@@ -2,6 +2,7 @@
 
 **Marooned** is a peaceful and atmospheric 3D island exploration game built with C++ and Raylib. 
 
+![Gameplay Screenshot](assets/screenshot0.png)
 ---
 
 ## 🌴 Features
