@@ -1,0 +1,10 @@
+*.exe
+*.o
+*.obj
+*.dll
+*.log
+*.png
+*.hdr
+*.glb
+raylib/
+build/
