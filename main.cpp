@@ -99,7 +99,8 @@ int main() {
     Image heightmap = LoadImage("assets/donutIsle.png");
     ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE); // ensures it's 8-bit grayscale
     Vector3 terrainScale = {16000.0f, 300.0f, 16000.0f};
-    unsigned char* pixels = (unsigned char*)heightmap.data;       // now we can index safely
+
+    unsigned char* pixels = (unsigned char*)heightmap.data; //for iterating heightmap for tree placement. 
 
     Shader terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
 
@@ -292,7 +293,11 @@ int main() {
     UnloadImage(heightmap);
     //UnloadTexture(heightmapTex);
     UnloadModel(model);
-    UnloadShader(shader);
+    UnloadModel(boat);
+    UnloadModel(palmTree);
+    UnloadShader(terrainShader);
+    UnloadShader(skyShader);
+    UnloadShader(waterShader);
     CloseWindow();
 
     return 0;
