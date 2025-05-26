@@ -40,6 +40,8 @@ std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, 
                     tree.yOffset = ((float)GetRandomValue(-200, 200)) / 100.0f;     // -2.0 to 2.0
                     tree.xOffset = ((float)GetRandomValue(-treeSpacing, treeSpacing));
                     tree.zOffset = ((float)GetRandomValue(-treeSpacing, treeSpacing));
+                    tree.useAltModel = GetRandomValue(0, 1);
+
 
                     trees.push_back(tree);
                 }
@@ -87,7 +89,7 @@ std::vector<BushInstance> GenerateBushes(Image heightmap, unsigned char* pixels,
             if (height > heightThreshold) {
                 Vector3 pos = {
                     (float)x / heightmap.width * terrainScale.x - terrainScale.x / 2,
-                    height,
+                    height-5,
                     (float)z / heightmap.height * terrainScale.z - terrainScale.z / 2
                 };
 
@@ -96,8 +98,8 @@ std::vector<BushInstance> GenerateBushes(Image heightmap, unsigned char* pixels,
                 bush.scale = 100.0f + ((float)GetRandomValue(0, 1000) / 100.0f);
                 bush.model = bushModel;
                 bush.yOffset = ((float)GetRandomValue(-200, 200)) / 100.0f;     // -2.0 to 2.0
-                bush.xOffset = ((float)GetRandomValue(-bushSpacing, bushSpacing));
-                bush.zOffset = ((float)GetRandomValue(-bushSpacing, bushSpacing));
+                bush.xOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2));
+                bush.zOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2));
                 bushes.push_back(bush);
             }
         }
@@ -106,8 +108,53 @@ std::vector<BushInstance> GenerateBushes(Image heightmap, unsigned char* pixels,
     return bushes;
 }
 
+std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<BushInstance>& inputTrees, Image heightmap,
+                                                          unsigned char* pixels, Vector3 terrainScale,
+                                                          float treeHeightThreshold) {
+    std::vector<BushInstance> filtered;
+
+    for (const auto& tree : inputTrees) {
+        float xPercent = (tree.position.x + terrainScale.x / 2) / terrainScale.x;
+        float zPercent = (tree.position.z + terrainScale.z / 2) / terrainScale.z;
+
+        int xPixel = (int)(xPercent * heightmap.width);
+        int zPixel = (int)(zPercent * heightmap.height);
+
+        if (xPixel < 0 || xPixel >= heightmap.width || zPixel < 0 || zPixel >= heightmap.height) continue;
+
+        int i = zPixel * heightmap.width + xPixel;
+        float height = ((float)pixels[i] / 255.0f) * terrainScale.y;
+
+        if (height > treeHeightThreshold) {
+            filtered.push_back(tree);
+        }
+    }
+
+    return filtered;
+}
+
+void DrawTrees(const std::vector<TreeInstance>& trees, Model& model1, Model& model2){
+    for (const auto& tree : trees) {
+        Vector3 pos = tree.position;
+        pos.y += tree.yOffset;
+        pos.x += tree.xOffset;
+        pos.z += tree.zOffset;
+
+        Model& treeModel = tree.useAltModel ? model1 : model2; // useAltModel is set when generating. 
+
+        DrawModelEx(treeModel, pos, { 0, 1, 0 }, tree.rotationY,
+                    { tree.scale, tree.scale, tree.scale }, WHITE);
+    }
+
+}
+
 void DrawBushes(const std::vector<BushInstance>& bushes) {
     for (const auto& bush : bushes) {
-        DrawModel(bush.model, bush.position, bush.scale, WHITE);
+        Vector3 pos = bush.position;
+        pos.x += bush.xOffset;
+        pos.y += bush.yOffset;
+        pos.z += bush.zOffset;
+        
+        DrawModel(bush.model, pos, bush.scale, WHITE);
     }
 }

@@ -2,12 +2,18 @@
 #include "raymath.h"
 #include "rlgl.h"
 #include "string"
-#include "terrain_chunks.h"
+#include "world.h"
 #include "vegetation.h"
+#include "player.h"
 
 #define GLSL_VERSION 330
 
+bool controlPlayer = false;
+Player player;
 
+Image heightmap;
+unsigned char* heightmapPixels;
+Vector3 terrainScale;
 
 void UpdateCustomCamera(Camera3D* camera, float deltaTime) {
     static float yaw = 0.0f;
@@ -86,7 +92,7 @@ void BeginCustom3D(Camera3D camera, float farClip) {
 
 
 int main() {
-    InitWindow(800, 800, "Marooned");
+    InitWindow(1600, 900, "Marooned");
     SetTargetFPS(60);
 
     RenderTexture2D sceneTexture = LoadRenderTexture((float)GetScreenWidth(), (float)GetScreenHeight()); //render texture
@@ -97,17 +103,17 @@ int main() {
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &res, SHADER_UNIFORM_VEC2);
     
 
-    Image heightmap = LoadImage("assets/perlin4k.png");
+    heightmap = LoadImage("assets/donutIsle.png");
     ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE); // ensures it's 8-bit grayscale
-    Vector3 terrainScale = {16000.0f, 300.0f, 16000.0f};
+    terrainScale = {16000.0f, 400.0f, 16000.0f};
 
-    unsigned char* pixels = (unsigned char*)heightmap.data; //for iterating heightmap for tree placement. 
+    heightmapPixels = (unsigned char*)heightmap.data; //for iterating heightmap for tree placement. 
 
     Shader terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
 
-    Mesh mesh = GenMeshHeightmap(heightmap, terrainScale);
+    Mesh terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
 
-    Model model = LoadModelFromMesh(mesh);
+    Model model = LoadModelFromMesh(terrainMesh);
     model.materials[0].shader = terrainShader;
 
     //skybox shader
@@ -119,7 +125,7 @@ int main() {
 
     float terrainSizeX = terrainScale.x;
     float terrainSizeZ = terrainScale.z;
-    float waterHeightY = 30.0;
+    float waterHeightY = 60.0;
 
 
     Mesh waterMesh = GenMeshPlane(30000, 30000, 1, 1);
@@ -142,20 +148,24 @@ int main() {
 
 
     Model palmTree = LoadModel("assets/models/bigPalmTree.glb");
+    Model palm2 = LoadModel("assets/models/smallPalmTree.glb");
+
+
+
     //Model smallPalmTree = LoadModel("assets/models/smallPalmTree.glb");
     float treeSpacing = 150.0f;
     float minTreeSpacing = 50.0f;
-    float treeHeightThreshold = 150.0f;
-    float bushHeightThreshold = 190;
+    float treeHeightThreshold = 200.0f;
+    float bushHeightThreshold = 200;
     
     // 🌴 Generate the trees
-    std::vector<TreeInstance> trees = GenerateTrees(heightmap, pixels, terrainScale, treeSpacing, minTreeSpacing, treeHeightThreshold);
+    std::vector<TreeInstance> trees = GenerateTrees(heightmap, heightmapPixels, terrainScale, treeSpacing, minTreeSpacing, treeHeightThreshold);
 
     // 🌴 Filter trees based on final height cutoff
-    trees = FilterTreesAboveHeightThreshold(trees, heightmap, pixels, terrainScale, treeHeightThreshold);
+    trees = FilterTreesAboveHeightThreshold(trees, heightmap, heightmapPixels, terrainScale, treeHeightThreshold);
 
-    std::vector<BushInstance> bushes = GenerateBushes(heightmap, pixels, terrainScale, treeSpacing, bushHeightThreshold, bush);
-
+    std::vector<BushInstance> bushes = GenerateBushes(heightmap, heightmapPixels, terrainScale, treeSpacing, bushHeightThreshold, bush);
+    bushes = FilterBushsAboveHeightThreshold(bushes, heightmap, heightmapPixels, terrainScale, bushHeightThreshold);
     // Camera
     Camera3D camera = { 0 };
     camera.position = (Vector3){ 0.0f, 400.0f, 0.0f };
@@ -167,14 +177,14 @@ int main() {
 
     DisableCursor();
 
-    Vector3 boatPosition = {0, -60, -5000.0};
+    Vector3 boatPosition = {0, -20, -5000.0};
     float boatSpeed = 200;
 
 
     while (!WindowShouldClose()) {
         //UpdateCamera(&camera, CAMERA_FREE);
         float deltaTime = GetFrameTime();
-        UpdateCustomCamera(&camera, deltaTime);
+        //UpdateCustomCamera(&camera, deltaTime);
         Vector3 camPos = camera.position;
         int camPosLoc = GetShaderLocation(terrainShader, "cameraPos");
         SetShaderValue(terrainShader, camPosLoc, &camPos, SHADER_UNIFORM_VEC3);
@@ -231,6 +241,39 @@ int main() {
             -terrainScale.z / 2.0f
         }; 
 
+        if (IsKeyPressed(KEY_TAB)) {
+            controlPlayer = !controlPlayer;
+
+            if (controlPlayer) {
+                // Initialize player at camera position
+                InitPlayer(player, camera.position);
+                
+
+            }
+        }
+
+        if (controlPlayer) {
+            UpdatePlayer(player, GetFrameTime(), terrainMesh);
+            DisableCursor();
+            float yawRad = DEG2RAD * player.rotation.y;
+            float pitchRad = DEG2RAD * player.rotation.x;
+
+            // Forward vector from yaw & pitch
+            Vector3 forward = {
+                cosf(pitchRad) * sinf(yawRad),
+                sinf(pitchRad),
+                cosf(pitchRad) * cosf(yawRad)
+            };
+
+            camera.position = Vector3Add(player.position, (Vector3){ 0, 1.5f, 0 });
+            camera.target = Vector3Add(camera.position, forward);
+        } else {
+            // Free camera movement
+            UpdateCustomCamera(&camera, deltaTime);
+        }
+
+
+
         // During render loop:
         float t = GetTime();
         SetShaderValue(waterShader, GetShaderLocation(waterShader, "time"), &t, SHADER_UNIFORM_FLOAT);
@@ -248,8 +291,9 @@ int main() {
         DrawModel(skyModel, camera.position, 10000.0f, WHITE);
         rlEnableDepthMask(); 
         rlEnableDepthTest();
-        rlEnableBackfaceCulling();
-        rlEnableColorBlend();
+        //rlEnableBackfaceCulling();
+        //rlEnableColorBlend();
+        //rlBlendMode(BLEND_ALPHA);
        
         //DrawModel(redTest, (Vector3){ 0, 600, 0 }, 1.0f, WHITE);
   
@@ -259,14 +303,8 @@ int main() {
 
         DrawModel(boat, boatPosition, 1.0f, WHITE);
 
-        for (const auto& tree : trees) {
-            Vector3 pos = tree.position;
-            pos.y += tree.yOffset;
-            pos.x += tree.xOffset;
-            pos.z += tree.zOffset;
-            DrawModelEx(palmTree, pos, { 0, 1, 0 }, tree.rotationY,
-                        { tree.scale, tree.scale, tree.scale }, WHITE);
-        }
+        rlSetBlendMode(BLEND_ALPHA);
+        DrawTrees(trees, palmTree, palm2);
 
         DrawBushes(bushes);
         //rlEnableDepthMask();       // Re-enable depth writing

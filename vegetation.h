@@ -12,6 +12,8 @@ struct TreeInstance {
     float yOffset;
     float xOffset;
     float zOffset;
+    bool useAltModel;
+
 };
 
 struct BushInstance {
@@ -30,8 +32,11 @@ std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, 
 std::vector<TreeInstance> FilterTreesAboveHeightThreshold(const std::vector<TreeInstance>& inputTrees, Image heightmap,
                                                           unsigned char* pixels, Vector3 terrainScale,
                                                           float treeHeightThreshold);
-
+void DrawTrees(const std::vector<TreeInstance>& trees, Model& model1, Model& model2);
 void DrawBushes(const std::vector<BushInstance>& bushes);
 std::vector<BushInstance> GenerateBillboardBushes(Image heightmap, Vector3 terrainScale, float spacing, float minHeight, float maxHeight);
 std::vector<BushInstance> GenerateBushes(Image heightmap, unsigned char* pixels, Vector3 terrainScale,
                                          float bushSpacing, float heightThreshold, Model bushModel);
+std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<BushInstance>& inputTrees, Image heightmap,
+                                                          unsigned char* pixels, Vector3 terrainScale,
+                                                          float treeHeightThreshold);
