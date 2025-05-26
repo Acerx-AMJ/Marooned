@@ -41,6 +41,7 @@ std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, 
                     tree.xOffset = ((float)GetRandomValue(-treeSpacing, treeSpacing));
                     tree.zOffset = ((float)GetRandomValue(-treeSpacing, treeSpacing));
                     tree.useAltModel = GetRandomValue(0, 1);
+                    tree.cullFactor = 1.05f;
 
 
                     trees.push_back(tree);
@@ -69,7 +70,7 @@ std::vector<TreeInstance> FilterTreesAboveHeightThreshold(const std::vector<Tree
         int i = zPixel * heightmap.width + xPixel;
         float height = ((float)pixels[i] / 255.0f) * terrainScale.y;
 
-        if (height > treeHeightThreshold) {
+        if (height > treeHeightThreshold * tree.cullFactor) {
             filtered.push_back(tree);
         }
     }
@@ -133,7 +134,7 @@ std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<Bush
     return filtered;
 }
 
-void DrawTrees(const std::vector<TreeInstance>& trees, Model& model1, Model& model2){
+void DrawTrees(const std::vector<TreeInstance>& trees, Model& model1, Model& model2, Model& shadowQuad){
     for (const auto& tree : trees) {
         Vector3 pos = tree.position;
         pos.y += tree.yOffset;
@@ -144,6 +145,23 @@ void DrawTrees(const std::vector<TreeInstance>& trees, Model& model1, Model& mod
 
         DrawModelEx(treeModel, pos, { 0, 1, 0 }, tree.rotationY,
                     { tree.scale, tree.scale, tree.scale }, WHITE);
+        
+        //draw shadow decal under trees.
+        Vector3 shadowPos = {
+            tree.position.x + tree.xOffset,
+            tree.position.y + tree.yOffset + 9.0f, // Slightly above ground to prevent Z-fighting
+            tree.position.z + tree.zOffset
+        };
+
+        
+        DrawModelEx(
+            shadowQuad,
+            shadowPos,
+            {0, 1, 0},
+            0,
+            {tree.scale * 15.0f, 1.0f, tree.scale * 15.0f}, // XZ scale, flat on Y
+            WHITE
+        );
     }
 
 }

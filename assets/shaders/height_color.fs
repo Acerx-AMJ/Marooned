@@ -28,7 +28,7 @@ void main()
     if (height > 30.0) {
         float t = clamp((height - 30) / 50.0, 0.0, 1.0);
         color = mix(waterColor, sandColor, t);
-        if (height > 100.0) {
+        if (height > 120.0) {
             float s = clamp((height - 100.0) / 30.0, 0.0, 1.0);
             color = mix(sandColor, grassColor, s);
         }

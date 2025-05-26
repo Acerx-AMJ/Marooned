@@ -7,9 +7,13 @@ struct Player {
     Vector3 velocity;
     Vector2 rotation;
     Vector3 forward;
-    float speed = 500.0f;
-    float gravity = 90.8f;
-    float height = 150.0f;
+    bool running = false;
+    float runSpeed = 800.0f; // faster than walk speed
+    float walkSpeed = 500.0f; // regular speed
+
+    float gravity = 450.0f;
+    float height = 200.0f;
+    float jumpStrength = 600; 
     bool grounded = false;
 };
 

@@ -8,14 +8,8 @@
 
 #define GLSL_VERSION 330
 
-bool controlPlayer = false;
-Player player;
-
-Image heightmap;
-unsigned char* heightmapPixels;
-Vector3 terrainScale;
-
 void UpdateCustomCamera(Camera3D* camera, float deltaTime) {
+    //Free camera control
     static float yaw = 0.0f;
     static float pitch = 0.0f;
 
@@ -75,12 +69,66 @@ void UpdateCustomCamera(Camera3D* camera, float deltaTime) {
     camera->target = Vector3Add(camera->position, forward);
 }
 
+void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, float deltaTime) {
+    if (controlPlayer) {
+        UpdatePlayer(player, GetFrameTime(), terrainMesh);
+        DisableCursor();
+
+        float yawRad = DEG2RAD * player.rotation.y;
+        float pitchRad = DEG2RAD * player.rotation.x;
+
+        Vector3 forward = {
+            cosf(pitchRad) * sinf(yawRad),
+            sinf(pitchRad),
+            cosf(pitchRad) * cosf(yawRad)
+        };
+
+        camera.position = Vector3Add(player.position, (Vector3){ 0, 1.5f, 0 });
+        camera.target = Vector3Add(camera.position, forward);
+    } else {
+        UpdateCustomCamera(&camera, deltaTime);
+    }
+}
+
+
+void HandleCameraPlayerToggle(Camera& camera, Player& player, bool& controlPlayer) {
+    if (IsKeyPressed(KEY_TAB)) {
+        controlPlayer = !controlPlayer;
+
+        if (controlPlayer) {
+            // Entering player mode — copy camera orientation to player
+            Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+            float yaw = atan2f(camForward.x, camForward.z) * RAD2DEG;
+            float pitch = -asinf(camForward.y) * RAD2DEG;
+
+            player.position = camera.position;
+            player.velocity = { 0 };
+            player.rotation.y = yaw;
+            player.rotation.x = Clamp(pitch, -89.0f, 89.0f);
+        } else {
+            // Exiting player mode — copy player orientation back to camera
+            float yawRad = DEG2RAD * player.rotation.y;
+            float pitchRad = DEG2RAD * player.rotation.x;
+
+            Vector3 forward = {
+                cosf(pitchRad) * sinf(yawRad),
+                sinf(pitchRad),
+                cosf(pitchRad) * cosf(yawRad)
+            };
+
+            camera.position = Vector3Add(player.position, (Vector3){ 0, 1.5f, 0 });
+            camera.target = Vector3Add(camera.position, forward);
+        }
+    }
+}
+
+
 void BeginCustom3D(Camera3D camera, float farClip) {
     rlDrawRenderBatchActive();
     rlMatrixMode(RL_PROJECTION);
     rlLoadIdentity();
-    //Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / GetScreenHeight(), 0.1f, farClip);
-    Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), 10.0f, 50000.0f);
+    float nearClip = 60.0f; //20 wider than the capsule. to 50k 
+    Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), nearClip, farClip);
 
     rlMultMatrixf(MatrixToFloat(proj));
 
@@ -92,27 +140,28 @@ void BeginCustom3D(Camera3D camera, float farClip) {
 
 
 int main() {
-    InitWindow(1600, 900, "Marooned");
+    SetConfigFlags(FLAG_MSAA_4X_HINT); // before InitWindow
+    InitWindow(800, 800, "Marooned");
     SetTargetFPS(60);
 
     RenderTexture2D sceneTexture = LoadRenderTexture((float)GetScreenWidth(), (float)GetScreenHeight()); //render texture
     Texture2D bushTex = LoadTexture("assets/bush.png");
 
-    Shader fogShader = LoadShader(0,"assets/shaders/fog_postprocess.fs");
+    Shader fogShader = LoadShader(0,"assets/shaders/fog_postprocess.fs"); //ambient occlusion shader not fog. 
     Vector2 res = {(float)GetScreenWidth(), (float)GetScreenHeight()};
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &res, SHADER_UNIFORM_VEC2);
-    
+    InitPlayer(player, Vector3 {0,0,0});
 
-    heightmap = LoadImage("assets/donutIsle.png");
+    heightmap = LoadImage("assets/EyeballIsle.png");
     ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE); // ensures it's 8-bit grayscale
-    terrainScale = {16000.0f, 400.0f, 16000.0f};
+    terrainScale = {16000.0f, 200.0f, 16000.0f};
 
     heightmapPixels = (unsigned char*)heightmap.data; //for iterating heightmap for tree placement. 
 
     Shader terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
 
-    Mesh terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
-
+    terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
+    
     Model model = LoadModelFromMesh(terrainMesh);
     model.materials[0].shader = terrainShader;
 
@@ -122,6 +171,11 @@ int main() {
     Model skyModel = LoadModelFromMesh(skyMesh);
     skyModel.materials[0].shader = skyShader;
 
+    Texture shadowTex = LoadTexture("assets/shadow_decal.png");
+    Shader shadowShader = LoadShader("assets/shaders/shadow_decal.vs", "assets/shaders/shadow_decal.fs");
+    Model shadowQuad = LoadModelFromMesh(GenMeshPlane(1.0f, 1.0f, 1, 1)); // 1x1 plane
+    shadowQuad.materials[0].shader = shadowShader;
+    SetMaterialTexture(&shadowQuad.materials[0], MATERIAL_MAP_DIFFUSE, shadowTex);
 
     float terrainSizeX = terrainScale.x;
     float terrainSizeZ = terrainScale.z;
@@ -136,11 +190,12 @@ int main() {
     //waterModel.materials[0].shader = waterShader;
 
 
-    Vector3 waterPos = { 0.0f, waterHeightY, 0.0f };
-
     Shader waterShader = LoadShader("assets/shaders/water.vs", "assets/shaders/water.fs");
-
+    Vector3 waterPos = { 0.0f, waterHeightY, 0.0f };
+    float waterLevel = waterPos.y;
+    SetShaderValue(waterShader, GetShaderLocation(waterShader, "waterLevel"), &waterLevel, SHADER_UNIFORM_FLOAT);
     waterModel.materials[0].shader = waterShader;
+
     Model boat = LoadModel("assets/models/boat.glb");
     // Apply a fix rotation (e.g. -90 degrees around X to make it face forward)
 
@@ -155,8 +210,8 @@ int main() {
     //Model smallPalmTree = LoadModel("assets/models/smallPalmTree.glb");
     float treeSpacing = 150.0f;
     float minTreeSpacing = 50.0f;
-    float treeHeightThreshold = 200.0f;
-    float bushHeightThreshold = 200;
+    float treeHeightThreshold = terrainScale.y * TREE_HEIGHT_RATIO;
+    float bushHeightThreshold = terrainScale.y * BUSH_HEIGHT_RATIO;
     
     // 🌴 Generate the trees
     std::vector<TreeInstance> trees = GenerateTrees(heightmap, heightmapPixels, terrainScale, treeSpacing, minTreeSpacing, treeHeightThreshold);
@@ -241,39 +296,8 @@ int main() {
             -terrainScale.z / 2.0f
         }; 
 
-        if (IsKeyPressed(KEY_TAB)) {
-            controlPlayer = !controlPlayer;
-
-            if (controlPlayer) {
-                // Initialize player at camera position
-                InitPlayer(player, camera.position);
-                
-
-            }
-        }
-
-        if (controlPlayer) {
-            UpdatePlayer(player, GetFrameTime(), terrainMesh);
-            DisableCursor();
-            float yawRad = DEG2RAD * player.rotation.y;
-            float pitchRad = DEG2RAD * player.rotation.x;
-
-            // Forward vector from yaw & pitch
-            Vector3 forward = {
-                cosf(pitchRad) * sinf(yawRad),
-                sinf(pitchRad),
-                cosf(pitchRad) * cosf(yawRad)
-            };
-
-            camera.position = Vector3Add(player.position, (Vector3){ 0, 1.5f, 0 });
-            camera.target = Vector3Add(camera.position, forward);
-        } else {
-            // Free camera movement
-            UpdateCustomCamera(&camera, deltaTime);
-        }
-
-
-
+        HandleCameraPlayerToggle(camera, player, controlPlayer);
+        UpdateCameraAndPlayer(camera, player, controlPlayer, deltaTime);
         // During render loop:
         float t = GetTime();
         SetShaderValue(waterShader, GetShaderLocation(waterShader, "time"), &t, SHADER_UNIFORM_FLOAT);
@@ -282,29 +306,27 @@ int main() {
         int camLoc = GetShaderLocation(waterShader, "cameraPos");
         SetShaderValue(waterShader, camLoc, &camPos, SHADER_UNIFORM_VEC3);
 
+
+
         // === RENDER TO TEXTURE ===
         BeginTextureMode(sceneTexture);
         ClearBackground(SKYBLUE);
 
-        BeginCustom3D(camera, 10000.0f);
+        BeginCustom3D(camera, 50000.0f);
         rlDisableBackfaceCulling(); rlDisableDepthMask(); rlDisableDepthTest();
         DrawModel(skyModel, camera.position, 10000.0f, WHITE);
         rlEnableDepthMask(); 
         rlEnableDepthTest();
-        //rlEnableBackfaceCulling();
-        //rlEnableColorBlend();
-        //rlBlendMode(BLEND_ALPHA);
-       
-        //DrawModel(redTest, (Vector3){ 0, 600, 0 }, 1.0f, WHITE);
-  
+        rlSetBlendMode(BLEND_ALPHA);
+        rlEnableColorBlend();
         DrawModel(model, terrainPosition, 1.0f, WHITE);
        
         DrawModel(waterModel, waterPos, 1.0f, WHITE);   
 
         DrawModel(boat, boatPosition, 1.0f, WHITE);
-
-        rlSetBlendMode(BLEND_ALPHA);
-        DrawTrees(trees, palmTree, palm2);
+        DrawPlayer(player);
+ 
+        DrawTrees(trees, palmTree, palm2, shadowQuad);
 
         DrawBushes(bushes);
         //rlEnableDepthMask();       // Re-enable depth writing

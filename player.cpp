@@ -1,11 +1,13 @@
 #include "player.h"
 #include "raymath.h"
 #include "world.h"
+#include <iostream>
 
 void InitPlayer(Player& player, Vector3 startPosition) {
     player.position = startPosition;
     player.velocity = {0, 0, 0};
     player.grounded = false;
+    
 }
 
 void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh) {
@@ -14,8 +16,15 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh) {
         player.velocity.y -= player.gravity * deltaTime;
     }
 
+    player.running = IsKeyDown(KEY_LEFT_SHIFT);
+
+    float currentSpeed = player.running ? player.runSpeed : player.walkSpeed;
+
+
+
+
     Vector2 mouseDelta = GetMouseDelta();
-    float mouseSensitivity = 0.2f;
+    float mouseSensitivity = 0.03f;
     player.rotation.y -= mouseDelta.x * mouseSensitivity; // Yaw (turn left/right)
     player.rotation.x -= mouseDelta.y * mouseSensitivity; // Pitch (look up/down)
 
@@ -46,7 +55,7 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh) {
             forward.z * input.z + right.z * input.x
         };
 
-        moveDir = Vector3Scale(Vector3Normalize(moveDir), player.speed * deltaTime);
+        moveDir = Vector3Scale(Vector3Normalize(moveDir), currentSpeed * deltaTime);
 
         player.position.x += moveDir.x;
         player.position.z += moveDir.z;
@@ -56,9 +65,10 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh) {
     }
 
 
+
     // Check ground height
     float groundY = GetHeightAtWorldPosition(player.position, heightmap, terrainScale);
-    float feetY = player.position.y - player.height / 2.0f;
+    float feetY = player.position.y- player.height / 2.0f;
 
     if (feetY <= groundY) {
         player.grounded = true;
@@ -66,14 +76,29 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh) {
         player.position.y = groundY + player.height / 2.0f;
     } else {
         player.grounded = false;
+        //player.position.y += player.velocity.y * deltaTime;
+        float targetY = groundY + player.height / 2.0f;
+        player.position.y = Lerp(player.position.y, targetY, 0.5f * deltaTime);
+    }
+
+    if (player.grounded && IsKeyPressed(KEY_SPACE)) {
+        player.velocity.y = player.jumpStrength;
+        player.grounded = false;
+    }
+
+    // apply vertical velocity after jumping
+    if (!player.grounded) {
+        player.velocity.y -= player.gravity * deltaTime;
         player.position.y += player.velocity.y * deltaTime;
     }
+
+
 
 
 }
 
 void DrawPlayer(const Player& player) {
-    //DrawCapsule(player.position, player.height * 0.5f, 0.4f, RED);
+    DrawCapsule(player.position, Vector3 {player.position.x, player.height, player.position.z}, 40, 4, 4, RED);
 }
 
 float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale) {
