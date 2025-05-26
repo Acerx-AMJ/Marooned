@@ -20,7 +20,7 @@ void main()
     ao += length(center - texture(sceneTexture, fragTexCoord + texel * vec2(-1,  1)).rgb);
     ao += length(center - texture(sceneTexture, fragTexCoord + texel * vec2( 1,  1)).rgb);
 
-    ao = clamp(ao * 0.226, 0.0, 1.0); // tweak strength
+    ao = clamp(ao * 0.5, 0.0, 1.0); // tweak strength
 
     vec3 final = center - ao * 0.2; // darken based on AO
 

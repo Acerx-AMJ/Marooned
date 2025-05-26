@@ -3,7 +3,6 @@
 *.obj
 *.dll
 *.log
-*.png
 *.hdr
 *.glb
 raylib/

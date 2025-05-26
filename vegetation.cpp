@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 #include "raymath.h"
+#include "rlgl.h"
 
 std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, Vector3 terrainScale,
                                         float treeSpacing, float minTreeSpacing, float treeHeightThreshold) {
@@ -72,4 +73,41 @@ std::vector<TreeInstance> FilterTreesAboveHeightThreshold(const std::vector<Tree
     }
 
     return filtered;
+}
+
+std::vector<BushInstance> GenerateBushes(Image heightmap, unsigned char* pixels, Vector3 terrainScale,
+                                         float bushSpacing, float heightThreshold, Model bushModel) {
+    std::vector<BushInstance> bushes;
+
+    for (int z = 0; z < heightmap.height; z += (int)bushSpacing) {
+        for (int x = 0; x < heightmap.width; x += (int)bushSpacing) {
+            int i = z * heightmap.width + x;
+            float height = ((float)pixels[i] / 255.0f) * terrainScale.y;
+
+            if (height > heightThreshold) {
+                Vector3 pos = {
+                    (float)x / heightmap.width * terrainScale.x - terrainScale.x / 2,
+                    height,
+                    (float)z / heightmap.height * terrainScale.z - terrainScale.z / 2
+                };
+
+                BushInstance bush;
+                bush.position = pos;
+                bush.scale = 100.0f + ((float)GetRandomValue(0, 1000) / 100.0f);
+                bush.model = bushModel;
+                bush.yOffset = ((float)GetRandomValue(-200, 200)) / 100.0f;     // -2.0 to 2.0
+                bush.xOffset = ((float)GetRandomValue(-bushSpacing, bushSpacing));
+                bush.zOffset = ((float)GetRandomValue(-bushSpacing, bushSpacing));
+                bushes.push_back(bush);
+            }
+        }
+    }
+
+    return bushes;
+}
+
+void DrawBushes(const std::vector<BushInstance>& bushes) {
+    for (const auto& bush : bushes) {
+        DrawModel(bush.model, bush.position, bush.scale, WHITE);
+    }
 }

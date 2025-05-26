@@ -8,6 +8,7 @@
 #define GLSL_VERSION 330
 
 
+
 void UpdateCustomCamera(Camera3D* camera, float deltaTime) {
     static float yaw = 0.0f;
     static float pitch = 0.0f;
@@ -73,7 +74,7 @@ void BeginCustom3D(Camera3D camera, float farClip) {
     rlMatrixMode(RL_PROJECTION);
     rlLoadIdentity();
     //Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / GetScreenHeight(), 0.1f, farClip);
-    Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), 10.0f, 18000.0f);
+    Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), 10.0f, 50000.0f);
 
     rlMultMatrixf(MatrixToFloat(proj));
 
@@ -85,18 +86,18 @@ void BeginCustom3D(Camera3D camera, float farClip) {
 
 
 int main() {
-    InitWindow(800, 800, "Rolling Hills");
+    InitWindow(800, 800, "Marooned");
     SetTargetFPS(60);
 
     RenderTexture2D sceneTexture = LoadRenderTexture((float)GetScreenWidth(), (float)GetScreenHeight()); //render texture
-    
+    Texture2D bushTex = LoadTexture("assets/bush.png");
 
     Shader fogShader = LoadShader(0,"assets/shaders/fog_postprocess.fs");
     Vector2 res = {(float)GetScreenWidth(), (float)GetScreenHeight()};
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &res, SHADER_UNIFORM_VEC2);
     
 
-    Image heightmap = LoadImage("assets/donutIsle.png");
+    Image heightmap = LoadImage("assets/perlin4k.png");
     ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE); // ensures it's 8-bit grayscale
     Vector3 terrainScale = {16000.0f, 300.0f, 16000.0f};
 
@@ -137,12 +138,15 @@ int main() {
     Model boat = LoadModel("assets/models/boat.glb");
     // Apply a fix rotation (e.g. -90 degrees around X to make it face forward)
 
+    Model bush = LoadModel("assets/models/grass2.glb");
+
 
     Model palmTree = LoadModel("assets/models/bigPalmTree.glb");
     //Model smallPalmTree = LoadModel("assets/models/smallPalmTree.glb");
     float treeSpacing = 150.0f;
     float minTreeSpacing = 50.0f;
     float treeHeightThreshold = 150.0f;
+    float bushHeightThreshold = 190;
     
     // 🌴 Generate the trees
     std::vector<TreeInstance> trees = GenerateTrees(heightmap, pixels, terrainScale, treeSpacing, minTreeSpacing, treeHeightThreshold);
@@ -150,6 +154,7 @@ int main() {
     // 🌴 Filter trees based on final height cutoff
     trees = FilterTreesAboveHeightThreshold(trees, heightmap, pixels, terrainScale, treeHeightThreshold);
 
+    std::vector<BushInstance> bushes = GenerateBushes(heightmap, pixels, terrainScale, treeSpacing, bushHeightThreshold, bush);
 
     // Camera
     Camera3D camera = { 0 };
@@ -242,10 +247,10 @@ int main() {
         rlDisableBackfaceCulling(); rlDisableDepthMask(); rlDisableDepthTest();
         DrawModel(skyModel, camera.position, 10000.0f, WHITE);
         rlEnableDepthMask(); 
-        rlEnableBackfaceCulling();
-
         rlEnableDepthTest();
+        rlEnableBackfaceCulling();
         rlEnableColorBlend();
+       
         //DrawModel(redTest, (Vector3){ 0, 600, 0 }, 1.0f, WHITE);
   
         DrawModel(model, terrainPosition, 1.0f, WHITE);
@@ -263,10 +268,12 @@ int main() {
                         { tree.scale, tree.scale, tree.scale }, WHITE);
         }
 
-        //DrawTerrainChunks(chunks);
+        DrawBushes(bushes);
+        //rlEnableDepthMask();       // Re-enable depth writing
+       
         rlDisableDepthTest();
         
-
+        
         //Vector3 sunPos = {0.0f, 500.0f, 0.0f};
         //DrawSphere(sunPos, 5.0f, YELLOW);
         EndMode3D();
@@ -291,10 +298,11 @@ int main() {
 
     // Cleanup
     UnloadImage(heightmap);
-    //UnloadTexture(heightmapTex);
+
     UnloadModel(model);
     UnloadModel(boat);
     UnloadModel(palmTree);
+    UnloadModel(bush);
     UnloadShader(terrainShader);
     UnloadShader(skyShader);
     UnloadShader(waterShader);
