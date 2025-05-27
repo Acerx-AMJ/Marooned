@@ -25,6 +25,7 @@ struct BushInstance {
     float yOffset;
     float xOffset;
     float zOffset;
+    float cullFactor;
 };
 
 std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, Vector3 terrainScale,

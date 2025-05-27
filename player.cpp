@@ -2,6 +2,7 @@
 #include "raymath.h"
 #include "world.h"
 #include <iostream>
+#include "resources.h"
 
 void InitPlayer(Player& player, Vector3 startPosition) {
     player.position = startPosition;

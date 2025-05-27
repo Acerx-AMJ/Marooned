@@ -5,10 +5,10 @@
 
 
 extern bool controlPlayer;
-extern Image heightmap;
+//extern Image heightmap;
 extern unsigned char* heightmapPixels;
-extern Vector3 terrainScale;
-extern Mesh terrainMesh;
+//extern Vector3 terrainScale;
+//extern Mesh terrainMesh;
 extern Player player;
 
 extern const float TREE_HEIGHT_RATIO;

@@ -101,6 +101,7 @@ std::vector<BushInstance> GenerateBushes(Image heightmap, unsigned char* pixels,
                 bush.yOffset = ((float)GetRandomValue(-200, 200)) / 100.0f;     // -2.0 to 2.0
                 bush.xOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2));
                 bush.zOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2));
+                bush.cullFactor = 1.05f;
                 bushes.push_back(bush);
             }
         }
@@ -126,7 +127,7 @@ std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<Bush
         int i = zPixel * heightmap.width + xPixel;
         float height = ((float)pixels[i] / 255.0f) * terrainScale.y;
 
-        if (height > treeHeightThreshold) {
+        if (height > treeHeightThreshold * tree.cullFactor) {
             filtered.push_back(tree);
         }
     }

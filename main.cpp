@@ -5,6 +5,7 @@
 #include "world.h"
 #include "vegetation.h"
 #include "player.h"
+#include "resources.h"
 
 #define GLSL_VERSION 330
 
@@ -123,6 +124,7 @@ void HandleCameraPlayerToggle(Camera& camera, Player& player, bool& controlPlaye
 }
 
 
+
 void BeginCustom3D(Camera3D camera, float farClip) {
     rlDrawRenderBatchActive();
     rlMatrixMode(RL_PROJECTION);
@@ -143,76 +145,20 @@ int main() {
     SetConfigFlags(FLAG_MSAA_4X_HINT); // before InitWindow
     InitWindow(800, 800, "Marooned");
     SetTargetFPS(60);
+    LoadAllResources();
 
-    RenderTexture2D sceneTexture = LoadRenderTexture((float)GetScreenWidth(), (float)GetScreenHeight()); //render texture
-    Texture2D bushTex = LoadTexture("assets/bush.png");
 
-    Shader fogShader = LoadShader(0,"assets/shaders/fog_postprocess.fs"); //ambient occlusion shader not fog. 
-    Vector2 res = {(float)GetScreenWidth(), (float)GetScreenHeight()};
-    SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &res, SHADER_UNIFORM_VEC2);
     InitPlayer(player, Vector3 {0,0,0});
 
-    heightmap = LoadImage("assets/EyeballIsle.png");
-    ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE); // ensures it's 8-bit grayscale
-    terrainScale = {16000.0f, 200.0f, 16000.0f};
+ 
 
-    heightmapPixels = (unsigned char*)heightmap.data; //for iterating heightmap for tree placement. 
+    //float waterHeightY = 60.0;
 
-    Shader terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
-
-    terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
-    
-    Model model = LoadModelFromMesh(terrainMesh);
-    model.materials[0].shader = terrainShader;
-
-    //skybox shader
-    Shader skyShader = LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
-    Mesh skyMesh = GenMeshCube(1.0f, 1.0f, 1.0f);
-    Model skyModel = LoadModelFromMesh(skyMesh);
-    skyModel.materials[0].shader = skyShader;
-
-    Texture shadowTex = LoadTexture("assets/shadow_decal.png");
-    Shader shadowShader = LoadShader("assets/shaders/shadow_decal.vs", "assets/shaders/shadow_decal.fs");
-    Model shadowQuad = LoadModelFromMesh(GenMeshPlane(1.0f, 1.0f, 1, 1)); // 1x1 plane
-    shadowQuad.materials[0].shader = shadowShader;
-    SetMaterialTexture(&shadowQuad.materials[0], MATERIAL_MAP_DIFFUSE, shadowTex);
-
-    float terrainSizeX = terrainScale.x;
-    float terrainSizeZ = terrainScale.z;
-    float waterHeightY = 60.0;
-
-
-    Mesh waterMesh = GenMeshPlane(30000, 30000, 1, 1);
-
-    //UploadMesh(&waterMesh, true); // reupload updated UVs
-
-    Model waterModel = LoadModelFromMesh(waterMesh);
-    //waterModel.materials[0].shader = waterShader;
-
-
-    Shader waterShader = LoadShader("assets/shaders/water.vs", "assets/shaders/water.fs");
-    Vector3 waterPos = { 0.0f, waterHeightY, 0.0f };
-    float waterLevel = waterPos.y;
-    SetShaderValue(waterShader, GetShaderLocation(waterShader, "waterLevel"), &waterLevel, SHADER_UNIFORM_FLOAT);
-    waterModel.materials[0].shader = waterShader;
-
-    Model boat = LoadModel("assets/models/boat.glb");
-    // Apply a fix rotation (e.g. -90 degrees around X to make it face forward)
-
-    Model bush = LoadModel("assets/models/grass2.glb");
-
-
-    Model palmTree = LoadModel("assets/models/bigPalmTree.glb");
-    Model palm2 = LoadModel("assets/models/smallPalmTree.glb");
-
-
-
-    //Model smallPalmTree = LoadModel("assets/models/smallPalmTree.glb");
     float treeSpacing = 150.0f;
     float minTreeSpacing = 50.0f;
     float treeHeightThreshold = terrainScale.y * TREE_HEIGHT_RATIO;
     float bushHeightThreshold = terrainScale.y * BUSH_HEIGHT_RATIO;
-    
+    heightmapPixels = (unsigned char*)heightmap.data; //for iterating heightmap data for tree placement
     // 🌴 Generate the trees
     std::vector<TreeInstance> trees = GenerateTrees(heightmap, heightmapPixels, terrainScale, treeSpacing, minTreeSpacing, treeHeightThreshold);
 
@@ -221,6 +167,8 @@ int main() {
 
     std::vector<BushInstance> bushes = GenerateBushes(heightmap, heightmapPixels, terrainScale, treeSpacing, bushHeightThreshold, bush);
     bushes = FilterBushsAboveHeightThreshold(bushes, heightmap, heightmapPixels, terrainScale, bushHeightThreshold);
+
+
     // Camera
     Camera3D camera = { 0 };
     camera.position = (Vector3){ 0.0f, 400.0f, 0.0f };
@@ -300,6 +248,7 @@ int main() {
         UpdateCameraAndPlayer(camera, player, controlPlayer, deltaTime);
         // During render loop:
         float t = GetTime();
+        Vector3 waterPos = {0, waterHeightY, 0};
         SetShaderValue(waterShader, GetShaderLocation(waterShader, "time"), &t, SHADER_UNIFORM_FLOAT);
         DrawModel(waterModel, waterPos, 1.0f, WHITE);
 
@@ -319,7 +268,7 @@ int main() {
         rlEnableDepthTest();
         rlSetBlendMode(BLEND_ALPHA);
         rlEnableColorBlend();
-        DrawModel(model, terrainPosition, 1.0f, WHITE);
+        DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
        
         DrawModel(waterModel, waterPos, 1.0f, WHITE);   
 
@@ -349,23 +298,16 @@ int main() {
             (Vector2){0, 0}, WHITE);
         EndShaderMode();
 
-        // === 2D Overlay (optional) ===
+
         DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
+        DrawText("Press tab for first person mode", 100, 100, 20, WHITE);
 
         EndDrawing();
 
     }
 
     // Cleanup
-    UnloadImage(heightmap);
-
-    UnloadModel(model);
-    UnloadModel(boat);
-    UnloadModel(palmTree);
-    UnloadModel(bush);
-    UnloadShader(terrainShader);
-    UnloadShader(skyShader);
-    UnloadShader(waterShader);
+    UnloadAllResources();
     CloseWindow();
 
     return 0;

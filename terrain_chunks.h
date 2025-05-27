@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include <vector>
+#include <raymath.h>
 
 struct TerrainChunk {
     Model model;
