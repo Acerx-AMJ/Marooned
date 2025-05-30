@@ -10,7 +10,9 @@ extern unsigned char* heightmapPixels;
 //extern Vector3 terrainScale;
 //extern Mesh terrainMesh;
 extern Player player;
-
+extern Vector3 boatPosition;
+extern float boatSpeed;
+extern float waterHeightY;
 extern const float TREE_HEIGHT_RATIO;
 extern const float BUSH_HEIGHT_RATIO;
 

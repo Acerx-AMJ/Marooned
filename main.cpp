@@ -6,8 +6,12 @@
 #include "vegetation.h"
 #include "player.h"
 #include "resources.h"
+#include "input.h"
+#include "boat.h"
 
 #define GLSL_VERSION 330
+
+
 
 void UpdateCustomCamera(Camera3D* camera, float deltaTime) {
     //Free camera control
@@ -84,10 +88,17 @@ void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, f
             cosf(pitchRad) * cosf(yawRad)
         };
 
-        camera.position = Vector3Add(player.position, (Vector3){ 0, 1.5f, 0 });
+        float camYOffset = player.isSwimming ? -40.0f : 1.5f;  // swimming lowers the camera
+        camera.position = Vector3Add(player.position, (Vector3){ 0, camYOffset, 0 });
+        //camera.position = Vector3Add(player.position, (Vector3){ 0, 1.5f, 0 });
         camera.target = Vector3Add(camera.position, forward);
+
+
     } else {
         UpdateCustomCamera(&camera, deltaTime);
+        if (player.onBoard) {
+            player.position = Vector3Add(player_boat.position, {0, 200.0f, 0});
+        }
     }
 }
 
@@ -123,6 +134,36 @@ void HandleCameraPlayerToggle(Camera& camera, Player& player, bool& controlPlaye
     }
 }
 
+void DrawBillboardPro(Camera3D camera, Texture2D texture, Vector3 worldPos, float size) {
+    // Convert 3D position to 2D screen position
+    Vector2 screenPos = GetWorldToScreen(worldPos, camera);
+
+    // Define source rectangle (flipped vertically to fix upside-down texture)
+    Rectangle sourceRec = {
+        0.0f,
+        (float)texture.height,
+        (float)texture.width,
+        -(float)texture.height
+    };
+
+    // Define destination rectangle (centered on screen position)
+    Rectangle destRec = {
+        screenPos.x - size / 2,
+        screenPos.y - size,
+        size,
+        size
+    };
+
+    // No rotation needed because the screenPos already centers it correctly
+    float rotation = 0.0f;
+
+    // Draw with transparency
+    DrawTexturePro(texture, sourceRec, destRec, { 0, 0 }, rotation, WHITE);
+}
+
+
+
+
 
 
 void BeginCustom3D(Camera3D camera, float farClip) {
@@ -142,31 +183,13 @@ void BeginCustom3D(Camera3D camera, float farClip) {
 
 
 int main() {
-    SetConfigFlags(FLAG_MSAA_4X_HINT); // before InitWindow
-    InitWindow(800, 800, "Marooned");
+    //SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
+    InitWindow(1600, 900, "Marooned");
     SetTargetFPS(60);
     LoadAllResources();
 
-
     InitPlayer(player, Vector3 {0,0,0});
-
- 
-
-    //float waterHeightY = 60.0;
-
-    float treeSpacing = 150.0f;
-    float minTreeSpacing = 50.0f;
-    float treeHeightThreshold = terrainScale.y * TREE_HEIGHT_RATIO;
-    float bushHeightThreshold = terrainScale.y * BUSH_HEIGHT_RATIO;
-    heightmapPixels = (unsigned char*)heightmap.data; //for iterating heightmap data for tree placement
-    // 🌴 Generate the trees
-    std::vector<TreeInstance> trees = GenerateTrees(heightmap, heightmapPixels, terrainScale, treeSpacing, minTreeSpacing, treeHeightThreshold);
-
-    // 🌴 Filter trees based on final height cutoff
-    trees = FilterTreesAboveHeightThreshold(trees, heightmap, heightmapPixels, terrainScale, treeHeightThreshold);
-
-    std::vector<BushInstance> bushes = GenerateBushes(heightmap, heightmapPixels, terrainScale, treeSpacing, bushHeightThreshold, bush);
-    bushes = FilterBushsAboveHeightThreshold(bushes, heightmap, heightmapPixels, terrainScale, bushHeightThreshold);
+    generateVegetation();
 
 
     // Camera
@@ -176,16 +199,13 @@ int main() {
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
-
-
     DisableCursor();
+    InitBoat(player_boat, boatPosition);
 
-    Vector3 boatPosition = {0, -20, -5000.0};
-    float boatSpeed = 200;
 
 
     while (!WindowShouldClose()) {
-        //UpdateCamera(&camera, CAMERA_FREE);
+        UpdateInputMode(); //handle both gamepad and keyboard/mouse
         float deltaTime = GetFrameTime();
         //UpdateCustomCamera(&camera, deltaTime);
         Vector3 camPos = camera.position;
@@ -193,69 +213,37 @@ int main() {
         SetShaderValue(terrainShader, camPosLoc, &camPos, SHADER_UNIFORM_VEC3);
         float time = GetTime();
         SetShaderValue(skyShader, GetShaderLocation(skyShader, "time"), &time, SHADER_UNIFORM_FLOAT);
-
+        
         Vector3 forward = { 0.0f, 0.0f, 1.0f }; // facing +Z
-        Vector3 velocity = Vector3Scale(forward, boatSpeed * deltaTime);
-        boatPosition = Vector3Add(boatPosition, velocity);
+        //Vector3 velocity = Vector3Scale(forward, boatSpeed * deltaTime);
+        //boatPosition = Vector3Add(boatPosition, velocity);
 
         if (IsGamepadAvailable(0)) { //hack to speed up controller movement. 
-            float lookSensitivity = 0.03f;  // ← lower = slower
-
-            float yawInput = GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_X);
-            float pitchInput = GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_Y);
-
-            float yaw = -yawInput * lookSensitivity;
-            float pitch = -pitchInput * lookSensitivity;
-
-            Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
-
-            // Rotate around camera.up (Y axis) for yaw
-            Matrix yawRot = MatrixRotate(camera.up, yaw);
-            //forward = Vector3Transform(forward, yawRot);
-
-            // Calculate right vector and rotate around it for pitch
-            Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
-            Matrix pitchRot = MatrixRotate(right, pitch);
-            forward = Vector3Transform(forward, yawRot);
-            forward = Vector3Transform(forward, pitchRot);
-
-            // Update camera target based on new forward vector
-            camera.target = Vector3Add(camera.position, forward);
-            float boost = 1.0f; // base speed
-            Vector2 stick = {
-                GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X),
-                GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y)
-            };
-
-            //Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
-            //Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
-
-            camera.position = Vector3Add(camera.position,
-                Vector3Scale(right, stick.x * boost));
-            camera.position = Vector3Add(camera.position,
-                Vector3Scale(forward, -stick.y * boost));
-
-            camera.target = Vector3Add(camera.position, forward);
+            UpdateCameraWithGamepad(camera);
         }
-        
+
         Vector3 terrainPosition = {
             -terrainScale.x / 2.0f,
             0.0f,
             -terrainScale.z / 2.0f
         }; 
 
+        float wave = sin(GetTime() * 0.9f) * 0.9f;  // slow, subtle vertical motion
+        float animatedWaterLevel = waterHeightY + wave;
+
         HandleCameraPlayerToggle(camera, player, controlPlayer);
         UpdateCameraAndPlayer(camera, player, controlPlayer, deltaTime);
         // During render loop:
         float t = GetTime();
-        Vector3 waterPos = {0, waterHeightY, 0};
+        Vector3 waterPos = {0, animatedWaterLevel, 0};
         SetShaderValue(waterShader, GetShaderLocation(waterShader, "time"), &t, SHADER_UNIFORM_FLOAT);
         DrawModel(waterModel, waterPos, 1.0f, WHITE);
 
         int camLoc = GetShaderLocation(waterShader, "cameraPos");
         SetShaderValue(waterShader, camLoc, &camPos, SHADER_UNIFORM_VEC3);
+        UpdateBoat(player_boat, deltaTime);
 
-
+        
 
         // === RENDER TO TEXTURE ===
         BeginTextureMode(sceneTexture);
@@ -268,24 +256,25 @@ int main() {
         rlEnableDepthTest();
         rlSetBlendMode(BLEND_ALPHA);
         rlEnableColorBlend();
+        BeginBlendMode(BLEND_ALPHA);
         DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
        
         DrawModel(waterModel, waterPos, 1.0f, WHITE);   
-
-        DrawModel(boat, boatPosition, 1.0f, WHITE);
+        
+        DrawBoat(player_boat);
         DrawPlayer(player);
- 
+        
         DrawTrees(trees, palmTree, palm2, shadowQuad);
 
-        DrawBushes(bushes);
-        //rlEnableDepthMask();       // Re-enable depth writing
+        DrawBushes(bushes, shadowQuad);
+
+        DrawBillboard(camera, raptorFront, Vector3{0, 260, 0}, 200, WHITE);
        
-        rlDisableDepthTest();
-        
-        
-        //Vector3 sunPos = {0.0f, 500.0f, 0.0f};
-        //DrawSphere(sunPos, 5.0f, YELLOW);
+    
+        EndBlendMode();
         EndMode3D();
+
+        rlDisableDepthTest();
         EndTextureMode();
 
         // === POSTPROCESS TO SCREEN ===
@@ -300,7 +289,7 @@ int main() {
 
 
         DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
-        DrawText("Press tab for first person mode", 100, 100, 20, WHITE);
+        DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
 
         EndDrawing();
 

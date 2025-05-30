@@ -15,7 +15,7 @@ void main()
     float wave = sin(fragTexCoord.x * 30.0 + time * 0.5) * 0.15 +
                  cos(fragTexCoord.y * 30.0 + time * 0.3) * 0.15;
 
-    float brightness = 1.1f + wave;
+    float brightness = 1.3f + wave;
 
     // Depth-based gradient using distance from camera
     float distance = length(fragPosition - cameraPos);

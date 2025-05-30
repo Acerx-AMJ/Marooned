@@ -1,20 +1,21 @@
 #include "resources.h"
+#include "world.h"
 
 RenderTexture2D sceneTexture;
-Texture2D bushTex, shadowTex;
+Texture2D bushTex, shadowTex, raptorFront;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
-Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boat;
+Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel;
 Image heightmap;
 Mesh terrainMesh;
 
 Vector3 terrainScale;
-float waterHeightY;
+
 Vector2 screenResolution;
 
 void LoadAllResources() {
     screenResolution = {(float)GetScreenWidth(), (float)GetScreenHeight()};
     sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
-
+    raptorFront = LoadTexture("assets/sprites/raptorFront.png");
     // Heightmap
     heightmap = LoadImage("assets/EyeballIsle.png");
     ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
@@ -44,7 +45,6 @@ void LoadAllResources() {
 
     // Water
     waterShader = LoadShader("assets/shaders/water.vs", "assets/shaders/water.fs");
-    waterHeightY = 60.0f;
     SetShaderValue(waterShader, GetShaderLocation(waterShader, "waterLevel"), &waterHeightY, SHADER_UNIFORM_FLOAT);
     waterModel = LoadModelFromMesh(GenMeshPlane(30000, 30000, 1, 1));
     waterModel.materials[0].shader = waterShader;
@@ -54,7 +54,7 @@ void LoadAllResources() {
     palmTree = LoadModel("assets/models/bigPalmTree.glb");
     palm2 = LoadModel("assets/models/smallPalmTree.glb");
     bush = LoadModel("assets/models/grass2.glb");
-    boat = LoadModel("assets/models/boat.glb");
+    boatModel = LoadModel("assets/models/boat.glb");
 
     bushTex = LoadTexture("assets/bush.png");
 }
@@ -74,7 +74,7 @@ void UnloadAllResources() {
     UnloadModel(palmTree);
     UnloadModel(palm2);
     UnloadModel(bush);
-    UnloadModel(boat);
+    UnloadModel(boatModel);
     UnloadImage(heightmap);
     UnloadMesh(terrainMesh);
 }

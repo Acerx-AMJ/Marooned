@@ -6,6 +6,27 @@
 #include <cmath>
 #include "raymath.h"
 #include "rlgl.h"
+#include "resources.h"
+#include "world.h"
+
+std::vector<TreeInstance> trees;
+std::vector<BushInstance> bushes;
+
+void generateVegetation(){
+    float treeSpacing = 150.0f;
+    float minTreeSpacing = 50.0f;
+    float treeHeightThreshold = terrainScale.y * TREE_HEIGHT_RATIO;
+    float bushHeightThreshold = terrainScale.y * BUSH_HEIGHT_RATIO;
+    heightmapPixels = (unsigned char*)heightmap.data; //for iterating heightmap data for tree placement
+    // 🌴 Generate the trees
+    trees = GenerateTrees(heightmap, heightmapPixels, terrainScale, treeSpacing, minTreeSpacing, treeHeightThreshold);
+
+    // 🌴 Filter trees based on final height cutoff
+    trees = FilterTreesAboveHeightThreshold(trees, heightmap, heightmapPixels, terrainScale, treeHeightThreshold);
+
+    bushes = GenerateBushes(heightmap, heightmapPixels, terrainScale, treeSpacing, bushHeightThreshold, bush);
+    bushes = FilterBushsAboveHeightThreshold(bushes, heightmap, heightmapPixels, terrainScale, bushHeightThreshold);
+}
 
 std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, Vector3 terrainScale,
                                         float treeSpacing, float minTreeSpacing, float treeHeightThreshold) {
@@ -37,11 +58,11 @@ std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, 
                     tree.position = pos;
                     tree.rotationY = (float)GetRandomValue(0, 359);
                     tree.scale = 20.0f + ((float)GetRandomValue(0, 1000) / 100.0f); // 20.0 - 30.0
-                    tree.yOffset = ((float)GetRandomValue(-200, 200)) / 100.0f;     // -2.0 to 2.0
+                    tree.yOffset = ((float)GetRandomValue(-600, 200)) / 100.0f;     // -2.0 to 2.0
                     tree.xOffset = ((float)GetRandomValue(-treeSpacing, treeSpacing));
                     tree.zOffset = ((float)GetRandomValue(-treeSpacing, treeSpacing));
                     tree.useAltModel = GetRandomValue(0, 1);
-                    tree.cullFactor = 1.05f;
+                    tree.cullFactor = 1.05f; //5 percent higher than tree threshold. 
 
 
                     trees.push_back(tree);
@@ -100,8 +121,8 @@ std::vector<BushInstance> GenerateBushes(Image heightmap, unsigned char* pixels,
                 bush.model = bushModel;
                 bush.yOffset = ((float)GetRandomValue(-200, 200)) / 100.0f;     // -2.0 to 2.0
                 bush.xOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2));
-                bush.zOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2));
-                bush.cullFactor = 1.05f;
+                bush.zOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2)); //space them out wider, then cull more aggresively. 
+                bush.cullFactor = 1.07f; //agressively cull bushes. 
                 bushes.push_back(bush);
             }
         }
@@ -110,14 +131,14 @@ std::vector<BushInstance> GenerateBushes(Image heightmap, unsigned char* pixels,
     return bushes;
 }
 
-std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<BushInstance>& inputTrees, Image heightmap,
+std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<BushInstance>& inputBushes, Image heightmap,
                                                           unsigned char* pixels, Vector3 terrainScale,
                                                           float treeHeightThreshold) {
     std::vector<BushInstance> filtered;
 
-    for (const auto& tree : inputTrees) {
-        float xPercent = (tree.position.x + terrainScale.x / 2) / terrainScale.x;
-        float zPercent = (tree.position.z + terrainScale.z / 2) / terrainScale.z;
+    for (const auto& bush : inputBushes) {
+        float xPercent = (bush.position.x + terrainScale.x / 2) / terrainScale.x;
+        float zPercent = (bush.position.z + terrainScale.z / 2) / terrainScale.z;
 
         int xPixel = (int)(xPercent * heightmap.width);
         int zPixel = (int)(zPercent * heightmap.height);
@@ -127,8 +148,8 @@ std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<Bush
         int i = zPixel * heightmap.width + xPixel;
         float height = ((float)pixels[i] / 255.0f) * terrainScale.y;
 
-        if (height > treeHeightThreshold * tree.cullFactor) {
-            filtered.push_back(tree);
+        if (height > treeHeightThreshold * bush.cullFactor) {
+            filtered.push_back(bush);
         }
     }
 
@@ -150,7 +171,7 @@ void DrawTrees(const std::vector<TreeInstance>& trees, Model& model1, Model& mod
         //draw shadow decal under trees.
         Vector3 shadowPos = {
             tree.position.x + tree.xOffset,
-            tree.position.y + tree.yOffset + 9.0f, // Slightly above ground to prevent Z-fighting
+            tree.position.y + 9.0f, // Slightly above ground to prevent Z-fighting
             tree.position.z + tree.zOffset
         };
 
@@ -167,13 +188,30 @@ void DrawTrees(const std::vector<TreeInstance>& trees, Model& model1, Model& mod
 
 }
 
-void DrawBushes(const std::vector<BushInstance>& bushes) {
+void DrawBushes(const std::vector<BushInstance>& bushes, Model& shadowQuad) {
     for (const auto& bush : bushes) {
         Vector3 pos = bush.position;
         pos.x += bush.xOffset;
-        pos.y += bush.yOffset;
+        pos.y += bush.yOffset-10;
         pos.z += bush.zOffset;
         
         DrawModel(bush.model, pos, bush.scale, WHITE);
+
+            //draw shadow decal under bushes. 
+        // Vector3 shadowPos = {
+        //     bush.position.x + bush.xOffset,
+        //     bush.position.y + bush.yOffset + 10.0f, // Slightly above ground to prevent Z-fighting
+        //     bush.position.z + bush.zOffset
+        // };
+
+        
+        // DrawModelEx(
+        //     shadowQuad,
+        //     shadowPos,
+        //     {0, 1, 0},
+        //     0,
+        //     {bush.scale * 5.0f, 1.0f, bush.scale * 5.0f}, // XZ scale, flat on Y
+        //     WHITE
+        // );
     }
 }

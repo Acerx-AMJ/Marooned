@@ -17,19 +17,21 @@ void main()
     vec3 rockColor  = vec3(0.4, 0.3, 0.2);
     vec3 snowColor  = vec3(1.0, 1.0, 1.0);
 
-    vec3 waterColor = vec3(0.9, 0.9, 0.01);//vec3(0.01, 0.3, 1.0); //vec3(0.0, 0.3, 1.0);
+    vec3 waterColor = vec3(0.1, .6, 1.0);//vec3(0.01, 0.3, 1.0); //vec3(0.0, 0.3, 1.0);
     vec3 sandColor  = vec3(0.9, 0.9, 0.01); //vec3(0.9, 0.9, 0.2);
     vec3 grassColor = vec3(0.2, 0.7, 0.2); 
 
     float brightness = 0.60;
 
     // Blend based on height
-    vec3 color = sandColor;
-    if (height > 30.0) {
-        float t = clamp((height - 30) / 50.0, 0.0, 1.0);
+    vec3 color = waterColor;
+
+    if (height > 60.0) {
+        float t = smoothstep(30.0, 80.0, height);
         color = mix(waterColor, sandColor, t);
+
         if (height > 120.0) {
-            float s = clamp((height - 100.0) / 30.0, 0.0, 1.0);
+            float s = smoothstep(100.0, 130.0, height);
             color = mix(sandColor, grassColor, s);
         }
     }
