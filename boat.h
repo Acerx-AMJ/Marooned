@@ -5,13 +5,14 @@
 
 struct Boat {
     Vector3 position;
+    Vector3 previousBoatPosition;
     Vector3 velocity;
     float rotationY;  // heading
     float speed;
     float maxSpeed;
     float acceleration;
     float turnSpeed;
-
+    bool beached;
     bool playerOnBoard;
 };
 

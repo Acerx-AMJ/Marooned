@@ -2,7 +2,7 @@
 #include "world.h"
 
 RenderTexture2D sceneTexture;
-Texture2D bushTex, shadowTex, raptorFront;
+Texture2D bushTex, shadowTex, raptorFront, raptorTexture;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel;
 Image heightmap;
@@ -16,6 +16,11 @@ void LoadAllResources() {
     screenResolution = {(float)GetScreenWidth(), (float)GetScreenHeight()};
     sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
     raptorFront = LoadTexture("assets/sprites/raptorFront.png");
+    Image rawImg = LoadImage("assets/sprites/raptorSheet.png");
+    raptorTexture = LoadTextureFromImage(rawImg);
+    UnloadImage(rawImg);
+
+
     // Heightmap
     heightmap = LoadImage("assets/EyeballIsle.png");
     ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
@@ -63,6 +68,8 @@ void UnloadAllResources() {
     UnloadRenderTexture(sceneTexture);
     UnloadTexture(bushTex);
     UnloadTexture(shadowTex);
+    UnloadTexture(raptorFront);
+    UnloadTexture(raptorTexture);
     UnloadShader(fogShader);
     UnloadShader(skyShader);
     UnloadShader(waterShader);
@@ -77,4 +84,5 @@ void UnloadAllResources() {
     UnloadModel(boatModel);
     UnloadImage(heightmap);
     UnloadMesh(terrainMesh);
+
 }

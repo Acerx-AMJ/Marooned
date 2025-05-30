@@ -8,6 +8,7 @@
 #include "resources.h"
 #include "input.h"
 #include "boat.h"
+#include "character.h"
 
 #define GLSL_VERSION 330
 
@@ -202,7 +203,7 @@ int main() {
     DisableCursor();
     InitBoat(player_boat, boatPosition);
 
-
+    Character raptor({ 10.0f, 220.0f, 10.0f }, &raptorTexture, 200, 200, 1, 0.5f, 0.5f);
 
     while (!WindowShouldClose()) {
         UpdateInputMode(); //handle both gamepad and keyboard/mouse
@@ -243,7 +244,7 @@ int main() {
         SetShaderValue(waterShader, camLoc, &camPos, SHADER_UNIFORM_VEC3);
         UpdateBoat(player_boat, deltaTime);
 
-        
+        raptor.Update(GetFrameTime(), player.position, heightmap, terrainScale);        
 
         // === RENDER TO TEXTURE ===
         BeginTextureMode(sceneTexture);
@@ -263,12 +264,14 @@ int main() {
         
         DrawBoat(player_boat);
         DrawPlayer(player);
-        
+
+        raptor.Draw(camera);
+
         DrawTrees(trees, palmTree, palm2, shadowQuad);
 
         DrawBushes(bushes, shadowQuad);
 
-        DrawBillboard(camera, raptorFront, Vector3{0, 260, 0}, 200, WHITE);
+        //DrawBillboard(camera, raptorFront, Vector3{0, 260, 0}, 200, WHITE);
        
     
         EndBlendMode();
