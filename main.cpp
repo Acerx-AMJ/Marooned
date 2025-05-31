@@ -9,6 +9,8 @@
 #include "input.h"
 #include "boat.h"
 #include "character.h"
+#include "algorithm"
+
 
 #define GLSL_VERSION 330
 
@@ -162,11 +164,6 @@ void DrawBillboardPro(Camera3D camera, Texture2D texture, Vector3 worldPos, floa
     DrawTexturePro(texture, sourceRec, destRec, { 0, 0 }, rotation, WHITE);
 }
 
-
-
-
-
-
 void BeginCustom3D(Camera3D camera, float farClip) {
     rlDrawRenderBatchActive();
     rlMatrixMode(RL_PROJECTION);
@@ -182,16 +179,69 @@ void BeginCustom3D(Camera3D camera, float farClip) {
     rlMultMatrixf(MatrixToFloat(view));
 }
 
+void SpawnRaptor(Vector3 pos) {
+    Character raptor(pos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f);
+    raptors.push_back(raptor);
+}
+
+void generateRaptors(int amount){
+    int numRaptors = amount;
+    int spawned = 0;
+    int attempts = 0;
+    int maxAttempts = 100; // avoid infinite loops just in case
+
+    while (spawned < numRaptors && attempts < maxAttempts) {
+        ++attempts;
+
+        float x = GetRandomValue(-6000, 6000);
+        float z = GetRandomValue(-6000, 6000);
+        Vector3 spawnPos = { x, 220.0f, z };
+
+        float terrainHeight = GetHeightAtWorldPosition(spawnPos, heightmap, terrainScale);
+
+        if (terrainHeight > 60.0f) { // not in water
+            // Adjust Y to sit on top of terrain
+            float spriteHeight = 200 * 0.5f; // frameHeight * scale
+            spawnPos.y = terrainHeight + spriteHeight / 2.0f;
+
+            Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f);
+            raptors.push_back(raptor);
+            ++spawned;
+        }
+    }
+
+
+}
+
+void drawRaptors(Camera& camera){
+    //sort the raptors every frame before drawing them.  
+    std::sort(raptorPtrs.begin(), raptorPtrs.end(), [&](Character* a, Character* b) {
+        float distA = Vector3Distance(camera.position, a->position);
+        float distB = Vector3Distance(camera.position, b->position);
+        return distA > distB; // Farthest first
+    });
+
+    for (Character* raptor : raptorPtrs){
+        raptor->Draw(camera);
+    }
+
+}
+
+
+
+
 
 int main() {
     //SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
     InitWindow(1600, 900, "Marooned");
     SetTargetFPS(60);
     LoadAllResources();
-
-    InitPlayer(player, Vector3 {0,0,0});
     generateVegetation();
-
+   
+    InitPlayer(player, Vector3 {0,0,0});
+    generateRaptors(5);
+    //addRaptorPointers();
+    for (Character& r : raptors) raptorPtrs.push_back(&r);
 
     // Camera
     Camera3D camera = { 0 };
@@ -203,7 +253,7 @@ int main() {
     DisableCursor();
     InitBoat(player_boat, boatPosition);
 
-    Character raptor({ 10.0f, 220.0f, 10.0f }, &raptorTexture, 200, 200, 1, 0.5f, 0.5f);
+
 
     while (!WindowShouldClose()) {
         UpdateInputMode(); //handle both gamepad and keyboard/mouse
@@ -243,9 +293,10 @@ int main() {
         int camLoc = GetShaderLocation(waterShader, "cameraPos");
         SetShaderValue(waterShader, camLoc, &camPos, SHADER_UNIFORM_VEC3);
         UpdateBoat(player_boat, deltaTime);
-
-        raptor.Update(GetFrameTime(), player.position, heightmap, terrainScale);        
-
+    
+        for (Character& raptor : raptors) {
+            raptor.Update(deltaTime, player.position, heightmap, terrainScale, raptorPtrs);
+        }
         // === RENDER TO TEXTURE ===
         BeginTextureMode(sceneTexture);
         ClearBackground(SKYBLUE);
@@ -265,7 +316,8 @@ int main() {
         DrawBoat(player_boat);
         DrawPlayer(player);
 
-        raptor.Draw(camera);
+        drawRaptors(camera);
+        //raptor.Draw(camera);
 
         DrawTrees(trees, palmTree, palm2, shadowQuad);
 

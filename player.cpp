@@ -192,25 +192,3 @@ void DrawPlayer(const Player& player) {
     DrawCapsule(player.position, Vector3 {player.position.x, player.height, player.position.z}, 40, 4, 4, RED);
 }
 
-float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale) {
-    int width = heightmap.width;
-    int height = heightmap.height;
-    unsigned char* pixels = (unsigned char*)heightmap.data;
-
-    // Convert world X/Z into heightmap image coordinates
-    float xPercent = (position.x + terrainScale.x / 2.0f) / terrainScale.x;
-    float zPercent = (position.z + terrainScale.z / 2.0f) / terrainScale.z;
-
-    // Clamp to valid range
-    xPercent = Clamp(xPercent, 0.0f, 1.0f);
-    zPercent = Clamp(zPercent, 0.0f, 1.0f);
-
-    // Convert to pixel indices
-    int x = (int)(xPercent * (width - 1));
-    int z = (int)(zPercent * (height - 1));
-    int index = z * width + x;
-
-    // Get grayscale pixel and scale to world height
-    float heightValue = (float)pixels[index] / 255.0f;
-    return heightValue * terrainScale.y;
-}

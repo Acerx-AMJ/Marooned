@@ -16,13 +16,11 @@ void LoadAllResources() {
     screenResolution = {(float)GetScreenWidth(), (float)GetScreenHeight()};
     sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
     raptorFront = LoadTexture("assets/sprites/raptorFront.png");
-    Image rawImg = LoadImage("assets/sprites/raptorSheet.png");
-    raptorTexture = LoadTextureFromImage(rawImg);
-    UnloadImage(rawImg);
+    raptorTexture = LoadTexture("assets/sprites/raptorSheet.png");
 
 
     // Heightmap
-    heightmap = LoadImage("assets/EyeballIsle.png");
+    heightmap = LoadImage("assets/MiddleIsland.png");
     ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
     terrainScale = {16000.0f, 200.0f, 16000.0f};
 

@@ -49,6 +49,8 @@
         "text_encoding": "cpp",
         "cinttypes": "cpp",
         "variant": "cpp",
-        "*.m": "cpp"
+        "*.m": "cpp",
+        "iostream": "cpp",
+        "istream": "cpp"
     }
 }

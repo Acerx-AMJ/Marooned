@@ -1,6 +1,9 @@
 #include "Character.h"
 #include "raymath.h"
 #include <iostream>
+#include "resources.h"
+#include "rlgl.h"
+//#include "world.h"
 
 
 Character::Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, float speed, float scl, int row)
@@ -8,13 +11,32 @@ Character::Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, fl
       currentFrame(0), maxFrames(frames), animationTimer(0), animationSpeed(speed),
       scale(scl), rowIndex(row) {}
 
-void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap, Vector3 terrainScale) {
-    animationTimer += deltaTime;
+Vector3 Character::ComputeRepulsionForce(const std::vector<Character*>& allRaptors, float repulsionRadius, float repulsionStrength) {
+    Vector3 repulsion = { 0 };
 
+    for (Character* other : allRaptors) {
+        if (other == this) continue;
+
+        float dist = Vector3Distance(position, other->position);
+        if (dist < repulsionRadius && dist > 1.0f) {
+            Vector3 away = Vector3Normalize(Vector3Subtract(position, other->position)); // you - other
+            float falloff = (repulsionRadius - dist) / repulsionRadius;
+            repulsion = Vector3Add(repulsion, Vector3Scale(away, falloff * repulsionStrength));
+        }
+    }
+
+    return repulsion;
+}
+
+
+void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors ) {
+    animationTimer += deltaTime;
+    stateTimer += deltaTime;
+    previousPosition = position;
     float groundY = GetHeightAtWorldPosition(position, heightmap, terrainScale);
 
     // Gravity
-    float gravity = 400.0f; // scale this to fit your world
+    float gravity = 800.0f; 
     static float verticalVelocity = 0.0f;
 
     float spriteHeight = frameHeight * scale;
@@ -31,37 +53,94 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
     // Adjust distances for your scale (example values)
     switch (state) {
         case DinoState::Idle:
-            if (distance < 3000.0f) {
+            if (distance < 3000.0f && stateTimer > 0.5f) {
                 state = DinoState::Chase;
-                SetAnimation(1, 4, 0.12f);
+                SetAnimation(1, 5, 0.12f);
+                stateTimer = 0.0f;
             }
             break;
 
-        case DinoState::Chase:
+        case DinoState::Chase: {
             if (distance < 100.0f) {
                 state = DinoState::Attack;
                 SetAnimation(2, 5, 0.1f);
-            } else if (distance > 10000.0f) {
+                stateTimer = 0.0f;
+            } else if (distance > 3000.0f) {
                 state = DinoState::Idle;
                 SetAnimation(0, 1, 1.0f);
+                stateTimer = 0.0f;
             } else {
+                // Chase logic with repulsion
                 Vector3 dir = Vector3Normalize(Vector3Subtract(playerPosition, position));
                 Vector3 horizontalMove = { dir.x, 0, dir.z };
-                position = Vector3Add(position, Vector3Scale(horizontalMove, deltaTime * 300.0f)); // adjust speed
-                rotationY = RAD2DEG * atan2f(dir.x, dir.z);
+
+                // Add repulsion from other raptors
+                Vector3 repulsion = ComputeRepulsionForce(allRaptors, 50, 500);
+                Vector3 moveWithRepulsion = Vector3Add(horizontalMove, Vector3Scale(repulsion, deltaTime));
+
+                Vector3 proposedPosition = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f));
+
+                float proposedTerrainHeight = GetHeightAtWorldPosition(proposedPosition, heightmap, terrainScale);
+                float currentTerrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
+                float spriteHeight = frameHeight * scale;
+
+                if (currentTerrainHeight <= 65.0f) {
+                    state = DinoState::RunAway;
+                    SetAnimation(3, 4, 0.1f);
+                    stateTimer = 0.0f;
+                } else if (proposedTerrainHeight > 60.0f) {
+                    position = proposedPosition;
+                    rotationY = RAD2DEG * atan2f(dir.x, dir.z);
+                    position.y = GetHeightAtWorldPosition(position, heightmap, terrainScale) + (frameHeight * scale) / 2.0f;
+                }
+
+               
+
             }
+
             break;
+        }
+
+
 
         case DinoState::Attack:
             if (distance > 200.0f) {
                 state = DinoState::Chase;
-                SetAnimation(1, 4, 0.12f);
+                SetAnimation(1, 5, 0.12f);
+            }
+            if (stateTimer >= 3.0f) {
+                state = DinoState::RunAway;
+                SetAnimation(3, 4, 0.1f); // run away animation
+                stateTimer = 0.0f;
             }
             break;
 
-        case DinoState::RunAway:
-            // TODO: Add logic for fleeing
-            break;
+            case DinoState::RunAway: {
+                Vector3 awayDir = Vector3Normalize(Vector3Subtract(position, playerPosition));
+                Vector3 horizontalMove = { awayDir.x, 0, awayDir.z };
+                
+                // Add repulsion
+                Vector3 repulsion = ComputeRepulsionForce(allRaptors, 50, 500);
+                Vector3 moveWithRepulsion = Vector3Add(horizontalMove, Vector3Scale(repulsion, deltaTime));
+                
+                Vector3 proposedPos = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f));
+
+                float terrainHeight = GetHeightAtWorldPosition(proposedPos, heightmap, terrainScale);
+                if (terrainHeight > 60) {
+                     
+                    position = proposedPos;
+                    position.y = GetHeightAtWorldPosition(position, heightmap, terrainScale) + (frameHeight * scale) / 2.0f;
+                    rotationY = RAD2DEG * atan2f(awayDir.x, awayDir.z);
+                }
+                float randomDistance = GetRandomValue(1000, 2000);
+                if (distance > randomDistance && stateTimer > 1.0f) {
+                    state = DinoState::Idle;
+                    SetAnimation(0, 1, 1.0f);
+                    stateTimer = 0.0f;
+                }
+
+                break;
+            }
     }
 
     if (animationTimer >= animationSpeed) {
@@ -81,8 +160,10 @@ void Character::Draw(Camera3D camera) {
     };
 
     Vector2 size = { frameWidth * scale, frameHeight * scale };
-
+        // Shadow draw (beneath the dino)
+    Vector3 shadowPos = { position.x, position.y - (frameHeight * scale / 2.0f) + 20.0f, position.z };    
     DrawBillboardRec(camera, *texture, sourceRec, position, size, WHITE);
+
 }
 
 void Character::SetAnimation(int row, int frames, float speed) {
