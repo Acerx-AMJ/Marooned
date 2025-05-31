@@ -189,6 +189,6 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh) {
 
 
 void DrawPlayer(const Player& player) {
-    DrawCapsule(player.position, Vector3 {player.position.x, player.height, player.position.z}, 40, 4, 4, RED);
+    DrawCapsule(player.position, Vector3 {player.position.x, player.height, player.position.z}, 10, 4, 4, RED);
 }
 

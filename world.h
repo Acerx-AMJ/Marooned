@@ -22,5 +22,7 @@ extern std::vector<Character*> raptorPtrs;
 
 
 float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
-
+void removeAllRaptors();
+void generateRaptors(int amount, Vector3 centerPos, float radius);
+void regenerateRaptors(int amount, Vector3 centerPos, float radius);
 

@@ -35,7 +35,7 @@ extern std::vector<TreeInstance> trees;
 extern std::vector<BushInstance> bushes;
 
 void generateVegetation();
-
+void RemoveAllVegetation();
 
 std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, Vector3 terrainScale,
                                         float treeSpacing, float minTreeSpacing, float treeHeightThreshold);

@@ -1,5 +1,7 @@
 #include "input.h"
 #include "raymath.h"
+#include "vegetation.h"
+#include "world.h"
 
 InputMode currentInputMode = InputMode::KeyboardMouse;
 
@@ -38,7 +40,16 @@ void UpdateCameraWithGamepad(Camera3D& camera) {
     camera.target = Vector3Add(camera.position, forward);
 }
 
+void debugControls(){
+    if (IsKeyPressed(KEY_P)){
+        RemoveAllVegetation();
+    }
+    if (IsKeyPressed(KEY_O)) regenerateRaptors(5, player.position, 6000);
+}
+
 void UpdateInputMode() {
+
+
     // Check gamepad activity
     if (IsGamepadAvailable(0)) {
         float lx = GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X);

@@ -2,9 +2,9 @@
 #include "world.h"
 
 RenderTexture2D sceneTexture;
-Texture2D bushTex, shadowTex, raptorFront, raptorTexture;
+Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
-Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel;
+Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel;
 Image heightmap;
 Mesh terrainMesh;
 
@@ -17,10 +17,11 @@ void LoadAllResources() {
     sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
     raptorFront = LoadTexture("assets/sprites/raptorFront.png");
     raptorTexture = LoadTexture("assets/sprites/raptorSheet.png");
+    gunTexture = LoadTexture("assets/sprites/flintlock.png");
+    gunModel = LoadModel("assets/models/flintlock.glb");
 
-
-    // Heightmap
-    heightmap = LoadImage("assets/MiddleIsland.png");
+    // Heightmap //TODO: refactor this into level switching, an array of heightmaps. A menu to increase or decrease the index. 
+    heightmap = LoadImage("assets/MiddleIsland.png"); ///////////////////////// current map
     ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
     terrainScale = {16000.0f, 200.0f, 16000.0f};
 
@@ -82,5 +83,6 @@ void UnloadAllResources() {
     UnloadModel(boatModel);
     UnloadImage(heightmap);
     UnloadMesh(terrainMesh);
+    
 
 }

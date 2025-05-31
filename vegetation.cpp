@@ -156,6 +156,11 @@ std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<Bush
     return filtered;
 }
 
+void RemoveAllVegetation() {
+    trees.clear();
+    bushes.clear();
+}
+
 void DrawTrees(const std::vector<TreeInstance>& trees, Model& model1, Model& model2, Model& shadowQuad){
     for (const auto& tree : trees) {
         Vector3 pos = tree.position;

@@ -1,6 +1,7 @@
 #include "world.h"
 #include "player.h"
 #include "raymath.h"
+#include "resources.h"
 
 bool controlPlayer = false;
 unsigned char* heightmapPixels = nullptr;
@@ -16,6 +17,54 @@ const float BUSH_HEIGHT_RATIO = 0.80f;
 std::vector<Character> raptors;
 
 std::vector<Character*> raptorPtrs;
+
+void removeAllRaptors(){
+    raptorPtrs.clear();
+    raptors.clear();
+
+}
+
+
+void generateRaptors(int amount, Vector3 centerPos, float radius) {
+    raptors.clear();
+    raptorPtrs.clear();
+
+    int spawned = 0;
+    int attempts = 0;
+    const int maxAttempts = 1000; // More attempts since spawnable area may be smaller
+
+    while (spawned < amount && attempts < maxAttempts) {
+        ++attempts;
+
+        // Random position around centerPos within a circle (not square)
+        float angle = GetRandomValue(0, 360) * DEG2RAD;
+        float distance = GetRandomValue(500, (int)radius); // Optional: minimum distance
+        float x = centerPos.x + cosf(angle) * distance;
+        float z = centerPos.z + sinf(angle) * distance;
+
+        Vector3 spawnPos = { x, 0.0f, z };
+        float terrainHeight = GetHeightAtWorldPosition(spawnPos, heightmap, terrainScale);
+
+        if (terrainHeight > 60.0f) {
+            float spriteHeight = 200 * 0.5f;
+            spawnPos.y = terrainHeight + spriteHeight / 2.0f;
+
+            Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f);
+            raptors.push_back(raptor);
+            ++spawned;
+        }
+    }
+
+    for (Character& r : raptors) {
+        raptorPtrs.push_back(&r);
+    }
+}
+
+
+void regenerateRaptors(int amount, Vector3 position, float radius){
+    generateRaptors(amount, player.position, 6000); 
+}
+
 
 float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale) {
     //read heightmap data to determine height in world space. 

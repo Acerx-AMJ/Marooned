@@ -11,7 +11,6 @@
 #include "character.h"
 #include "algorithm"
 
-
 #define GLSL_VERSION 330
 
 
@@ -184,37 +183,10 @@ void SpawnRaptor(Vector3 pos) {
     raptors.push_back(raptor);
 }
 
-void generateRaptors(int amount){
-    int numRaptors = amount;
-    int spawned = 0;
-    int attempts = 0;
-    int maxAttempts = 100; // avoid infinite loops just in case
 
-    while (spawned < numRaptors && attempts < maxAttempts) {
-        ++attempts;
-
-        float x = GetRandomValue(-6000, 6000);
-        float z = GetRandomValue(-6000, 6000);
-        Vector3 spawnPos = { x, 220.0f, z };
-
-        float terrainHeight = GetHeightAtWorldPosition(spawnPos, heightmap, terrainScale);
-
-        if (terrainHeight > 60.0f) { // not in water
-            // Adjust Y to sit on top of terrain
-            float spriteHeight = 200 * 0.5f; // frameHeight * scale
-            spawnPos.y = terrainHeight + spriteHeight / 2.0f;
-
-            Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f);
-            raptors.push_back(raptor);
-            ++spawned;
-        }
-    }
-
-
-}
 
 void drawRaptors(Camera& camera){
-    //sort the raptors every frame before drawing them.  
+    //sort the raptors by distance every frame before drawing them. Draw the closest dino last to prevent glitches. 
     std::sort(raptorPtrs.begin(), raptorPtrs.end(), [&](Character* a, Character* b) {
         float distA = Vector3Distance(camera.position, a->position);
         float distB = Vector3Distance(camera.position, b->position);
@@ -227,8 +199,59 @@ void drawRaptors(Camera& camera){
 
 }
 
+void drawWeapon3d(Camera& camera){
+
+    // Build a rotation matrix that aligns +Z with that direction
+    Matrix lookAt = MatrixLookAt(camera.position, camera.target, { 0, 1, 0 });
+    Matrix gunRotation = MatrixInvert(lookAt); // Invert to use as model transform
+    Quaternion gunQuat = QuaternionFromMatrix(gunRotation);
+
+    Quaternion q = gunQuat;
+    float angle = 2.0f * acosf(q.w);
+    float angleDeg = angle * RAD2DEG;
+    Vector3 scale = { 3.0f, 3.0f, 3.0f };
+    float sinTheta = sqrtf(1.0f - q.w * q.w);
+    Vector3 axis;
+    if (sinTheta < 0.001f) {
+        axis = { 1.0f, 0.0f, 0.0f }; // Arbitrary axis
+    } else {
+        axis = { q.x / sinTheta, q.y / sinTheta, q.z / sinTheta };
+    }
+
+        // Calculate camera basis vectors
+    Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+    Vector3 camRight = Vector3Normalize(Vector3CrossProduct(camForward, { 0, 1, 0 }));
+    Vector3 camUp = { 0, 1, 0 };
+
+    // Gun offset relative to camera (in camera space)
+    float forwardOffset = 100.0f;
+    float sideOffset = 8.0f;
+    float verticalOffset = -20.0f;
+
+    // Combine into world space position
+    Vector3 gunPos = camera.position;
+    gunPos = Vector3Add(gunPos, Vector3Scale(camForward, forwardOffset));
+    gunPos = Vector3Add(gunPos, Vector3Scale(camRight, sideOffset));
+    gunPos = Vector3Add(gunPos, Vector3Scale(camUp, verticalOffset));
 
 
+
+    DrawModelEx(gunModel, gunPos, axis, angleDeg, scale, WHITE);
+
+}
+
+void drawWeapon(){
+    Rectangle source = { 0, 0, 1024, 1024}; 
+    Rectangle dest = {
+        GetScreenWidth()* 0.5f,              
+        GetScreenHeight() * 0.6f,            
+        1024.0f,                             
+        1024.0f                              
+    };
+    Vector2 origin = { dest.width / 2.0f, dest.height / 2.0f }; // center the sprite
+
+    DrawTexturePro(gunTexture, source, dest, origin, 0.0f, WHITE);
+}
 
 
 int main() {
@@ -239,9 +262,8 @@ int main() {
     generateVegetation();
    
     InitPlayer(player, Vector3 {0,0,0});
-    generateRaptors(5);
-    //addRaptorPointers();
-    for (Character& r : raptors) raptorPtrs.push_back(&r);
+    generateRaptors(5, player.position, 6000);
+    
 
     // Camera
     Camera3D camera = { 0 };
@@ -257,6 +279,7 @@ int main() {
 
     while (!WindowShouldClose()) {
         UpdateInputMode(); //handle both gamepad and keyboard/mouse
+        debugControls(); //press P to remove all vegetation
         float deltaTime = GetFrameTime();
         //UpdateCustomCamera(&camera, deltaTime);
         Vector3 camPos = camera.position;
@@ -312,12 +335,15 @@ int main() {
         DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
        
         DrawModel(waterModel, waterPos, 1.0f, WHITE);   
-        
+        //DrawModel(gunModel, Vector3{0, 300, 0}, 1.0f, WHITE);
         DrawBoat(player_boat);
         DrawPlayer(player);
 
-        drawRaptors(camera);
-        //raptor.Draw(camera);
+        drawRaptors(camera); //sort and draw raptors
+
+        drawWeapon3d(camera);
+
+        
 
         DrawTrees(trees, palmTree, palm2, shadowQuad);
 
@@ -330,6 +356,8 @@ int main() {
         EndMode3D();
 
         rlDisableDepthTest();
+        //DrawTexture(gunTexture, GetScreenWidth() * 0.55f, GetScreenHeight() * 0.7f, WHITE);
+
         EndTextureMode();
 
         // === POSTPROCESS TO SCREEN ===
@@ -341,6 +369,11 @@ int main() {
             (Rectangle){0, 0, (float)GetScreenWidth(), -(float)GetScreenHeight()},
             (Vector2){0, 0}, WHITE);
         EndShaderMode();
+
+        // if (controlPlayer){
+        //     drawWeapon();
+        // }
+
 
 
         DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
