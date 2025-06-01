@@ -5,11 +5,25 @@
 #include "resources.h"
 #include "input.h"
 #include "boat.h"
+#include "rlgl.h"
+
+Weapon weapon;
 
 void InitPlayer(Player& player, Vector3 startPosition) {
     player.position = startPosition;
     player.velocity = {0, 0, 0};
     player.grounded = false;
+
+    weapon.model = LoadModel("assets/models/blunderbus.glb");
+    weapon.scale = { 2.0f, 2.0f, 2.0f };
+
+    weapon.muzzleFlashTexture = muzzleFlash;
+    weapon.forwardOffset = 80.0f;
+    weapon.sideOffset = 20.0f;
+    weapon.verticalOffset = -30.0f;
+
+    weapon.fireSound = LoadSound("assets/sounds/shotgun.ogg");
+    weapon.fireCooldown = 1.0f;
     
 }
 
@@ -103,6 +117,13 @@ void HandleGamepadInput(float deltaTime) {
 }
 
 void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh) {
+    weapon.Update(deltaTime);
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        weapon.Fire();
+    }
+
+
     // --- Boarding Check ---
     if (!player.onBoard) {
         float distanceToBoat = Vector3Distance(player.position, player_boat.position);
@@ -188,7 +209,11 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh) {
 
 
 
-void DrawPlayer(const Player& player) {
+void DrawPlayer(const Player& player, Camera& camera) {
     DrawCapsule(player.position, Vector3 {player.position.x, player.height, player.position.z}, 10, 4, 4, RED);
+
+    if (controlPlayer) weapon.Draw(camera); 
+
+
 }
 

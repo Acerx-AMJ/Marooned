@@ -3,7 +3,7 @@
 #include <string>
 
 extern RenderTexture2D sceneTexture;
-extern Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture;
+extern Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash;
 extern Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 extern Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel;
 extern Image heightmap;

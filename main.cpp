@@ -186,7 +186,7 @@ void SpawnRaptor(Vector3 pos) {
 
 
 void drawRaptors(Camera& camera){
-    //sort the raptors by distance every frame before drawing them. Draw the closest dino last to prevent glitches. 
+
     std::sort(raptorPtrs.begin(), raptorPtrs.end(), [&](Character* a, Character* b) {
         float distA = Vector3Distance(camera.position, a->position);
         float distB = Vector3Distance(camera.position, b->position);
@@ -196,6 +196,8 @@ void drawRaptors(Camera& camera){
     for (Character* raptor : raptorPtrs){
         raptor->Draw(camera);
     }
+
+
 
 }
 
@@ -209,7 +211,7 @@ void drawWeapon3d(Camera& camera){
     Quaternion q = gunQuat;
     float angle = 2.0f * acosf(q.w);
     float angleDeg = angle * RAD2DEG;
-    Vector3 scale = { 3.0f, 3.0f, 3.0f };
+    Vector3 scale = { 2.0f, 2.0f, 2.0f };
     float sinTheta = sqrtf(1.0f - q.w * q.w);
     Vector3 axis;
     if (sinTheta < 0.001f) {
@@ -224,9 +226,9 @@ void drawWeapon3d(Camera& camera){
     Vector3 camUp = { 0, 1, 0 };
 
     // Gun offset relative to camera (in camera space)
-    float forwardOffset = 100.0f;
-    float sideOffset = 8.0f;
-    float verticalOffset = -20.0f;
+    float forwardOffset = 80.0f;
+    float sideOffset = 20.0f;
+    float verticalOffset = -30.0f;
 
     // Combine into world space position
     Vector3 gunPos = camera.position;
@@ -257,6 +259,7 @@ void drawWeapon(){
 int main() {
     //SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
     InitWindow(1600, 900, "Marooned");
+    InitAudioDevice();
     SetTargetFPS(60);
     LoadAllResources();
     generateVegetation();
@@ -331,26 +334,20 @@ int main() {
         rlEnableDepthTest();
         rlSetBlendMode(BLEND_ALPHA);
         rlEnableColorBlend();
-        BeginBlendMode(BLEND_ALPHA);
         DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
        
         DrawModel(waterModel, waterPos, 1.0f, WHITE);   
         //DrawModel(gunModel, Vector3{0, 300, 0}, 1.0f, WHITE);
         DrawBoat(player_boat);
-        DrawPlayer(player);
+
 
         drawRaptors(camera); //sort and draw raptors
-
-        drawWeapon3d(camera);
-
-        
+        DrawPlayer(player, camera);
 
         DrawTrees(trees, palmTree, palm2, shadowQuad);
 
         DrawBushes(bushes, shadowQuad);
 
-        //DrawBillboard(camera, raptorFront, Vector3{0, 260, 0}, 200, WHITE);
-       
     
         EndBlendMode();
         EndMode3D();
@@ -385,6 +382,7 @@ int main() {
 
     // Cleanup
     UnloadAllResources();
+    CloseAudioDevice();
     CloseWindow();
 
     return 0;

@@ -1,12 +1,15 @@
 #pragma once
 
 #include "raylib.h"
+#include "weapon.h"
 
 struct Player {
     Vector3 position;
     Vector3 velocity;
     Vector2 rotation;
     Vector3 forward;
+    Weapon weapon;
+    
     bool running = false;
     float runSpeed = 800.0f; // faster than walk speed
     float walkSpeed = 500.0f; // regular speed
@@ -28,7 +31,7 @@ void InitPlayer(Player& player, Vector3 startPosition);
 void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh);
 
 // Draws the player model or debug marker
-void DrawPlayer(const Player& player);
+void DrawPlayer(const Player& player, Camera& camera);
 void HandleGamepadInput(float deltaTime);
 void HandleKeyboardInput(float deltaTime);
 void HandleMouseLook(float deltaTime);

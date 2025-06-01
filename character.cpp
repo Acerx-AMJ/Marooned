@@ -50,6 +50,7 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
     }
     float distance = Vector3Distance(position, playerPosition);
     float randomTime = GetRandomValue(1, 3);
+
     //idle, chase, attack, runaway
     switch (state) {
         case DinoState::Idle:
@@ -57,11 +58,12 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
                 state = DinoState::Chase;
                 SetAnimation(1, 5, 0.12f);
                 stateTimer = 0.0f;
+                hasRunawayAngle = false;
             }
             break;
 
         case DinoState::Chase: {
-            if (distance < 100.0f) {
+            if (distance < 150.0f) {
                 state = DinoState::Attack;
                 SetAnimation(2, 5, 0.1f);
                 stateTimer = 0.0f;
@@ -110,6 +112,9 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
             
             if (stateTimer >= randomTime) {
                 state = DinoState::RunAway;
+                // On state change to RunAway
+                runawayAngleOffset = DEG2RAD * GetRandomValue(-60, 60);
+                hasRunawayAngle = true;
                 SetAnimation(3, 4, 0.1f); // run away animation
                 stateTimer = 0.0f;
             }
@@ -117,7 +122,17 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
 
         case DinoState::RunAway: {
             Vector3 awayDir = Vector3Normalize(Vector3Subtract(position, playerPosition)); // direction away from player
-            Vector3 horizontalMove = { awayDir.x, 0, awayDir.z };
+
+            if (!hasRunawayAngle) {
+                runawayAngleOffset = DEG2RAD * GetRandomValue(-60, 60);
+                hasRunawayAngle = true;
+            }
+            float baseAngle = atan2f(position.z - playerPosition.z, position.x - playerPosition.x);
+            float finalAngle = baseAngle + runawayAngleOffset;
+
+            Vector3 veerDir = { cosf(finalAngle), 0.0f, sinf(finalAngle) };
+
+            Vector3 horizontalMove = { veerDir.x, 0, veerDir.z };
 
             // Add repulsion
             Vector3 repulsion = ComputeRepulsionForce(allRaptors, 50, 500);
@@ -153,7 +168,6 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
 }
 
 
-
 void Character::Draw(Camera3D camera) {
     Rectangle sourceRec = {
         (float)(currentFrame * frameWidth),
@@ -162,10 +176,17 @@ void Character::Draw(Camera3D camera) {
         (float)frameHeight
     };
 
-    Vector2 size = { frameWidth * scale, frameHeight * scale };
-    DrawBillboardRec(camera, *texture, sourceRec, position, size, WHITE);
+    // Calculate a slight camera-facing offset to reduce z-fighting
+    Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.position, position));
+    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 0.01f)); // Adjust 0.1f if needed
 
+    Vector2 size = { frameWidth * scale, frameHeight * scale };
+
+    rlDisableDepthMask();
+    DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, WHITE);
+    rlEnableDepthMask();
 }
+
 
 void Character::SetAnimation(int row, int frames, float speed) {
     rowIndex = row;

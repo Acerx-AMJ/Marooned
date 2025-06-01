@@ -2,11 +2,12 @@
 #include "world.h"
 
 RenderTexture2D sceneTexture;
-Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture;
+Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel;
 Image heightmap;
 Mesh terrainMesh;
+Sound musket;
 
 Vector3 terrainScale;
 
@@ -18,7 +19,8 @@ void LoadAllResources() {
     raptorFront = LoadTexture("assets/sprites/raptorFront.png");
     raptorTexture = LoadTexture("assets/sprites/raptorSheet.png");
     gunTexture = LoadTexture("assets/sprites/flintlock.png");
-    gunModel = LoadModel("assets/models/flintlock.glb");
+    gunModel = LoadModel("assets/models/blunderbus.glb");
+    muzzleFlash = LoadTexture("assets/sprites/muzzleFlash.png");
 
     // Heightmap //TODO: refactor this into level switching, an array of heightmaps. A menu to increase or decrease the index. 
     heightmap = LoadImage("assets/MiddleIsland.png"); ///////////////////////// current map
@@ -69,6 +71,7 @@ void UnloadAllResources() {
     UnloadTexture(shadowTex);
     UnloadTexture(raptorFront);
     UnloadTexture(raptorTexture);
+    UnloadTexture(gunTexture);
     UnloadShader(fogShader);
     UnloadShader(skyShader);
     UnloadShader(waterShader);
@@ -81,6 +84,7 @@ void UnloadAllResources() {
     UnloadModel(palm2);
     UnloadModel(bush);
     UnloadModel(boatModel);
+    UnloadModel(gunModel);
     UnloadImage(heightmap);
     UnloadMesh(terrainMesh);
     

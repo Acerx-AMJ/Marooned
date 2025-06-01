@@ -27,6 +27,8 @@ public:
     float rotationY = 0.0f; // in degrees
     float stateTimer = 0.0f;
     float attackTimer = 0.0f;
+    float runawayAngleOffset = 0.0f;
+    bool hasRunawayAngle = false;
 
 
     Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, float speed, float scl, int row = 0);
