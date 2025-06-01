@@ -21,8 +21,8 @@ void main()
     float distance = length(fragPosition - cameraPos);
     float depthFactor = clamp((distance - 500.0) / 6000.0, 0.0, 1.0); // adjust range
 
-    vec3 shallowColor = vec3(0.0, 0.5, 1.0);  // near camera, lighter
-    vec3 deepColor    = vec3(0.0, 0.2, 0.6);  // far from camera, darker
+    vec3 shallowColor = vec3(0.0, 0.4, 1.0);  // near camera, lighter
+    vec3 deepColor    = vec3(0.0, 0.1, 0.6);  // far from camera, darker
 
     vec3 waterColor = mix(shallowColor, deepColor, depthFactor) * brightness;
 

@@ -22,7 +22,7 @@ struct Weapon {
     float flashDuration = 0.1f;
     float flashTimer = 0.0f;
 
-    void Fire();
+    void Fire(Camera& camera);
     void Update(float deltaTime);
     void Draw(const Camera& camera);
 };

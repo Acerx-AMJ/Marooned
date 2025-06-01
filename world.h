@@ -4,6 +4,9 @@
 #include "player.h"
 #include <vector>
 #include "character.h"
+#include "bullet.h"
+
+
 
 extern bool controlPlayer;
 //extern Image heightmap;
@@ -12,6 +15,7 @@ extern unsigned char* heightmapPixels;
 //extern Mesh terrainMesh;
 extern Player player;
 extern Vector3 boatPosition;
+
 extern float boatSpeed;
 extern float waterHeightY;
 extern const float TREE_HEIGHT_RATIO;
@@ -20,6 +24,8 @@ extern const float BUSH_HEIGHT_RATIO;
 extern std::vector<Character> raptors;
 extern std::vector<Character*> raptorPtrs;
 
+
+extern std::vector<Bullet> activeBullets;
 
 float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
 void removeAllRaptors();

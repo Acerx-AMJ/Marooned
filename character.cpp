@@ -5,13 +5,57 @@
 #include "rlgl.h"
 #include "world.h"
 #include "algorithm"
-//#include "world.h"
+#include "sound_manager.h"
+#include "player.h"
 
 
 Character::Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, float speed, float scl, int row)
-    : position(pos), texture(tex), frameWidth(fw), frameHeight(fh),
-      currentFrame(0), maxFrames(frames), animationTimer(0), animationSpeed(speed),
-      scale(scl), rowIndex(row) {}
+    : position(pos),
+      texture(tex),
+      frameWidth(fw),
+      frameHeight(fh),
+      currentFrame(0),
+      maxFrames(frames),
+      rowIndex(row),
+      animationTimer(0),
+      animationSpeed(speed),
+      scale(scl) {}
+
+BoundingBox Character::GetBoundingBox() const {
+    float halfWidth = (frameWidth * scale * 0.4f) / 2.0f;  // Only 1/3 of width
+    float halfHeight = (frameHeight * scale) / 2.0f;
+
+    return {
+        { position.x - halfWidth, position.y - halfHeight, position.z - halfWidth },
+        { position.x + halfWidth, position.y + halfHeight, position.z + halfWidth }
+    };
+}
+
+
+void Character::TakeDamage(int amount) {
+    if (isDead) return;
+
+    currentHealth -= amount;
+
+    if (currentHealth <= 0) {
+        currentHealth = 0;
+        isDead = true;
+        state = DinoState::Death;
+        SetAnimation(4, 4, 0.2f); // your death anim here
+        deathTimer = 0.0f;
+        SoundManager::GetInstance().Play("dinoDeath");
+        // Play death sound here if desired
+    } else {
+        state = DinoState::Idle;
+        stateTimer = 0.0f;
+        SoundManager::GetInstance().Play("dinoHit");
+        // Play hurt sound here
+        //PlaySound(SoundManager::getInstance().GetSound("raptor_hurt"));
+        // Optional: flash red or stagger
+    }
+}
+
+
 
 Vector3 Character::ComputeRepulsionForce(const std::vector<Character*>& allRaptors, float repulsionRadius, float repulsionStrength) {
     Vector3 repulsion = { 0 };
@@ -31,7 +75,7 @@ Vector3 Character::ComputeRepulsionForce(const std::vector<Character*>& allRapto
 }
 
 
-void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors ) {
+void Character::Update(float deltaTime, Vector3 playerPosition, Player& player,  Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors ) {
     animationTimer += deltaTime;
     stateTimer += deltaTime;
     previousPosition = position;
@@ -53,17 +97,38 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
     float distance = Vector3Distance(position, playerPosition);
     float randomTime = GetRandomValue(1, 3);
 
-    if (currentHealth <= 0) state = DinoState::Death;
+    //if (currentHealth <= 0) state = DinoState::Death;
 
     //idle, chase, attack, runaway
     switch (state) {
         case DinoState::Idle:
-            if (distance < 3000.0f && stateTimer > 0.5f) { //if far enough away, stop. 
+            if (distance < 3000.0f && stateTimer > 1.0f) { //if far enough away, stop. 
                 state = DinoState::Chase;
                 SetAnimation(1, 5, 0.12f);
                 stateTimer = 0.0f;
                 hasRunawayAngle = false;
+                float hearableDistance = 1500.0f;
+                if (distance < hearableDistance){
+                    int number = GetRandomValue(1, 3);
+                    switch (number)
+                    {
+                    case 1:
+                        SoundManager::GetInstance().Play("dinoTweet");
+                        break;
+                    case 2:
+                        SoundManager::GetInstance().Play("dinoTweet2");
+                        break;
+
+                    case 3:
+                        SoundManager::GetInstance().Play("dinoTarget");
+                        break;
+
+                    }
+                    
+                }
             }
+
+            
             break;
 
         case DinoState::Chase: {
@@ -88,7 +153,7 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
 
                 float proposedTerrainHeight = GetHeightAtWorldPosition(proposedPosition, heightmap, terrainScale); //see if the next step is water. 
                 float currentTerrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
-                float spriteHeight = frameHeight * scale;
+                //float spriteHeight = frameHeight * scale;
 
                 //run away if near water. 
                 if (currentTerrainHeight <= 65.0f) {
@@ -113,16 +178,27 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
                 state = DinoState::Chase;
                 SetAnimation(1, 5, 0.12f);
             }
-            
+
+            attackCooldown -= deltaTime;
+            if (attackCooldown <= 0.0f) {
+                attackCooldown = 1.0f; // seconds between attacks
+
+                // Play attack sound
+                SoundManager::GetInstance().Play("dinoBite");
+
+                // Damage the player
+                player.TakeDamage(10);
+            }
+
             if (stateTimer >= randomTime) {
                 state = DinoState::RunAway;
-                // On state change to RunAway
                 runawayAngleOffset = DEG2RAD * GetRandomValue(-60, 60);
                 hasRunawayAngle = true;
                 SetAnimation(3, 4, 0.1f); // run away animation
                 stateTimer = 0.0f;
             }
             break;
+
 
         case DinoState::RunAway: {
             Vector3 awayDir = Vector3Normalize(Vector3Subtract(position, playerPosition)); // direction away from player
@@ -165,7 +241,7 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
         } 
         case DinoState::Death:
             if (!isDead) {
-                SetAnimation(4, 4, 0.2f);  
+                SetAnimation(4, 5, 0.15f);  
                 isDead = true;
                 deathTimer = 0.0f;         // Start counting
             }
@@ -173,9 +249,6 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
             deathTimer += deltaTime;
 
             break;
-
-
-    
     }
 
     if (animationTimer >= animationSpeed) {
@@ -187,11 +260,11 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
             }
             // else do nothing — stay on last frame
         } else {
-            currentFrame = (currentFrame + 1) % maxFrames;
+            currentFrame = (currentFrame + 1) % maxFrames; //loop
         }
     }
 
-
+    //erase dead raptors from raptorPtrs 
     raptorPtrs.erase(std::remove_if(raptorPtrs.begin(), raptorPtrs.end(),
     [](Character* raptor) {
         return raptor->isDead && raptor->deathTimer > 5.0f;
@@ -217,6 +290,8 @@ void Character::Draw(Camera3D camera) {
 
     rlDisableDepthMask();
     DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, WHITE);
+    //DrawBoundingBox(GetBoundingBox(), RED);
+
     rlEnableDepthMask();
 }
 

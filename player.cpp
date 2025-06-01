@@ -74,7 +74,7 @@ void HandleKeyboardInput(float deltaTime) {
 void HandleStickLook(float deltaTime){
 
     float lookSensitivity = 2.0f;
-    float moveSensitivity = 1.0f;
+    //float moveSensitivity = 1.0f;
 
     float yaw = -GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_X) * lookSensitivity;
     float pitch = -GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_Y) * lookSensitivity;
@@ -116,11 +116,16 @@ void HandleGamepadInput(float deltaTime) {
     }
 }
 
-void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh) {
+void Player::TakeDamage(int amount){
+    //color screen red
+    std::cout << "player hit\n";
+}
+
+void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& camera) {
     weapon.Update(deltaTime);
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        weapon.Fire();
+        weapon.Fire(camera);
     }
 
 

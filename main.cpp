@@ -10,6 +10,8 @@
 #include "boat.h"
 #include "character.h"
 #include "algorithm"
+#include "bullet.h"
+#include "sound_manager.h"
 
 #define GLSL_VERSION 330
 
@@ -78,7 +80,7 @@ void UpdateCustomCamera(Camera3D* camera, float deltaTime) {
 
 void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, float deltaTime) {
     if (controlPlayer) {
-        UpdatePlayer(player, GetFrameTime(), terrainMesh);
+        UpdatePlayer(player, GetFrameTime(), terrainMesh, camera);
         DisableCursor();
 
         float yawRad = DEG2RAD * player.rotation.y;
@@ -255,6 +257,14 @@ void drawWeapon(){
     DrawTexturePro(gunTexture, source, dest, origin, 0.0f, WHITE);
 }
 
+bool CheckCollisionPointBox(Vector3 point, BoundingBox box) {
+    return (
+        point.x >= box.min.x && point.x <= box.max.x &&
+        point.y >= box.min.y && point.y <= box.max.y &&
+        point.z >= box.min.z && point.z <= box.max.z
+    );
+}
+
 
 int main() {
     //SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
@@ -271,7 +281,7 @@ int main() {
     // Camera
     Camera3D camera = { 0 };
     camera.position = (Vector3){ 0.0f, 400.0f, 0.0f };
-    camera.target = (Vector3){ 10.0f, 0.0f, 10.0f };
+    camera.target = (Vector3){ 0.0f, 0.0f, 1.0f };
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
@@ -279,13 +289,13 @@ int main() {
     InitBoat(player_boat, boatPosition);
 
 
-
+    //main gmae loop
     while (!WindowShouldClose()) {
         UpdateInputMode(); //handle both gamepad and keyboard/mouse
         debugControls(); //press P to remove all vegetation, Press O to regenerate raptors, press K to kill a raptor. 
         UpdateShaders(camera);
         sortTrees(camera);
-        Vector3 forward = { 0.0f, 0.0f, 1.0f }; // facing +Z
+        
         float deltaTime = GetFrameTime();
 
 
@@ -293,7 +303,7 @@ int main() {
             UpdateCameraWithGamepad(camera);
         }
 
-        Vector3 terrainPosition = {
+        Vector3 terrainPosition = { //center the terrain around 0, 0, 0
             -terrainScale.x / 2.0f,
             0.0f,
             -terrainScale.z / 2.0f
@@ -308,13 +318,15 @@ int main() {
         float wave = sin(GetTime() * 0.9f) * 0.9f;  // slow, subtle vertical motion
         float animatedWaterLevel = waterHeightY + wave;
         Vector3 waterPos = {0, animatedWaterLevel, 0};
-        DrawModel(waterModel, waterPos, 1.0f, WHITE);
-
+        Vector3 bottomPos = {0, waterHeightY - 100, 0};
+ 
+        //DrawModel(waterModel, waterPos, 1.0f, WHITE);
+       //DrawModel(bottomPlane, bottomPos, 1.0f, DARKBLUE);
 
         UpdateBoat(player_boat, deltaTime);
     
         for (Character& raptor : raptors) {
-            raptor.Update(deltaTime, player.position, heightmap, terrainScale, raptorPtrs);
+            raptor.Update(deltaTime, player.position, player,  heightmap, terrainScale, raptorPtrs);
         }
         // === RENDER TO TEXTURE ===
         BeginTextureMode(sceneTexture);
@@ -329,7 +341,8 @@ int main() {
         rlEnableColorBlend();
         DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
        
-        DrawModel(waterModel, waterPos, 1.0f, WHITE);   
+        DrawModel(waterModel, waterPos, 1.0f, WHITE); 
+        DrawModel(bottomPlane, bottomPos, 1.0f, DARKBLUE); //a second plane below water plane. to prevent seeing through the world when looking down.
         DrawTrees(trees, palmTree, palm2, shadowQuad);
 
         DrawBushes(bushes, shadowQuad);
@@ -340,6 +353,22 @@ int main() {
         drawRaptors(camera); //sort and draw raptors
         DrawPlayer(player, camera);
 
+        for (Bullet& b : activeBullets) {
+            b.Update(deltaTime);
+            b.Draw();   
+            if (!b.IsAlive()) continue;
+
+            for (Character* r : raptorPtrs) {
+                if (r->isDead) continue;
+
+                BoundingBox box = r->GetBoundingBox();
+                if (CheckCollisionPointBox(b.GetPosition(), box)) {
+                    r->TakeDamage(25);
+                    b.kill();
+                    break; // don't hit more than one thing
+                }
+            }
+        }
 
     
         EndBlendMode();

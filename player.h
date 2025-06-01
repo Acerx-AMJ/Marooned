@@ -21,6 +21,9 @@ struct Player {
     bool isSwimming = false;
     bool onBoard = false;
     bool disableMovement = false;
+
+    
+    void TakeDamage(int amount);
     
 };
 
@@ -28,9 +31,8 @@ struct Player {
 void InitPlayer(Player& player, Vector3 startPosition);
 
 // Updates player movement and physics
-void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh);
+void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& camera);
 
-// Draws the player model or debug marker
 void DrawPlayer(const Player& player, Camera& camera);
 void HandleGamepadInput(float deltaTime);
 void HandleKeyboardInput(float deltaTime);

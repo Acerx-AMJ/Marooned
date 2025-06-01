@@ -1,0 +1,12 @@
+Marooned on an island full of dinosaurs 
+
+Set in the 1700s in the Caribbean. Some one marooned you on purpose. You lost your memory? 
+Trapped on an island lost to time. Find a treasure chest with a gun in it. Add a sword at some point. 
+Need a way of making structures like lost temple ruins. caves. Huts. villagers? hostile locals? Go full Turok? 
+Need to keep the scope small enough to finish. It's already hugely complicated. 
+
+Level switching. Change heightmaps from a menu, destroy all objects, regenerate vegetation, and raptors.
+
+Terrain has a hard limit to how big it can be. 4k textures scaled to 16k. sounds like a lot but everything is scaled big. Need serpanteen paths that loop around. Need a way to block player besides water. invisible walls where thick jungle is. Create bounding boxes around trees. make areas where trees are too dense to pass. 
+
+invisible wall at the edge of water plane. make a boundary at 30k radius from center for all maps?  

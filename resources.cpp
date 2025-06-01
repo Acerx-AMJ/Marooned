@@ -1,10 +1,11 @@
 #include "resources.h"
 #include "world.h"
+#include "sound_manager.h"
 
 RenderTexture2D sceneTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
-Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel;
+Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, bottomPlane;
 Image heightmap;
 Mesh terrainMesh;
 Sound musket;
@@ -68,7 +69,9 @@ void LoadAllResources() {
     waterShader = LoadShader("assets/shaders/water.vs", "assets/shaders/water.fs");
     SetShaderValue(waterShader, GetShaderLocation(waterShader, "waterLevel"), &waterHeightY, SHADER_UNIFORM_FLOAT);
     waterModel = LoadModelFromMesh(GenMeshPlane(30000, 30000, 1, 1));
+    bottomPlane = LoadModelFromMesh(GenMeshPlane(30000, 30000, 1, 1));
     waterModel.materials[0].shader = waterShader;
+    bottomPlane.materials[0].shader = waterShader;
 
     // Models
     
@@ -78,6 +81,14 @@ void LoadAllResources() {
     boatModel = LoadModel("assets/models/boat.glb");
 
     bushTex = LoadTexture("assets/bush.png");
+
+    //Sounds
+    SoundManager::GetInstance().LoadSound("dinoHit", "assets/sounds/dinoHit.ogg");
+    SoundManager::GetInstance().LoadSound("dinoDeath", "assets/sounds/dinoDeath.ogg");
+    SoundManager::GetInstance().LoadSound("dinoTweet", "assets/sounds/dino1.ogg");
+    SoundManager::GetInstance().LoadSound("dinoTarget", "assets/sounds/dino2.ogg");
+    SoundManager::GetInstance().LoadSound("dinoTweet2", "assets/sounds/dino3.ogg");
+    SoundManager::GetInstance().LoadSound("dinoBite", "assets/sounds/bite.ogg");
 }
 
 void UnloadAllResources() {

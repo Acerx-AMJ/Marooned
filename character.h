@@ -30,18 +30,20 @@ public:
     bool isDead = false;
     float deathTimer = 0.0f;
     float attackTimer = 0.0f;
+    float attackCooldown = 0.0f;
     float runawayAngleOffset = 0.0f;
     bool hasRunawayAngle = false;
 
-    int maxHealth = 100;
+    int maxHealth = 200;
     int currentHealth = maxHealth;
 
 
-    Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, float speed, float scl, int row = 0);
-    //void Update(float deltaTime, Vector3 playerPosition, Image heightmap, Vector3 terrainScale);
-    void Update(float deltaTime, Vector3 playerPosition, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors);
-    Vector3 ComputeRepulsionForce(const std::vector<Character*>& allRaptors, float repulsionRadius = 500.0f, float repulsionStrength = 6000.0f);
 
+    Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, float speed, float scl, int row = 0);
+    BoundingBox GetBoundingBox() const;
+    void Update(float deltaTime, Vector3 playerPosition, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors);
+    Vector3 ComputeRepulsionForce(const std::vector<Character*>& allRaptors, float repulsionRadius = 500.0f, float repulsionStrength = 6000.0f);
+    void TakeDamage(int amount);
     void Draw(Camera3D camera);
     void SetAnimation(int row, int frames, float speed);
 };
