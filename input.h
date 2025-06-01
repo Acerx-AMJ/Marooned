@@ -8,6 +8,7 @@ enum class InputMode {
 
 extern InputMode currentInputMode;
 
+
 void UpdateInputMode();
 void debugControls();
 void UpdateCameraWithGamepad(Camera3D& camera);

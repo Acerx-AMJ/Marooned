@@ -282,18 +282,12 @@ int main() {
 
     while (!WindowShouldClose()) {
         UpdateInputMode(); //handle both gamepad and keyboard/mouse
-        debugControls(); //press P to remove all vegetation
-        float deltaTime = GetFrameTime();
-        //UpdateCustomCamera(&camera, deltaTime);
-        Vector3 camPos = camera.position;
-        int camPosLoc = GetShaderLocation(terrainShader, "cameraPos");
-        SetShaderValue(terrainShader, camPosLoc, &camPos, SHADER_UNIFORM_VEC3);
-        float time = GetTime();
-        SetShaderValue(skyShader, GetShaderLocation(skyShader, "time"), &time, SHADER_UNIFORM_FLOAT);
-        
+        debugControls(); //press P to remove all vegetation, Press O to regenerate raptors, press K to kill a raptor. 
+        UpdateShaders(camera);
+        sortTrees(camera);
         Vector3 forward = { 0.0f, 0.0f, 1.0f }; // facing +Z
-        //Vector3 velocity = Vector3Scale(forward, boatSpeed * deltaTime);
-        //boatPosition = Vector3Add(boatPosition, velocity);
+        float deltaTime = GetFrameTime();
+
 
         if (IsGamepadAvailable(0)) { //hack to speed up controller movement. 
             UpdateCameraWithGamepad(camera);
@@ -305,19 +299,18 @@ int main() {
             -terrainScale.z / 2.0f
         }; 
 
-        float wave = sin(GetTime() * 0.9f) * 0.9f;  // slow, subtle vertical motion
-        float animatedWaterLevel = waterHeightY + wave;
+
 
         HandleCameraPlayerToggle(camera, player, controlPlayer);
         UpdateCameraAndPlayer(camera, player, controlPlayer, deltaTime);
         // During render loop:
-        float t = GetTime();
+
+        float wave = sin(GetTime() * 0.9f) * 0.9f;  // slow, subtle vertical motion
+        float animatedWaterLevel = waterHeightY + wave;
         Vector3 waterPos = {0, animatedWaterLevel, 0};
-        SetShaderValue(waterShader, GetShaderLocation(waterShader, "time"), &t, SHADER_UNIFORM_FLOAT);
         DrawModel(waterModel, waterPos, 1.0f, WHITE);
 
-        int camLoc = GetShaderLocation(waterShader, "cameraPos");
-        SetShaderValue(waterShader, camLoc, &camPos, SHADER_UNIFORM_VEC3);
+
         UpdateBoat(player_boat, deltaTime);
     
         for (Character& raptor : raptors) {
@@ -337,16 +330,16 @@ int main() {
         DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
        
         DrawModel(waterModel, waterPos, 1.0f, WHITE);   
-        //DrawModel(gunModel, Vector3{0, 300, 0}, 1.0f, WHITE);
+        DrawTrees(trees, palmTree, palm2, shadowQuad);
+
+        DrawBushes(bushes, shadowQuad);
+
         DrawBoat(player_boat);
 
 
         drawRaptors(camera); //sort and draw raptors
         DrawPlayer(player, camera);
 
-        DrawTrees(trees, palmTree, palm2, shadowQuad);
-
-        DrawBushes(bushes, shadowQuad);
 
     
         EndBlendMode();
@@ -382,6 +375,8 @@ int main() {
 
     // Cleanup
     UnloadAllResources();
+    removeAllRaptors();
+    RemoveAllVegetation();
     CloseAudioDevice();
     CloseWindow();
 

@@ -8,9 +8,22 @@
 #include "rlgl.h"
 #include "resources.h"
 #include "world.h"
+#include "algorithm"
 
 std::vector<TreeInstance> trees;
 std::vector<BushInstance> bushes;
+std::vector<const TreeInstance*> sortedTrees;
+
+
+void sortTrees(Camera& camera){
+    // Sort farthest to nearest (back-to-front)
+    std::sort(sortedTrees.begin(), sortedTrees.end(), [&](const TreeInstance* a, const TreeInstance* b) {
+        float da = Vector3Distance(camera.position, a->position);
+        float db = Vector3Distance(camera.position, b->position);
+        return da > db; // draw farther trees first
+    });
+}
+
 
 void generateVegetation(){
     float treeSpacing = 150.0f;
@@ -26,6 +39,12 @@ void generateVegetation(){
 
     bushes = GenerateBushes(heightmap, heightmapPixels, terrainScale, treeSpacing, bushHeightThreshold, bush);
     bushes = FilterBushsAboveHeightThreshold(bushes, heightmap, heightmapPixels, terrainScale, bushHeightThreshold);
+
+    // Copy tree pointers into a separate list so we can sort them by distance
+    // without modifying the original `trees` vector (which holds the actual data)
+    for (const auto& tree : trees) { //solves tree leaf glitches. We do the same for raptors. 
+        sortedTrees.push_back(&tree);
+    }
 }
 
 std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, Vector3 terrainScale,
@@ -159,37 +178,31 @@ std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<Bush
 void RemoveAllVegetation() {
     trees.clear();
     bushes.clear();
+    sortedTrees.clear();
 }
 
 void DrawTrees(const std::vector<TreeInstance>& trees, Model& model1, Model& model2, Model& shadowQuad){
-    for (const auto& tree : trees) {
-        Vector3 pos = tree.position;
-        pos.y += tree.yOffset;
-        pos.x += tree.xOffset;
-        pos.z += tree.zOffset;
+    for (const TreeInstance* tree : sortedTrees) {
+        Vector3 pos = tree->position;
+        pos.y += tree->yOffset;
+        pos.x += tree->xOffset;
+        pos.z += tree->zOffset;
 
-        Model& treeModel = tree.useAltModel ? model1 : model2; // useAltModel is set when generating. 
+        Model& treeModel = tree->useAltModel ? model1 : model2;
 
-        DrawModelEx(treeModel, pos, { 0, 1, 0 }, tree.rotationY,
-                    { tree.scale, tree.scale, tree.scale }, WHITE);
-        
-        //draw shadow decal under trees.
+        DrawModelEx(treeModel, pos, { 0, 1, 0 }, tree->rotationY,
+                    { tree->scale, tree->scale, tree->scale }, WHITE);
+
         Vector3 shadowPos = {
-            tree.position.x + tree.xOffset,
-            tree.position.y + 9.0f, // Slightly above ground to prevent Z-fighting
-            tree.position.z + tree.zOffset
+            tree->position.x + tree->xOffset,
+            tree->position.y + 9.0f,
+            tree->position.z + tree->zOffset
         };
 
-        
-        DrawModelEx(
-            shadowQuad,
-            shadowPos,
-            {0, 1, 0},
-            0,
-            {tree.scale * 15.0f, 1.0f, tree.scale * 15.0f}, // XZ scale, flat on Y
-            WHITE
-        );
+        DrawModelEx(shadowQuad, shadowPos, {0, 1, 0}, 0,
+                    {tree->scale * 15.0f, 1.0f, tree->scale * 15.0f}, WHITE);
     }
+
 
 }
 
@@ -199,7 +212,7 @@ void DrawBushes(const std::vector<BushInstance>& bushes, Model& shadowQuad) {
         pos.x += bush.xOffset;
         pos.y += bush.yOffset-10;
         pos.z += bush.zOffset;
-        
+
         DrawModel(bush.model, pos, bush.scale, WHITE);
 
             //draw shadow decal under bushes. 

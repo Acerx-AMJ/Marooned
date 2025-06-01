@@ -33,9 +33,12 @@ struct BushInstance {
 
 extern std::vector<TreeInstance> trees;
 extern std::vector<BushInstance> bushes;
+extern std::vector<const TreeInstance*> sortedTrees;
+
 
 void generateVegetation();
 void RemoveAllVegetation();
+void sortTrees(Camera& camera);
 
 std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, Vector3 terrainScale,
                                         float treeSpacing, float minTreeSpacing, float treeHeightThreshold);

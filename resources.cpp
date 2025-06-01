@@ -13,10 +13,25 @@ Vector3 terrainScale;
 
 Vector2 screenResolution;
 
+void UpdateShaders(Camera& camera){
+    float t = GetTime();
+    Vector3 camPos = camera.position;
+    SetShaderValue(waterShader, GetShaderLocation(waterShader, "time"), &t, SHADER_UNIFORM_FLOAT);
+
+    int camLoc = GetShaderLocation(waterShader, "cameraPos");
+    SetShaderValue(waterShader, camLoc, &camPos, SHADER_UNIFORM_VEC3);
+
+ 
+    int camPosLoc = GetShaderLocation(terrainShader, "cameraPos");
+    SetShaderValue(terrainShader, camPosLoc, &camPos, SHADER_UNIFORM_VEC3);
+    //float time = GetTime();
+    SetShaderValue(skyShader, GetShaderLocation(skyShader, "time"), &t, SHADER_UNIFORM_FLOAT);
+}
+
 void LoadAllResources() {
     screenResolution = {(float)GetScreenWidth(), (float)GetScreenHeight()};
     sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
-    raptorFront = LoadTexture("assets/sprites/raptorFront.png");
+
     raptorTexture = LoadTexture("assets/sprites/raptorSheet.png");
     gunTexture = LoadTexture("assets/sprites/flintlock.png");
     gunModel = LoadModel("assets/models/blunderbus.glb");
@@ -69,7 +84,6 @@ void UnloadAllResources() {
     UnloadRenderTexture(sceneTexture);
     UnloadTexture(bushTex);
     UnloadTexture(shadowTex);
-    UnloadTexture(raptorFront);
     UnloadTexture(raptorTexture);
     UnloadTexture(gunTexture);
     UnloadShader(fogShader);

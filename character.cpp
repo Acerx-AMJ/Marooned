@@ -3,6 +3,8 @@
 #include <iostream>
 #include "resources.h"
 #include "rlgl.h"
+#include "world.h"
+#include "algorithm"
 //#include "world.h"
 
 
@@ -50,6 +52,8 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
     }
     float distance = Vector3Distance(position, playerPosition);
     float randomTime = GetRandomValue(1, 3);
+
+    if (currentHealth <= 0) state = DinoState::Death;
 
     //idle, chase, attack, runaway
     switch (state) {
@@ -158,13 +162,42 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Image heightmap,
             }
 
             break;
-        }
+        } 
+        case DinoState::Death:
+            if (!isDead) {
+                SetAnimation(4, 4, 0.2f);  
+                isDead = true;
+                deathTimer = 0.0f;         // Start counting
+            }
+
+            deathTimer += deltaTime;
+
+            break;
+
+
+    
     }
 
     if (animationTimer >= animationSpeed) {
         animationTimer = 0;
-        currentFrame = (currentFrame + 1) % maxFrames;
+
+        if (state == DinoState::Death) {
+            if (currentFrame < maxFrames - 1) {
+                currentFrame++;
+            }
+            // else do nothing — stay on last frame
+        } else {
+            currentFrame = (currentFrame + 1) % maxFrames;
+        }
     }
+
+
+    raptorPtrs.erase(std::remove_if(raptorPtrs.begin(), raptorPtrs.end(),
+    [](Character* raptor) {
+        return raptor->isDead && raptor->deathTimer > 5.0f;
+    }),
+    raptorPtrs.end());
+
 }
 
 
@@ -178,7 +211,7 @@ void Character::Draw(Camera3D camera) {
 
     // Calculate a slight camera-facing offset to reduce z-fighting
     Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.position, position));
-    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 0.01f)); // Adjust 0.1f if needed
+    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 1.0f)); // Adjust 0.1f if needed
 
     Vector2 size = { frameWidth * scale, frameHeight * scale };
 

@@ -6,6 +6,7 @@
 InputMode currentInputMode = InputMode::KeyboardMouse;
 
 
+
 void UpdateCameraWithGamepad(Camera3D& camera) {
     if (!IsGamepadAvailable(0)) return;
 
@@ -41,14 +42,29 @@ void UpdateCameraWithGamepad(Camera3D& camera) {
 }
 
 void debugControls(){
+    static float killCooldown = 0.0f;
+
+    float dt = GetFrameTime();
+    killCooldown -= dt;
+
     if (IsKeyPressed(KEY_P)){
         RemoveAllVegetation();
     }
-    if (IsKeyPressed(KEY_O)) regenerateRaptors(5, player.position, 6000);
+    if (IsKeyPressed(KEY_O)){
+        regenerateRaptors(5, player.position, 6000);
+
+    }
+
+    if (IsKeyPressed(KEY_K) && killCooldown <= 0.0f) {
+        if (!raptorPtrs.empty()) {
+            raptorPtrs[0]->currentHealth = 0; //kill the fist on the list. 
+            killCooldown = 1.0f; // Cooldown for 1 second
+        }
+    }
 }
 
-void UpdateInputMode() {
 
+void UpdateInputMode() {
 
     // Check gamepad activity
     if (IsGamepadAvailable(0)) {
