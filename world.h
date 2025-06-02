@@ -5,6 +5,7 @@
 #include <vector>
 #include "character.h"
 #include "bullet.h"
+#include "vegetation.h"
 
 
 
@@ -31,4 +32,5 @@ float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrai
 void removeAllRaptors();
 void generateRaptors(int amount, Vector3 centerPos, float radius);
 void regenerateRaptors(int amount, Vector3 centerPos, float radius);
-
+bool CheckTreeCollision(const TreeInstance& tree, const Vector3& playerPos);
+void ResolveTreeCollision(const TreeInstance& tree, Vector3& playerPos);

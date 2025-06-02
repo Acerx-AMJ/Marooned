@@ -89,6 +89,8 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("dinoTarget", "assets/sounds/dino2.ogg");
     SoundManager::GetInstance().LoadSound("dinoTweet2", "assets/sounds/dino3.ogg");
     SoundManager::GetInstance().LoadSound("dinoBite", "assets/sounds/bite.ogg");
+    SoundManager::GetInstance().LoadSound("reload", "assets/sounds/reload.ogg");
+    SoundManager::GetInstance().LoadSound("shotgun", "assets/sounds/shotgun.ogg");
 }
 
 void UnloadAllResources() {

@@ -2,6 +2,7 @@
 #include "raymath.h"
 #include "vegetation.h"
 #include "world.h"
+#include <iostream>
 
 InputMode currentInputMode = InputMode::KeyboardMouse;
 
@@ -42,10 +43,13 @@ void UpdateCameraWithGamepad(Camera3D& camera) {
 }
 
 void debugControls(){
-    static float killCooldown = 0.0f;
 
-    float dt = GetFrameTime();
-    killCooldown -= dt;
+
+    if (IsKeyPressed(KEY_L)) {
+        std::cout << "Player Position: X=" << player.position.x
+                << " Y=" << player.position.y
+                << " Z=" << player.position.z << "\n";
+    }
 
     if (IsKeyPressed(KEY_P)){
         RemoveAllVegetation();
@@ -55,12 +59,7 @@ void debugControls(){
 
     }
 
-    if (IsKeyPressed(KEY_K) && killCooldown <= 0.0f) {
-        if (!raptorPtrs.empty()) {
-            raptorPtrs[0]->currentHealth = 0; //kill the fist on the list. 
-            killCooldown = 1.0f; // Cooldown for 1 second
-        }
-    }
+
 }
 
 

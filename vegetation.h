@@ -17,6 +17,10 @@ struct TreeInstance {
     bool useAltModel;
     float cullFactor;
 
+    // Collision info (simple cylinder)
+    float colliderRadius = 80.0f;   // trunk radius
+    float colliderHeight = 300.0f;  // height of trunk to base of leaves
+
 };
 
 struct BushInstance {

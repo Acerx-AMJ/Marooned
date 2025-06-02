@@ -3,15 +3,19 @@
 #include <iostream>
 #include "rlgl.h"
 #include "bullet.h"
-
+#include "sound_manager.h"
 
 void Weapon::Fire(Camera& camera) {
+
     if (GetTime() - lastFired >= fireCooldown) {
-        PlaySound(fireSound);
+        SoundManager::GetInstance().Play("shotgun");
+        
         recoil = recoilAmount;
         lastFired = GetTime();
         flashTimer = flashDuration;
-
+        // Schedule reload sound
+        reloadScheduled = true;
+        reloadTimer = 0.0f;
 
         //offset bulletOrigin to weapon position. 
         Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
@@ -19,9 +23,9 @@ void Weapon::Fire(Camera& camera) {
         Vector3 camUp = { 0, 1, 0 };
 
         // Offsets in local space
-        float forwardOffset = -50.0f;
+        float forwardOffset = 0.0f;
         float sideOffset = 30.0f;
-        float verticalOffset = -40.0f; // down
+        float verticalOffset = -50.0f; // down
 
         // Final origin for bullets in world space
         Vector3 bulletOrigin = camera.position;
@@ -32,7 +36,7 @@ void Weapon::Fire(Camera& camera) {
         FireBlunderbuss(
             bulletOrigin,
             camForward,
-            3.0f,    // spreadDegrees (tweak this!)
+            2.0f,    // spreadDegrees (tweak this!)
             6,        // pelletCount
             1500.0f,   // bulletSpeed
             1.2f      // lifetimeSeconds
@@ -52,6 +56,25 @@ void Weapon::Update(float deltaTime) {
         flashTimer -= deltaTime;
         if (flashTimer < 0.0f) flashTimer = 0.0f;
     }
+
+    // Handle delayed reload sound
+    if (reloadScheduled) {
+        reloadTimer += deltaTime;
+
+        if (reloadTimer >= reloadDelay) {
+            SoundManager::GetInstance().Play("reload");
+            reloadScheduled = false;
+        }
+
+        if (reloadTimer > 0.5f){
+            reloadDip = Lerp(reloadDip, 20.0f, deltaTime * 20.0f); // dip fast
+        }
+    }
+
+    if (reloadDip > 0.0f) {
+        reloadDip -= 100.0f * deltaTime; // change speed as needed
+        if (reloadDip < 0.0f) reloadDip = 0.0f;
+    }
 }
 
 void Weapon::Draw(const Camera& camera) {
@@ -69,11 +92,12 @@ void Weapon::Draw(const Camera& camera) {
     Vector3 camUp = { 0, 1, 0 };
 
     float dynamicForward = forwardOffset - recoil;
-
+    float dynamicVertical = verticalOffset - reloadDip;
     Vector3 gunPos = camera.position;
     gunPos = Vector3Add(gunPos, Vector3Scale(camForward, dynamicForward));
     gunPos = Vector3Add(gunPos, Vector3Scale(camRight, sideOffset));
-    gunPos = Vector3Add(gunPos, Vector3Scale(camUp, verticalOffset));
+    gunPos = Vector3Add(gunPos, Vector3Scale(camUp, dynamicVertical));
+
 
     if (flashTimer > 0.0f) {
         Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));

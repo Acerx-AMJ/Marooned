@@ -10,6 +10,7 @@ enum class DinoState {
     Chase,
     Attack,
     RunAway,
+    Stagger,
     Death
 };
 
@@ -29,12 +30,13 @@ public:
     float stateTimer = 0.0f;
     bool isDead = false;
     float deathTimer = 0.0f;
-    float attackTimer = 0.0f;
     float attackCooldown = 0.0f;
+    float chaseDuration = 0.0f;
+    float hitTimer = 0.0f;
     float runawayAngleOffset = 0.0f;
     bool hasRunawayAngle = false;
 
-    int maxHealth = 200;
+    int maxHealth = 150;
     int currentHealth = maxHealth;
 
 

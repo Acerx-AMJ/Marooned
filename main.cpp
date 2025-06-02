@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include <iostream>
 #include "raymath.h"
 #include "rlgl.h"
 #include "string"
@@ -108,6 +109,9 @@ void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, f
 
 
 void HandleCameraPlayerToggle(Camera& camera, Player& player, bool& controlPlayer) {
+
+
+
     if (IsKeyPressed(KEY_TAB)) {
         controlPlayer = !controlPlayer;
 
@@ -265,6 +269,82 @@ bool CheckCollisionPointBox(Vector3 point, BoundingBox box) {
     );
 }
 
+// void UpdateBulletsAndCheckHits(float deltaTime){
+//     for (Bullet& b : activeBullets) {
+//         b.Update(deltaTime);
+//         b.Draw();   
+//         if (!b.IsAlive()) continue;
+
+//         for (Character* r : raptorPtrs) {
+//             if (r->isDead) continue;
+
+//             BoundingBox box = r->GetBoundingBox();
+//             if (CheckCollisionPointBox(b.GetPosition(), box)) {
+//                 r->TakeDamage(25);
+//                 b.kill();
+//                 break; // don't hit more than one thing
+//             }
+//         }
+//     }
+// }
+
+void UpdateRaptors(float deltaTime){
+    for (Character& raptor : raptors) {
+        raptor.Update(deltaTime, player.position, player,  heightmap, terrainScale, raptorPtrs);
+    }
+}
+
+void UpdateBullets(float deltaTime) {
+    for (Bullet& b : activeBullets) {
+        b.Update(deltaTime);
+    }
+}
+
+void CheckBulletHits() {
+    for (Bullet& b : activeBullets) {
+        if (!b.IsAlive()) continue;
+
+        for (Character* r : raptorPtrs) {
+            if (r->isDead) continue;
+
+            BoundingBox box = r->GetBoundingBox();
+            if (CheckCollisionPointBox(b.GetPosition(), box)) {
+                r->TakeDamage(25);
+                b.kill();
+                break;
+            }
+        }
+    }
+}
+
+void DrawBullets() {
+    for (const Bullet& b : activeBullets) {
+        if (b.IsAlive()) b.Draw();
+    }
+}
+
+void TreeCollision(){
+    for (TreeInstance& tree : trees) {
+        if (Vector3DistanceSqr(tree.position, player.position) < 500 * 500) {
+            if (CheckTreeCollision(tree, player.position)) {
+                ResolveTreeCollision(tree, player.position);
+            }
+        }
+    }
+
+    for (Character* raptor : raptorPtrs){
+        for (TreeInstance& tree : trees) {
+            if (Vector3DistanceSqr(tree.position, raptor->position) < 500*500) {
+                if (CheckTreeCollision(tree, raptor->position)) {
+                    ResolveTreeCollision(tree, raptor->position);
+                }
+            }
+        }
+
+    }
+}
+
+
 
 int main() {
     //SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
@@ -273,14 +353,14 @@ int main() {
     SetTargetFPS(60);
     LoadAllResources();
     generateVegetation();
-   
-    InitPlayer(player, Vector3 {0,0,0});
-    generateRaptors(5, player.position, 6000);
-    
+    Vector3 startPosition = {5475.0f, 300.0f, -5665.0f}; //middle island start pos
+    InitPlayer(player, startPosition);
+    generateRaptors(5, Vector3{0}, 6000);
+
 
     // Camera
     Camera3D camera = { 0 };
-    camera.position = (Vector3){ 0.0f, 400.0f, 0.0f };
+    camera.position = startPosition;
     camera.target = (Vector3){ 0.0f, 0.0f, 1.0f };
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
     camera.fovy = 45.0f;
@@ -297,6 +377,12 @@ int main() {
         sortTrees(camera);
         
         float deltaTime = GetFrameTime();
+        UpdateBullets(deltaTime);
+        CheckBulletHits();
+        UpdateBoat(player_boat, deltaTime);
+        UpdateRaptors(deltaTime);
+
+        TreeCollision();
 
 
         if (IsGamepadAvailable(0)) { //hack to speed up controller movement. 
@@ -319,15 +405,7 @@ int main() {
         float animatedWaterLevel = waterHeightY + wave;
         Vector3 waterPos = {0, animatedWaterLevel, 0};
         Vector3 bottomPos = {0, waterHeightY - 100, 0};
- 
-        //DrawModel(waterModel, waterPos, 1.0f, WHITE);
-       //DrawModel(bottomPlane, bottomPos, 1.0f, DARKBLUE);
 
-        UpdateBoat(player_boat, deltaTime);
-    
-        for (Character& raptor : raptors) {
-            raptor.Update(deltaTime, player.position, player,  heightmap, terrainScale, raptorPtrs);
-        }
         // === RENDER TO TEXTURE ===
         BeginTextureMode(sceneTexture);
         ClearBackground(SKYBLUE);
@@ -353,31 +431,14 @@ int main() {
         drawRaptors(camera); //sort and draw raptors
         DrawPlayer(player, camera);
 
-        for (Bullet& b : activeBullets) {
-            b.Update(deltaTime);
-            b.Draw();   
-            if (!b.IsAlive()) continue;
+        DrawBullets();
 
-            for (Character* r : raptorPtrs) {
-                if (r->isDead) continue;
-
-                BoundingBox box = r->GetBoundingBox();
-                if (CheckCollisionPointBox(b.GetPosition(), box)) {
-                    r->TakeDamage(25);
-                    b.kill();
-                    break; // don't hit more than one thing
-                }
-            }
-        }
-
-    
         EndBlendMode();
-        EndMode3D();
+        EndMode3D(); //////////////////EndMode3d
 
         rlDisableDepthTest();
-        //DrawTexture(gunTexture, GetScreenWidth() * 0.55f, GetScreenHeight() * 0.7f, WHITE);
 
-        EndTextureMode();
+        EndTextureMode();//////end drawing to texture
 
         // === POSTPROCESS TO SCREEN ===
         BeginDrawing();

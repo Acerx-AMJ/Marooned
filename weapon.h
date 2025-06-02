@@ -14,13 +14,18 @@ struct Weapon {
     float recoilAmount = 15.0f;
     float recoilRecoverySpeed = 30.0f;
 
-    Sound fireSound;
     float lastFired = -999.0f;
-    float fireCooldown = 1.0f;
+    float fireCooldown; //set in player init
 
     Texture2D muzzleFlashTexture;
     float flashDuration = 0.1f;
     float flashTimer = 0.0f;
+    //delayed reload sound
+    bool reloadScheduled = false;
+    float reloadTimer = 0.0f;
+    float reloadDelay = 1.6f; // adjust as needed
+    float reloadDip = 0.0f; // controls how far the gun dips down
+ 
 
     void Fire(Camera& camera);
     void Update(float deltaTime);

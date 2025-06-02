@@ -2,6 +2,7 @@
 #include "player.h"
 #include "raymath.h"
 #include "resources.h"
+#include "vegetation.h"
 
 bool controlPlayer = false;
 unsigned char* heightmapPixels = nullptr;
@@ -26,6 +27,52 @@ void removeAllRaptors(){
     raptors.clear();
 
 }
+
+bool CheckTreeCollision(const TreeInstance& tree, const Vector3& playerPos) {
+    Vector3 treeBase = {
+        tree.position.x + tree.xOffset,
+        tree.position.y + tree.yOffset,
+        tree.position.z + tree.zOffset
+    };
+
+    float dx = playerPos.x - treeBase.x;
+    float dz = playerPos.z - treeBase.z;
+    float horizontalDistSq = dx * dx + dz * dz;
+
+    if (horizontalDistSq < tree.colliderRadius * tree.colliderRadius &&
+        playerPos.y >= treeBase.y &&
+        playerPos.y <= treeBase.y + tree.colliderHeight) {
+        return true;
+    }
+
+    return false;
+}
+
+void ResolveTreeCollision(const TreeInstance& tree, Vector3& playerPos) {
+    Vector3 treeBase = {
+        tree.position.x + tree.xOffset,
+        tree.position.y + tree.yOffset,
+        tree.position.z + tree.zOffset
+    };
+
+    float dx = playerPos.x - treeBase.x;
+    float dz = playerPos.z - treeBase.z;
+    float distSq = dx * dx + dz * dz;
+
+    float radius = tree.colliderRadius;
+    if (distSq < radius * radius) {
+        float dist = sqrtf(distSq);
+        float overlap = radius - dist;
+
+        if (dist > 0.01f) {
+            dx /= dist;
+            dz /= dist;
+            playerPos.x += dx * overlap;
+            playerPos.z += dz * overlap;
+        }
+    }
+}
+
 
 
 void generateRaptors(int amount, Vector3 centerPos, float radius) {

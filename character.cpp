@@ -46,12 +46,14 @@ void Character::TakeDamage(int amount) {
         SoundManager::GetInstance().Play("dinoDeath");
         // Play death sound here if desired
     } else {
-        state = DinoState::Idle;
+        hitTimer = 0.5f;
+        state = DinoState::Stagger;
+        SetAnimation(4, 1, 1.0f); // Use row 4, 1 frame, 1 second per frame
+        currentFrame = 0;         // Always start at first frame
         stateTimer = 0.0f;
+
         SoundManager::GetInstance().Play("dinoHit");
-        // Play hurt sound here
-        //PlaySound(SoundManager::getInstance().GetSound("raptor_hurt"));
-        // Optional: flash red or stagger
+
     }
 }
 
@@ -80,7 +82,11 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
     stateTimer += deltaTime;
     previousPosition = position;
     float groundY = GetHeightAtWorldPosition(position, heightmap, terrainScale);
-
+    if (hitTimer > 0){
+        hitTimer -= deltaTime;
+    }else{
+        hitTimer = 0;
+    }
     // Gravity
     float gravity = 800.0f; 
     static float verticalVelocity = 0.0f;
@@ -106,6 +112,7 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 state = DinoState::Chase;
                 SetAnimation(1, 5, 0.12f);
                 stateTimer = 0.0f;
+                chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
                 hasRunawayAngle = false;
                 float hearableDistance = 1500.0f;
                 if (distance < hearableDistance){
@@ -132,6 +139,8 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
             break;
 
         case DinoState::Chase: {
+            stateTimer += deltaTime;
+
             if (distance < 150.0f) {
                 state = DinoState::Attack;
                 SetAnimation(2, 5, 0.1f);
@@ -140,6 +149,13 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 state = DinoState::Idle;
                 SetAnimation(0, 1, 1.0f);
                 stateTimer = 0.0f;
+            } else if (stateTimer >= chaseDuration) {
+                // Give up and run away
+                state = DinoState::RunAway;
+                SetAnimation(3, 4, 0.1f);
+                stateTimer = 0.0f;
+                runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50);
+                hasRunawayAngle = true;
             } else {
                 // Chase logic with repulsion
                 Vector3 dir = Vector3Normalize(Vector3Subtract(playerPosition, position));
@@ -156,7 +172,7 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 //float spriteHeight = frameHeight * scale;
 
                 //run away if near water. 
-                if (currentTerrainHeight <= 65.0f) {
+                if (currentTerrainHeight <= 65.0f && stateTimer > 1.0f) {
                     state = DinoState::RunAway;
                     SetAnimation(3, 4, 0.1f);
                     stateTimer = 0.0f;
@@ -236,9 +252,26 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 SetAnimation(0, 1, 1.0f);
                 stateTimer = 0.0f;
             }
-
+            if (currentTerrainHeight <= 65.0f) {
+                state = DinoState::Chase;
+                SetAnimation(1, 5, 0.12f);
+                stateTimer = 0.0f;
+                hasRunawayAngle = false;
+                //break; // exit RunAway logic
+            }
             break;
-        } 
+        }
+
+        case DinoState::Stagger: {
+            //do nothing
+            if (stateTimer >= 0.6f) {
+                state = DinoState::Chase;
+                SetAnimation(1, 5, 0.12f);
+                stateTimer = 0.0f;
+                chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
+            }
+            break;
+        }
         case DinoState::Death:
             if (!isDead) {
                 SetAnimation(4, 5, 0.15f);  
@@ -288,8 +321,9 @@ void Character::Draw(Camera3D camera) {
 
     Vector2 size = { frameWidth * scale, frameHeight * scale };
 
+    Color dinoTint = (hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
     rlDisableDepthMask();
-    DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, WHITE);
+    DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, dinoTint);
     //DrawBoundingBox(GetBoundingBox(), RED);
 
     rlEnableDepthMask();

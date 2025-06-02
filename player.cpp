@@ -6,6 +6,7 @@
 #include "input.h"
 #include "boat.h"
 #include "rlgl.h"
+#include "sound_manager.h"
 
 Weapon weapon;
 
@@ -14,7 +15,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     player.velocity = {0, 0, 0};
     player.grounded = false;
 
-    weapon.model = LoadModel("assets/models/blunderbus.glb");
+    weapon.model = LoadModel("assets/models/blunderbus.glb"); //shouldn't this be in resources. 
     weapon.scale = { 2.0f, 2.0f, 2.0f };
 
     weapon.muzzleFlashTexture = muzzleFlash;
@@ -22,8 +23,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     weapon.sideOffset = 20.0f;
     weapon.verticalOffset = -30.0f;
 
-    weapon.fireSound = LoadSound("assets/sounds/shotgun.ogg");
-    weapon.fireCooldown = 1.0f;
+    weapon.fireCooldown = 2.0f;
     
 }
 
@@ -125,7 +125,12 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
     weapon.Update(deltaTime);
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        weapon.Fire(camera);
+        if (!player.isSwimming){
+            weapon.Fire(camera);        
+        }else{
+            SoundManager::GetInstance().Play("reload");
+        }
+        
     }
 
 
