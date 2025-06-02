@@ -17,12 +17,14 @@ struct Player {
     float gravity = 980.0f;
     float height = 200.0f;
     float jumpStrength = 600; 
+    float footstepTimer = 0.0;
     bool grounded = false;
     bool isSwimming = false;
+    bool isMoving = false;
     bool onBoard = false;
     bool disableMovement = false;
 
-    
+    void PlayFootstepSound();
     void TakeDamage(int amount);
     
 };

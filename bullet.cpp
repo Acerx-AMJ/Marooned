@@ -4,19 +4,33 @@
 #include <cmath>
 #include "world.h"
 
-Bullet::Bullet(Vector3 startPos, Vector3 dir, float spd, float lifetime)
-    : position(startPos), direction(Vector3Normalize(dir)), speed(spd), alive(true), age(0.0f), maxLifetime(lifetime) {}
+// Bullet::Bullet(Vector3 startPos, Vector3 dir, float spd, float lifetime)
+//     : position(startPos), direction(Vector3Normalize(dir)), speed(spd), alive(true), age(0.0f), maxLifetime(lifetime) {}
+
+// New constructor matching velocity-based logic
+Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime)
+    : position(startPos),
+      velocity(vel),
+      alive(true),
+      age(0.0f),
+      maxLifetime(lifetime)
+{}
+
 
 void Bullet::Update(float deltaTime) {
     if (!alive) return;
 
-    // Move the bullet
-    position = Vector3Add(position, Vector3Scale(direction, speed * deltaTime));
+    // Apply gravity
+    velocity.y -= gravity * deltaTime;
 
-    // Age the bullet
+    // Move
+    position = Vector3Add(position, Vector3Scale(velocity, deltaTime));
+
+    // Age out
     age += deltaTime;
     if (age >= maxLifetime) alive = false;
 }
+
 
 void Bullet::Draw() const {
     if (!alive) return;
@@ -37,10 +51,6 @@ Vector3 Bullet::GetPosition() const {
     return position;
 }
 
-#include "bullet.h"
-#include "raymath.h"
-#include <cmath>
-#include <cstdlib>
 
 
 void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int pelletCount, float speed, float lifetime) {
@@ -60,7 +70,9 @@ void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int p
         Vector3 dir = Vector3Transform(forward, spreadMatrix);
         dir = Vector3Normalize(dir);
 
-        activeBullets.emplace_back(origin, dir, speed, lifetime);
+        Vector3 velocity = Vector3Scale(dir, speed);
+        activeBullets.emplace_back(origin, velocity, lifetime);
+
     }
 }
 

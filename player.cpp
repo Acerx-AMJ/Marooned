@@ -50,7 +50,7 @@ void HandleKeyboardInput(float deltaTime) {
     if (input.x != 0 || input.z != 0) {
         input = Vector3Normalize(input);
         float yawRad = DEG2RAD * player.rotation.y;
-
+        player.isMoving = true;
         Vector3 forward = { sinf(yawRad), 0, cosf(yawRad) };
         Vector3 right = { forward.z, 0, -forward.x };
 
@@ -121,8 +121,38 @@ void Player::TakeDamage(int amount){
     std::cout << "player hit\n";
 }
 
+void PlayFootstepSound() {
+    static std::vector<std::string> footstepKeys = { "step1", "step2", "step3", "step4" };
+    static int lastIndex = -1;
+
+    int index;
+    do {
+        index = GetRandomValue(0, footstepKeys.size() - 1);
+    } while (index == lastIndex && footstepKeys.size() > 1);  // avoid repeat if more than 1
+
+    lastIndex = index;
+    std::string stepKey = footstepKeys[index];
+
+    SoundManager::GetInstance().Play(stepKey);
+}
+
+
 void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& camera) {
     weapon.Update(deltaTime);
+
+    if (player.velocity.x != 0.0f || player.velocity.y != 0.0f || player.velocity.z != 0.0f) {
+        player.isMoving = false;
+    }
+
+    if (player.running && player.isMoving) {
+        player.footstepTimer += deltaTime;
+
+        if (player.footstepTimer >= 0.4f) {  // 0.5 second interval
+            PlayFootstepSound();
+            player.footstepTimer = 0.0f;
+        }
+    }
+
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         if (!player.isSwimming){
@@ -209,6 +239,7 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
         }
     }
 
+    
     // === Movement Input ===
     if (currentInputMode == InputMode::Gamepad) {
         HandleGamepadInput(deltaTime);

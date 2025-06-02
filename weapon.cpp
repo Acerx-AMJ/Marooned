@@ -25,7 +25,7 @@ void Weapon::Fire(Camera& camera) {
         // Offsets in local space
         float forwardOffset = 0.0f;
         float sideOffset = 30.0f;
-        float verticalOffset = -50.0f; // down
+        float verticalOffset = -30.0f; // down
 
         // Final origin for bullets in world space
         Vector3 bulletOrigin = camera.position;
@@ -38,7 +38,7 @@ void Weapon::Fire(Camera& camera) {
             camForward,
             2.0f,    // spreadDegrees (tweak this!)
             6,        // pelletCount
-            1500.0f,   // bulletSpeed
+            2000.0f,   // bulletSpeed
             1.2f      // lifetimeSeconds
         );
     }

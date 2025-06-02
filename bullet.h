@@ -6,7 +6,7 @@
 
 class Bullet {
 public:
-    Bullet(Vector3 position, Vector3 direction, float speed, float lifetime);
+    Bullet(Vector3 position, Vector3 velocity, float lifetime);
 
     void Update(float deltaTime);
     void Draw() const;
@@ -17,12 +17,12 @@ public:
 
 private:
     Vector3 position;
-    Vector3 direction;
-    float speed;
+    Vector3 velocity;   // replaces direction and speed
     bool alive;
     float age;
     float maxLifetime;
     float timer;
+    float gravity = 300;
 };
 
 

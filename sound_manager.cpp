@@ -1,10 +1,12 @@
 #include "sound_manager.h"
 #include <iostream>
-
+std::vector<std::string> footstepKeys;
 SoundManager& SoundManager::GetInstance() {
     static SoundManager instance;
     return instance;
 }
+
+
 
 void SoundManager::LoadSound(const std::string& name, const std::string& filePath) {
     Sound sound = ::LoadSound(filePath.c_str());

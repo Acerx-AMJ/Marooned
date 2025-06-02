@@ -298,6 +298,12 @@ void UpdateBullets(float deltaTime) {
     for (Bullet& b : activeBullets) {
         b.Update(deltaTime);
     }
+
+    activeBullets.erase( //erase dead bullets. 
+        std::remove_if(activeBullets.begin(), activeBullets.end(),
+                    [](const Bullet& b) { return !b.IsAlive(); }),
+        activeBullets.end());
+
 }
 
 void CheckBulletHits() {
@@ -323,7 +329,31 @@ void DrawBullets() {
     }
 }
 
+bool CheckBulletHitsTree(const TreeInstance& tree, const Vector3& bulletPos) {
+    Vector3 treeBase = {
+        tree.position.x + tree.xOffset,
+        tree.position.y + tree.yOffset,
+        tree.position.z + tree.zOffset
+    };
+
+    // Check vertical overlap
+    if (bulletPos.y < treeBase.y || bulletPos.y > treeBase.y + tree.colliderHeight) {
+        return false;
+    }
+
+    // Check horizontal distance from tree trunk center
+    float dx = bulletPos.x - treeBase.x;
+    float dz = bulletPos.z - treeBase.z;
+    float horizontalDistSq = dx * dx + dz * dz;
+
+    return horizontalDistSq <= tree.colliderRadius * tree.colliderRadius;
+}
+
+
+
 void TreeCollision(){
+
+
     for (TreeInstance& tree : trees) {
         if (Vector3DistanceSqr(tree.position, player.position) < 500 * 500) {
             if (CheckTreeCollision(tree, player.position)) {
@@ -337,12 +367,34 @@ void TreeCollision(){
             if (Vector3DistanceSqr(tree.position, raptor->position) < 500*500) {
                 if (CheckTreeCollision(tree, raptor->position)) {
                     ResolveTreeCollision(tree, raptor->position);
+                    
                 }
             }
         }
 
     }
+
+
+
+    for (TreeInstance& tree : trees) {
+        for (Bullet& bullet : activeBullets){
+            if (!bullet.IsAlive()) continue; // <-- early out for dead bullets
+            if (Vector3DistanceSqr(tree.position, bullet.GetPosition()) < 500 * 500) {
+                if (CheckBulletHitsTree(tree, bullet.GetPosition())) {
+                    bullet.kill();
+                    //Tree hit by bullet. Play a sound. 
+                    break;
+                }
+
+            }
+ 
+        }
+    }
+
 }
+
+
+
 
 
 
@@ -382,7 +434,7 @@ int main() {
         UpdateBoat(player_boat, deltaTime);
         UpdateRaptors(deltaTime);
 
-        TreeCollision();
+        TreeCollision(); //player and raptor vs tree
 
 
         if (IsGamepadAvailable(0)) { //hack to speed up controller movement. 

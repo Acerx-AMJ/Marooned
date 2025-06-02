@@ -3,10 +3,12 @@
 #include "raylib.h"
 #include <map>
 #include <string>
+#include <vector>
 
 class SoundManager {
 public:
     static SoundManager& GetInstance(); // Singleton
+
 
     void LoadSound(const std::string& name, const std::string& filePath);
     Sound GetSound(const std::string& name);
