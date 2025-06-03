@@ -207,59 +207,16 @@ void drawRaptors(Camera& camera){
 
 }
 
-void drawWeapon3d(Camera& camera){
-
-    // Build a rotation matrix that aligns +Z with that direction
-    Matrix lookAt = MatrixLookAt(camera.position, camera.target, { 0, 1, 0 });
-    Matrix gunRotation = MatrixInvert(lookAt); // Invert to use as model transform
-    Quaternion gunQuat = QuaternionFromMatrix(gunRotation);
-
-    Quaternion q = gunQuat;
-    float angle = 2.0f * acosf(q.w);
-    float angleDeg = angle * RAD2DEG;
-    Vector3 scale = { 2.0f, 2.0f, 2.0f };
-    float sinTheta = sqrtf(1.0f - q.w * q.w);
-    Vector3 axis;
-    if (sinTheta < 0.001f) {
-        axis = { 1.0f, 0.0f, 0.0f }; // Arbitrary axis
-    } else {
-        axis = { q.x / sinTheta, q.y / sinTheta, q.z / sinTheta };
-    }
-
-        // Calculate camera basis vectors
-    Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
-    Vector3 camRight = Vector3Normalize(Vector3CrossProduct(camForward, { 0, 1, 0 }));
-    Vector3 camUp = { 0, 1, 0 };
-
-    // Gun offset relative to camera (in camera space)
-    float forwardOffset = 80.0f;
-    float sideOffset = 20.0f;
-    float verticalOffset = -30.0f;
-
-    // Combine into world space position
-    Vector3 gunPos = camera.position;
-    gunPos = Vector3Add(gunPos, Vector3Scale(camForward, forwardOffset));
-    gunPos = Vector3Add(gunPos, Vector3Scale(camRight, sideOffset));
-    gunPos = Vector3Add(gunPos, Vector3Scale(camUp, verticalOffset));
-
-
-
-    DrawModelEx(gunModel, gunPos, axis, angleDeg, scale, WHITE);
-
+Color ColorLerp(Color a, Color b, float t) {
+    Color result;
+    result.r = (unsigned char)Lerp((float)a.r, (float)b.r, t);
+    result.g = (unsigned char)Lerp((float)a.g, (float)b.g, t);
+    result.b = (unsigned char)Lerp((float)a.b, (float)b.b, t);
+    result.a = (unsigned char)Lerp((float)a.a, (float)b.a, t);
+    return result;
 }
 
-void drawWeapon(){
-    Rectangle source = { 0, 0, 1024, 1024}; 
-    Rectangle dest = {
-        GetScreenWidth()* 0.5f,              
-        GetScreenHeight() * 0.6f,            
-        1024.0f,                             
-        1024.0f                              
-    };
-    Vector2 origin = { dest.width / 2.0f, dest.height / 2.0f }; // center the sprite
 
-    DrawTexturePro(gunTexture, source, dest, origin, 0.0f, WHITE);
-}
 
 bool CheckCollisionPointBox(Vector3 point, BoundingBox box) {
     return (
@@ -269,24 +226,7 @@ bool CheckCollisionPointBox(Vector3 point, BoundingBox box) {
     );
 }
 
-// void UpdateBulletsAndCheckHits(float deltaTime){
-//     for (Bullet& b : activeBullets) {
-//         b.Update(deltaTime);
-//         b.Draw();   
-//         if (!b.IsAlive()) continue;
 
-//         for (Character* r : raptorPtrs) {
-//             if (r->isDead) continue;
-
-//             BoundingBox box = r->GetBoundingBox();
-//             if (CheckCollisionPointBox(b.GetPosition(), box)) {
-//                 r->TakeDamage(25);
-//                 b.kill();
-//                 break; // don't hit more than one thing
-//             }
-//         }
-//     }
-// }
 
 void UpdateRaptors(float deltaTime){
     for (Character& raptor : raptors) {
@@ -395,6 +335,72 @@ void TreeCollision(){
 
 
 
+void DrawHealthBar(){
+
+    float healthPercent = (float)player.currentHealth / player.maxHealth;
+    healthPercent = Clamp(healthPercent, 0.0f, 1.0f); // safety first
+    int barWidth = 300;
+    int barHeight = 30;
+    int barX = GetScreenWidth()/2 - barWidth/2;
+    int barY = 20;
+
+    Rectangle healthBarFull = { (float)barX, (float)barY, (float)barWidth, (float)barHeight };
+
+    Rectangle healthBarCurrent = { 
+        (float)barX, 
+        (float)barY, 
+        (float)(barWidth * healthPercent), 
+        (float)barHeight 
+    };
+
+    // Background frame (gray or black)
+    DrawRectangleLines(barX - 1, barY - 1, barWidth + 2, barHeight + 2, GRAY);
+
+    // Tint white to red based on health
+    //Color barColor = GetHealthBarColor(healthPercent);
+
+    Color barColor = WHITE;
+    if (healthPercent < 0.25f) {
+        float pulse = sin(GetTime() * 10.0f) * 0.5f + 0.5f; // 0..1
+        barColor = ColorLerp(WHITE, RED, pulse);
+    }
+
+    // Current health fill
+    DrawRectangleRec(healthBarCurrent, barColor);
+
+}
+
+void DrawStaminaBar(){
+    float staminaPercent = player.stamina / player.maxStamina;
+    staminaPercent = Clamp(staminaPercent, 0.0f, 1.0f);
+
+    int staminaBarWidth = 300;
+    int staminaBarHeight = 10;
+    int staminaBarX = GetScreenWidth()/2 - staminaBarWidth/2;
+    int staminaBarY = 60;  // health bar was probably at y = 20
+
+    Rectangle staminaBarBack = { (float)staminaBarX, (float)staminaBarY, (float)staminaBarWidth, (float)staminaBarHeight };
+    Rectangle staminaBarCurrent = {
+        (float)staminaBarX,
+        (float)staminaBarY,
+        (float)(staminaBarWidth * staminaPercent),
+        (float)staminaBarHeight
+
+    
+    };
+
+    // Outline
+    DrawRectangleLines(staminaBarX - 1, staminaBarY - 1, staminaBarWidth + 2, staminaBarHeight + 2, DARKGRAY);
+
+    // Color based on stamina
+    Color barColor = ColorLerp((Color){50, 50, 150, 255}, BLUE, staminaPercent);  // subtle fade
+
+    DrawRectangleRec(staminaBarCurrent, barColor);
+
+
+
+
+}
 
 
 
@@ -435,6 +441,7 @@ int main() {
         UpdateRaptors(deltaTime);
 
         TreeCollision(); //player and raptor vs tree
+
 
 
         if (IsGamepadAvailable(0)) { //hack to speed up controller movement. 
@@ -507,7 +514,8 @@ int main() {
         // }
 
 
-
+        DrawHealthBar();
+        DrawStaminaBar();
         DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
         DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
 

@@ -8,6 +8,7 @@ struct Player {
     Vector3 velocity;
     Vector2 rotation;
     Vector3 forward;
+    Vector3 startPosition;
     Weapon weapon;
     
     bool running = false;
@@ -18,11 +19,24 @@ struct Player {
     float height = 200.0f;
     float jumpStrength = 600; 
     float footstepTimer = 0.0;
+    float maxHealth = 100;
+    float currentHealth = maxHealth;
+
+    bool dying = false;
+    bool dead = false;
+    float deathTimer = 0.0f;
+
+
     bool grounded = false;
     bool isSwimming = false;
     bool isMoving = false;
     bool onBoard = false;
     bool disableMovement = false;
+    
+    float stamina = 100.0f;
+    float maxStamina = 100.0f;
+    bool canRun = true;
+
 
     void PlayFootstepSound();
     void TakeDamage(int amount);

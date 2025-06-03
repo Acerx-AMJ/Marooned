@@ -11,8 +11,9 @@ Player player = {};
 Vector3 boatPosition = {6000, -20, 0.0};
 float boatSpeed = 200;
 float waterHeightY = 60;
-
-
+float fadeToBlack = 0.0f;
+float vignetteIntensity = 0.0f;
+float vignetteFade = 0.0f;
 const float TREE_HEIGHT_RATIO = 0.80f;
 const float BUSH_HEIGHT_RATIO = 0.80f;
 

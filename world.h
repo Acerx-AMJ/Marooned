@@ -16,7 +16,9 @@ extern unsigned char* heightmapPixels;
 //extern Mesh terrainMesh;
 extern Player player;
 extern Vector3 boatPosition;
-
+extern float fadeToBlack;
+extern float vignetteIntensity;
+extern float vignetteFade;
 extern float boatSpeed;
 extern float waterHeightY;
 extern const float TREE_HEIGHT_RATIO;

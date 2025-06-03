@@ -12,6 +12,7 @@ Weapon weapon;
 
 void InitPlayer(Player& player, Vector3 startPosition) {
     player.position = startPosition;
+    player.startPosition = startPosition;
     player.velocity = {0, 0, 0};
     player.grounded = false;
 
@@ -37,14 +38,14 @@ void HandleMouseLook(float deltaTime){
 }
 
 void HandleKeyboardInput(float deltaTime) {
-
+    player.isMoving = false;
     Vector3 input = {0};
     if (IsKeyDown(KEY_W)) input.z += 1;
     if (IsKeyDown(KEY_S)) input.z -= 1;
     if (IsKeyDown(KEY_A)) input.x += 1;
     if (IsKeyDown(KEY_D)) input.x -= 1;
 
-    player.running = IsKeyDown(KEY_LEFT_SHIFT);
+    player.running = IsKeyDown(KEY_LEFT_SHIFT) && player.canRun;
     float speed = player.running ? player.runSpeed : player.walkSpeed;
 
     if (input.x != 0 || input.z != 0) {
@@ -117,9 +118,31 @@ void HandleGamepadInput(float deltaTime) {
 }
 
 void Player::TakeDamage(int amount){
-    //color screen red
-    std::cout << "player hit\n";
+    if (!player.dying && !player.dead) {
+        player.currentHealth -= amount;
+
+        if (player.currentHealth <= 0) {
+            player.dying = true;
+            player.deathTimer = 0.0f;
+
+            //PlaySound(screamSound); // cue the Wilhelm
+        }
+    }
+
+    vignetteIntensity = 1.0f;
+    vignetteFade = 0.0f;
+
+    if (rand() % 2 == 0){
+        SoundManager::GetInstance().Play("phit1");
+    }else{
+        SoundManager::GetInstance().Play("phit2");
+    }
+
+
+
 }
+
+
 
 void PlayFootstepSound() {
     static std::vector<std::string> footstepKeys = { "step1", "step2", "step3", "step4" };
@@ -136,22 +159,49 @@ void PlayFootstepSound() {
     SoundManager::GetInstance().Play(stepKey);
 }
 
-
-void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& camera) {
-    weapon.Update(deltaTime);
-
-    if (player.velocity.x != 0.0f || player.velocity.y != 0.0f || player.velocity.z != 0.0f) {
-        player.isMoving = false;
-    }
-
-    if (player.running && player.isMoving) {
+void UpdateFootsteps(float deltaTime){
+    if (player.isMoving && player.grounded) {
         player.footstepTimer += deltaTime;
 
-        if (player.footstepTimer >= 0.4f) {  // 0.5 second interval
+        float interval = player.running ? 0.4f : 0.6f;
+
+        if (player.footstepTimer >= interval) {
             PlayFootstepSound();
             player.footstepTimer = 0.0f;
         }
+    } else {
+        player.footstepTimer = 0.0f;
     }
+}
+
+
+
+
+void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& camera) {
+    weapon.Update(deltaTime);
+    UpdateFootsteps(deltaTime);
+    vignetteFade += deltaTime * 2.0f; // tweak fade speed
+    vignetteIntensity = Clamp(1.0f - vignetteFade, 0.0f, 1.0f);
+
+
+
+    if (player.running && player.isMoving && player.grounded && player.stamina > 0.0f) {
+        player.stamina -= deltaTime * 30.0f; // adjust drain rate
+        if (player.stamina <= 0.0f) {
+            player.stamina = 0.0f;
+            player.canRun = false;
+        }
+    }
+    else {
+        // Recover stamina
+        player.stamina += deltaTime * 20.0f; // adjust regen rate
+        if (player.stamina >= player.maxStamina) {
+            player.stamina = player.maxStamina;
+            player.canRun = true;
+        }
+    }
+
+
 
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -165,7 +215,7 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
 
 
     // --- Boarding Check ---
-    if (!player.onBoard) {
+    if (!player.onBoard) { //board the boat, lock player position to boat position, keep free look
         float distanceToBoat = Vector3Distance(player.position, player_boat.position);
         if (distanceToBoat < 300.0f && IsKeyPressed(KEY_SPACE)) {
             player.onBoard = true;
@@ -216,7 +266,7 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
     float groundY = GetHeightAtWorldPosition(player.position, heightmap, terrainScale);
     float feetY = player.position.y - player.height / 2.0f;
 
-    if (feetY <= groundY) {
+    if (feetY <= groundY + 5.0f) { //+5 buffer for uneven terrain. 
         player.grounded = true;
         player.velocity.y = 0;
         player.position.y = groundY + player.height / 2.0f;
@@ -238,6 +288,27 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
             }
         }
     }
+
+    //start the dying process. 
+    if (player.dying) {
+        player.deathTimer += deltaTime;
+        vignetteIntensity = 1.0f;
+        vignetteFade = 0.0f;
+        if (player.deathTimer > 1.5f) { 
+            player.dying = false;
+            player.dead = true;
+        }
+    }
+
+    if (player.dead) {
+        // Reset position and state
+        player.position = player.startPosition;
+        player.velocity = {0}; 
+        player.currentHealth = player.maxHealth;
+        player.dead = false;
+
+    }
+
 
     
     // === Movement Input ===

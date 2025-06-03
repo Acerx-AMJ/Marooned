@@ -1,6 +1,7 @@
 #include "resources.h"
 #include "world.h"
 #include "sound_manager.h"
+#include "raymath.h"
 
 RenderTexture2D sceneTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash;
@@ -27,6 +28,19 @@ void UpdateShaders(Camera& camera){
     SetShaderValue(terrainShader, camPosLoc, &camPos, SHADER_UNIFORM_VEC3);
     //float time = GetTime();
     SetShaderValue(skyShader, GetShaderLocation(skyShader, "time"), &t, SHADER_UNIFORM_FLOAT);
+
+    //red vignette intensity over time
+    SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
+
+// During death sequence:
+    if (player.dying) {
+        fadeToBlack = Clamp(player.deathTimer / 1.5f, 0.0f, 1.0f); // fade over 1.5 seconds
+        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
+    }
+    else {
+        fadeToBlack = 0.0f;
+        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
+    }
 }
 
 void LoadAllResources() {
@@ -46,9 +60,15 @@ void LoadAllResources() {
     terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
     terrainModel = LoadModelFromMesh(terrainMesh);
 
+
+
     // Shaders
     fogShader = LoadShader(0, "assets/shaders/fog_postprocess.fs");
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
+    //SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), (float[2]){ (float)GetScreenWidth(), (float)GetScreenHeight() }, SHADER_UNIFORM_VEC2);
+
+    
+
 
     terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
     terrainModel.materials[0].shader = terrainShader;
@@ -91,11 +111,14 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("dinoBite", "assets/sounds/bite.ogg");
     SoundManager::GetInstance().LoadSound("reload", "assets/sounds/reload.ogg");
     SoundManager::GetInstance().LoadSound("shotgun", "assets/sounds/shotgun.ogg");
-    
+
     SoundManager::GetInstance().LoadSound("step1", "assets/sounds/step1.ogg");
     SoundManager::GetInstance().LoadSound("step2", "assets/sounds/step2.ogg");
     SoundManager::GetInstance().LoadSound("step3", "assets/sounds/step3.ogg");
     SoundManager::GetInstance().LoadSound("step4", "assets/sounds/step4.ogg");
+
+    SoundManager::GetInstance().LoadSound("phit1", "assets/sounds/PlayerHit1.ogg");
+    SoundManager::GetInstance().LoadSound("phit2", "assets/sounds/PlayerHit2.ogg");
 }
 
 void UnloadAllResources() {

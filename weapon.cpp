@@ -24,7 +24,7 @@ void Weapon::Fire(Camera& camera) {
 
         // Offsets in local space
         float forwardOffset = 0.0f;
-        float sideOffset = 30.0f;
+        float sideOffset = 20.0f;
         float verticalOffset = -30.0f; // down
 
         // Final origin for bullets in world space
@@ -99,16 +99,15 @@ void Weapon::Draw(const Camera& camera) {
     gunPos = Vector3Add(gunPos, Vector3Scale(camUp, dynamicVertical));
 
 
-    if (flashTimer > 0.0f) {
+    if (flashTimer > 0.0f) {//Muzzle Flash
         Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
         Vector3 muzzlePos = Vector3Add(gunPos, Vector3Scale(camForward, 40.0f));
         
-        float flashSize = 60.0f; // tweak as needed
+        float flashSize = 120.0f; //could be bigger. 
         rlDisableDepthMask();
-        //rlDisableDepthTest();
         DrawBillboard(camera, muzzleFlashTexture, muzzlePos, flashSize, WHITE);
         rlEnableDepthMask();
-        //rlDisableDepthTest();
+
     }
 
     DrawModelEx(model, gunPos, axis, angleDeg, scale, WHITE);
