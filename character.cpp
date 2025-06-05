@@ -38,16 +38,16 @@ void Character::playRaptorSounds(){
     switch (number)
     {
     case 1:
-        SoundManager::GetInstance().PlaySoundAtPosition("dinoTweet", position, player.position);
+        SoundManager::GetInstance().PlaySoundAtPosition("dinoTweet", position, player.position, player.rotation.y, 8000);
         
         break;
     case 2:
-        SoundManager::GetInstance().PlaySoundAtPosition("dinoTwee2", position, player.position);
+        SoundManager::GetInstance().PlaySoundAtPosition("dinoTweet2", position, player.position, player.rotation.y, 8000);
         
         break;
 
     case 3:
-        SoundManager::GetInstance().PlaySoundAtPosition("dinoTarget", position, player.position);
+        SoundManager::GetInstance().PlaySoundAtPosition("dinoTarget", position, player.position, player.rotation.y, 8000);
         break;
     } 
 
@@ -147,7 +147,7 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
 
             }
 
-            if (distance < 3000.0f && stateTimer > 1.0f) { 
+            if (distance < 4000.0f && stateTimer > 1.0f) { 
                 state = DinoState::Chase; //switch to chase
                 SetAnimation(1, 5, 0.12f);
                 stateTimer = 0.0f;
@@ -169,7 +169,7 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 SetAnimation(2, 5, 0.1f);
                 stateTimer = 0.0f;
                 randomTime = GetRandomValue(1,3);
-            } else if (distance > 3000.0f) {
+            } else if (distance > 4000.0f) {
                 state = DinoState::Idle;
                 SetAnimation(0, 1, 1.0f);
                 stateTimer = 0.0f;
@@ -240,7 +240,7 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 hasRunawayAngle = true;
                 SetAnimation(3, 4, 0.1f); // run away animation
                 stateTimer = 0.0f;
-                randomDistance = GetRandomValue(1000, 1500);
+                randomDistance = GetRandomValue(1000, 2000);
             }
             break;
 

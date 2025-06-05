@@ -8,7 +8,7 @@
 class SoundManager {
 public:
     static SoundManager& GetInstance(); // Singleton
-    void PlaySoundAtPosition(const std::string& soundName, const Vector3& soundPos, const Vector3& listenerPos, float maxDistance = 2000.0f);
+    void PlaySoundAtPosition(const std::string& soundName, const Vector3& soundPos, const Vector3& listenerPos, float listenerYaw, float maxDistance);
 
 
     void LoadSound(const std::string& name, const std::string& filePath);

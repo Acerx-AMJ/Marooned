@@ -28,21 +28,66 @@ void SoundManager::Play(const std::string& name) {
     }
 }
 
-void SoundManager::PlaySoundAtPosition(const std::string& soundName, const Vector3& soundPos, const Vector3& listenerPos, float maxDistance) {
+void SoundManager::PlaySoundAtPosition(const std::string& soundName, const Vector3& soundPos, const Vector3& listenerPos, float listenerYaw, float maxDistance) {
     if (sounds.find(soundName) == sounds.end()) {
         std::cerr << "Sound not found: " << soundName << std::endl;
         return;
     }
 
-    float distance = Vector3Distance(soundPos, listenerPos);
+    Vector3 delta = Vector3Subtract(soundPos, listenerPos);
+    float distance = Vector3Length(delta);
+    if (distance > maxDistance) return;
+
     float volume = Clamp(1.0f - (distance / maxDistance), 0.0f, 1.0f);
 
-    if (volume > 0.01f) { // don’t bother playing inaudible sounds
-        Sound sound = sounds[soundName];
-        SetSoundVolume(sound, volume);
-        PlaySound(sound);
-    }
+    // Convert yaw to radians ////////////FAILED 3D audio attempt. 
+   //float yawRad = DEG2RAD * listenerYaw;
+    // float yawRad = DEG2RAD * -listenerYaw;  // flip sign here
+    // // Rotate world delta into local space
+    // // localX = right/left relative to where player is looking
+    // float localX = delta.x * cosf(yawRad) + delta.z * sinf(yawRad);
+    // float localZ = delta.z * cosf(yawRad) - delta.x * sinf(yawRad);
+
+    // // Now compute pan from localX (side) and localZ (front/back)
+    // float pan = Clamp(localX / (fabs(localZ) + 1.0f), -1.0f, 1.0f);
+
+    // // Optional: Scale the pan for less extreme stereo effect
+    // float panScale = 0.01f;
+    // float finalPan = Clamp(pan * panScale, -1.0f, 0.0f);
+
+
+    Sound sound = sounds[soundName];
+    // StopSound(sound);
+    SetSoundVolume(sound, volume);
+    // SetSoundPan(sound, finalPan);
+    PlaySound(sound);
+
+
 }
+
+
+
+// void SoundManager::PlaySoundAtPosition(const std::string& soundName, const Vector3& soundPos, const Vector3& listenerPos, float maxDistance) {
+//     if (sounds.find(soundName) == sounds.end()) {
+//         std::cerr << "Sound not found: " << soundName << std::endl;
+//         return;
+//     }
+
+//     float distance = Vector3Distance(soundPos, listenerPos);
+//     float volume = Clamp(1.0f - (distance / maxDistance), 0.0f, 1.0f);
+
+//     if (volume < 0.01f) return; // Skip inaudible
+
+//     // --- Calculate pan ---
+//     Vector3 delta = Vector3Subtract(soundPos, listenerPos);
+//     float pan = Clamp(delta.x, -1.0f, 1.0f); // Simple horizontal pan
+
+//     Sound sound = sounds[soundName];
+//     SetSoundVolume(sound, volume);
+//     SetSoundPan(sound, pan);
+//     PlaySound(sound);
+// }
+
 
 
 SoundManager::~SoundManager() {

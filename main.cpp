@@ -329,7 +329,7 @@ void DrawHealthBar(){
     };
 
     // Background frame (gray or black)
-    DrawRectangleLines(barX - 1, barY - 1, barWidth + 2, barHeight + 2, GRAY);
+    DrawRectangleLines(barX - 1, barY - 1, barWidth + 2, barHeight + 2, WHITE);
 
     // Tint white to red based on health
     //Color barColor = GetHealthBarColor(healthPercent);
@@ -390,7 +390,10 @@ int main() {
     InitPlayer(player, startPosition);
     generateRaptors(10, Vector3{0}, 3000); //spawn around the center of middle island. 
 
+    Music jungleAmbience = LoadMusicStream("assets/sounds/jungleSounds.ogg"); // or .ogg, .wav, etc.
+     PlayMusicStream(jungleAmbience); // Starts playback
 
+    SetMusicVolume(jungleAmbience, 0.5f); // Optional: adjust volume
     // Camera
     Camera3D camera = { 0 };
     camera.position = startPosition;
@@ -402,13 +405,15 @@ int main() {
     InitBoat(player_boat, boatPosition);
 
 
+
+
     //main gmae loop
     while (!WindowShouldClose()) {
         UpdateInputMode(); //handle both gamepad and keyboard/mouse
         debugControls(); //press P to remove all vegetation, Press O to regenerate raptors, press K to kill a raptor. 
         UpdateShaders(camera);
         sortTrees(camera);
-        
+        UpdateMusicStream(jungleAmbience);
         float deltaTime = GetFrameTime();
         UpdateBullets(deltaTime);
         CheckBulletHits();
