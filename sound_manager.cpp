@@ -1,5 +1,6 @@
 #include "sound_manager.h"
 #include <iostream>
+#include "raymath.h"
 std::vector<std::string> footstepKeys;
 SoundManager& SoundManager::GetInstance() {
     static SoundManager instance;
@@ -26,6 +27,23 @@ void SoundManager::Play(const std::string& name) {
         PlaySound(sounds[name]);
     }
 }
+
+void SoundManager::PlaySoundAtPosition(const std::string& soundName, const Vector3& soundPos, const Vector3& listenerPos, float maxDistance) {
+    if (sounds.find(soundName) == sounds.end()) {
+        std::cerr << "Sound not found: " << soundName << std::endl;
+        return;
+    }
+
+    float distance = Vector3Distance(soundPos, listenerPos);
+    float volume = Clamp(1.0f - (distance / maxDistance), 0.0f, 1.0f);
+
+    if (volume > 0.01f) { // don’t bother playing inaudible sounds
+        Sound sound = sounds[soundName];
+        SetSoundVolume(sound, volume);
+        PlaySound(sound);
+    }
+}
+
 
 SoundManager::~SoundManager() {
     UnloadAll();

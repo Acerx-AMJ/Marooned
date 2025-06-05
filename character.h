@@ -35,6 +35,9 @@ public:
     float hitTimer = 0.0f;
     float runawayAngleOffset = 0.0f;
     bool hasRunawayAngle = false;
+    float idleThreshold = 0.0f; // for random movements when idle
+    float randomDistance = 0.0f; //how far away to run before stopping. 
+    float randomTime = 0.0f;
 
     int maxHealth = 150;
     int currentHealth = maxHealth;
@@ -48,6 +51,7 @@ public:
     void TakeDamage(int amount);
     void Draw(Camera3D camera);
     void SetAnimation(int row, int frames, float speed);
+    void playRaptorSounds();
 };
 
 #endif

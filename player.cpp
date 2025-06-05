@@ -16,7 +16,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     player.velocity = {0, 0, 0};
     player.grounded = false;
 
-    weapon.model = LoadModel("assets/models/blunderbus.glb"); //shouldn't this be in resources. 
+    weapon.model = blunderbuss;//LoadModel("assets/models/blunderbus.glb"); //shouldn't this be in resources. 
     weapon.scale = { 2.0f, 2.0f, 2.0f };
 
     weapon.muzzleFlashTexture = muzzleFlash;
@@ -160,7 +160,7 @@ void PlayFootstepSound() {
 }
 
 void UpdateFootsteps(float deltaTime){
-    if (player.isMoving && player.grounded) {
+    if (player.isMoving && player.grounded &&!player.onBoard) {
         player.footstepTimer += deltaTime;
 
         float interval = player.running ? 0.4f : 0.6f;

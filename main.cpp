@@ -142,32 +142,7 @@ void HandleCameraPlayerToggle(Camera& camera, Player& player, bool& controlPlaye
     }
 }
 
-void DrawBillboardPro(Camera3D camera, Texture2D texture, Vector3 worldPos, float size) {
-    // Convert 3D position to 2D screen position
-    Vector2 screenPos = GetWorldToScreen(worldPos, camera);
 
-    // Define source rectangle (flipped vertically to fix upside-down texture)
-    Rectangle sourceRec = {
-        0.0f,
-        (float)texture.height,
-        (float)texture.width,
-        -(float)texture.height
-    };
-
-    // Define destination rectangle (centered on screen position)
-    Rectangle destRec = {
-        screenPos.x - size / 2,
-        screenPos.y - size,
-        size,
-        size
-    };
-
-    // No rotation needed because the screenPos already centers it correctly
-    float rotation = 0.0f;
-
-    // Draw with transparency
-    DrawTexturePro(texture, sourceRec, destRec, { 0, 0 }, rotation, WHITE);
-}
 
 void BeginCustom3D(Camera3D camera, float farClip) {
     rlDrawRenderBatchActive();
@@ -413,7 +388,7 @@ int main() {
     generateVegetation();
     Vector3 startPosition = {5475.0f, 300.0f, -5665.0f}; //middle island start pos
     InitPlayer(player, startPosition);
-    generateRaptors(5, Vector3{0}, 6000);
+    generateRaptors(10, Vector3{0}, 3000); //spawn around the center of middle island. 
 
 
     // Camera
@@ -480,10 +455,8 @@ int main() {
        
         DrawModel(waterModel, waterPos, 1.0f, WHITE); 
         DrawModel(bottomPlane, bottomPos, 1.0f, DARKBLUE); //a second plane below water plane. to prevent seeing through the world when looking down.
-        DrawTrees(trees, palmTree, palm2, shadowQuad);
-
+        DrawTrees(trees, palmTree, palm2, shadowQuad); //maybe models should be global, i think they are 
         DrawBushes(bushes, shadowQuad);
-
         DrawBoat(player_boat);
 
 
@@ -518,6 +491,7 @@ int main() {
         DrawStaminaBar();
         DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
         DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
+        DrawText("PRESS TAB TO SPAWN AS PLAYER", GetScreenWidth()/2 + 250, 30, 20, WHITE);
 
         EndDrawing();
 

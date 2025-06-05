@@ -6,7 +6,7 @@
 RenderTexture2D sceneTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
-Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, bottomPlane;
+Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, bottomPlane, blunderbuss;
 Image heightmap;
 Mesh terrainMesh;
 Sound musket;
@@ -55,7 +55,7 @@ void LoadAllResources() {
     // Heightmap //TODO: refactor this into level switching, an array of heightmaps. A menu to increase or decrease the index. 
     heightmap = LoadImage("assets/MiddleIsland.png"); ///////////////////////// current map
     ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
-    terrainScale = {16000.0f, 200.0f, 16000.0f};
+    terrainScale = {16000.0f, 200.0f, 16000.0f}; //4K height maps scaled to 16k looks best. 
 
     terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
     terrainModel = LoadModelFromMesh(terrainMesh);
@@ -63,13 +63,13 @@ void LoadAllResources() {
 
 
     // Shaders
+
+    //Post processing shader. AO shader + red vignette + fade to black
     fogShader = LoadShader(0, "assets/shaders/fog_postprocess.fs");
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
     //SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), (float[2]){ (float)GetScreenWidth(), (float)GetScreenHeight() }, SHADER_UNIFORM_VEC2);
 
-    
-
-
+    //color the mesh depending on the height. 
     terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
     terrainModel.materials[0].shader = terrainShader;
 
@@ -78,7 +78,7 @@ void LoadAllResources() {
     skyModel = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
     skyModel.materials[0].shader = skyShader;
 
-    // Shadow
+    // Shadow ////unused. 
     shadowTex = LoadTexture("assets/shadow_decal.png");
     shadowShader = LoadShader("assets/shaders/shadow_decal.vs", "assets/shaders/shadow_decal.fs");
     shadowQuad = LoadModelFromMesh(GenMeshPlane(1.0f, 1.0f, 1, 1));
@@ -99,7 +99,7 @@ void LoadAllResources() {
     palm2 = LoadModel("assets/models/smallPalmTree.glb");
     bush = LoadModel("assets/models/grass2.glb");
     boatModel = LoadModel("assets/models/boat.glb");
-
+    blunderbuss = LoadModel("assets/models/blunderbus.glb");
     bushTex = LoadTexture("assets/bush.png");
 
     //Sounds

@@ -31,6 +31,28 @@ BoundingBox Character::GetBoundingBox() const {
     };
 }
 
+void Character::playRaptorSounds(){
+
+    int number = GetRandomValue(1, 3);
+    //std::cout << "playing sound";
+    switch (number)
+    {
+    case 1:
+        SoundManager::GetInstance().PlaySoundAtPosition("dinoTweet", position, player.position);
+        
+        break;
+    case 2:
+        SoundManager::GetInstance().PlaySoundAtPosition("dinoTwee2", position, player.position);
+        
+        break;
+
+    case 3:
+        SoundManager::GetInstance().PlaySoundAtPosition("dinoTarget", position, player.position);
+        break;
+    } 
+
+}
+
 
 void Character::TakeDamage(int amount) {
     if (isDead) return;
@@ -77,6 +99,8 @@ Vector3 Character::ComputeRepulsionForce(const std::vector<Character*>& allRapto
 }
 
 
+
+
 void Character::Update(float deltaTime, Vector3 playerPosition, Player& player,  Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors ) {
     animationTimer += deltaTime;
     stateTimer += deltaTime;
@@ -100,61 +124,64 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
         verticalVelocity = 0.0f;
         position.y = groundY + spriteHeight / 2.0f;
     }
-    float distance = Vector3Distance(position, playerPosition);
-    float randomTime = GetRandomValue(1, 3);
+    float distance = Vector3Distance(position, player.position);
+
 
     //if (currentHealth <= 0) state = DinoState::Death;
 
-    //idle, chase, attack, runaway
+    //idle, chase, attack, runaway, stagger, death
+
+    //Raptors: roam around in the jungle untill they encounter player, chase player for 3-7 seconds, then run away, if close attack, if to far away roam.
+    //raptors are afraid of water. If they are cornered by water, they will attack. 
     switch (state) {
         case DinoState::Idle:
-            if (distance < 3000.0f && stateTimer > 1.0f) { //if far enough away, stop. 
-                state = DinoState::Chase;
+            if (stateTimer > idleThreshold){ //if idle for 10 seconds run to a new spot. 
+                state = DinoState::RunAway;
+                randomTime = GetRandomValue(1,3);
+                SetAnimation(3, 4, 0.1f);
+                stateTimer = 0.0f;
+                runawayAngleOffset = DEG2RAD * GetRandomValue(-180, 180);
+                hasRunawayAngle = true;
+                playRaptorSounds(); //make noises while they run around
+
+
+            }
+
+            if (distance < 3000.0f && stateTimer > 1.0f) { 
+                state = DinoState::Chase; //switch to chase
                 SetAnimation(1, 5, 0.12f);
                 stateTimer = 0.0f;
                 chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
                 hasRunawayAngle = false;
-                float hearableDistance = 1500.0f;
-                if (distance < hearableDistance){
-                    int number = GetRandomValue(1, 3);
-                    switch (number)
-                    {
-                    case 1:
-                        SoundManager::GetInstance().Play("dinoTweet");
-                        break;
-                    case 2:
-                        SoundManager::GetInstance().Play("dinoTweet2");
-                        break;
 
-                    case 3:
-                        SoundManager::GetInstance().Play("dinoTarget");
-                        break;
+                int number = GetRandomValue(1, 3);
+                playRaptorSounds();
 
-                    }
-                    
-                }
             }
-
-            
             break;
 
         case DinoState::Chase: {
             stateTimer += deltaTime;
 
             if (distance < 150.0f) {
+                //Gun is 100 away from player center, don't clip the gun. 
                 state = DinoState::Attack;
                 SetAnimation(2, 5, 0.1f);
                 stateTimer = 0.0f;
+                randomTime = GetRandomValue(1,3);
             } else if (distance > 3000.0f) {
                 state = DinoState::Idle;
                 SetAnimation(0, 1, 1.0f);
                 stateTimer = 0.0f;
+                idleThreshold = (float)GetRandomValue(5, 15);
             } else if (stateTimer >= chaseDuration) {
                 // Give up and run away
+                
                 state = DinoState::RunAway;
                 SetAnimation(3, 4, 0.1f);
                 stateTimer = 0.0f;
-                runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50);
+                runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50); //run in a random direction
+                randomDistance = GetRandomValue(1000, 2000); //set distance to run 
                 hasRunawayAngle = true;
             } else {
                 // Chase logic with repulsion
@@ -171,11 +198,15 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 float currentTerrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
                 //float spriteHeight = frameHeight * scale;
 
-                //run away if near water. 
+                //run away if near water. X Raptor now stops at waters edge, he no longer gets stuck though.
                 if (currentTerrainHeight <= 65.0f && stateTimer > 1.0f) {
                     state = DinoState::RunAway;
                     SetAnimation(3, 4, 0.1f);
                     stateTimer = 0.0f;
+                    randomDistance = GetRandomValue(1000, 2000); //set distance to run 
+                    runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50); //run in a random direction
+                    stateTimer = 0;
+
                 } else if (proposedTerrainHeight > 60.0f) {
                     position = proposedPosition;
                     rotationY = RAD2DEG * atan2f(dir.x, dir.z);
@@ -186,11 +217,8 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
 
             break;
         }
-
-
-
         case DinoState::Attack:
-            if (distance > 200.0f) {
+            if (distance > 200.0f) { //maybe this should be like 160, player would get bit more. 
                 state = DinoState::Chase;
                 SetAnimation(1, 5, 0.12f);
             }
@@ -212,6 +240,7 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 hasRunawayAngle = true;
                 SetAnimation(3, 4, 0.1f); // run away animation
                 stateTimer = 0.0f;
+                randomDistance = GetRandomValue(1000, 1500);
             }
             break;
 
@@ -246,11 +275,12 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 rotationY = RAD2DEG * atan2f(awayDir.x, awayDir.z);
             }
 
-            float randomDistance = GetRandomValue(1000, 2000);
+            
             if (distance > randomDistance && stateTimer > 1.0f && currentTerrainHeight > 60.0f) {
                 state = DinoState::Idle;
                 SetAnimation(0, 1, 1.0f);
                 stateTimer = 0.0f;
+                idleThreshold = (float)GetRandomValue(5, 15);
             }
             if (currentTerrainHeight <= 65.0f) {
                 state = DinoState::Chase;
