@@ -1,6 +1,6 @@
 # Marooned
 
-**Marooned** is a peaceful and atmospheric 3D island exploration game built with C++ and Raylib. 
+Marooned is first-person island-hopping adventure game built from scratch in C++ with Raylib. Explore a chain of mysterious tropical islands teeming with danger, lost ruins, and ancient secrets.
 
 ![Gameplay Screenshot](assets/Screenshot2.png)
 ---
@@ -9,6 +9,16 @@
 
 - 🏝️ **Procedural Terrain**  
   Generate vast island landscapes from 4K perlin noise heightmaps.
+
+- 🗺️ **Procedural dungeons** 
+  generation based on PNG blueprints.
+
+- 🧍 **First-person on-foot controller**
+
+- 🚣 **First-person boat controller**
+
+- 🦕 **Wandering dinosaurs**
+   patrol and chase behavior.
 
 - 🌤️ **Dynamic Skybox**  
   A seamless, procedurally rendered sky with soft, animated clouds.
@@ -26,15 +36,8 @@
 - 🧭 **Free Camera Navigation**  
   Navigate freely over the landscape or plan for a 3rd-person boat cam.
 
----
-
-## 🚧 Planned Features
-
-- 🚣 First-person boat controller  
-- 🌿 Additional vegetation types like bushes or grass (billboards)  
-- 🧍 First-person on-foot controller  
-- 🗺️ Item collection, crafting, and progression  
-- 🔮 Mysterious story elements and environmental clues
+- 🔊 **Jungle ambiance**
+  Footstep sounds, raptor cries
 
 ---
 
