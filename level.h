@@ -12,6 +12,8 @@ struct LevelData {
     Vector3 startPosition;           // Player starting position
     Vector3 raptorSpawnCenter;       // Center point for raptor spawns
     int raptorCount;                 // Number of raptors to spawn
+    bool isDungeon;
+    
 };
 
 // All available levels

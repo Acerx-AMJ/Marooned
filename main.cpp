@@ -14,6 +14,7 @@
 #include "bullet.h"
 #include "sound_manager.h"
 #include "level.h"
+#include "dungeonGeneration.h"
 
 #define GLSL_VERSION 330
 
@@ -386,17 +387,30 @@ void ClearLevel() {
 
 void DrawMenu() {
     ClearBackground(BLACK);
-    float middle = GetScreenWidth()/2 - 150;
-    DrawText("MAROONED", middle, 180, 60, GREEN);
+    
+    DrawTexturePro(
+        backDrop,
+        Rectangle{ 0, 0, (float)backDrop.width, (float)backDrop.height },
+        Rectangle{ 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() },
+        Vector2{ 0, 0 },
+        0.0f,
+        WHITE
+    );
 
-    DrawText(selectedOption == 0 ? "> Start" : "  Start", middle, 280, 30, WHITE);
+    //float middle = GetScreenWidth()/2 - 150;
+    const char* title = "MAROONED";
+    int fontSize = 60;
+    int titleX = GetScreenWidth() / 2 - MeasureText(title, fontSize) / 2;
+    DrawText(title, titleX, 180, fontSize, GREEN);
+
+    DrawText(selectedOption == 0 ? "> Start" : "  Start", titleX, 280, 30, WHITE);
     
     DrawText(
         TextFormat("%s Level: %s", selectedOption == 1 ? ">" : " ", levels[levelIndex].name.c_str()),
-        middle, 330, 30, YELLOW
+        titleX, 330, 30, YELLOW
     );
 
-    DrawText(selectedOption == 2 ? "> Quit" : "  Quit", middle, 380, 30, WHITE);
+    DrawText(selectedOption == 2 ? "> Quit" : "  Quit", titleX, 380, 30, WHITE);
 }
 
 
@@ -417,17 +431,26 @@ void InitLevel(const LevelData& level, Camera camera) {
     generateVegetation();
 
     // Initialize the player at the specified start position
-    InitPlayer(player, level.startPosition);
+    
     camera.position = player.position;
     // Generate raptors around the given spawn center
     generateRaptors(level.raptorCount, level.raptorSpawnCenter, 3000);
 
     InitBoat(player_boat, boatPosition);
-    
-
         //color the mesh depending on the height. 
     
     terrainModel.materials[0].shader = terrainShader;
+    if (level.isDungeon){
+        LoadDungeonLayout("assets/maps/map3.png");
+        GenerateFloorTiles(200.0f, waterHeightY + 20);
+        GenerateWallTiles(200.0f, waterHeightY + 20); // or use correct offset
+        isDungeon = true;
+
+    }
+
+    InitPlayer(player, level.startPosition);
+   
+
 }
 
 
@@ -454,11 +477,10 @@ int main() {
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
     DisableCursor();
-
-
+    
     //main game loop
     while (!WindowShouldClose()) {
-
+        //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
             if (IsKeyPressed(KEY_UP)) selectedOption = (selectedOption - 1 + 3) % 3;
             if (IsKeyPressed(KEY_DOWN)) selectedOption = (selectedOption + 1) % 3;
@@ -487,13 +509,13 @@ int main() {
         if (IsKeyPressed(KEY_ESCAPE)) {
             currentGameState = GameState::Menu;
         }
-
-        UpdateInputMode(); //handle both gamepad and keyboard/mouse
-        debugControls(); //press P to remove all vegetation, Press O to regenerate raptors, press K to kill a raptor. 
-        UpdateShaders(camera);
-        sortTrees(camera);
-        UpdateMusicStream(jungleAmbience);
         float deltaTime = GetFrameTime();
+        UpdateInputMode(); //handle both gamepad and keyboard/mouse
+        debugControls(); //press P to remove all vegetation, Press O to regenerate raptors, Press L to print player position
+        UpdateShaders(camera);
+        sortTrees(camera); //sort trees by distance to player, draw closest trees last.
+        UpdateMusicStream(jungleAmbience);
+        
         UpdateBullets(deltaTime);
         CheckBulletHits();
         UpdateBoat(player_boat, deltaTime);
@@ -535,6 +557,10 @@ int main() {
         rlSetBlendMode(BLEND_ALPHA);
         rlEnableColorBlend();
 
+        DrawDungeonFloor(floorTile);
+        DrawDungeonWalls(wall);
+        
+        DrawDungeonCeiling(floorTile, 400.0f); // Or whatever offset looks good
 
         DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
        
@@ -543,8 +569,8 @@ int main() {
         DrawTrees(trees, palmTree, palm2, shadowQuad); //maybe models should be global, i think they are 
         DrawBushes(bushes, shadowQuad);
         DrawBoat(player_boat);
-        DrawModel(floorTile, Vector3{0, 200, 0}, 0.5, WHITE);
-        DrawModel(doorWay, Vector3{0, 200, 0}, 0.5, WHITE);
+        //DrawModel(floorTile, Vector3{0, 200, 0}, 0.5, WHITE);
+        //DrawModel(doorWay, Vector3{0, 200, 0}, 0.5, WHITE);
         drawRaptors(camera); //sort and draw raptors
         DrawPlayer(player, camera);
 

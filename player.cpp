@@ -264,7 +264,11 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
     }
 
     // === Ground Check ===
+
     float groundY = GetHeightAtWorldPosition(player.position, heightmap, terrainScale);
+    if (isDungeon) {
+        groundY = waterHeightY + 40;
+    }
     float feetY = player.position.y - player.height / 2.0f;
 
     if (feetY <= groundY + 5.0f) { //+5 buffer for uneven terrain. 

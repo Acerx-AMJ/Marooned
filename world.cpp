@@ -9,6 +9,7 @@
 GameState currentGameState = GameState::Menu;
 int levelIndex = 0;
 bool controlPlayer = false;
+bool isDungeon = false;
 unsigned char* heightmapPixels = nullptr;
 Player player = {};
 Vector3 startPosition = {5475.0f, 300.0f, -5665.0f}; //middle island start pos

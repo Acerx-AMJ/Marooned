@@ -4,9 +4,10 @@
 #include "raymath.h"
 
 RenderTexture2D sceneTexture;
-Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash;
+Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
-Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, bottomPlane, blunderbuss, floorTile, doorWay;
+Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, 
+bottomPlane, blunderbuss, floorTile, doorWay, wall;
 Image heightmap;
 Mesh terrainMesh;
 Sound musket;
@@ -25,10 +26,9 @@ void LoadAllResources() {
     gunTexture = LoadTexture("assets/sprites/flintlock.png");
     gunModel = LoadModel("assets/models/blunderbus.glb");
     muzzleFlash = LoadTexture("assets/sprites/muzzleFlash.png");
+    backDrop = LoadTexture("assets/screenshots/MiddleIsland.png");
 
 
-    floorTile = LoadModel("assets/models/floorTile.glb");
-    doorWay = LoadModel("assets/models/doorWay.glb");
 
     // Heightmap 
     // heightmap = LoadImage("assets/MiddleIsland.png"); ///////////////////////// current map
@@ -77,7 +77,10 @@ void LoadAllResources() {
     boatModel = LoadModel("assets/models/boat.glb");
     blunderbuss = LoadModel("assets/models/blunderbus.glb");
     bushTex = LoadTexture("assets/bush.png");
-
+    floorTile = LoadModel("assets/models/floorTile.glb");
+    doorWay = LoadModel("assets/models/doorWay.glb");
+    wall = LoadModel("assets/models/wall.glb");
+    
     //Sounds
     SoundManager::GetInstance().LoadSound("dinoHit", "assets/sounds/dinoHit.ogg");
     SoundManager::GetInstance().LoadSound("dinoDeath", "assets/sounds/dinoDeath.ogg");

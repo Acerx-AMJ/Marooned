@@ -14,7 +14,7 @@ enum class GameState {
 };
 
 extern bool controlPlayer;
-
+extern bool isDungeon;
 extern unsigned char* heightmapPixels;
 extern Vector3 startPosition;
 extern int selectedOption; // 0 = Start, 1 = Quit
