@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS = -O2 -Wall -std=c++17
-INCLUDE = -IC:/raylib/raylib/src
-LIBS = -LC:/raylib/raylib/src -lraylib -lopengl32 -lgdi32 -lwinmm
+INCLUDE = -IC:\raylib\raylib\src
+LIBS = -LC:\raylib\raylib\src -lraylib -lopengl32 -lgdi32 -lwinmm
 
 SRC = main.cpp vegetation.cpp player.cpp world.cpp resources.cpp input.cpp boat.cpp character.cpp weapon.cpp bullet.cpp sound_manager.cpp level.cpp dungeonGeneration.cpp
 OUT = game.exe

@@ -79,8 +79,8 @@ void LoadAllResources() {
     bushTex = LoadTexture("assets/bush.png");
     floorTile = LoadModel("assets/models/floorTile.glb");
     doorWay = LoadModel("assets/models/doorWay.glb");
-    wall = LoadModel("assets/models/wall.glb");
-    
+    wall = LoadModel("assets/models/wall1.glb");
+
     //Sounds
     SoundManager::GetInstance().LoadSound("dinoHit", "assets/sounds/dinoHit.ogg");
     SoundManager::GetInstance().LoadSound("dinoDeath", "assets/sounds/dinoDeath.ogg");

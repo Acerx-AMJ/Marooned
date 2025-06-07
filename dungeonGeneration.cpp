@@ -2,14 +2,38 @@
 #include "raymath.h"
 static std::vector<Vector3> floorTilePositions;
 static std::vector<std::pair<Vector3, float>> wallInstances; // position + Y rotation
-//static std::vector<WallInstance> wallInstances;
 
 static std::vector<Vector3> ceilingTilePositions;
+
+
+std::vector<WallRun> wallRunColliders;
 
 static Image dungeonImg;
 static Color* dungeonPixels = nullptr;
 static int dungeonWidth = 0;
 static int dungeonHeight = 0;
+
+BoundingBox MakeWallBoundingBox(const Vector3& start, const Vector3& end, float thickness, float height) {
+    Vector3 min = Vector3Min(start, end);
+    Vector3 max = Vector3Max(start, end);
+    
+
+    // Expand by half thickness in perpendicular direction
+    if (start.x == end.x) {
+        // Vertical wall (same x, different z)
+        min.x -= thickness * 0.5f;
+        max.x += thickness * 0.5f;
+    } else {
+        // Horizontal wall (same z, different x)
+        min.z -= thickness * 0.5f;
+        max.z += thickness * 0.5f;
+    }
+
+    max.y += height + 1000; // Add height
+
+    return { min, max };
+}
+
 
 void LoadDungeonLayout(const std::string& imagePath) {
     if (dungeonPixels) {
@@ -35,43 +59,86 @@ void GenerateFloorTiles(float tileSize, float baseY) {
             floorTilePositions.push_back(pos);
         }
     }
+
+
 }
 
 void GenerateWallTiles(float tileSize, float baseY) {
     wallInstances.clear();
+    wallRunColliders.clear();
+
+    float wallThickness = 50.0f;
+    float wallHeight = 200.0f;
 
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
-            Color pixel = dungeonPixels[y * dungeonWidth + x];
-            if (pixel.r < 50 && pixel.g < 50 && pixel.b < 50) {
-                bool rightWhite = (x < dungeonWidth - 1) && dungeonPixels[y * dungeonWidth + (x + 1)].r > 200;
-                bool leftWhite  = (x > 0) && dungeonPixels[y * dungeonWidth + (x - 1)].r > 200;
-                bool upWhite    = (y > 0) && dungeonPixels[(y - 1) * dungeonWidth + x].r > 200;
-                bool downWhite  = (y < dungeonHeight - 1) && dungeonPixels[(y + 1) * dungeonWidth + x].r > 200;
+            Color current = dungeonPixels[y * dungeonWidth + x];
+            if (current.r < 50 && current.g < 50 && current.b < 50) {
 
-                float rotationY = 0.0f;
-                bool horizontal = (leftWhite || rightWhite);
-                bool vertical = (upWhite || downWhite);
+                // Horizontal pair
+                if (x < dungeonWidth - 1) {
+                    Color right = dungeonPixels[y * dungeonWidth + (x + 1)];
+                    if (right.r < 50) {
+                        float midX = (x + 0.5f) * tileSize;
+                        float z = y * tileSize;
 
-                if (vertical && !horizontal) rotationY = 90.0f;
-                else if (horizontal && !vertical) rotationY = 0.0f;
-                else if (vertical && horizontal) rotationY = 0.0f;
-                else rotationY = 0.0f;
+                        Vector3 pos = {midX, baseY, z};
+                        wallInstances.emplace_back(pos, 90.0f);
 
-                Vector3 pos = {
-                    x * tileSize,
-                    baseY,
-                    y * tileSize
-                };
+                        Vector3 start = { x * tileSize, baseY, z };
+                        Vector3 end = { (x + 1) * tileSize, baseY, z };
+                        BoundingBox bounds = MakeWallBoundingBox(start, end, wallThickness, wallHeight);
+                        wallRunColliders.push_back({start, end, 90.0f, bounds});
+                    }
+                }
 
-                pos.x = roundf(pos.x / tileSize) * tileSize;
-                pos.z = roundf(pos.z / tileSize) * tileSize;        
+                // Vertical pair
+                if (y < dungeonHeight - 1) {
+                    Color down = dungeonPixels[(y + 1) * dungeonWidth + x];
+                    if (down.r < 50) {
+                        float xPos = x * tileSize;
+                        float midZ = (y + 0.5f) * tileSize;
 
-                wallInstances.emplace_back(pos, rotationY);
+                        Vector3 pos = {xPos, baseY, midZ};
+                        wallInstances.emplace_back(pos, 0.0f);
+
+                        Vector3 start = { xPos, baseY, y * tileSize };
+                        Vector3 end = { xPos, baseY, (y + 1) * tileSize };
+                        BoundingBox bounds = MakeWallBoundingBox(start, end, wallThickness, wallHeight);
+                        wallRunColliders.push_back({start, end, 0.0f, bounds});
+                    }
+                }
             }
         }
     }
 }
+
+
+
+void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float radius) {
+    // Clamp player position to the inside of the box
+    float closestX = Clamp(position.x, box.min.x, box.max.x);
+    float closestY = Clamp(position.y, box.min.y, box.max.y);
+    float closestZ = Clamp(position.z, box.min.z, box.max.z);
+
+    Vector3 closestPoint = { closestX, closestY, closestZ };
+    Vector3 pushDir = Vector3Subtract(position, closestPoint);
+    float distance = Vector3Length(pushDir);
+
+    if (distance == 0.0f) {
+        // If player is exactly on the box surface, push arbitrarily
+        pushDir = {1.0f, 0.0f, 0.0f};
+        distance = 0.001f;
+    }
+
+    float overlap = radius - distance;
+    if (overlap > 0.0f) {
+        Vector3 correction = Vector3Scale(Vector3Normalize(pushDir), overlap);
+        position = Vector3Add(position, correction);
+    }
+}
+
+
 
 void GenerateCeilingTiles(float ceilingOffsetY) {
     ceilingTilePositions.clear();
@@ -84,12 +151,16 @@ void GenerateCeilingTiles(float ceilingOffsetY) {
         };
         ceilingTilePositions.push_back(ceilingPos);
     }
+
+
 }
+
 
 
 void DrawDungeonFloor(Model floorTileModel) {
     for (const Vector3& pos : floorTilePositions) {
         DrawModel(floorTileModel, pos, 1.0f, WHITE);
+        
     }
 }
 
@@ -123,5 +194,12 @@ void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY) {
         );
 
     }
+}
+
+
+void ClearDungeon() {
+    floorTilePositions.clear();
+    wallInstances.clear();
+    ceilingTilePositions.clear(); // if used
 }
 

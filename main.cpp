@@ -377,6 +377,8 @@ void DrawStaminaBar(){
 }
 
 void ClearLevel() {
+    isDungeon = false;
+    ClearDungeon();
     RemoveAllVegetation();
     removeAllRaptors();
     UnloadImage(heightmap);
@@ -522,6 +524,13 @@ int main() {
         UpdateRaptors(deltaTime);
 
         TreeCollision(); //player and raptor vs tree
+        for (const WallRun& run : wallRunColliders) {
+            if (CheckCollisionBoxSphere(run.bounds, player.position, player.radius)) {
+                ResolveBoxSphereCollision(run.bounds, player.position, player.radius);
+            }
+        }
+
+        
 
 
 
