@@ -32,11 +32,11 @@ struct Player {
     bool isMoving = false;
     bool onBoard = false;
     bool disableMovement = false;
-    
+
     float stamina = 100.0f;
     float maxStamina = 100.0f;
     bool canRun = true;
-
+    bool canMove = true;
 
     void PlayFootstepSound();
     void TakeDamage(int amount);

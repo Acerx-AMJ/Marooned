@@ -6,7 +6,7 @@
 RenderTexture2D sceneTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
-Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, bottomPlane, blunderbuss;
+Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, bottomPlane, blunderbuss, floorTile, doorWay;
 Image heightmap;
 Mesh terrainMesh;
 Sound musket;
@@ -15,33 +15,7 @@ Vector3 terrainScale;
 
 Vector2 screenResolution;
 
-void UpdateShaders(Camera& camera){
-    float t = GetTime();
-    Vector3 camPos = camera.position;
-    SetShaderValue(waterShader, GetShaderLocation(waterShader, "time"), &t, SHADER_UNIFORM_FLOAT);
 
-    int camLoc = GetShaderLocation(waterShader, "cameraPos");
-    SetShaderValue(waterShader, camLoc, &camPos, SHADER_UNIFORM_VEC3);
-
- 
-    int camPosLoc = GetShaderLocation(terrainShader, "cameraPos");
-    SetShaderValue(terrainShader, camPosLoc, &camPos, SHADER_UNIFORM_VEC3);
-    //float time = GetTime();
-    SetShaderValue(skyShader, GetShaderLocation(skyShader, "time"), &t, SHADER_UNIFORM_FLOAT);
-
-    //red vignette intensity over time
-    SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
-
-// During death sequence:
-    if (player.dying) {
-        fadeToBlack = Clamp(player.deathTimer / 1.5f, 0.0f, 1.0f); // fade over 1.5 seconds
-        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
-    }
-    else {
-        fadeToBlack = 0.0f;
-        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
-    }
-}
 
 void LoadAllResources() {
     screenResolution = {(float)GetScreenWidth(), (float)GetScreenHeight()};
@@ -52,15 +26,19 @@ void LoadAllResources() {
     gunModel = LoadModel("assets/models/blunderbus.glb");
     muzzleFlash = LoadTexture("assets/sprites/muzzleFlash.png");
 
-    // Heightmap //TODO: refactor this into level switching, an array of heightmaps. A menu to increase or decrease the index. 
-    heightmap = LoadImage("assets/MiddleIsland.png"); ///////////////////////// current map
-    ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
-    terrainScale = {16000.0f, 200.0f, 16000.0f}; //4K height maps scaled to 16k looks best. 
 
-    terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
-    terrainModel = LoadModelFromMesh(terrainMesh);
+    floorTile = LoadModel("assets/models/floorTile.glb");
+    doorWay = LoadModel("assets/models/doorWay.glb");
 
+    // Heightmap 
+    // heightmap = LoadImage("assets/MiddleIsland.png"); ///////////////////////// current map
+    // ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
+    // terrainScale = {16000.0f, 200.0f, 16000.0f}; //4K height maps scaled to 16k looks best. 
 
+    // terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
+    // terrainModel = LoadModelFromMesh(terrainMesh);
+
+    terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
 
     // Shaders
 
@@ -69,9 +47,7 @@ void LoadAllResources() {
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
     //SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), (float[2]){ (float)GetScreenWidth(), (float)GetScreenHeight() }, SHADER_UNIFORM_VEC2);
 
-    //color the mesh depending on the height. 
-    terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
-    terrainModel.materials[0].shader = terrainShader;
+
 
     // Sky
     skyShader = LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
@@ -119,6 +95,34 @@ void LoadAllResources() {
 
     SoundManager::GetInstance().LoadSound("phit1", "assets/sounds/PlayerHit1.ogg");
     SoundManager::GetInstance().LoadSound("phit2", "assets/sounds/PlayerHit2.ogg");
+}
+
+void UpdateShaders(Camera& camera){
+    float t = GetTime();
+    Vector3 camPos = camera.position;
+    SetShaderValue(waterShader, GetShaderLocation(waterShader, "time"), &t, SHADER_UNIFORM_FLOAT);
+
+    int camLoc = GetShaderLocation(waterShader, "cameraPos");
+    SetShaderValue(waterShader, camLoc, &camPos, SHADER_UNIFORM_VEC3);
+
+ 
+    int camPosLoc = GetShaderLocation(terrainShader, "cameraPos");
+    SetShaderValue(terrainShader, camPosLoc, &camPos, SHADER_UNIFORM_VEC3);
+    //float time = GetTime();
+    SetShaderValue(skyShader, GetShaderLocation(skyShader, "time"), &t, SHADER_UNIFORM_FLOAT);
+
+    //red vignette intensity over time
+    SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
+
+// During death sequence:
+    if (player.dying) {
+        fadeToBlack = Clamp(player.deathTimer /2.5f, 0.0f, 1.0f); // fade over 1.5 seconds
+        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
+    }
+    else {
+        fadeToBlack = 0.0f;
+        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
+    }
 }
 
 void UnloadAllResources() {

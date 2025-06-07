@@ -13,6 +13,7 @@
 #include "algorithm"
 #include "bullet.h"
 #include "sound_manager.h"
+#include "level.h"
 
 #define GLSL_VERSION 330
 
@@ -61,7 +62,7 @@ void UpdateCustomCamera(Camera3D* camera, float deltaTime) {
     if (IsKeyDown(KEY_S)) inputZ -= 1.0f;
     if (IsKeyDown(KEY_A)) inputX -= 1.0f;
     if (IsKeyDown(KEY_D)) inputX += 1.0f;
-    if (IsKeyDown(KEY_SPACE)) inputY += 1.0f;
+    if (IsKeyDown(KEY_SPACE)) inputY += 1.0f; //fly up and down
     if (IsKeyDown(KEY_LEFT_SHIFT)) inputY -= 1.0f;
 
     if (IsGamepadAvailable(0)) {
@@ -372,28 +373,79 @@ void DrawStaminaBar(){
 
     DrawRectangleRec(staminaBarCurrent, barColor);
 
+}
+
+void ClearLevel() {
+    RemoveAllVegetation();
+    removeAllRaptors();
+    UnloadImage(heightmap);
+    UnloadModel(terrainModel);
+}
 
 
 
+void DrawMenu() {
+    ClearBackground(BLACK);
+    float middle = GetScreenWidth()/2 - 150;
+    DrawText("MAROONED", middle, 180, 60, GREEN);
+
+    DrawText(selectedOption == 0 ? "> Start" : "  Start", middle, 280, 30, WHITE);
+    
+    DrawText(
+        TextFormat("%s Level: %s", selectedOption == 1 ? ">" : " ", levels[levelIndex].name.c_str()),
+        middle, 330, 30, YELLOW
+    );
+
+    DrawText(selectedOption == 2 ? "> Quit" : "  Quit", middle, 380, 30, WHITE);
+}
+
+
+
+
+void InitLevel(const LevelData& level, Camera camera) {
+    ClearLevel();
+    // Load and format the heightmap image
+    heightmap = LoadImage(level.heightmapPath.c_str());
+    ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
+
+    // Generate the terrain mesh and model from the heightmap
+    terrainScale = level.terrainScale;
+    terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
+    terrainModel = LoadModelFromMesh(terrainMesh);
+
+    // Generate vegetation like trees and bushes
+    generateVegetation();
+
+    // Initialize the player at the specified start position
+    InitPlayer(player, level.startPosition);
+    camera.position = player.position;
+    // Generate raptors around the given spawn center
+    generateRaptors(level.raptorCount, level.raptorSpawnCenter, 3000);
+
+    InitBoat(player_boat, boatPosition);
+    
+
+        //color the mesh depending on the height. 
+    
+    terrainModel.materials[0].shader = terrainShader;
 }
 
 
 
 int main() {
     //SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
-    InitWindow(1600, 900, "Marooned");
+    InitWindow(1600, 800, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
     LoadAllResources();
-    generateVegetation();
-    Vector3 startPosition = {5475.0f, 300.0f, -5665.0f}; //middle island start pos
-    InitPlayer(player, startPosition);
-    generateRaptors(10, Vector3{0}, 3000); //spawn around the center of middle island. 
+    SetExitKey(KEY_NULL);
 
-    Music jungleAmbience = LoadMusicStream("assets/sounds/jungleSounds.ogg"); // or .ogg, .wav, etc.
-     PlayMusicStream(jungleAmbience); // Starts playback
+    Music jungleAmbience = LoadMusicStream("assets/sounds/jungleSounds.ogg"); 
+    PlayMusicStream(jungleAmbience); // Starts playback
+    SetMusicVolume(jungleAmbience, 0.5f); 
+    controlPlayer = true; //start as player
 
-    SetMusicVolume(jungleAmbience, 0.5f); // Optional: adjust volume
+
     // Camera
     Camera3D camera = { 0 };
     camera.position = startPosition;
@@ -402,13 +454,40 @@ int main() {
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
     DisableCursor();
-    InitBoat(player_boat, boatPosition);
 
 
-
-
-    //main gmae loop
+    //main game loop
     while (!WindowShouldClose()) {
+
+        if (currentGameState == GameState::Menu) {
+            if (IsKeyPressed(KEY_UP)) selectedOption = (selectedOption - 1 + 3) % 3;
+            if (IsKeyPressed(KEY_DOWN)) selectedOption = (selectedOption + 1) % 3;
+
+            if (IsKeyPressed(KEY_ENTER)) {
+                if (selectedOption == 0) {
+                    InitLevel(levels[levelIndex], camera);
+                    currentGameState = GameState::Playing;
+                } else if (selectedOption == 1) {
+                    levelIndex = (levelIndex + 1) % levels.size(); // Cycle through levels
+                } else if (selectedOption == 2) {
+                    currentGameState = GameState::Quit;
+                }
+            }
+
+
+            BeginDrawing();
+            DrawMenu();
+            EndDrawing();
+
+            if (currentGameState == GameState::Quit) break;
+            
+
+            continue; // skip the rest of the game loop
+        }
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            currentGameState = GameState::Menu;
+        }
+
         UpdateInputMode(); //handle both gamepad and keyboard/mouse
         debugControls(); //press P to remove all vegetation, Press O to regenerate raptors, press K to kill a raptor. 
         UpdateShaders(camera);
@@ -451,11 +530,12 @@ int main() {
 
         BeginCustom3D(camera, 50000.0f);
         rlDisableBackfaceCulling(); rlDisableDepthMask(); rlDisableDepthTest();
-        DrawModel(skyModel, camera.position, 10000.0f, WHITE);
-        rlEnableDepthMask(); 
-        rlEnableDepthTest();
+        DrawModel(skyModel, camera.position, 10000.0f, WHITE); //draw skybox with no depthmask or test or backface culling, leave backfaceculling off. 
+        rlEnableDepthMask(); rlEnableDepthTest();
         rlSetBlendMode(BLEND_ALPHA);
         rlEnableColorBlend();
+
+
         DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
        
         DrawModel(waterModel, waterPos, 1.0f, WHITE); 
@@ -463,8 +543,8 @@ int main() {
         DrawTrees(trees, palmTree, palm2, shadowQuad); //maybe models should be global, i think they are 
         DrawBushes(bushes, shadowQuad);
         DrawBoat(player_boat);
-
-
+        DrawModel(floorTile, Vector3{0, 200, 0}, 0.5, WHITE);
+        DrawModel(doorWay, Vector3{0, 200, 0}, 0.5, WHITE);
         drawRaptors(camera); //sort and draw raptors
         DrawPlayer(player, camera);
 
@@ -487,16 +567,13 @@ int main() {
             (Vector2){0, 0}, WHITE);
         EndShaderMode();
 
-        // if (controlPlayer){
-        //     drawWeapon();
-        // }
 
-
+        ///2D on top of render texture
         DrawHealthBar();
         DrawStaminaBar();
         DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
         DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
-        DrawText("PRESS TAB TO SPAWN AS PLAYER", GetScreenWidth()/2 + 250, 30, 20, WHITE);
+        DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 250, 30, 20, WHITE);
 
         EndDrawing();
 

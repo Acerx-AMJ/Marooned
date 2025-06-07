@@ -4,10 +4,14 @@
 #include "resources.h"
 #include "vegetation.h"
 
+
+
+GameState currentGameState = GameState::Menu;
+int levelIndex = 0;
 bool controlPlayer = false;
 unsigned char* heightmapPixels = nullptr;
 Player player = {};
-
+Vector3 startPosition = {5475.0f, 300.0f, -5665.0f}; //middle island start pos
 Vector3 boatPosition = {6000, -20, 0.0};
 float boatSpeed = 200;
 float waterHeightY = 60;
@@ -16,6 +20,7 @@ float vignetteIntensity = 0.0f;
 float vignetteFade = 0.0f;
 const float TREE_HEIGHT_RATIO = 0.80f;
 const float BUSH_HEIGHT_RATIO = 0.80f;
+int selectedOption = 0;
 
 std::vector<Character> raptors;
 
@@ -96,7 +101,7 @@ void generateRaptors(int amount, Vector3 centerPos, float radius) {
         Vector3 spawnPos = { x, 0.0f, z };
         float terrainHeight = GetHeightAtWorldPosition(spawnPos, heightmap, terrainScale);
 
-        if (terrainHeight > 60.0f) {
+        if (terrainHeight > 80.0f) {
             float spriteHeight = 200 * 0.5f;
             spawnPos.y = terrainHeight + spriteHeight / 2.0f;
 

@@ -38,6 +38,7 @@ void HandleMouseLook(float deltaTime){
 }
 
 void HandleKeyboardInput(float deltaTime) {
+    if (!player.canMove) return;
     player.isMoving = false;
     Vector3 input = {0};
     if (IsKeyDown(KEY_W)) input.z += 1;
@@ -292,7 +293,9 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
     //start the dying process. 
     if (player.dying) {
         player.deathTimer += deltaTime;
-        vignetteIntensity = 1.0f;
+        player.velocity = {0}; //stop moving when dying. should hide the gun as well. 
+        player.canMove = false;
+        vignetteIntensity = 1.0f; //should stay red becuase its set to 1 everyframe. 
         vignetteFade = 0.0f;
         if (player.deathTimer > 1.5f) { 
             player.dying = false;
@@ -306,6 +309,7 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
         player.velocity = {0}; 
         player.currentHealth = player.maxHealth;
         player.dead = false;
+        player.canMove = true;
 
     }
 

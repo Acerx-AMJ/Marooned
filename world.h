@@ -7,13 +7,18 @@
 #include "bullet.h"
 #include "vegetation.h"
 
-
+enum class GameState {
+    Menu,
+    Playing,
+    Quit
+};
 
 extern bool controlPlayer;
-//extern Image heightmap;
+
 extern unsigned char* heightmapPixels;
-//extern Vector3 terrainScale;
-//extern Mesh terrainMesh;
+extern Vector3 startPosition;
+extern int selectedOption; // 0 = Start, 1 = Quit
+extern int levelIndex;
 extern Player player;
 extern Vector3 boatPosition;
 extern float fadeToBlack;
@@ -24,6 +29,8 @@ extern float waterHeightY;
 extern const float TREE_HEIGHT_RATIO;
 extern const float BUSH_HEIGHT_RATIO;
 
+
+extern GameState currentGameState;
 extern std::vector<Character> raptors;
 extern std::vector<Character*> raptorPtrs;
 

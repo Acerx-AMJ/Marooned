@@ -2,6 +2,8 @@
 
 #include "raylib.h"
 
+
+
 struct Weapon {
     Model model;
     Vector3 scale = { 1.0f, 1.0f, 1.0f };
