@@ -455,6 +455,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         LoadDungeonLayout("assets/maps/map3.png");
         GenerateFloorTiles(200.0f, floorHeight);
         GenerateWallTiles(200.0f, floorHeight);
+        GenerateCeilingTiles(400.0f);
         isDungeon = true;
 
     }
@@ -545,6 +546,10 @@ int main() {
             WallCollision();
 
         }
+        UpdateWallTints(player.position);
+        UpdateCeilingTints(player.position);
+        UpdateFloorTints(player.position);
+    
 
         if (IsGamepadAvailable(0)) { //hack to speed up controller movement. 
             UpdateCameraWithGamepad(camera);
@@ -581,7 +586,8 @@ int main() {
         DrawDungeonFloor(floorTile);
         DrawDungeonWalls(wall);
         
-        DrawDungeonCeiling(floorTile, 400.0f); // Or whatever offset looks good
+        //DrawDungeonCeiling(floorTile, 400.0f); // Or whatever offset looks good
+        DrawDungeonCeiling(floorTile);
 
         DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
        

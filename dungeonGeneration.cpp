@@ -1,10 +1,12 @@
 #include "dungeonGeneration.h"
 #include "raymath.h"
 #include "resources.h"
-static std::vector<Vector3> floorTilePositions;
-static std::vector<std::pair<Vector3, float>> wallInstances; // position + Y rotation
-
-static std::vector<Vector3> ceilingTilePositions;
+//static std::vector<Vector3> floorTilePositions;
+std::vector<FloorTile> floorTiles;
+//static std::vector<std::pair<Vector3, float>> wallInstances; // position + Y rotation
+static std::vector<WallInstance> wallInstances;
+//static std::vector<Vector3> ceilingTilePositions;
+std::vector<CeilingTile> ceilingTiles;
 
 
 std::vector<WallRun> wallRunColliders;
@@ -13,6 +15,8 @@ static Image dungeonImg;
 static Color* dungeonPixels = nullptr;
 static int dungeonWidth = 0;
 static int dungeonHeight = 0;
+
+
 
 BoundingBox MakeWallBoundingBox(const Vector3& start, const Vector3& end, float thickness, float height) {
     Vector3 min = Vector3Min(start, end);
@@ -47,8 +51,25 @@ void LoadDungeonLayout(const std::string& imagePath) {
     dungeonHeight = dungeonImg.height;
 }
 
+// void GenerateFloorTiles(float tileSize, float baseY) {
+//     floorTilePositions.clear();
+//     //fill the dungeon area with floor tiles, ignore the walls for now. 
+//     for (int y = 0; y < dungeonHeight; y++) {
+//         for (int x = 0; x < dungeonWidth; x++) {
+//             Vector3 pos = {
+//                 x * tileSize,
+//                 baseY,
+//                 y * tileSize
+//             };
+//             floorTilePositions.push_back(pos);
+//         }
+//     }
+
+
+// }
+
 void GenerateFloorTiles(float tileSize, float baseY) {
-    floorTilePositions.clear();
+    floorTiles.clear();
 
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
@@ -57,14 +78,21 @@ void GenerateFloorTiles(float tileSize, float baseY) {
                 baseY,
                 y * tileSize
             };
-            floorTilePositions.push_back(pos);
+
+            // Default tint: white (full brightness)
+            FloorTile tile;
+            tile.position = pos;
+            tile.tint = WHITE;
+
+            floorTiles.push_back(tile);
         }
     }
-
-
 }
 
+
 void GenerateWallTiles(float tileSize, float baseY) {
+    //place wall tiles on top of floor tiles intersecting them instead of cutting out space for walls. 
+    //generate bounding boxes from wallrun start to end. 
     wallInstances.clear();
     wallRunColliders.clear();
     
@@ -74,7 +102,7 @@ void GenerateWallTiles(float tileSize, float baseY) {
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
-            if (current.r < 50 && current.g < 50 && current.b < 50) {
+            if (current.r < 50 && current.g < 50 && current.b < 50) { //black
 
                 // Horizontal pair
                 if (x < dungeonWidth - 1) {
@@ -84,7 +112,15 @@ void GenerateWallTiles(float tileSize, float baseY) {
                         float z = y * tileSize;
 
                         Vector3 pos = {midX, baseY, z};
-                        wallInstances.emplace_back(pos, 90.0f);
+                        //wallInstances.emplace_back(pos, 90.0f);
+                        WallInstance wall;
+                        wall.position = pos;
+                        wall.rotationY = 90.0f;
+                        //wall.bounds = ComputeBoundingBox(pos, rot); // Optional if you want bounds now
+                        wall.tint = WHITE; // Or a starting color
+
+                        wallInstances.push_back(wall);
+
 
                         Vector3 start = { x * tileSize, baseY, z };
                         Vector3 end = { (x + 1) * tileSize, baseY, z };
@@ -101,7 +137,15 @@ void GenerateWallTiles(float tileSize, float baseY) {
                         float midZ = (y + 0.5f) * tileSize;
 
                         Vector3 pos = {xPos, baseY, midZ};
-                        wallInstances.emplace_back(pos, 0.0f);
+                        //wallInstances.emplace_back(pos, 0.0f);
+                        WallInstance wall;
+                        wall.position = pos;
+                        wall.rotationY = 0.0f;
+                        //wall.bounds = ComputeBoundingBox(pos, rot); // Optional if you want bounds now
+                        wall.tint = WHITE; // Or a starting color
+
+                        wallInstances.push_back(wall);
+
 
                         Vector3 start = { xPos, baseY, y * tileSize };
                         Vector3 end = { xPos, baseY, (y + 1) * tileSize };
@@ -140,46 +184,85 @@ void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float 
 }
 
 
-
 void GenerateCeilingTiles(float ceilingOffsetY) {
-    ceilingTilePositions.clear();
+    ceilingTiles.clear();
 
-    for (const Vector3& pos : floorTilePositions) {
-        Vector3 ceilingPos = {
-            pos.x,
-            pos.y + ceilingOffsetY,
-            pos.z
-        };
-        ceilingTilePositions.push_back(ceilingPos);
-    }
+    for (const FloorTile& floor : floorTiles) {
+        CeilingTile ceiling;
+        ceiling.position = Vector3Add(floor.position, {0, ceilingOffsetY, 0});
+        ceiling.tint = GRAY; // default tint
 
-
-}
-
-void DrawDungeonFloor(Model floorTileModel) {
-    for (const Vector3& pos : floorTilePositions) {
-        DrawModel(floorTileModel, pos, 1.0f, WHITE);
-        
+        ceilingTiles.push_back(ceiling);
     }
 }
+
+void DrawDungeonFloor(Model floorModel) {
+    for (const FloorTile& tile : floorTiles) {
+        DrawModelEx(floorModel, tile.position, Vector3{0,1,0}, 0.0f, Vector3{1,1,1}, tile.tint);
+    }
+}
+
 
 void DrawDungeonWalls(Model wallModel) {
+    const float wallHeight = 200.0f; // Match your actual wall height
 
-    for (const auto& [pos, rot] : wallInstances) {
-        // === Draw base wall ===
+    for (const WallInstance& wall : wallInstances) {
+        // Draw base wall
+        DrawModelEx(wallModel, wall.position, Vector3{0, 1, 0}, wall.rotationY, Vector3{1, 1, 1}, wall.tint);
 
-        
-        DrawModelEx(wallModel, pos, Vector3{0, 1, 0}, rot, Vector3{1, 1, 1}, WHITE);
-
-        // === Draw stacked wall ===
-        Vector3 topPos = pos;
-        topPos.y += 200; // 1 wall height above
-
-        DrawModelEx(wallModel, topPos, Vector3{0, 1, 0}, rot, Vector3{1, 1, 1}, WHITE);
-        
+        // Draw second stacked wall
+        Vector3 topPos = wall.position;
+        topPos.y += wallHeight;
+        DrawModelEx(wallModel, topPos, Vector3{0, 1, 0}, wall.rotationY, Vector3{1, 1, 1}, wall.tint);
     }
- 
 }
+
+void UpdateWallTints(Vector3 playerPos) {
+    const float maxLightDistance = 6000.0f;
+    const float minBrightness = 0.2f;
+
+    Vector3 warmColor = {1.0f, 0.85f, 0.7f};
+
+    for (WallInstance& wall : wallInstances) {
+        float dist = Vector3Distance(playerPos, wall.position);
+        float brightness = Clamp(1.0f - (dist / maxLightDistance), minBrightness, 1.0f);
+
+        Vector3 tinted = Vector3Scale(warmColor, brightness);
+        wall.tint = ColorFromNormalized((Vector4){ tinted.x, tinted.y, tinted.z, 1.0f });
+    }
+}
+
+
+void UpdateFloorTints(Vector3 playerPos) {
+    const float maxLightDistance = 6000.0f;
+    const float minBrightness = 0.2f;
+
+    Vector3 warmColor = {1.0f, 0.85f, 0.7f};
+
+    for (FloorTile& tile : floorTiles) {
+        float dist = Vector3Distance(playerPos, tile.position);
+        float brightness = Clamp(1.0f - (dist / maxLightDistance), minBrightness, 1.0f);
+        Vector3 tinted = Vector3Scale(warmColor, brightness);
+        tile.tint = ColorFromNormalized((Vector4){ tinted.x, tinted.y, tinted.z, 1.0f });
+    }
+}
+
+
+void UpdateCeilingTints(Vector3 playerPos) {
+    const float maxLightDistance = 8000.0f;
+    const float minBrightness = 0.2f;
+
+    Vector3 warmCeilingColor = {0.8f, 0.7f, 0.6f}; // slightly muted warm tone
+
+    for (CeilingTile& ceiling : ceilingTiles) {
+        float dist = Vector3Distance(playerPos, ceiling.position);
+        float brightness = Clamp(1.0f - (dist / maxLightDistance), minBrightness, 1.0f);
+        Vector3 tinted = Vector3Scale(warmCeilingColor, brightness);
+        ceiling.tint = ColorFromNormalized((Vector4){ tinted.x, tinted.y, tinted.z, 1.0f });
+    }
+}
+
+
 
 
 // void DrawDungeonWalls(Model wallModel) {
@@ -203,29 +286,43 @@ void DrawDungeonWalls(Model wallModel) {
 // }
 
 
-void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY) {
-    for (const Vector3& pos : floorTilePositions) {
-        Vector3 ceilingPos = {
-            pos.x,
-            pos.y + ceilingOffsetY,
-            pos.z
-        };
+// void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY) {
+//     for (const Vector3& pos : floorTilePositions) {
+//         Vector3 ceilingPos = {
+//             pos.x,
+//             pos.y + ceilingOffsetY,
+//             pos.z
+//         };
+//         DrawModelEx(
+//             ceilingTileModel,
+//             ceilingPos,                  // Position of the tile
+//             Vector3{1, 0, 0},            // Rotation axis (X-axis)
+//             180.0f,                      // Rotation angle
+//             Vector3{1, 1, 1},            // Scale
+//             GRAY
+//         );
+
+//     }
+// }
+void DrawDungeonCeiling(Model ceilingTileModel) {
+    for (const CeilingTile& ceiling : ceilingTiles) {
         DrawModelEx(
             ceilingTileModel,
-            ceilingPos,                  // Position of the tile
-            Vector3{1, 0, 0},            // Rotation axis (X-axis)
-            180.0f,                      // Rotation angle
-            Vector3{1, 1, 1},            // Scale
-            GRAY
+            ceiling.position,
+            Vector3{1, 0, 0}, // Flip to face downward
+            180.0f,
+            Vector3{1, 1, 1},
+            ceiling.tint
         );
-
     }
 }
 
 
 void ClearDungeon() {
-    floorTilePositions.clear();
+    //floorTilePositions.clear();
+    floorTiles.clear();
     wallInstances.clear();
-    ceilingTilePositions.clear(); // if used
+    //ceilingTilePositions.clear(); // if used
+    ceilingTiles.clear();
 }
 
