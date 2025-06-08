@@ -1,5 +1,6 @@
 #include "dungeonGeneration.h"
 #include "raymath.h"
+#include "resources.h"
 static std::vector<Vector3> floorTilePositions;
 static std::vector<std::pair<Vector3, float>> wallInstances; // position + Y rotation
 
@@ -66,7 +67,7 @@ void GenerateFloorTiles(float tileSize, float baseY) {
 void GenerateWallTiles(float tileSize, float baseY) {
     wallInstances.clear();
     wallRunColliders.clear();
-
+    
     float wallThickness = 50.0f;
     float wallHeight = 200.0f;
 
@@ -155,8 +156,6 @@ void GenerateCeilingTiles(float ceilingOffsetY) {
 
 }
 
-
-
 void DrawDungeonFloor(Model floorTileModel) {
     for (const Vector3& pos : floorTilePositions) {
         DrawModel(floorTileModel, pos, 1.0f, WHITE);
@@ -165,16 +164,43 @@ void DrawDungeonFloor(Model floorTileModel) {
 }
 
 void DrawDungeonWalls(Model wallModel) {
-    for (const auto& [pos, rot] : wallInstances) {
-        // Draw base wall
-        DrawModelEx(wallModel, pos, Vector3{0,1,0}, rot, Vector3{1,1,1}, WHITE);
 
-        // Draw stacked wall above
+    for (const auto& [pos, rot] : wallInstances) {
+        // === Draw base wall ===
+
+        
+        DrawModelEx(wallModel, pos, Vector3{0, 1, 0}, rot, Vector3{1, 1, 1}, WHITE);
+
+        // === Draw stacked wall ===
         Vector3 topPos = pos;
-        topPos.y += 200;
-        DrawModelEx(wallModel, topPos, Vector3{0,1,0}, rot, Vector3{1,1,1}, WHITE);
+        topPos.y += 200; // 1 wall height above
+
+        DrawModelEx(wallModel, topPos, Vector3{0, 1, 0}, rot, Vector3{1, 1, 1}, WHITE);
+        
     }
+ 
 }
+
+
+// void DrawDungeonWalls(Model wallModel) {
+
+//     for (const auto& [pos, rot] : wallInstances) {
+
+//         Matrix transform = MatrixIdentity();
+//         transform = MatrixMultiply(transform, MatrixTranslate(pos.x, pos.y, pos.z));
+//         transform = MatrixMultiply(transform, MatrixRotateY(DEG2RAD * rot)); // if rotated
+//         transform = MatrixMultiply(transform, MatrixScale(1.0f, 1.0f, 1.0f)); // if needed
+
+//         SetShaderValueMatrix(dungeonWallShader, GetShaderLocation(dungeonWallShader, "model"), transform);
+//         // Draw base wall
+//         DrawModelEx(wallModel, pos, Vector3{0,1,0}, rot, Vector3{1,1,1}, WHITE);
+
+//         // Draw stacked wall above
+//         Vector3 topPos = pos;
+//         topPos.y += 200;
+//         DrawModelEx(wallModel, topPos, Vector3{0,1,0}, rot, Vector3{1,1,1}, WHITE);
+//     }
+// }
 
 
 void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY) {

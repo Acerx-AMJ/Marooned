@@ -238,6 +238,14 @@ void CheckBulletHits() {
             }
         }
     }
+    //bullet collision with dungeon walls. 
+    for (WallRun& w : wallRunColliders){
+        for (Bullet& b: activeBullets){
+            if (CheckCollisionPointBox(b.GetPosition(), w.bounds)){
+                b.kill();
+            }
+        }
+    }
 }
 
 void DrawBullets() {
@@ -439,13 +447,14 @@ void InitLevel(const LevelData& level, Camera camera) {
     generateRaptors(level.raptorCount, level.raptorSpawnCenter, 3000);
 
     InitBoat(player_boat, boatPosition);
-        //color the mesh depending on the height. 
-    
+
     terrainModel.materials[0].shader = terrainShader;
+
+    float floorHeight = waterHeightY + 20;
     if (level.isDungeon){
         LoadDungeonLayout("assets/maps/map3.png");
-        GenerateFloorTiles(200.0f, waterHeightY + 20);
-        GenerateWallTiles(200.0f, waterHeightY + 20); // or use correct offset
+        GenerateFloorTiles(200.0f, floorHeight);
+        GenerateWallTiles(200.0f, floorHeight);
         isDungeon = true;
 
     }
@@ -453,6 +462,14 @@ void InitLevel(const LevelData& level, Camera camera) {
     InitPlayer(player, level.startPosition);
    
 
+}
+
+void WallCollision(){
+    for (const WallRun& run : wallRunColliders) {
+        if (CheckCollisionBoxSphere(run.bounds, player.position, player.radius)) {
+            ResolveBoxSphereCollision(run.bounds, player.position, player.radius);
+        }
+    }
 }
 
 
@@ -524,15 +541,10 @@ int main() {
         UpdateRaptors(deltaTime);
 
         TreeCollision(); //player and raptor vs tree
-        for (const WallRun& run : wallRunColliders) {
-            if (CheckCollisionBoxSphere(run.bounds, player.position, player.radius)) {
-                ResolveBoxSphereCollision(run.bounds, player.position, player.radius);
-            }
+        if (isDungeon){
+            WallCollision();
+
         }
-
-        
-
-
 
         if (IsGamepadAvailable(0)) { //hack to speed up controller movement. 
             UpdateCameraWithGamepad(camera);

@@ -2,6 +2,7 @@
 #include "world.h"
 #include "sound_manager.h"
 #include "raymath.h"
+#include <iostream>
 
 RenderTexture2D sceneTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop;
@@ -16,7 +17,8 @@ Vector3 terrainScale;
 
 Vector2 screenResolution;
 
-
+int lightPosLoc;
+int camPosLocD;
 
 void LoadAllResources() {
     screenResolution = {(float)GetScreenWidth(), (float)GetScreenHeight()};
@@ -28,7 +30,16 @@ void LoadAllResources() {
     muzzleFlash = LoadTexture("assets/sprites/muzzleFlash.png");
     backDrop = LoadTexture("assets/screenshots/MiddleIsland.png");
 
-
+    // Models
+    palmTree = LoadModel("assets/models/bigPalmTree.glb");
+    palm2 = LoadModel("assets/models/smallPalmTree.glb");
+    bush = LoadModel("assets/models/grass2.glb");
+    boatModel = LoadModel("assets/models/boat.glb");
+    blunderbuss = LoadModel("assets/models/blunderbus.glb");
+    bushTex = LoadTexture("assets/bush.png");
+    floorTile = LoadModel("assets/models/floorTile.glb");
+    doorWay = LoadModel("assets/models/doorWay.glb");
+    wall = LoadModel("assets/models/wall1.glb");
 
     // Heightmap 
     // heightmap = LoadImage("assets/MiddleIsland.png"); ///////////////////////// current map
@@ -44,10 +55,6 @@ void LoadAllResources() {
 
     //Post processing shader. AO shader + red vignette + fade to black
     fogShader = LoadShader(0, "assets/shaders/fog_postprocess.fs");
-    SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
-    //SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), (float[2]){ (float)GetScreenWidth(), (float)GetScreenHeight() }, SHADER_UNIFORM_VEC2);
-
-
 
     // Sky
     skyShader = LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
@@ -69,17 +76,15 @@ void LoadAllResources() {
     waterModel.materials[0].shader = waterShader;
     bottomPlane.materials[0].shader = waterShader;
 
-    // Models
-    
-    palmTree = LoadModel("assets/models/bigPalmTree.glb");
-    palm2 = LoadModel("assets/models/smallPalmTree.glb");
-    bush = LoadModel("assets/models/grass2.glb");
-    boatModel = LoadModel("assets/models/boat.glb");
-    blunderbuss = LoadModel("assets/models/blunderbus.glb");
-    bushTex = LoadTexture("assets/bush.png");
-    floorTile = LoadModel("assets/models/floorTile.glb");
-    doorWay = LoadModel("assets/models/doorWay.glb");
-    wall = LoadModel("assets/models/wall1.glb");
+    //Dungeon lighting
+    // dungeonWallShader = LoadShader("dungeon_wall.vs", "dungeon_wall.fs");
+    // lightPosLoc = GetShaderLocation(dungeonWallShader, "lightPos");
+    // camPosLocD = GetShaderLocation(dungeonWallShader, "cameraPos");
+    //wall.materials[0].shader = dungeonWallShader;
+    // assign shader to wall model(s)
+
+
+
 
     //Sounds
     SoundManager::GetInstance().LoadSound("dinoHit", "assets/sounds/dinoHit.ogg");
@@ -98,6 +103,8 @@ void LoadAllResources() {
 
     SoundManager::GetInstance().LoadSound("phit1", "assets/sounds/PlayerHit1.ogg");
     SoundManager::GetInstance().LoadSound("phit2", "assets/sounds/PlayerHit2.ogg");
+
+
 }
 
 void UpdateShaders(Camera& camera){
@@ -117,6 +124,34 @@ void UpdateShaders(Camera& camera){
     //red vignette intensity over time
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
+    //dungeonDarkness
+    float dungeonDarkness = 0.2f;
+    float dungeonContrast = 1.25f;
+    int isDungeonVal = 0;
+
+    if (isDungeon){
+        isDungeonVal = 1;
+    }else{
+        isDungeonVal = 0;
+    }
+
+    SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
+
+    SetShaderValue(fogShader, GetShaderLocation(fogShader, "isDungeon"), &isDungeonVal, SHADER_UNIFORM_INT);
+    SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonDarkness"), &dungeonDarkness, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonContrast"), &dungeonContrast, SHADER_UNIFORM_FLOAT);
+
+    // Vector3 playerLightPos = player.position;
+    // //Vector3 camPos = camera.position;
+
+    // SetShaderValue(dungeonWallShader, lightPosLoc, &playerLightPos, SHADER_UNIFORM_VEC3);
+    // SetShaderValue(dungeonWallShader, camPosLoc, &camPos, SHADER_UNIFORM_VEC3);
+
+
+
+    // assign shader to wall model(s)
+    
+
 // During death sequence:
     if (player.dying) {
         fadeToBlack = Clamp(player.deathTimer /2.5f, 0.0f, 1.0f); // fade over 1.5 seconds
@@ -134,11 +169,13 @@ void UnloadAllResources() {
     UnloadTexture(shadowTex);
     UnloadTexture(raptorTexture);
     UnloadTexture(gunTexture);
+
     UnloadShader(fogShader);
     UnloadShader(skyShader);
     UnloadShader(waterShader);
     UnloadShader(terrainShader);
     UnloadShader(shadowShader);
+
     UnloadModel(skyModel);
     UnloadModel(waterModel);
     UnloadModel(shadowQuad);
@@ -147,7 +184,12 @@ void UnloadAllResources() {
     UnloadModel(bush);
     UnloadModel(boatModel);
     UnloadModel(gunModel);
+    UnloadModel(wall);
+    UnloadModel(floorTile);
+
+
     UnloadImage(heightmap);
+
     UnloadMesh(terrainMesh);
     
 

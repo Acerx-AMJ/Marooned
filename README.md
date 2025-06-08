@@ -2,7 +2,7 @@
 
 Marooned is first-person island-hopping adventure game built from scratch in C++ with Raylib. Explore a chain of mysterious tropical islands teeming with danger, lost ruins, and ancient secrets.
 
-![Gameplay Screenshot](assets/Screenshot2.png)
+![Gameplay Screenshot](assets/Screenshot3.png)
 ---
 
 ## 🌴 Features
@@ -18,7 +18,7 @@ Marooned is first-person island-hopping adventure game built from scratch in C++
 - 🚣 **First-person boat controller**
 
 - 🦕 **Wandering dinosaurs**
-   patrol and chase behavior.
+   patrol, chase, and runaway behavior.
 
 - 🌤️ **Dynamic Skybox**  
   A seamless, procedurally rendered sky with soft, animated clouds.

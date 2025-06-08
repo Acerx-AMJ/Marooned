@@ -6,8 +6,11 @@ out vec4 finalColor;
 uniform sampler2D sceneTexture;
 uniform vec2 resolution;
 uniform float vignetteIntensity; // 0.0 to 1.0
-
 uniform float fadeToBlack; // 0.0 = no fade, 1.0 = full black
+
+uniform float dungeonDarkness;  // 0.0 = normal, 1.0 = fully dark
+uniform float dungeonContrast;  // 1.0 = normal, >1.0 = more contrast
+uniform int isDungeon;
 
 
 void main()
@@ -36,8 +39,20 @@ void main()
 
     // Apply fade to black
     final = mix(final, vec3(0.0), fadeToBlack);
-
+    if (isDungeon == 1) {
+        // Apply darkness
+        final *= 1.0 - dungeonDarkness;
+        
+        // Optional contrast tweak (simple midpoint pivot)
+        float midpoint = 0.5;
+        final = (final - midpoint) * dungeonContrast + midpoint;
+        final = mix(final, vec3(0.2, 0.4, 0.6), 0.1); // slight blue tint
+        
+    }
+   
     finalColor = vec4(final, 1.0);
+
+    
 }
 
 

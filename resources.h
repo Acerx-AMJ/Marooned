@@ -12,6 +12,8 @@ extern Mesh terrainMesh;
 extern Vector3 terrainScale;
 
 extern Vector2 screenResolution;
+//extern int lightPosLoc;
+//extern int camPosLocD;
 void UpdateShaders(Camera& camera);
 void LoadAllResources();
 void UnloadAllResources();
