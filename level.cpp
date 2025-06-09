@@ -24,8 +24,8 @@ std::vector<LevelData> levels = {
         "assets/blank.png",
         {16000.0f, 300.0f, 16000.0f},
         {1000.0f, 300.0f, 1000.0f},
-        {1000.0f, 0, -1000.0f},
-        0,
+        {0.0f, 0.0f, 0.0f},
+        10, //raptors in dungeons?
         true //isDungeon is true, adjust brightness and floorPosY
     }
 };

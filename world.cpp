@@ -16,6 +16,7 @@ Vector3 startPosition = {5475.0f, 300.0f, -5665.0f}; //middle island start pos
 Vector3 boatPosition = {6000, -20, 0.0};
 float boatSpeed = 200;
 float waterHeightY = 60;
+float dungeonHeight = 100;
 float fadeToBlack = 0.0f;
 float vignetteIntensity = 0.0f;
 float vignetteFade = 0.0f;
@@ -28,6 +29,7 @@ std::vector<Character> raptors;
 std::vector<Character*> raptorPtrs;
 
 std::vector<Bullet> activeBullets;
+std::vector<Decal> decals;
 
 void removeAllRaptors(){
     raptorPtrs.clear();
@@ -101,8 +103,9 @@ void generateRaptors(int amount, Vector3 centerPos, float radius) {
 
         Vector3 spawnPos = { x, 0.0f, z };
         float terrainHeight = GetHeightAtWorldPosition(spawnPos, heightmap, terrainScale);
-
+        if (isDungeon) terrainHeight = 85;
         if (terrainHeight > 80.0f) {
+            std::cout << "gererated raptor\n";
             float spriteHeight = 200 * 0.5f;
             spawnPos.y = terrainHeight + spriteHeight / 2.0f;
 

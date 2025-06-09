@@ -223,7 +223,7 @@ void UpdateBullets(float deltaTime) {
 
 }
 
-void CheckBulletHits() {
+void CheckBulletHits(Camera& camera) {
     for (Bullet& b : activeBullets) {
         if (!b.IsAlive()) continue;
 
@@ -233,7 +233,13 @@ void CheckBulletHits() {
             BoundingBox box = r->GetBoundingBox();
             if (CheckCollisionPointBox(b.GetPosition(), box)) {
                 r->TakeDamage(25);
-                b.kill();
+                b.kill(camera);
+                //blood decals on raptor hit
+                Vector3 camDir = Vector3Normalize(Vector3Subtract(b.GetPosition(), camera.position));
+                Vector3 offsetPos = Vector3Add(b.GetPosition(), Vector3Scale(camDir, -150.0f));
+  
+
+                decals.emplace_back(offsetPos, DecalType::Smoke, &bloodSheet, 7, 1.2f, 0.2f, 60.0f);
                 break;
             }
         }
@@ -242,7 +248,7 @@ void CheckBulletHits() {
     for (WallRun& w : wallRunColliders){
         for (Bullet& b: activeBullets){
             if (CheckCollisionPointBox(b.GetPosition(), w.bounds)){
-                b.kill();
+                b.kill(camera);
             }
         }
     }
@@ -276,7 +282,7 @@ bool CheckBulletHitsTree(const TreeInstance& tree, const Vector3& bulletPos) {
 
 
 
-void TreeCollision(){
+void TreeCollision(Camera& camera){
 
 
     for (TreeInstance& tree : trees) {
@@ -306,8 +312,10 @@ void TreeCollision(){
             if (!bullet.IsAlive()) continue; // <-- early out for dead bullets
             if (Vector3DistanceSqr(tree.position, bullet.GetPosition()) < 500 * 500) {
                 if (CheckBulletHitsTree(tree, bullet.GetPosition())) {
-                    bullet.kill();
+                   
+                   
                     //Tree hit by bullet. Play a sound. 
+                    bullet.kill(camera);
                     break;
                 }
 
@@ -457,6 +465,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateWallTiles(200.0f, floorHeight);
         GenerateCeilingTiles(400.0f);
         isDungeon = true;
+        generateRaptors(level.raptorCount, player.position, 3000);
 
     }
 
@@ -470,7 +479,23 @@ void WallCollision(){
         if (CheckCollisionBoxSphere(run.bounds, player.position, player.radius)) {
             ResolveBoxSphereCollision(run.bounds, player.position, player.radius);
         }
+
+        for (Character& r : raptors){
+            if (CheckCollisionBoxSphere(run.bounds, r.position, 100)){
+                ResolveBoxSphereCollision(run.bounds, r.position, 100);
+            }
+        }
     }
+}
+
+void UpdateDecals(float deltaTime){
+    for (auto& d : decals) {
+        d.Update(deltaTime);
+        
+    }
+    decals.erase(std::remove_if(decals.begin(), decals.end(),
+                [](const Decal& d) { return !d.alive; }),
+                decals.end());
 }
 
 
@@ -537,11 +562,13 @@ int main() {
         UpdateMusicStream(jungleAmbience);
         
         UpdateBullets(deltaTime);
-        CheckBulletHits();
+        UpdateDecals(deltaTime);
+        CheckBulletHits(camera);
+        UpdateDecals(deltaTime);
         UpdateBoat(player_boat, deltaTime);
         UpdateRaptors(deltaTime);
 
-        TreeCollision(); //player and raptor vs tree
+        TreeCollision(camera); //player and raptor vs tree
         if (isDungeon){
             WallCollision();
 
@@ -602,9 +629,14 @@ int main() {
         DrawPlayer(player, camera);
 
         DrawBullets();
+        for (auto& d : decals) {
+            d.Draw(camera);
+        }
 
         EndBlendMode();
         EndMode3D(); //////////////////EndMode3d
+
+
 
         rlDisableDepthTest();
 

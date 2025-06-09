@@ -51,22 +51,6 @@ void LoadDungeonLayout(const std::string& imagePath) {
     dungeonHeight = dungeonImg.height;
 }
 
-// void GenerateFloorTiles(float tileSize, float baseY) {
-//     floorTilePositions.clear();
-//     //fill the dungeon area with floor tiles, ignore the walls for now. 
-//     for (int y = 0; y < dungeonHeight; y++) {
-//         for (int x = 0; x < dungeonWidth; x++) {
-//             Vector3 pos = {
-//                 x * tileSize,
-//                 baseY,
-//                 y * tileSize
-//             };
-//             floorTilePositions.push_back(pos);
-//         }
-//     }
-
-
-// }
 
 void GenerateFloorTiles(float tileSize, float baseY) {
     floorTiles.clear();
@@ -218,7 +202,7 @@ void DrawDungeonWalls(Model wallModel) {
 }
 
 void UpdateWallTints(Vector3 playerPos) {
-    const float maxLightDistance = 6000.0f;
+    const float maxLightDistance = 4000.0f;
     const float minBrightness = 0.2f;
 
     Vector3 warmColor = {1.0f, 0.85f, 0.7f};
@@ -234,7 +218,7 @@ void UpdateWallTints(Vector3 playerPos) {
 
 
 void UpdateFloorTints(Vector3 playerPos) {
-    const float maxLightDistance = 6000.0f;
+    const float maxLightDistance = 4000.0f;
     const float minBrightness = 0.2f;
 
     Vector3 warmColor = {1.0f, 0.85f, 0.7f};
@@ -249,7 +233,7 @@ void UpdateFloorTints(Vector3 playerPos) {
 
 
 void UpdateCeilingTints(Vector3 playerPos) {
-    const float maxLightDistance = 8000.0f;
+    const float maxLightDistance = 4000.0f;
     const float minBrightness = 0.2f;
 
     Vector3 warmCeilingColor = {0.8f, 0.7f, 0.6f}; // slightly muted warm tone
@@ -262,48 +246,6 @@ void UpdateCeilingTints(Vector3 playerPos) {
     }
 }
 
-
-
-
-// void DrawDungeonWalls(Model wallModel) {
-
-//     for (const auto& [pos, rot] : wallInstances) {
-
-//         Matrix transform = MatrixIdentity();
-//         transform = MatrixMultiply(transform, MatrixTranslate(pos.x, pos.y, pos.z));
-//         transform = MatrixMultiply(transform, MatrixRotateY(DEG2RAD * rot)); // if rotated
-//         transform = MatrixMultiply(transform, MatrixScale(1.0f, 1.0f, 1.0f)); // if needed
-
-//         SetShaderValueMatrix(dungeonWallShader, GetShaderLocation(dungeonWallShader, "model"), transform);
-//         // Draw base wall
-//         DrawModelEx(wallModel, pos, Vector3{0,1,0}, rot, Vector3{1,1,1}, WHITE);
-
-//         // Draw stacked wall above
-//         Vector3 topPos = pos;
-//         topPos.y += 200;
-//         DrawModelEx(wallModel, topPos, Vector3{0,1,0}, rot, Vector3{1,1,1}, WHITE);
-//     }
-// }
-
-
-// void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY) {
-//     for (const Vector3& pos : floorTilePositions) {
-//         Vector3 ceilingPos = {
-//             pos.x,
-//             pos.y + ceilingOffsetY,
-//             pos.z
-//         };
-//         DrawModelEx(
-//             ceilingTileModel,
-//             ceilingPos,                  // Position of the tile
-//             Vector3{1, 0, 0},            // Rotation axis (X-axis)
-//             180.0f,                      // Rotation angle
-//             Vector3{1, 1, 1},            // Scale
-//             GRAY
-//         );
-
-//     }
-// }
 void DrawDungeonCeiling(Model ceilingTileModel) {
     for (const CeilingTile& ceiling : ceilingTiles) {
         DrawModelEx(

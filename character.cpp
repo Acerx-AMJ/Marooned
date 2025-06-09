@@ -106,13 +106,15 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
     stateTimer += deltaTime;
     previousPosition = position;
     float groundY = GetHeightAtWorldPosition(position, heightmap, terrainScale);
+    if (isDungeon) groundY = dungeonHeight;
     if (hitTimer > 0){
         hitTimer -= deltaTime;
     }else{
         hitTimer = 0;
     }
     // Gravity
-    float gravity = 800.0f; 
+    float gravity = 800.0f;
+    if (isDungeon) gravity = 0.0f;
     static float verticalVelocity = 0.0f;
 
     float spriteHeight = frameHeight * scale;
@@ -125,9 +127,6 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
         position.y = groundY + spriteHeight / 2.0f;
     }
     float distance = Vector3Distance(position, player.position);
-
-
-    //if (currentHealth <= 0) state = DinoState::Death;
 
     //idle, chase, attack, runaway, stagger, death
 
@@ -182,6 +181,7 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 stateTimer = 0.0f;
                 runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50); //run in a random direction
                 randomDistance = GetRandomValue(1000, 2000); //set distance to run 
+                if (isDungeon) randomDistance = GetRandomValue(500, 1000);
                 hasRunawayAngle = true;
             } else {
                 // Chase logic with repulsion
@@ -197,7 +197,8 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 float proposedTerrainHeight = GetHeightAtWorldPosition(proposedPosition, heightmap, terrainScale); //see if the next step is water. 
                 float currentTerrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
                 //float spriteHeight = frameHeight * scale;
-
+                if (isDungeon) proposedTerrainHeight = dungeonHeight;
+                if (isDungeon) currentTerrainHeight = dungeonHeight;
                 //run away if near water. X Raptor now stops at waters edge, he no longer gets stuck though.
                 if (currentTerrainHeight <= 65.0f && stateTimer > 1.0f) {
                     state = DinoState::RunAway;
@@ -210,7 +211,8 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 } else if (proposedTerrainHeight > 60.0f) {
                     position = proposedPosition;
                     rotationY = RAD2DEG * atan2f(dir.x, dir.z);
-                    position.y = GetHeightAtWorldPosition(position, heightmap, terrainScale) + (frameHeight * scale) / 2.0f; //recalculate height
+                    //dont recalculate height if in a dungeon. dungeon height stays the same. 
+                    if (!isDungeon) position.y = GetHeightAtWorldPosition(position, heightmap, terrainScale) + (frameHeight * scale) / 2.0f; //recalculate height
                 }
 
             }
@@ -266,7 +268,8 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
             Vector3 proposedPos = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f));
             float currentTerrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
             float proposedTerrainHeight = GetHeightAtWorldPosition(proposedPos, heightmap, terrainScale);
-
+            if (isDungeon) proposedTerrainHeight = dungeonHeight;
+            if (isDungeon) currentTerrainHeight = dungeonHeight;
             // If the current terrain is near water, force runaway state to continue,
             // but only move if the proposed position is on solid ground.
             if (proposedTerrainHeight > 60.0f) {
@@ -350,12 +353,13 @@ void Character::Draw(Camera3D camera) {
     Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 1.0f)); // Adjust 0.1f if needed
 
     Vector2 size = { frameWidth * scale, frameHeight * scale };
-
+    //if (isDungeon) offsetPos.y += 0.1;
     Color dinoTint = (hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
     rlDisableDepthMask();
+    
     DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, dinoTint);
     //DrawBoundingBox(GetBoundingBox(), RED);
-
+    //rlEnableBackfaceCulling();
     rlEnableDepthMask();
 }
 

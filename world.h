@@ -6,6 +6,7 @@
 #include "character.h"
 #include "bullet.h"
 #include "vegetation.h"
+#include "decal.h"
 
 enum class GameState {
     Menu,
@@ -15,6 +16,7 @@ enum class GameState {
 
 extern bool controlPlayer;
 extern bool isDungeon;
+extern float dungeonHeight;
 extern unsigned char* heightmapPixels;
 extern Vector3 startPosition;
 extern int selectedOption; // 0 = Start, 1 = Quit
@@ -36,6 +38,7 @@ extern std::vector<Character*> raptorPtrs;
 
 
 extern std::vector<Bullet> activeBullets;
+extern std::vector<Decal> decals;
 
 float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
 void removeAllRaptors();

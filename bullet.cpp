@@ -3,6 +3,8 @@
 #include <raylib.h>
 #include <cmath>
 #include "world.h"
+#include "resources.h"
+#include "decal.h"
 
 // Bullet::Bullet(Vector3 startPos, Vector3 dir, float spd, float lifetime)
 //     : position(startPos), direction(Vector3Normalize(dir)), speed(spd), alive(true), age(0.0f), maxLifetime(lifetime) {}
@@ -42,7 +44,13 @@ bool Bullet::IsAlive() const {
     return alive;
 }
 
-void Bullet::kill(){
+void Bullet::kill(Camera& camera){
+    //smoke decals and bullet death
+    Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
+    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
+
+    decals.emplace_back(offsetPos, DecalType::Smoke, &smokeSheet, 7, 0.8f, 0.1f, 25.0f);
+
     alive = false;
     
 }

@@ -5,7 +5,7 @@
 #include <iostream>
 
 RenderTexture2D sceneTexture;
-Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop;
+Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, 
 bottomPlane, blunderbuss, floorTile, doorWay, wall;
@@ -29,7 +29,8 @@ void LoadAllResources() {
     gunModel = LoadModel("assets/models/blunderbus.glb");
     muzzleFlash = LoadTexture("assets/sprites/muzzleFlash.png");
     backDrop = LoadTexture("assets/screenshots/MiddleIsland.png");
-
+    smokeSheet = LoadTexture("assets/sprites/smokeSheet.png");
+    bloodSheet = LoadTexture("assets/sprites/bloodSheet.png");
     // Models
     palmTree = LoadModel("assets/models/bigPalmTree.glb");
     palm2 = LoadModel("assets/models/smallPalmTree.glb");
@@ -169,6 +170,7 @@ void UnloadAllResources() {
     UnloadTexture(shadowTex);
     UnloadTexture(raptorTexture);
     UnloadTexture(gunTexture);
+    UnloadTexture(smokeSheet);
 
     UnloadShader(fogShader);
     UnloadShader(skyShader);

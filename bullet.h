@@ -10,7 +10,7 @@ public:
 
     void Update(float deltaTime);
     void Draw() const;
-    void kill();
+    void kill(Camera& camera);
     bool IsAlive() const;
     Vector3 GetPosition() const;
     

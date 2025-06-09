@@ -267,7 +267,7 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
 
     float groundY = GetHeightAtWorldPosition(player.position, heightmap, terrainScale);
     if (isDungeon) {
-        groundY = waterHeightY + 50;
+        groundY = dungeonHeight;
     }
     float feetY = player.position.y - player.height / 2.0f;
 
