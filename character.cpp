@@ -106,7 +106,7 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
     stateTimer += deltaTime;
     previousPosition = position;
     float groundY = GetHeightAtWorldPosition(position, heightmap, terrainScale);
-    if (isDungeon) groundY = dungeonHeight;
+    if (isDungeon) groundY = dungeonPlayerHeight;
     if (hitTimer > 0){
         hitTimer -= deltaTime;
     }else{
@@ -197,8 +197,8 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
                 float proposedTerrainHeight = GetHeightAtWorldPosition(proposedPosition, heightmap, terrainScale); //see if the next step is water. 
                 float currentTerrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
                 //float spriteHeight = frameHeight * scale;
-                if (isDungeon) proposedTerrainHeight = dungeonHeight;
-                if (isDungeon) currentTerrainHeight = dungeonHeight;
+                if (isDungeon) proposedTerrainHeight = dungeonPlayerHeight;
+                if (isDungeon) currentTerrainHeight = dungeonPlayerHeight;
                 //run away if near water. X Raptor now stops at waters edge, he no longer gets stuck though.
                 if (currentTerrainHeight <= 65.0f && stateTimer > 1.0f) {
                     state = DinoState::RunAway;
@@ -268,8 +268,8 @@ void Character::Update(float deltaTime, Vector3 playerPosition, Player& player, 
             Vector3 proposedPos = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f));
             float currentTerrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
             float proposedTerrainHeight = GetHeightAtWorldPosition(proposedPos, heightmap, terrainScale);
-            if (isDungeon) proposedTerrainHeight = dungeonHeight;
-            if (isDungeon) currentTerrainHeight = dungeonHeight;
+            if (isDungeon) proposedTerrainHeight = dungeonPlayerHeight;
+            if (isDungeon) currentTerrainHeight = dungeonPlayerHeight;
             // If the current terrain is near water, force runaway state to continue,
             // but only move if the proposed position is on solid ground.
             if (proposedTerrainHeight > 60.0f) {

@@ -8,7 +8,7 @@ class Bullet {
 public:
     Bullet(Vector3 position, Vector3 velocity, float lifetime);
 
-    void Update(float deltaTime);
+    void Update(Camera& camera, float deltaTime);
     void Draw() const;
     void kill(Camera& camera);
     bool IsAlive() const;

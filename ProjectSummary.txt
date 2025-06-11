@@ -1,0 +1,60 @@
+🧠 Project Summary: Marooned
+A first-person exploration/survival game with procedural terrain and dungeon elements. Built in C++ with Raylib.
+
+🔧 Core Mechanics in main.cpp:
+Dual camera modes:
+
+Free camera (fly mode)
+
+Player-controlled FPS mode (switch with TAB)
+
+Rendering system:
+
+Custom projection/view matrix via BeginCustom3D()
+
+Renders to a texture for post-processing (fog shader etc.)
+
+Dynamic world systems:
+
+Procedural terrain with vegetation
+
+Animated water + a “bottom plane” to hide the world edge
+
+Raptors spawned and sorted before drawing
+
+Combat & Decals:
+
+Bullet objects interact with trees, raptors, and dungeon walls
+
+Decals like blood/smoke created on hit
+
+Temporary lights from bullet positions
+
+UI:
+
+Health and stamina bars
+
+Dynamic main menu + level select
+
+Levels:
+
+Open-world or dungeon-based (switch via level.isDungeon)
+
+Dungeon floor/wall/ceiling/barrel generation from PNG layout
+
+🧟 Enemy AI:
+All handled via Character class (raptors are just instances of that)
+
+Raptors get updated via UpdateRaptors() and handle their own state logic
+
+raptorPtrs used for sorting by distance and for bullet collision
+
+📦 Other systems:
+Decals with lifetimes (decal.Update(), .alive)
+
+Music streams for ambience/dungeon, using Raylib audio
+
+Handles input from both gamepad and keyboard/mouse
+
+Modular headers: vegetation.h, bullet.h, player.h, etc.
+

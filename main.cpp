@@ -211,9 +211,9 @@ void UpdateRaptors(float deltaTime){
     }
 }
 
-void UpdateBullets(float deltaTime) {
+void UpdateBullets(Camera& camera, float deltaTime) {
     for (Bullet& b : activeBullets) {
-        b.Update(deltaTime);
+        b.Update(camera, deltaTime);
     }
 
     activeBullets.erase( //erase dead bullets. 
@@ -452,25 +452,36 @@ void InitLevel(const LevelData& level, Camera camera) {
     
     camera.position = player.position;
     // Generate raptors around the given spawn center
-    generateRaptors(level.raptorCount, level.raptorSpawnCenter, 3000);
+   
 
     InitBoat(player_boat, boatPosition);
-
+    
     terrainModel.materials[0].shader = terrainShader;
 
-    float floorHeight = waterHeightY + 20;
+
     if (level.isDungeon){
-        LoadDungeonLayout("assets/maps/map3.png");
+        isDungeon = true;
+        LoadDungeonLayout("assets/maps/map4.png");
+        
         GenerateFloorTiles(200.0f, floorHeight);
         GenerateWallTiles(200.0f, floorHeight);
         GenerateCeilingTiles(400.0f);
-        isDungeon = true;
-        generateRaptors(level.raptorCount, player.position, 3000);
+        GenerateBarrels(200, floorHeight);
+        GenerateLightSources(200, floorHeight);
+        generateRaptors(level.raptorCount,level.raptorSpawnCenter, 8000);
 
+    }else{
+        generateRaptors(level.raptorCount, level.raptorSpawnCenter, 3000);
     }
+    //player.position = FindSpawnPoint(dungeonPixels, dungeonWidth, dungeonHeight, 200, floorHeight);
+    Vector3 resolvedSpawn = level.startPosition; // default fallback
 
-    InitPlayer(player, level.startPosition);
-   
+    Vector3 pixelSpawn = FindSpawnPoint(dungeonPixels, dungeonWidth, dungeonHeight, 200, floorHeight);
+    if (pixelSpawn.x != 0 || pixelSpawn.z != 0) {
+        resolvedSpawn = pixelSpawn;
+        //Overriding start position with green pixel
+    }
+    InitPlayer(player, resolvedSpawn);
 
 }
 
@@ -498,6 +509,43 @@ void UpdateDecals(float deltaTime){
                 decals.end());
 }
 
+void lightBullets(float deltaTime){
+   // === Clean up expired bullet lights ===
+    for (int i = bulletLights.size() - 1; i >= 0; --i) {
+        bulletLights[i].age += deltaTime;
+        if (bulletLights[i].age >= bulletLights[i].lifeTime) {
+            bulletLights.erase(bulletLights.begin() + i);
+        }
+    }
+
+   // === Collect new lights to add after cleanup ===
+    std::vector<LightSource> newBulletLights;
+    for (const Bullet& bullet : activeBullets) {
+        LightSource bulletLight;
+        bulletLight.position = bullet.GetPosition();
+        bulletLight.range = 300.0f;
+        bulletLight.intensity = 1.2f;
+        bulletLight.lifeTime = 0.5f;
+        bulletLight.age = 0.0f;
+        newBulletLights.push_back(bulletLight);
+    }
+
+    //=== Now safely append them ===
+    bulletLights.insert(bulletLights.end(), newBulletLights.begin(), newBulletLights.end());
+}
+
+void HandleDungeon(float deltaTime) {
+    WallCollision();
+
+    //lightBullets(deltaTime);
+    
+    // === Update tints with updated light list ===
+    UpdateWallTints(player.position);
+    UpdateCeilingTints(player.position);
+    UpdateFloorTints(player.position);
+    UpdateBarrelTints(player.position);
+}
+
 
 
 int main() {
@@ -507,13 +555,15 @@ int main() {
     SetTargetFPS(60);
     LoadAllResources();
     SetExitKey(KEY_NULL);
-
+    Music dungeonAir = LoadMusicStream("assets/sounds/dungeonAir.ogg");
     Music jungleAmbience = LoadMusicStream("assets/sounds/jungleSounds.ogg"); 
     PlayMusicStream(jungleAmbience); // Starts playback
-    SetMusicVolume(jungleAmbience, 0.5f); 
+    PlayMusicStream(dungeonAir);
+    SetMusicVolume(jungleAmbience, 0.5f);
+    SetMusicVolume(dungeonAir, 1.0f);
     controlPlayer = true; //start as player
 
-
+    
     // Camera
     Camera3D camera = { 0 };
     camera.position = startPosition;
@@ -527,6 +577,7 @@ int main() {
     while (!WindowShouldClose()) {
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
+            if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Playing;
             if (IsKeyPressed(KEY_UP)) selectedOption = (selectedOption - 1 + 3) % 3;
             if (IsKeyPressed(KEY_DOWN)) selectedOption = (selectedOption + 1) % 3;
 
@@ -559,24 +610,23 @@ int main() {
         debugControls(); //press P to remove all vegetation, Press O to regenerate raptors, Press L to print player position
         UpdateShaders(camera);
         sortTrees(camera); //sort trees by distance to player, draw closest trees last.
-        UpdateMusicStream(jungleAmbience);
+        if (!isDungeon) UpdateMusicStream(jungleAmbience);
         
-        UpdateBullets(deltaTime);
+        UpdateBullets(camera, deltaTime);
         UpdateDecals(deltaTime);
         CheckBulletHits(camera);
         UpdateDecals(deltaTime);
         UpdateBoat(player_boat, deltaTime);
         UpdateRaptors(deltaTime);
-
         TreeCollision(camera); //player and raptor vs tree
+        
         if (isDungeon){
-            WallCollision();
+            HandleDungeon(deltaTime);
+            UpdateMusicStream(dungeonAir);
+            
 
         }
-        UpdateWallTints(player.position);
-        UpdateCeilingTints(player.position);
-        UpdateFloorTints(player.position);
-    
+
 
         if (IsGamepadAvailable(0)) { //hack to speed up controller movement. 
             UpdateCameraWithGamepad(camera);
@@ -612,7 +662,8 @@ int main() {
 
         DrawDungeonFloor(floorTile);
         DrawDungeonWalls(wall);
-        
+        DrawDungeonBarrels(barrelModel);
+        DrawDungeonPillars(pillarModel);
         //DrawDungeonCeiling(floorTile, 400.0f); // Or whatever offset looks good
         DrawDungeonCeiling(floorTile);
 
@@ -622,7 +673,7 @@ int main() {
         DrawModel(bottomPlane, bottomPos, 1.0f, DARKBLUE); //a second plane below water plane. to prevent seeing through the world when looking down.
         DrawTrees(trees, palmTree, palm2, shadowQuad); //maybe models should be global, i think they are 
         DrawBushes(bushes, shadowQuad);
-        DrawBoat(player_boat);
+        if (!isDungeon) DrawBoat(player_boat);
         //DrawModel(floorTile, Vector3{0, 200, 0}, 0.5, WHITE);
         //DrawModel(doorWay, Vector3{0, 200, 0}, 0.5, WHITE);
         drawRaptors(camera); //sort and draw raptors

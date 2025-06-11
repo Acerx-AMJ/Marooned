@@ -3,6 +3,7 @@
 #include "raymath.h"
 #include "resources.h"
 #include "vegetation.h"
+#include "dungeonGeneration.h"
 
 
 
@@ -14,22 +15,25 @@ unsigned char* heightmapPixels = nullptr;
 Player player = {};
 Vector3 startPosition = {5475.0f, 300.0f, -5665.0f}; //middle island start pos
 Vector3 boatPosition = {6000, -20, 0.0};
+Vector3 playerSpawnPoint = {0,0,0};
 float boatSpeed = 200;
 float waterHeightY = 60;
-float dungeonHeight = 100;
+float dungeonPlayerHeight = 100;
 float fadeToBlack = 0.0f;
 float vignetteIntensity = 0.0f;
 float vignetteFade = 0.0f;
 const float TREE_HEIGHT_RATIO = 0.80f;
 const float BUSH_HEIGHT_RATIO = 0.80f;
 int selectedOption = 0;
-
+float floorHeight = 80;
 std::vector<Character> raptors;
 
 std::vector<Character*> raptorPtrs;
 
 std::vector<Bullet> activeBullets;
 std::vector<Decal> decals;
+
+
 
 void removeAllRaptors(){
     raptorPtrs.clear();
@@ -84,35 +88,50 @@ void ResolveTreeCollision(const TreeInstance& tree, Vector3& playerPos) {
 
 
 
+
 void generateRaptors(int amount, Vector3 centerPos, float radius) {
     raptors.clear();
     raptorPtrs.clear();
 
     int spawned = 0;
     int attempts = 0;
-    const int maxAttempts = 1000; // More attempts since spawnable area may be smaller
+    const int maxAttempts = 1000;
 
     while (spawned < amount && attempts < maxAttempts) {
         ++attempts;
 
-        // Random position around centerPos within a circle (not square)
         float angle = GetRandomValue(0, 360) * DEG2RAD;
-        float distance = GetRandomValue(500, (int)radius); // Optional: minimum distance
+        float distance = GetRandomValue(500, (int)radius);
         float x = centerPos.x + cosf(angle) * distance;
         float z = centerPos.z + sinf(angle) * distance;
 
         Vector3 spawnPos = { x, 0.0f, z };
-        float terrainHeight = GetHeightAtWorldPosition(spawnPos, heightmap, terrainScale);
-        if (isDungeon) terrainHeight = 85;
-        if (terrainHeight > 80.0f) {
-            std::cout << "gererated raptor\n";
+        
+        if (isDungeon) {
+            // Convert world x,z to dungeon tile coordinates
+            const float tileSize = 200.0f; 
+            int gridX = (int)(x / tileSize);
+            int gridY = (int)(z / tileSize);
+
+            if (!IsDungeonFloorTile(gridX, gridY)) continue;
+
+            float dh = 85.0f;
+            float spriteHeight = 200 * 0.5f;
+            spawnPos.y = dh + spriteHeight / 2.0f;
+
+        } else {
+            float terrainHeight = GetHeightAtWorldPosition(spawnPos, heightmap, terrainScale);
+            if (terrainHeight <= 80.0f) continue;
+
             float spriteHeight = 200 * 0.5f;
             spawnPos.y = terrainHeight + spriteHeight / 2.0f;
-
-            Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f);
-            raptors.push_back(raptor);
-            ++spawned;
         }
+
+        //std::cout << "generated raptor\n";
+
+        Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f);
+        raptors.push_back(raptor);
+        ++spawned;
     }
 
     for (Character& r : raptors) {

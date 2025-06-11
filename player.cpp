@@ -15,7 +15,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     player.startPosition = startPosition;
     player.velocity = {0, 0, 0};
     player.grounded = false;
-
+    player.groundY = 0.0;
     weapon.model = blunderbuss;//LoadModel("assets/models/blunderbus.glb"); //shouldn't this be in resources. 
     weapon.scale = { 2.0f, 2.0f, 2.0f };
 
@@ -264,17 +264,18 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
     }
 
     // === Ground Check ===
-
-    float groundY = GetHeightAtWorldPosition(player.position, heightmap, terrainScale);
+    
+    player.groundY = GetHeightAtWorldPosition(player.position, heightmap, terrainScale);
+    
     if (isDungeon) {
-        groundY = dungeonHeight;
+        player.groundY = dungeonPlayerHeight;
     }
     float feetY = player.position.y - player.height / 2.0f;
 
-    if (feetY <= groundY + 5.0f) { //+5 buffer for uneven terrain. 
+    if (feetY <= player.groundY + 5.0f) { //+5 buffer for uneven terrain. 
         player.grounded = true;
         player.velocity.y = 0;
-        player.position.y = groundY + player.height / 2.0f;
+        player.position.y = player.groundY + player.height / 2.0f;
     } else {
         player.grounded = false;
     }

@@ -27,7 +27,7 @@ struct Player {
     bool dead = false;
     float deathTimer = 0.0f;
 
-
+    float groundY;
     bool grounded = false;
     bool isSwimming = false;
     bool isMoving = false;

@@ -8,7 +8,7 @@ RenderTexture2D sceneTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, 
-bottomPlane, blunderbuss, floorTile, doorWay, wall;
+bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel;
 Image heightmap;
 Mesh terrainMesh;
 Sound musket;
@@ -41,6 +41,8 @@ void LoadAllResources() {
     floorTile = LoadModel("assets/models/floorTile.glb");
     doorWay = LoadModel("assets/models/doorWay.glb");
     wall = LoadModel("assets/models/wall1.glb");
+    barrelModel = LoadModel("assets/models/barrel.glb");
+    pillarModel = LoadModel("assets/models/pillar.glb");
 
     // Heightmap 
     // heightmap = LoadImage("assets/MiddleIsland.png"); ///////////////////////// current map
@@ -56,6 +58,7 @@ void LoadAllResources() {
 
     //Post processing shader. AO shader + red vignette + fade to black
     fogShader = LoadShader(0, "assets/shaders/fog_postprocess.fs");
+    
 
     // Sky
     skyShader = LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
@@ -76,14 +79,6 @@ void LoadAllResources() {
     bottomPlane = LoadModelFromMesh(GenMeshPlane(30000, 30000, 1, 1));
     waterModel.materials[0].shader = waterShader;
     bottomPlane.materials[0].shader = waterShader;
-
-    //Dungeon lighting
-    // dungeonWallShader = LoadShader("dungeon_wall.vs", "dungeon_wall.fs");
-    // lightPosLoc = GetShaderLocation(dungeonWallShader, "lightPos");
-    // camPosLocD = GetShaderLocation(dungeonWallShader, "cameraPos");
-    //wall.materials[0].shader = dungeonWallShader;
-    // assign shader to wall model(s)
-
 
 
 
@@ -126,8 +121,8 @@ void UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
     //dungeonDarkness
-    float dungeonDarkness = 0.2f;
-    float dungeonContrast = 1.25f;
+    float dungeonDarkness = 0.01f;
+    float dungeonContrast = 1.125f;
     int isDungeonVal = 0;
 
     if (isDungeon){
@@ -141,6 +136,10 @@ void UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "isDungeon"), &isDungeonVal, SHADER_UNIFORM_INT);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonDarkness"), &dungeonDarkness, SHADER_UNIFORM_FLOAT);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonContrast"), &dungeonContrast, SHADER_UNIFORM_FLOAT);
+    // int colorBleedLoc = GetShaderLocation(fogShader, "colorBleedAmount");
+    // float bleedAmount = 0.25f;
+    // SetShaderValue(fogShader, colorBleedLoc, &bleedAmount, SHADER_UNIFORM_FLOAT);
+    // SetShaderValue(fogShader, colorBleedLoc, &bleedAmount, SHADER_UNIFORM_FLOAT);
 
     // Vector3 playerLightPos = player.position;
     // //Vector3 camPos = camera.position;
@@ -188,6 +187,8 @@ void UnloadAllResources() {
     UnloadModel(gunModel);
     UnloadModel(wall);
     UnloadModel(floorTile);
+    UnloadModel(doorWay);
+    UnloadModel(barrelModel);
 
 
     UnloadImage(heightmap);

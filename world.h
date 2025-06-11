@@ -16,9 +16,11 @@ enum class GameState {
 
 extern bool controlPlayer;
 extern bool isDungeon;
-extern float dungeonHeight;
+extern float dungeonPlayerHeight;
+extern float floorHeight;
 extern unsigned char* heightmapPixels;
 extern Vector3 startPosition;
+extern Vector3 playerSpawnPoint;
 extern int selectedOption; // 0 = Start, 1 = Quit
 extern int levelIndex;
 extern Player player;

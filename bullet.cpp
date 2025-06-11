@@ -19,7 +19,7 @@ Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime)
 {}
 
 
-void Bullet::Update(float deltaTime) {
+void Bullet::Update(Camera& camera, float deltaTime) {
     if (!alive) return;
 
     // Apply gravity
@@ -31,6 +31,14 @@ void Bullet::Update(float deltaTime) {
     // Age out
     age += deltaTime;
     if (age >= maxLifetime) alive = false;
+
+    //hit floor
+    if (isDungeon){
+        if (position.y <= dungeonPlayerHeight) kill(camera);     
+    }else{
+        if (position.y <= player.groundY) kill(camera);       
+    }
+
 }
 
 
