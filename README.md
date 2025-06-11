@@ -5,63 +5,39 @@ Marooned is a first-person exploration/survival game with procedural terrain and
 ![Gameplay Screenshot](assets/Screenshot3.png)
 ---
 
-🧩 Features
+## 🌴 Features
 
-🌍 Procedural Terrain
-Generates large island environments from grayscale heightmaps.
+- 🏝️ **Procedural Terrain**  
+  Generate vast island landscapes from 4K perlin noise heightmaps.
 
-Realistic terrain shading using a custom terrain shader and ambient occlusion.
+- 🗺️ **Procedural dungeons** 
+  generation based on PNG blueprints.
 
-Dynamic sky and animated water complete the atmosphere.
+- 🧍 **First-person on-foot controller**
 
-🌿 Vegetation System
-Palm trees and bushes are procedurally placed and vary in size and shape.
+- 🚣 **First-person boat controller**
 
-Includes basic collision for navigation and interaction.
+- 🦕 **Wandering dinosaurs**
+   patrol, chase, and runaway behavior.
 
-Supports environmental interaction (bullets can hit and react with trees).
+- 🌤️ **Dynamic Skybox**  
+  A seamless, procedurally rendered sky with soft, animated clouds.
 
-🧍 First-Person Player Mode
-Toggle between free-fly camera and grounded player mode (TAB key).
+- 🌊 **Animated Water Shader**  
+  Realistic water distortion with distance-based gradients for added depth.
 
-Player can sprint, swim, and interact with the world.
+- 🌲 **Vegetation System**  
+  Procedurally placed palm trees with randomized scale, rotation, and offsets.  
+  Tree placement is filtered by terrain height and spacing rules.
 
-Health and stamina systems visualized through clean on-screen UI.
+- 🌫️ **Ambient Occlusion Shader**  
+  Screen-space AO gives a subtle cell-shaded look to island edges.
 
-🧠 AI System
-Raptors roam the island or inhabit dungeons.
+- 🧭 **Free Camera Navigation**  
+  Navigate freely over the landscape or plan for a 3rd-person boat cam.
 
-Uses a shared Character class with state-based logic (idle, chase, attack, flee).
-
-Enemies avoid terrain and interact with trees and walls.
-
-🔫 Combat & Projectiles
-Bullets can be fired and interact with characters, walls, and trees.
-
-Decals (blood, smoke) are dynamically created on impact.
-
-Bullet lights briefly illuminate surroundings for added visual flair.
-
-🏰 Dungeon Mode
-Switches game context into a handcrafted dungeon generated from PNG maps.
-
-Rooms, walls, barrels, and lights created at runtime.
-
-Separate ambient audio and lighting for underground tension.
-
-📷 Custom Render Pipeline
-Offscreen framebuffer for scene rendering.
-
-Fullscreen post-processing via a fog shader.
-
-Custom camera matrix setup for maximum control.
-
-🎧 Audio
-Ambient jungle and dungeon soundscapes using Raylib music streams.
-
-Basic sound manager system for playing SFX.
-
-Planned support for positional audio and reverb zones.
+- 🔊 **Jungle ambiance**
+  Footstep sounds, raptor cries
 
 ---
 
