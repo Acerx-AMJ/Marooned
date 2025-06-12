@@ -162,7 +162,7 @@ void BeginCustom3D(Camera3D camera, float farClip) {
 }
 
 void SpawnRaptor(Vector3 pos) {
-    Character raptor(pos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f);
+    Character raptor(pos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
     raptors.push_back(raptor);
 }
 
@@ -207,7 +207,7 @@ bool CheckCollisionPointBox(Vector3 point, BoundingBox box) {
 
 void UpdateRaptors(float deltaTime){
     for (Character& raptor : raptors) {
-        raptor.Update(deltaTime, player.position, player,  heightmap, terrainScale, raptorPtrs);
+        raptor.Update(deltaTime, player,  heightmap, terrainScale, raptorPtrs);
     }
 }
 
@@ -468,7 +468,9 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateCeilingTiles(400.0f);
         GenerateBarrels(200, floorHeight);
         GenerateLightSources(200, floorHeight);
-        generateRaptors(level.raptorCount,level.raptorSpawnCenter, 8000);
+        Vector3 dungeonCenter = GetDungeonWorldPos(dungeonWidth / 2, dungeonHeight / 2, 200, floorHeight);
+        //generateRaptors(level.raptorCount, dungeonCenter, 10000);
+        GenerateRaptorsFromImage(200, floorHeight);
 
     }else{
         generateRaptors(level.raptorCount, level.raptorSpawnCenter, 3000);

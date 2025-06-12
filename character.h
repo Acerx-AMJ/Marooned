@@ -5,6 +5,13 @@
 #include "player.h"
 #include <vector>
 
+enum class CharacterType {
+    Raptor,
+    Skeleton,
+    // Add more later: Zombie, Goblin, etc.
+};
+
+
 enum class DinoState {
     Idle,
     Chase,
@@ -41,13 +48,16 @@ public:
 
     int maxHealth = 150;
     int currentHealth = maxHealth;
+    CharacterType type;
 
 
-
-    Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, float speed, float scl, int row = 0);
+    Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, float speed, float scl, int row = 0, CharacterType t = CharacterType::Raptor);
     BoundingBox GetBoundingBox() const;
-    void Update(float deltaTime, Vector3 playerPosition, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors);
+    void Update(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors);
     Vector3 ComputeRepulsionForce(const std::vector<Character*>& allRaptors, float repulsionRadius = 500.0f, float repulsionStrength = 6000.0f);
+    void UpdateRaptorAI(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors);
+    void UpdateAI(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors); 
+    void UpdateSkeletonAI(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors);
     void TakeDamage(int amount);
     void Draw(Camera3D camera);
     void SetAnimation(int row, int frames, float speed);

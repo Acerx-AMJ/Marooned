@@ -81,4 +81,5 @@ void UpdateBarrelTints(Vector3 playerPos);
 bool IsDungeonFloorTile(int x, int y); 
 Vector3 GetDungeonWorldPos(int x, int y, float tileSize, float baseY);
 Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, float baseY);
+void GenerateRaptorsFromImage(float tileSize, float baseY);
 void ClearDungeon();

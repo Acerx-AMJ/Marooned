@@ -25,7 +25,7 @@ std::vector<LevelData> levels = {
         {16000.0f, 300.0f, 16000.0f},
         {0.0f, 300.0f, 0.0f},
         {0.0f, 0.0f, 0.0f},
-        0, //raptors in dungeons?
+        7, //raptors in dungeons?
         true //isDungeon is true, adjust brightness and floorPosY
     }
 };

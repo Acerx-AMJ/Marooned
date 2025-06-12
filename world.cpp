@@ -129,7 +129,7 @@ void generateRaptors(int amount, Vector3 centerPos, float radius) {
 
         //std::cout << "generated raptor\n";
 
-        Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f);
+        Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
         raptors.push_back(raptor);
         ++spawned;
     }

@@ -59,8 +59,17 @@ void LoadDungeonLayout(const std::string& imagePath) {
     dungeonWidth = dungeonImg.width;
     dungeonHeight = dungeonImg.height;
     
+
     
-    
+    //🟩 Green = Player Start
+
+    //🔵 Blue = Barrel
+
+    //🟥 Red = Raptor
+
+    //🟨 Yellow = Light
+
+    //🟪 Purple = Key
     
 }
 
@@ -190,7 +199,7 @@ void GenerateCeilingTiles(float ceilingOffsetY) {
     }
 }
 
-const Color BARREL_COLOR = {0, 0, 255, 255};
+//const Color BARREL_COLOR = {0, 0, 255, 255};
 
 void GenerateBarrels(float tileSize, float baseY) {
     barrelInstances.clear();
@@ -206,6 +215,30 @@ void GenerateBarrels(float tileSize, float baseY) {
         }
     }
 }
+
+void GenerateRaptorsFromImage(float tileSize, float baseY) {
+    raptors.clear(); // Clear existing raptors if needed
+
+    for (int y = 0; y < dungeonHeight; y++) {
+        for (int x = 0; x < dungeonWidth; x++) {
+            Color current = dungeonPixels[y * dungeonWidth + x];
+
+            // Look for pure red pixels (255, 0, 0)
+            if (current.r == 255 && current.g == 0 && current.b == 0) {
+                Vector3 spawnPos = GetDungeonWorldPos(x, y, tileSize, 135);
+                
+                Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
+
+                raptors.push_back(raptor);
+            }
+        }
+    }
+
+    for (Character& r : raptors) {
+        raptorPtrs.push_back(&r);
+    }
+}
+
 
 
 
