@@ -3,6 +3,9 @@
 #include "vegetation.h"
 #include "world.h"
 #include <iostream>
+#include "player.h"
+#include "dungeonGeneration.h"
+#include "pathfinding.h"
 
 InputMode currentInputMode = InputMode::KeyboardMouse;
 
@@ -58,6 +61,28 @@ void debugControls(){
         regenerateRaptors(5, player.position, 6000);
 
     }
+
+    if (IsKeyPressed(KEY_P)) {
+        Vector2 start = {
+            (float)GetDungeonImageX(player.position.x, tileSize, dungeonWidth),
+            (float)GetDungeonImageY(player.position.z, tileSize, dungeonHeight)
+        };
+
+        Vector2 goal = { 6, 8 }; // Pick a target tile
+
+
+
+        std::cout << "Start tile: (" << start.x << ", " << start.y << ") walkable=" << IsWalkable((int)start.x, (int)start.y) << std::endl;
+        std::cout << "Goal  tile: (" << goal.x  << ", " << goal.y  << ") walkable=" << IsWalkable((int)goal.x, (int)goal.y) << std::endl;
+
+        auto path = FindPath(start, goal);
+        std::cout << "Path length: " << path.size() << std::endl;
+
+        for (auto& p : path) {
+            std::cout << "→ (" << p.x << ", " << p.y << ")" << std::endl;
+        }
+    }
+
 
 
 }

@@ -8,7 +8,8 @@ std::vector<LevelData> levels = {
         {5475.0f, 300.0f, -5665.0f}, //start position
         {0, 0, 0}, //raptor spawn center - 3000 radius
         10, //raptor count
-        false //isDungeon
+        false, //isDungeon
+        BoundingBox{ Vector3{-100, 0, 100}, Vector3{-100, 300, 100} } // ← Dungeon entrance
     },
     {
         "EyeballIsle",
@@ -17,7 +18,8 @@ std::vector<LevelData> levels = {
         {0.0f, 300.0f, 0.0f},
         {0.0f, 0, 0.0f},
         0,
-        false
+        false, 
+        std::nullopt // ← no entrance
     },
     {
         "Dungeon1",
@@ -25,7 +27,9 @@ std::vector<LevelData> levels = {
         {16000.0f, 300.0f, 16000.0f},
         {0.0f, 300.0f, 0.0f},
         {0.0f, 0.0f, 0.0f},
-        7, //raptors in dungeons?
-        true //isDungeon is true, adjust brightness and floorPosY
+        0, 
+        true, //isDungeon is true
+        std::nullopt // ← no entrance
+
     }
 };

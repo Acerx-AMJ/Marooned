@@ -5,7 +5,7 @@
 #include <iostream>
 
 RenderTexture2D sceneTexture;
-Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet;
+Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, 
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel;
@@ -25,6 +25,7 @@ void LoadAllResources() {
     sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
 
     raptorTexture = LoadTexture("assets/sprites/raptorSheet.png");
+    skeletonSheet = LoadTexture("assets/sprites/skeletonSheet.png");
     gunTexture = LoadTexture("assets/sprites/flintlock.png");
     gunModel = LoadModel("assets/models/blunderbus.glb");
     muzzleFlash = LoadTexture("assets/sprites/muzzleFlash.png");
@@ -121,7 +122,7 @@ void UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
     //dungeonDarkness
-    float dungeonDarkness = 0.01f;
+    float dungeonDarkness = 0.05f;
     float dungeonContrast = 1.125f;
     int isDungeonVal = 0;
 
@@ -136,31 +137,7 @@ void UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "isDungeon"), &isDungeonVal, SHADER_UNIFORM_INT);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonDarkness"), &dungeonDarkness, SHADER_UNIFORM_FLOAT);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonContrast"), &dungeonContrast, SHADER_UNIFORM_FLOAT);
-    // int colorBleedLoc = GetShaderLocation(fogShader, "colorBleedAmount");
-    // float bleedAmount = 0.25f;
-    // SetShaderValue(fogShader, colorBleedLoc, &bleedAmount, SHADER_UNIFORM_FLOAT);
-    // SetShaderValue(fogShader, colorBleedLoc, &bleedAmount, SHADER_UNIFORM_FLOAT);
 
-    // Vector3 playerLightPos = player.position;
-    // //Vector3 camPos = camera.position;
-
-    // SetShaderValue(dungeonWallShader, lightPosLoc, &playerLightPos, SHADER_UNIFORM_VEC3);
-    // SetShaderValue(dungeonWallShader, camPosLoc, &camPos, SHADER_UNIFORM_VEC3);
-
-
-
-    // assign shader to wall model(s)
-    
-
-// During death sequence:
-    if (player.dying) {
-        fadeToBlack = Clamp(player.deathTimer /2.5f, 0.0f, 1.0f); // fade over 1.5 seconds
-        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
-    }
-    else {
-        fadeToBlack = 0.0f;
-        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
-    }
 }
 
 void UnloadAllResources() {

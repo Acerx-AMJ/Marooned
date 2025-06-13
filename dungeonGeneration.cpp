@@ -14,8 +14,8 @@ std::vector<CeilingTile> ceilingTiles;
 std::vector<BarrelInstance> barrelInstances;
 std::vector<PillarInstance> pillars;
 std::vector<WallRun> wallRunColliders;
-std::vector<LightSource> dungeonLights;
-std::vector<LightSource> bulletLights;
+std::vector<LightSource> dungeonLights; //static lights. 
+std::vector<LightSource> bulletLights; //lights attached to bullets for testing. 
 
 Image dungeonImg; //save the dungeon info globaly
 Color* dungeonPixels = nullptr;
@@ -23,9 +23,9 @@ int dungeonWidth = 0;
 int dungeonHeight = 0;
 
 // === Constants ===
-const Color COLOR_BLACK  = { 0, 0, 0, 255 };
-const Color COLOR_BLUE   = { 0, 0, 255, 255 };
-
+const Color COLOR_BLACK  = { 0, 0, 0, 255 }; //walls
+const Color COLOR_BLUE   = { 0, 0, 255, 255 }; //barrels
+const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
 
 BoundingBox MakeWallBoundingBox(const Vector3& start, const Vector3& end, float thickness, float height) {
     Vector3 min = Vector3Min(start, end);
@@ -43,7 +43,7 @@ BoundingBox MakeWallBoundingBox(const Vector3& start, const Vector3& end, float 
         max.z += thickness * 0.5f;
     }
 
-    max.y += height + 1000; // Add height
+    max.y += height + 1000; // dont jump over walls. 1000 high
 
     return { min, max };
 }
@@ -59,8 +59,6 @@ void LoadDungeonLayout(const std::string& imagePath) {
     dungeonWidth = dungeonImg.width;
     dungeonHeight = dungeonImg.height;
     
-
-    
     //🟩 Green = Player Start
 
     //🔵 Blue = Barrel
@@ -74,6 +72,7 @@ void LoadDungeonLayout(const std::string& imagePath) {
 }
 
 Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, float baseY) {
+    //look for the green pixel
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             Color current = pixels[y * width + x];
@@ -120,9 +119,14 @@ inline bool IsBarrelColor(Color c) {
     return ColorsEqual(c, COLOR_BLUE);
 }
 
+inline bool IsEnemyColor(Color c) {
+    return ColorsEqual(c, COLOR_RED);
+}
+
 
 
 void GenerateWallTiles(float tileSize, float baseY) {
+    //and create bounding boxes
     wallInstances.clear();
     wallRunColliders.clear();
 
@@ -183,13 +187,9 @@ void GenerateWallTiles(float tileSize, float baseY) {
 }
 
 
-
-
-
-
 void GenerateCeilingTiles(float ceilingOffsetY) {
     ceilingTiles.clear();
-
+    //mirror the floor
     for (const FloorTile& floor : floorTiles) {
         CeilingTile ceiling;
         ceiling.position = Vector3Add(floor.position, {0, ceilingOffsetY, 0});
@@ -199,7 +199,6 @@ void GenerateCeilingTiles(float ceilingOffsetY) {
     }
 }
 
-//const Color BARREL_COLOR = {0, 0, 255, 255};
 
 void GenerateBarrels(float tileSize, float baseY) {
     barrelInstances.clear();
@@ -217,8 +216,8 @@ void GenerateBarrels(float tileSize, float baseY) {
 }
 
 void GenerateRaptorsFromImage(float tileSize, float baseY) {
-    raptors.clear(); // Clear existing raptors if needed
-
+    raptors.clear(); // Clear existing raptors
+    raptorPtrs.clear();
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
@@ -234,11 +233,42 @@ void GenerateRaptorsFromImage(float tileSize, float baseY) {
         }
     }
 
-    for (Character& r : raptors) {
+    for (Character& r : raptors) { //don't forget raptorPtrs
         raptorPtrs.push_back(&r);
     }
 }
 
+void GenerateSkeletonsFromImage(float tileSize, float baseY) {
+    skeletons.clear();
+    skeletonPtrs.clear();
+
+    for (int y = 0; y < dungeonHeight; y++) {
+        for (int x = 0; x < dungeonWidth; x++) {
+            Color current = dungeonPixels[y * dungeonWidth + x];
+
+            // Look for pure red pixels (255, 0, 0) → Skeleton spawn
+            if (current.r == 255 && current.g == 0 && current.b == 0) {
+                Vector3 spawnPos = GetDungeonWorldPos(x, y, tileSize, baseY);
+
+                Character skeleton(
+                    spawnPos,
+                    &skeletonSheet, // use your actual texture
+                    200, 200,         // frame width, height
+                    1,                // max frames
+                    0.5f, 0.5f,       // scale, speed
+                    0,                // initial animation frame
+                    CharacterType::Skeleton
+                );
+
+                skeletons.push_back(skeleton);
+            }
+        }
+    }
+
+    for (Character& s : skeletons) {
+        skeletonPtrs.push_back(&s);
+    }
+}
 
 
 
@@ -256,7 +286,7 @@ void GenerateLightSources(float tileSize, float baseY) {
                 Vector3 pPos = GetDungeonWorldPos(x, y, tileSize, baseY);
 
                 dungeonLights.push_back({ pos, 1.0f }); // 1.0f = full intensity
-                pillars.push_back({pPos, 1.0f}); //put a pillar wherever there is a lightsource
+                pillars.push_back({pPos, 1.0f}); //put a pillar wherever there is a lightsource, for now
             }
         }
     }
@@ -265,13 +295,22 @@ void GenerateLightSources(float tileSize, float baseY) {
 Vector3 GetDungeonWorldPos(int x, int y, float tileSize, float baseY) {
     int flippedY = dungeonHeight - 1 - y;
     int flippedX = dungeonWidth - 1 - x;
-
+    //flip x and y to match world coords. 
     return Vector3{
-        flippedX * tileSize + tileSize / 2.0f,
+        flippedX * tileSize + tileSize / 2.0f, //center of the tile
         baseY,
         flippedY * tileSize + tileSize / 2.0f
     };
 }
+
+int GetDungeonImageX(float worldX, float tileSize, int dungeonWidth) {
+    return dungeonWidth - 1 - (int)(worldX / tileSize);
+}
+
+int GetDungeonImageY(float worldZ, float tileSize, int dungeonHeight) {
+    return dungeonHeight - 1 - (int)(worldZ / tileSize);
+}
+
 
 
 
@@ -472,10 +511,12 @@ void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float 
 
 
 void ClearDungeon() {
-    //floorTilePositions.clear();
     floorTiles.clear();
     wallInstances.clear();
-    //ceilingTilePositions.clear(); // if used
     ceilingTiles.clear();
+    barrelInstances.clear();
+    dungeonLights.clear();
+    raptorPtrs.clear();
+    raptors.clear();
 }
 

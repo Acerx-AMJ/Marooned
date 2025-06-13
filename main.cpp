@@ -15,6 +15,7 @@
 #include "sound_manager.h"
 #include "level.h"
 #include "dungeonGeneration.h"
+#include "pathfinding.h"
 
 #define GLSL_VERSION 330
 
@@ -112,8 +113,6 @@ void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, f
 
 void HandleCameraPlayerToggle(Camera& camera, Player& player, bool& controlPlayer) {
 
-
-
     if (IsKeyPressed(KEY_TAB)) {
         controlPlayer = !controlPlayer;
 
@@ -184,6 +183,23 @@ void drawRaptors(Camera& camera){
 
 }
 
+
+void drawSkeletons(Camera& camera){
+
+    std::sort(skeletonPtrs.begin(), skeletonPtrs.end(), [&](Character* a, Character* b) {
+        float distA = Vector3Distance(camera.position, a->position);
+        float distB = Vector3Distance(camera.position, b->position);
+        return distA > distB; // Farthest first
+    });
+
+    for (Character* skeleton : skeletonPtrs){
+        skeleton->Draw(camera);
+    }
+
+
+
+}
+
 Color ColorLerp(Color a, Color b, float t) {
     Color result;
     result.r = (unsigned char)Lerp((float)a.r, (float)b.r, t);
@@ -208,6 +224,12 @@ bool CheckCollisionPointBox(Vector3 point, BoundingBox box) {
 void UpdateRaptors(float deltaTime){
     for (Character& raptor : raptors) {
         raptor.Update(deltaTime, player,  heightmap, terrainScale, raptorPtrs);
+    }
+}
+
+void UpdateSkeletons(float deltaTime){
+    for (Character& skeleton : skeletons) {
+        skeleton.Update(deltaTime, player, heightmap, terrainScale, skeletonPtrs);
     }
 }
 
@@ -243,6 +265,18 @@ void CheckBulletHits(Camera& camera) {
                 break;
             }
         }
+
+        for (Character* s : skeletonPtrs) {
+            if (s->isDead) continue;
+
+            BoundingBox box = s->GetBoundingBox();
+            if (CheckCollisionPointBox(b.GetPosition(), box)) {
+                s->TakeDamage(25);
+                b.kill(camera);
+
+                break;
+            }
+        }
     }
     //bullet collision with dungeon walls. 
     for (WallRun& w : wallRunColliders){
@@ -254,10 +288,14 @@ void CheckBulletHits(Camera& camera) {
     }
 }
 
-void DrawBullets() {
+void DrawBullets(Camera& camera) {
     for (const Bullet& b : activeBullets) {
         if (b.IsAlive()) b.Draw();
     }
+
+    for (auto& d : decals) {
+            d.Draw(camera);
+        }
 }
 
 bool CheckBulletHitsTree(const TreeInstance& tree, const Vector3& bulletPos) {
@@ -462,15 +500,16 @@ void InitLevel(const LevelData& level, Camera camera) {
     if (level.isDungeon){
         isDungeon = true;
         LoadDungeonLayout("assets/maps/map4.png");
-        
+        ConvertImageToWalkableGrid(dungeonImg);
         GenerateFloorTiles(200.0f, floorHeight);
         GenerateWallTiles(200.0f, floorHeight);
         GenerateCeilingTiles(400.0f);
         GenerateBarrels(200, floorHeight);
         GenerateLightSources(200, floorHeight);
-        Vector3 dungeonCenter = GetDungeonWorldPos(dungeonWidth / 2, dungeonHeight / 2, 200, floorHeight);
+        //Vector3 dungeonCenter = GetDungeonWorldPos(dungeonWidth / 2, dungeonHeight / 2, 200, floorHeight);
         //generateRaptors(level.raptorCount, dungeonCenter, 10000);
-        GenerateRaptorsFromImage(200, floorHeight);
+        //GenerateRaptorsFromImage(200, floorHeight);
+        GenerateSkeletonsFromImage(tileSize, 165);
 
     }else{
         generateRaptors(level.raptorCount, level.raptorSpawnCenter, 3000);
@@ -536,6 +575,36 @@ void lightBullets(float deltaTime){
     bulletLights.insert(bulletLights.end(), newBulletLights.begin(), newBulletLights.end());
 }
 
+void UpdateFade(float deltaTime){
+    if (isFading) {
+        if (fadeIn) {
+            fadeToBlack += fadeSpeed * deltaTime;
+            if (fadeToBlack >= 1.0f) {
+                fadeToBlack = 1.0f;
+                isFading = false;
+            }
+        } else {
+            fadeToBlack -= fadeSpeed * deltaTime;
+            if (fadeToBlack <= 0.0f) {
+                fadeToBlack = 0.0f;
+                isFading = false;
+            }
+        }
+
+        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
+    }
+
+}
+
+void DrawDungeonEntrance(){
+    if (!isDungeon && levels[levelIndex].dungeonEntrance.has_value()) {
+        BoundingBox archBox = levels[levelIndex].dungeonEntrance.value();
+        Vector3 center = Vector3Lerp(archBox.min, archBox.max, 0.5f);
+        DrawModel(doorWay, center, 0.5f, WHITE);
+    }
+
+}
+
 void HandleDungeon(float deltaTime) {
     WallCollision();
 
@@ -552,7 +621,7 @@ void HandleDungeon(float deltaTime) {
 
 int main() {
     //SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
-    InitWindow(1600, 800, "Marooned");
+    InitWindow(1600, 900, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
     LoadAllResources();
@@ -613,13 +682,14 @@ int main() {
         UpdateShaders(camera);
         sortTrees(camera); //sort trees by distance to player, draw closest trees last.
         if (!isDungeon) UpdateMusicStream(jungleAmbience);
-        
+        UpdateFade(deltaTime);
         UpdateBullets(camera, deltaTime);
         UpdateDecals(deltaTime);
         CheckBulletHits(camera);
         UpdateDecals(deltaTime);
         UpdateBoat(player_boat, deltaTime);
         UpdateRaptors(deltaTime);
+        UpdateSkeletons(deltaTime);
         TreeCollision(camera); //player and raptor vs tree
         
         if (isDungeon){
@@ -628,6 +698,8 @@ int main() {
             
 
         }
+
+
 
 
         if (IsGamepadAvailable(0)) { //hack to speed up controller movement. 
@@ -639,6 +711,13 @@ int main() {
             0.0f,
             -terrainScale.z / 2.0f
         }; 
+
+        if (!isDungeon && levels[levelIndex].dungeonEntrance.has_value()) {
+            if (CheckCollisionPointBox(player.position, levels[levelIndex].dungeonEntrance.value())) {
+                vignetteFade = 0.0f;
+                
+            }
+        }
 
 
 
@@ -679,12 +758,12 @@ int main() {
         //DrawModel(floorTile, Vector3{0, 200, 0}, 0.5, WHITE);
         //DrawModel(doorWay, Vector3{0, 200, 0}, 0.5, WHITE);
         drawRaptors(camera); //sort and draw raptors
+        drawSkeletons(camera);
         DrawPlayer(player, camera);
 
-        DrawBullets();
-        for (auto& d : decals) {
-            d.Draw(camera);
-        }
+        DrawBullets(camera); //and decals
+
+        DrawDungeonEntrance();
 
         EndBlendMode();
         EndMode3D(); //////////////////EndMode3d

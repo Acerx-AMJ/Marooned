@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "raylib.h"
+#include <optional>
 
 // Struct that holds all necessary data for a level
 struct LevelData {
@@ -13,6 +14,8 @@ struct LevelData {
     Vector3 raptorSpawnCenter;       // Center point for raptor spawns
     int raptorCount;                 // Number of raptors to spawn
     bool isDungeon;
+
+    std::optional<BoundingBox> dungeonEntrance; // not every level has a dungeonEntrance
     
 };
 

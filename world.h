@@ -32,12 +32,17 @@ extern float boatSpeed;
 extern float waterHeightY;
 extern const float TREE_HEIGHT_RATIO;
 extern const float BUSH_HEIGHT_RATIO;
+extern float tileSize;
+extern bool isFading;
+extern float fadeSpeed; // units per second
+extern bool fadeIn;     // true = fade in (to black), false = fade out (to visible)
 
 
 extern GameState currentGameState;
 extern std::vector<Character> raptors;
 extern std::vector<Character*> raptorPtrs;
-
+extern std::vector<Character> skeletons;
+extern std::vector<Character*> skeletonPtrs;
 
 extern std::vector<Bullet> activeBullets;
 extern std::vector<Decal> decals;

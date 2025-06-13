@@ -302,6 +302,11 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
         player.canMove = false;
         vignetteIntensity = 1.0f; //should stay red becuase its set to 1 everyframe. 
         vignetteFade = 0.0f;
+        
+        isFading = true;
+        fadeIn = true;      // fade to black
+        fadeSpeed = 1.5f;   // fade in over ~0.67 seconds
+
         if (player.deathTimer > 1.5f) { 
             player.dying = false;
             player.dead = true;
@@ -315,6 +320,10 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
         player.currentHealth = player.maxHealth;
         player.dead = false;
         player.canMove = true;
+
+        isFading = true;
+        fadeIn = false;     // fade out of black
+        fadeSpeed = 1.5f;
 
     }
 
