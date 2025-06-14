@@ -259,6 +259,11 @@ void Character::UpdateAI(float deltaTime, Player& player, Image heightmap, Vecto
 
 void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vector<Character*>& allRaptors) {
 
+    static float repathTimer = 0.0f;
+    repathTimer += deltaTime;
+
+    const float repathInterval = 0.4f; // seconds between path recalculations
+
     float distance = Vector3Distance(position, player.position);
     playerVisible = false;
     if (isDungeon){
@@ -290,7 +295,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
                 Vector2 start = WorldToImageCoords(position);
                 Vector2 goal = WorldToImageCoords(player.position);
 
-                std::vector<Vector2> tilePath = FindPath(start, goal);
+                std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
                 currentWorldPath.clear();
                 for (const Vector2& tile : tilePath) {
                     Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
@@ -298,57 +303,100 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
                     currentWorldPath.push_back(worldPos);
                 }
             }
+
+            else if (stateTimer > 10.0f) { // ← idle too long? pick a new destination
+                                // Try random reachable tile in dungeon
+                Vector2 start = WorldToImageCoords(position);
+                Vector2 randomTile;
+                bool found = false;
+
+                int patrolRadius = 3;
+
+                for (int i = 0; i < 10; ++i) { // try 10 random nearby tiles
+                    int rx = (int)start.x + GetRandomValue(-patrolRadius, patrolRadius);
+                    int ry = (int)start.y + GetRandomValue(-patrolRadius, patrolRadius);
+
+                    if (rx < 0 || ry < 0 || rx >= dungeonWidth || ry >= dungeonHeight)
+                        continue;
+
+                    if (walkable[rx][ry] && !IsTileOccupied(rx, ry, skeletonPtrs, this)) {
+                        randomTile = {(float)rx, (float)ry};
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) {
+                    std::vector<Vector2> tilePath = FindPath(start, randomTile);
+                    
+                    currentWorldPath.clear();
+
+                    for (const Vector2& tile : tilePath) {
+                        Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
+                        worldPos.y += 80.0f;
+                        currentWorldPath.push_back(worldPos);
+                    }
+
+                    if (!currentWorldPath.empty()) {
+                        state = DinoState::Patrol;
+                        SetAnimation(1, 2, 0.12f); // reuse walk anim
+                    }
+                }
+    }
             break;
 
         
         case DinoState::Chase:
             stateTimer += deltaTime;
-  
+            pathCooldownTimer -= deltaTime;
+
             if (distance < 150.0f) {
                 state = DinoState::Attack;
                 SetAnimation(2, 4, 0.2f);
                 stateTimer = 0.0f;
-                attackCooldown = 0.0f; //attack right away
+                attackCooldown = 0.0f;
+
             } else if (distance > 4000.0f) {
                 state = DinoState::Idle;
                 SetAnimation(0, 1, 1.0f);
                 stateTimer = 0.0f;
+
             } else {
-                //move toward player if you have a path
+                Vector2 currentPlayerTile = WorldToImageCoords(player.position);
+                if (((int)currentPlayerTile.x != (int)lastPlayerTile.x || (int)currentPlayerTile.y != (int)lastPlayerTile.y)
+                    && pathCooldownTimer <= 0.0f) {
+
+                    lastPlayerTile = currentPlayerTile; //save the last player tile so we aren't recalculating if the player hasn't moved. 
+                    pathCooldownTimer = 0.4f;
+
+                    Vector2 start = WorldToImageCoords(position);
+                    //std::vector<Vector2> tilePath = FindPath(start, currentPlayerTile);
+                    std::vector<Vector2> tilePath = SmoothPath(FindPath(start, currentPlayerTile), dungeonImg);
+                    currentWorldPath.clear();
+                    for (const Vector2& tile : tilePath) {
+                        Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
+                        worldPos.y += 80.0f;
+                        currentWorldPath.push_back(worldPos);
+                    }
+                }
+
+                // 🧭 Move along current path
                 if (!currentWorldPath.empty()) {
                     Vector3 targetPos = currentWorldPath[0];
-
                     Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
-                    Vector3 move = Vector3Scale(dir, 700 * deltaTime); // consider making speed a variable
+                    Vector3 move = Vector3Scale(dir, skeleSpeed * deltaTime);
                     position = Vector3Add(position, move);
-
                     rotationY = RAD2DEG * atan2f(dir.x, dir.z);
-                    position.y = targetPos.y; // set to baked height
+                    position.y = targetPos.y;
 
                     if (Vector3Distance(position, targetPos) < 100.0f) {
                         currentWorldPath.erase(currentWorldPath.begin());
                     }
-                
-                } else {
-                    pathCooldownTimer -= deltaTime;
-
-                    if (currentWorldPath.empty() && pathCooldownTimer <= 0.0f) {
-                        pathCooldownTimer = 1.0f; // 1 second before re-pathing, as to not spam the BFS
-
-                        Vector2 start = WorldToImageCoords(position);
-                        Vector2 goal = WorldToImageCoords(player.position);
-
-                        std::vector<Vector2> tilePath = FindPath(start, goal);
-                        currentWorldPath.clear();
-                        for (const Vector2& tile : tilePath) {
-                            Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
-                            worldPos.y += 80.0f;
-                            currentWorldPath.push_back(worldPos);
-                        }
-                    }
                 }
             }
             break;
+
+
 
         case DinoState::Attack: {
             //dont stand on the same tile as another skele when attacking
@@ -371,13 +419,14 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
             if (distance > 200.0f) { //maybe this should be like 160, player would get bit more. 
                 state = DinoState::Chase;
                 SetAnimation(1, 4, 0.25f);
+                stateTimer = 0.0;
             }
 
 
 
             attackCooldown -= deltaTime;
             if (attackCooldown <= 0.0f) {
-                attackCooldown = 1.0f; // seconds between attacks
+                attackCooldown = 1.5f; // seconds between attacks
 
                 // Play attack sound
                 SoundManager::GetInstance().Play("dinoBite");
@@ -388,17 +437,15 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
             break;
         }
         case DinoState::Reposition: {
-            // Search 1-tile radius for unoccupied tile
-            const int offsets[4][2] = {
-                { 1, 0 },
-                {-1, 0 },
-                { 0, 1 },
-                { 0,-1 }
+            
+            const int offsets[8][2] = {
+                {  1,  0 }, { -1,  0 }, { 0,  1 }, { 0, -1 },
+                {  1,  1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }
             };
 
             Vector2 myTile = WorldToImageCoords(position);
 
-            for (int i = 0; i < 4; ++i) {
+            for (int i = 0; i < 8; ++i) {
                 int tx = (int)myTile.x + offsets[i][0];
                 int ty = (int)myTile.y + offsets[i][1];
 
@@ -411,24 +458,21 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
                 target.y += 80.0f;
 
                 Vector3 dir = Vector3Normalize(Vector3Subtract(target, position));
-                Vector3 move = Vector3Scale(dir, 700 * deltaTime);
+                Vector3 move = Vector3Scale(dir, skeleSpeed * deltaTime);
                 position = Vector3Add(position, move);
 
                 rotationY = RAD2DEG * atan2f(dir.x, dir.z);
                 position.y = target.y;
 
-                // Close enough
-                if (Vector3Distance(position, target) < 150.0f) {
-                    state = DinoState::Attack; // or Attack, depending on distance
-                    SetAnimation(3, 5, 0.12f);
+                float dist = Vector3Distance(position, target);
+
+                if (dist < 150.0f) {
+                    state = DinoState::Attack;
+                    SetAnimation(2, 5, 0.2f);
+                } else if (dist > 200.0f) {
+                    state = DinoState::Chase;
+                    SetAnimation(1, 4, 0.25f);
                 }
-
-                if (Vector3Distance(position, target) > 200.0f) {
-                    state = DinoState::Chase; // or Attack, depending on distance
-                    SetAnimation(1, 2, 0.12f);
-                }
-
-
 
                 break;
             }
@@ -436,13 +480,43 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
             break;
         }
 
+        case DinoState::Patrol: {
+            stateTimer += deltaTime;
+
+            if (distance < 4000 && playerVisible){
+                state = DinoState::Chase;
+                SetAnimation(1, 4, 0.25f);
+            }
+
+            if (!currentWorldPath.empty()) {
+                Vector3 targetPos = currentWorldPath[0];
+                Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
+                Vector3 move = Vector3Scale(dir, 500 * deltaTime); // maybe slower than chase
+                position = Vector3Add(position, move);
+                rotationY = RAD2DEG * atan2f(dir.x, dir.z);
+                position.y = targetPos.y;
+
+                if (Vector3Distance(position, targetPos) < 100.0f) {
+                    currentWorldPath.erase(currentWorldPath.begin());
+                }
+            }
+            else {
+                state = DinoState::Idle;
+                SetAnimation(0, 1, 1.0f);
+                stateTimer = 0.0f;
+            }
+
+            break;
+        }
+
+
         case DinoState::Stagger: {
             //do nothing
             if (stateTimer >= 0.6f && playerVisible) {
                 state = DinoState::Chase;
-                SetAnimation(1, 5, 0.25f);
+                SetAnimation(1, 4, 0.25f);
                 stateTimer = 0.0f;
-                chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
+                //chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
             }
             break;
         }
@@ -457,44 +531,8 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
             deathTimer += deltaTime;
             break;
         }
-
-
        
 }
-
-
-bool Character::LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
-    float dx = end.x - start.x;
-    float dy = end.y - start.y;
-    float distance = sqrtf(dx*dx + dy*dy);
-    
-    if (distance == 0) return true;
-
-    float stepX = dx / distance;
-    float stepY = dy / distance;
-
-    float x = start.x;
-    float y = start.y;
-
-    for (int i = 0; i < distance && i < maxSteps; i++) {
-        int tileX = (int)x;
-        int tileY = (int)y;
-
-        // Bounds check
-        if (tileX < 0 || tileX >= dungeonMap.width || tileY < 0 || tileY >= dungeonMap.height)
-            return false;
-
-        Color c = GetImageColor(dungeonMap, tileX, tileY);
-        if (c.r < 50) return false; // Blocked by wall
-
-        x += stepX;
-        y += stepY;
-    }
-
-    return true;
-}
-
-
 
 
 
@@ -540,7 +578,8 @@ void Character::TakeDamage(int amount) {
         currentHealth = 0;
         isDead = true;
         state = DinoState::Death;
-        SetAnimation(4, 3, 0.5f); // your death anim here
+        if (type == CharacterType::Raptor) SetAnimation(4, 5, 0.12f);
+        if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f); //less froms for skele death. 
         deathTimer = 0.0f;
         SoundManager::GetInstance().Play("dinoDeath");
         // Play death sound here if desired
@@ -575,7 +614,20 @@ Vector3 Character::ComputeRepulsionForce(const std::vector<Character*>& allRapto
     return repulsion;
 }
 
+void Character::eraseCharacters(){
+    //erase dead raptors from raptorPtrs 
+    raptorPtrs.erase(std::remove_if(raptorPtrs.begin(), raptorPtrs.end(),
+    [](Character* raptor) {
+        return raptor->isDead && raptor->deathTimer > 5.0f;
+    }),
+    raptorPtrs.end());
 
+    skeletonPtrs.erase(std::remove_if(skeletonPtrs.begin(), skeletonPtrs.end(),
+    [](Character* skeleton) {
+        return skeleton->isDead && skeleton->deathTimer > 5.0f;
+    }),
+    skeletonPtrs.end());
+}
 
 
 void Character::Update(float deltaTime, Player& player,  Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors ) {
@@ -621,12 +673,7 @@ void Character::Update(float deltaTime, Player& player,  Image heightmap, Vector
         }
     }
 
-    //erase dead raptors from raptorPtrs 
-    raptorPtrs.erase(std::remove_if(raptorPtrs.begin(), raptorPtrs.end(),
-    [](Character* raptor) {
-        return raptor->isDead && raptor->deathTimer > 5.0f;
-    }),
-    raptorPtrs.end());
+    eraseCharacters(); //clean up dead rators and skeletons
 
 }
 
@@ -641,8 +688,8 @@ void Character::Draw(Camera3D camera) {
 
     // Calculate a slight camera-facing offset to reduce z-fighting
     Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.position, position));
-    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 1.0f)); // Adjust 0.1f if needed
-    scale = 0.8;
+    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 10.0f)); // Adjust 0.1f if needed
+    if (type == CharacterType::Skeleton) scale = 0.8;
     Vector2 size = { frameWidth * scale, frameHeight * scale };
 
     Color dinoTint = (hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;

@@ -16,7 +16,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     player.velocity = {0, 0, 0};
     player.grounded = false;
     player.groundY = 0.0;
-    weapon.model = blunderbuss;//LoadModel("assets/models/blunderbus.glb"); //shouldn't this be in resources. 
+    weapon.model = blunderbuss;
     weapon.scale = { 2.0f, 2.0f, 2.0f };
 
     weapon.muzzleFlashTexture = muzzleFlash;
@@ -126,7 +126,7 @@ void Player::TakeDamage(int amount){
             player.dying = true;
             player.deathTimer = 0.0f;
 
-            //PlaySound(screamSound); // cue the Wilhelm
+           
         }
     }
 
@@ -305,7 +305,7 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
         
         isFading = true;
         fadeIn = true;      // fade to black
-        fadeSpeed = 1.5f;   // fade in over ~0.67 seconds
+        fadeSpeed = 1.5f;   
 
         if (player.deathTimer > 1.5f) { 
             player.dying = false;

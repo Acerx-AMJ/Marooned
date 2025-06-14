@@ -54,7 +54,7 @@ void debugControls(){
                 << " Z=" << player.position.z << "\n";
     }
 
-    if (IsKeyPressed(KEY_P)){
+    if (IsKeyPressed(KEY_I)){
         RemoveAllVegetation();
     }
     if (IsKeyPressed(KEY_O)){

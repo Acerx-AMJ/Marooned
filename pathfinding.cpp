@@ -136,3 +136,63 @@ Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeleton
     return nullptr;
 }
 
+bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
+    float dx = end.x - start.x;
+    float dy = end.y - start.y;
+    float distance = sqrtf(dx*dx + dy*dy);
+    
+    if (distance == 0) return true;
+
+    float stepX = dx / distance;
+    float stepY = dy / distance;
+
+    float x = start.x;
+    float y = start.y;
+
+    for (int i = 0; i < distance && i < maxSteps; i++) {
+        int tileX = (int)x;
+        int tileY = (int)y;
+
+        // Bounds check
+        if (tileX < 0 || tileX >= dungeonMap.width || tileY < 0 || tileY >= dungeonMap.height)
+            return false;
+
+        Color c = GetImageColor(dungeonMap, tileX, tileY);
+        if (c.r < 50) return false; // Blocked by wall
+
+        x += stepX;
+        y += stepY;
+    }
+
+    return true;
+}
+
+std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& dungeonMap) {
+    std::vector<Vector2> result;
+
+    if (path.empty()) return result;
+
+    size_t i = 0;
+    while (i < path.size()) {
+        result.push_back(path[i]);
+
+        size_t j = path.size() - 1;
+        bool found = false;
+
+        for (; j > i + 1; --j) {
+            if (LineOfSightRaycast(path[i], path[j], dungeonMap, 100)) {
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            i = j;  // jump to further straight-line segment
+        } else {
+            ++i;    // fallback: step forward to prevent infinite loop
+        }
+    }
+
+    return result;
+}
+

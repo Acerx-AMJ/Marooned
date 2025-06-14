@@ -474,6 +474,7 @@ void DrawMenu() {
 
 void InitLevel(const LevelData& level, Camera camera) {
     ClearLevel();
+    ClearDungeon();
     // Load and format the heightmap image
     heightmap = LoadImage(level.heightmapPath.c_str());
     ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
@@ -484,15 +485,13 @@ void InitLevel(const LevelData& level, Camera camera) {
     terrainModel = LoadModelFromMesh(terrainMesh);
 
     // Generate vegetation like trees and bushes
-    generateVegetation();
+    if (!isDungeon) generateVegetation();
 
     // Initialize the player at the specified start position
     
     camera.position = player.position;
-    // Generate raptors around the given spawn center
-   
 
-    InitBoat(player_boat, boatPosition);
+    if (!isDungeon) InitBoat(player_boat, boatPosition);
     
     terrainModel.materials[0].shader = terrainShader;
 
@@ -514,7 +513,7 @@ void InitLevel(const LevelData& level, Camera camera) {
     }else{
         generateRaptors(level.raptorCount, level.raptorSpawnCenter, 3000);
     }
-    //player.position = FindSpawnPoint(dungeonPixels, dungeonWidth, dungeonHeight, 200, floorHeight);
+
     Vector3 resolvedSpawn = level.startPosition; // default fallback
 
     Vector3 pixelSpawn = FindSpawnPoint(dungeonPixels, dungeonWidth, dungeonHeight, 200, floorHeight);
@@ -522,7 +521,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         resolvedSpawn = pixelSpawn;
         //Overriding start position with green pixel
     }
-    InitPlayer(player, resolvedSpawn);
+    InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. 
 
 }
 
@@ -681,7 +680,7 @@ int main() {
         debugControls(); //press P to remove all vegetation, Press O to regenerate raptors, Press L to print player position
         UpdateShaders(camera);
         sortTrees(camera); //sort trees by distance to player, draw closest trees last.
-        if (!isDungeon) UpdateMusicStream(jungleAmbience);
+        
         UpdateFade(deltaTime);
         UpdateBullets(camera, deltaTime);
         UpdateDecals(deltaTime);
@@ -691,18 +690,14 @@ int main() {
         UpdateRaptors(deltaTime);
         UpdateSkeletons(deltaTime);
         TreeCollision(camera); //player and raptor vs tree
-        
+
+        if (!isDungeon) UpdateMusicStream(jungleAmbience);
         if (isDungeon){
             HandleDungeon(deltaTime);
             UpdateMusicStream(dungeonAir);
-            
-
         }
 
-
-
-
-        if (IsGamepadAvailable(0)) { //hack to speed up controller movement. 
+        if (IsGamepadAvailable(0)) {  //free camera with gamepad
             UpdateCameraWithGamepad(camera);
         }
 
@@ -766,9 +761,7 @@ int main() {
         DrawDungeonEntrance();
 
         EndBlendMode();
-        EndMode3D(); //////////////////EndMode3d
-
-
+        EndMode3D(); //////////////////EndMode3
 
         rlDisableDepthTest();
 

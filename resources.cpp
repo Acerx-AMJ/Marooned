@@ -147,6 +147,8 @@ void UnloadAllResources() {
     UnloadTexture(raptorTexture);
     UnloadTexture(gunTexture);
     UnloadTexture(smokeSheet);
+    UnloadTexture(bloodSheet);
+    UnloadTexture(skeletonSheet);
 
     UnloadShader(fogShader);
     UnloadShader(skyShader);
@@ -166,6 +168,8 @@ void UnloadAllResources() {
     UnloadModel(floorTile);
     UnloadModel(doorWay);
     UnloadModel(barrelModel);
+    UnloadModel(pillarModel);
+    
 
 
     UnloadImage(heightmap);

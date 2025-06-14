@@ -259,7 +259,8 @@ void GenerateSkeletonsFromImage(float tileSize, float baseY) {
                     0,                // initial animation frame
                     CharacterType::Skeleton
                 );
-
+                skeleton.maxHealth = 200;
+                skeleton.currentHealth = 200; //at least 2 shots. 
                 skeletons.push_back(skeleton);
             }
         }
@@ -514,9 +515,12 @@ void ClearDungeon() {
     floorTiles.clear();
     wallInstances.clear();
     ceilingTiles.clear();
+    pillars.clear();
     barrelInstances.clear();
     dungeonLights.clear();
     raptorPtrs.clear();
     raptors.clear();
+    skeletons.clear();
+    skeletonPtrs.clear();
 }
 

@@ -18,6 +18,7 @@ enum class DinoState {
     RunAway,
     Stagger,
     Reposition,
+    Patrol,
     Death
 };
 
@@ -47,7 +48,8 @@ public:
     float randomDistance = 0.0f; //how far away to run before stopping. 
     float randomTime = 0.0f;
     float pathCooldownTimer = 0.0f;
-
+    Vector2 lastPlayerTile = {-1, -1}; // Initialized to invalid tile
+    float skeleSpeed = 500;
     bool playerVisible = false;
     float timeSinceLastSeen = 9999.0f;  // Large to start
     float forgetTime = 10.0f;           // After 3 seconds of no visibility, give up
@@ -68,9 +70,9 @@ public:
     void UpdateRaptorAI(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors);
     void UpdateAI(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors); 
     void UpdateSkeletonAI(float deltaTime, Player& player, const std::vector<Character*>& allRaptors);
-    bool CanSeePlayer(Player& player, const Image& dungeonMap, float tileSize, int dungeonWidth, int dungeonHeight);
-    bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps);
 
+
+    void eraseCharacters();
     void setPath();
     void TakeDamage(int amount);
     void Draw(Camera3D camera);
