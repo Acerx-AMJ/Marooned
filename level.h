@@ -5,6 +5,17 @@
 #include "raylib.h"
 #include <optional>
 
+struct DungeonEntrance {
+    Vector3 position;
+    BoundingBox collider;
+    int linkedLevelIndex;
+    std::string entranceID;         // Optional: for tracking visited status
+
+    bool isTriggered = false;
+
+
+};
+
 // Struct that holds all necessary data for a level
 struct LevelData {
     std::string name;                 // Display name
@@ -15,7 +26,8 @@ struct LevelData {
     int raptorCount;                 // Number of raptors to spawn
     bool isDungeon;
 
-    std::optional<BoundingBox> dungeonEntrance; // not every level has a dungeonEntrance
+    std::vector<DungeonEntrance> entrances;
+    
     
 };
 

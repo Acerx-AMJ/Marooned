@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+
+
+
 struct DoorwayInstance {
     Vector3 position;
     float rotationY;
@@ -24,6 +27,8 @@ struct Door {
     Color tint = WHITE;
     int tileX;
     int tileY;
+
+    int linkedLevelIndex = -1; // ← NEW: -1 means no linked level
 };
 
 

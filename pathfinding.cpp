@@ -88,7 +88,7 @@ void ConvertImageToWalkableGrid(const Image& dungeonMap) {
             // Define colors precisely
             bool isWall = (c.r < 50 && c.g < 50 && c.b < 50); // black
             bool isBarrel = (c.b > 200 && c.r < 100 && c.g < 100); // blue barrel
-            // optionally: bool isSpawn = (c.g > 200 && c.r < 100 && c.b < 100); // green
+            
 
             walkable[x][y] = !(isWall || isBarrel);
         }
@@ -125,6 +125,7 @@ bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, cons
 }
 
 Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeletons, const Character* self) {
+    //skeles can't occupy the same tile while stoped. 
     for (Character* s : skeletons) {
         if (s == self || s->state == DinoState::Death) continue;
 
@@ -137,7 +138,7 @@ Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeleton
 }
 
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
-    //raymarch the pixels in the players direction stopping at walls and closed doors. 
+    //raymarch the pixels in the players direction stopping at walls and closed doors. otherwises return true. 
     float dx = end.x - start.x;
     float dy = end.y - start.y;
     float distance = sqrtf(dx*dx + dy*dy);
@@ -182,6 +183,8 @@ bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int
 
 
 std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& dungeonMap) {
+    //check for short cuts. skip points if you can connect stright to a point further along. 
+    //A B C D -> A D, skip B and C if A can connect straight to D 
     std::vector<Vector2> result;
 
     if (path.empty()) return result;

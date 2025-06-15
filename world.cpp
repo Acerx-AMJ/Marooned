@@ -40,6 +40,8 @@ std::vector<Character*> skeletonPtrs;
 std::vector<Bullet> activeBullets;
 std::vector<Decal> decals;
 
+std::vector<DungeonEntrance> dungeonEntrances;
+
 
 
 void removeAllRaptors(){

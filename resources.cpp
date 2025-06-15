@@ -103,6 +103,9 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("phit1", "assets/sounds/PlayerHit1.ogg");
     SoundManager::GetInstance().LoadSound("phit2", "assets/sounds/PlayerHit2.ogg");
 
+    SoundManager::GetInstance().LoadSound("doorOpen", "assets/sounds/doorOpen.ogg");
+    SoundManager::GetInstance().LoadSound("doorClose", "assets/sounds/doorCLose.ogg");
+
 
 }
 

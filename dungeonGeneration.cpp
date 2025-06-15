@@ -161,7 +161,12 @@ void GenerateWallTiles(float tileSize, float baseY) {
                     wall.tint = WHITE;
                     wallInstances.push_back(wall);
 
+                    // Move them down to match the wall visuals
+                    a.y -= 190.0f;
+                    b.y -= 190.0f;
+
                     BoundingBox bounds = MakeWallBoundingBox(a, b, wallThickness, wallHeight);
+
                     wallRunColliders.push_back({ a, b, 90.0f, bounds });
                 }
             }
@@ -182,7 +187,11 @@ void GenerateWallTiles(float tileSize, float baseY) {
                     wall.tint = WHITE;
                     wallInstances.push_back(wall);
 
+                    a.y -= 190.0f;
+                    b.y -= 190.0f;
+
                     BoundingBox bounds = MakeWallBoundingBox(a, b, wallThickness, wallHeight);
+
                     wallRunColliders.push_back({ a, b, 0.0f, bounds });
                 }
             }
@@ -448,9 +457,9 @@ void DrawDungeonWalls(Model wallModel) {
         DrawModelEx(wallModel, wall.position, Vector3{0, 1, 0}, wall.rotationY, Vector3{1, 1, 1}, wall.tint);
 
         // Draw second stacked wall
-        Vector3 topPos = wall.position;
-        topPos.y += wallHeight;
-        DrawModelEx(wallModel, topPos, Vector3{0, 1, 0}, wall.rotationY, Vector3{1, 1, 1}, wall.tint);
+        // Vector3 topPos = wall.position;
+        // topPos.y += wallHeight;
+        // DrawModelEx(wallModel, topPos, Vector3{0, 1, 0}, wall.rotationY, Vector3{1, 1, 1}, wall.tint);
     }
 }
 
@@ -720,6 +729,7 @@ void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float 
 
 
 void ClearDungeon() {
+    wallRunColliders.clear();
     floorTiles.clear();
     wallInstances.clear();
     ceilingTiles.clear();
@@ -730,5 +740,8 @@ void ClearDungeon() {
     raptors.clear();
     skeletons.clear();
     skeletonPtrs.clear();
+    doors.clear();
+    doorways.clear();
+
 }
 

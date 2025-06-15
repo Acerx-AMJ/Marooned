@@ -282,6 +282,15 @@ void CheckBulletHits(Camera& camera) {
     for (WallRun& w : wallRunColliders){
         for (Bullet& b: activeBullets){
             if (CheckCollisionPointBox(b.GetPosition(), w.bounds)){
+                std::cout << "wall hit\n";
+                b.kill(camera);
+            }
+        }
+    }
+
+    for (Door& d : doors){
+        for (Bullet& b: activeBullets){
+            if (CheckCollisionPointBox(b.GetPosition(), d.collider) && !d.isOpen){
                 b.kill(camera);
             }
         }
@@ -324,7 +333,7 @@ void TreeCollision(Camera& camera){
 
 
     for (TreeInstance& tree : trees) {
-        if (Vector3DistanceSqr(tree.position, player.position) < 500 * 500) {
+        if (Vector3DistanceSqr(tree.position, player.position) < 500 * 500) { //check a smaller area not the whole map. 
             if (CheckTreeCollision(tree, player.position)) {
                 ResolveTreeCollision(tree, player.position);
             }
@@ -348,7 +357,7 @@ void TreeCollision(Camera& camera){
     for (TreeInstance& tree : trees) {
         for (Bullet& bullet : activeBullets){
             if (!bullet.IsAlive()) continue; // <-- early out for dead bullets
-            if (Vector3DistanceSqr(tree.position, bullet.GetPosition()) < 500 * 500) {
+            if (Vector3DistanceSqr(tree.position, bullet.GetPosition()) < 500 * 500) { 
                 if (CheckBulletHitsTree(tree, bullet.GetPosition())) {
                    
                    
@@ -494,14 +503,15 @@ void InitLevel(const LevelData& level, Camera camera) {
     if (!isDungeon) InitBoat(player_boat, boatPosition);
     
     terrainModel.materials[0].shader = terrainShader;
-
+    player.currentHealth = player.maxHealth; //regain health on reloading
+    
 
     if (level.isDungeon){
         isDungeon = true;
         LoadDungeonLayout("assets/maps/map4.png");
         ConvertImageToWalkableGrid(dungeonImg);
         GenerateFloorTiles(200.0f, floorHeight);
-        GenerateWallTiles(200.0f, floorHeight);
+        GenerateWallTiles(200.0f, floorHeight+190);
         GenerateCeilingTiles(400.0f);
         GenerateBarrels(200, floorHeight);
         GenerateLightSources(200, floorHeight);
@@ -513,6 +523,28 @@ void InitLevel(const LevelData& level, Camera camera) {
 
     }else{
         generateRaptors(level.raptorCount, level.raptorSpawnCenter, 3000);
+        dungeonEntrances = level.entrances;
+        for (const DungeonEntrance& e : dungeonEntrances) {
+                Door d;
+                d.position = e.position;
+                d.rotationY = 0.0f; // or whatever fits
+                d.doorTexture = &doorTexture;
+                d.isOpen = false;
+                d.scale = {300, 365, 1};
+                d.tint = WHITE;
+                d.linkedLevelIndex = e.linkedLevelIndex; //map4
+                // collider and other settings...
+                doors.push_back(d);
+
+                DoorwayInstance dw;
+                dw.position = e.position;
+                dw.rotationY = 90.0f * DEG2RAD;
+                dw.isOpen = false;
+                
+                doorways.push_back(dw);
+            }
+
+       
     }
 
     Vector3 resolvedSpawn = level.startPosition; // default fallback
@@ -602,14 +634,6 @@ void UpdateFade(float deltaTime){
 
 }
 
-void DrawDungeonEntrance(){
-    if (!isDungeon && levels[levelIndex].dungeonEntrance.has_value()) {
-        BoundingBox archBox = levels[levelIndex].dungeonEntrance.value();
-        Vector3 center = Vector3Lerp(archBox.min, archBox.max, 0.5f);
-        DrawModel(doorWay, center, 0.5f, WHITE);
-    }
-
-}
 
 void HandleDungeon(float deltaTime) {
     WallCollision();
@@ -641,6 +665,50 @@ void DoorCollision(){
         }
     }
 }
+
+void HandleDoorInteraction(Camera& camera) {
+    static bool isWaiting = false;
+    static float openTimer = 0.0f;
+    static int pendingDoorIndex = -1;
+
+    float deltaTime = GetFrameTime();
+
+    if (!isWaiting && IsKeyPressed(KEY_E)) {
+        for (size_t i = 0; i < doors.size(); ++i) {
+            float distanceTo = Vector3Distance(doors[i].position, player.position);
+            if (distanceTo < 300) {
+                isWaiting = true;
+                openTimer = 0.0f;
+                pendingDoorIndex = i;
+
+                std::string s = doors[i].isOpen ? "doorClose" : "doorOpen";
+                SoundManager::GetInstance().Play(s);
+
+                if (!isDungeon && doors[i].linkedLevelIndex != -1) {
+                    isDungeon = true;
+                    InitLevel(levels[doors[i].linkedLevelIndex], camera); //Enter the Dungeon
+                }
+
+                break; // only process one door at a time
+            }
+        }
+    }
+
+    if (isWaiting) {
+        openTimer += deltaTime;
+        if (openTimer >= 0.5f && pendingDoorIndex != -1) {
+            doors[pendingDoorIndex].isOpen = !doors[pendingDoorIndex].isOpen;
+            doorways[pendingDoorIndex].isOpen = doors[pendingDoorIndex].isOpen;
+
+            // Reset
+            isWaiting = false;
+            openTimer = 0.0f;
+            pendingDoorIndex = -1;
+        }
+    }
+}
+
+
 
 
 
@@ -717,6 +785,8 @@ int main() {
         UpdateSkeletons(deltaTime);
         TreeCollision(camera); //player and raptor vs tree
         DoorCollision();
+        HandleDoorInteraction(camera);
+
         if (!isDungeon) UpdateMusicStream(jungleAmbience);
         if (isDungeon){
             HandleDungeon(deltaTime);
@@ -733,12 +803,7 @@ int main() {
             -terrainScale.z / 2.0f
         }; 
 
-        if (!isDungeon && levels[levelIndex].dungeonEntrance.has_value()) {
-            if (CheckCollisionPointBox(player.position, levels[levelIndex].dungeonEntrance.value())) {
-                vignetteFade = 0.0f;
-                
-            }
-        }
+
 
 
 
@@ -784,8 +849,6 @@ int main() {
         DrawPlayer(player, camera);
 
         DrawBullets(camera); //and decals
-
-        DrawDungeonEntrance();
 
         EndBlendMode();
         EndMode3D(); //////////////////EndMode3
