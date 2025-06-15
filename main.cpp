@@ -505,6 +505,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateCeilingTiles(400.0f);
         GenerateBarrels(200, floorHeight);
         GenerateLightSources(200, floorHeight);
+        GenerateDoorways(tileSize, floorHeight);
         //Vector3 dungeonCenter = GetDungeonWorldPos(dungeonWidth / 2, dungeonHeight / 2, 200, floorHeight);
         //generateRaptors(level.raptorCount, dungeonCenter, 10000);
         //GenerateRaptorsFromImage(200, floorHeight);
@@ -534,6 +535,12 @@ void WallCollision(){
         for (Character& r : raptors){
             if (CheckCollisionBoxSphere(run.bounds, r.position, 100)){
                 ResolveBoxSphereCollision(run.bounds, r.position, 100);
+            }
+        }
+
+        for (Character& skeleton : skeletons){
+            if (CheckCollisionBoxSphere(run.bounds, skeleton.position, 100)){
+                ResolveBoxSphereCollision(run.bounds, skeleton.position, 100);
             }
         }
     }
@@ -614,6 +621,25 @@ void HandleDungeon(float deltaTime) {
     UpdateCeilingTints(player.position);
     UpdateFloorTints(player.position);
     UpdateBarrelTints(player.position);
+    UpdateDoorwayTints(player.position);
+    UpdateDoorTints(player.position);
+}
+
+void DoorCollision(){
+    for (Door& door : doors){
+        if (!door.isOpen && CheckCollisionBoxSphere(door.collider, player.position, player.radius)){
+           ResolveBoxSphereCollision(door.collider, player.position, player.radius);
+
+        }
+
+        for (Character& skeleton : skeletons){
+            if (!door.isOpen && CheckCollisionBoxSphere(door.collider, skeleton.position, skeleton.radius)){
+                ResolveBoxSphereCollision(door.collider, skeleton.position, skeleton.radius);
+
+            }
+            
+        }
+    }
 }
 
 
@@ -690,7 +716,7 @@ int main() {
         UpdateRaptors(deltaTime);
         UpdateSkeletons(deltaTime);
         TreeCollision(camera); //player and raptor vs tree
-
+        DoorCollision();
         if (!isDungeon) UpdateMusicStream(jungleAmbience);
         if (isDungeon){
             HandleDungeon(deltaTime);
@@ -740,6 +766,7 @@ int main() {
         DrawDungeonWalls(wall);
         DrawDungeonBarrels(barrelModel);
         DrawDungeonPillars(pillarModel);
+        DrawDungeonDoorways(doorWay);
         //DrawDungeonCeiling(floorTile, 400.0f); // Or whatever offset looks good
         DrawDungeonCeiling(floorTile);
 

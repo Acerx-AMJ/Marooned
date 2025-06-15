@@ -1,10 +1,10 @@
-// Skybox Fragment Shader
 #version 330
 
 in vec3 fragPosition;
 out vec4 finalColor;
 
 uniform float time;
+uniform int isDungeon;
 uniform samplerCube environmentMap;
 
 // 3D Tileable Noise (simple)
@@ -29,19 +29,20 @@ float noise(vec3 p) {
 }
 
 void main() {
+    if (isDungeon == 1) {
+        finalColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+
     vec3 dir = normalize(fragPosition);
-    float cloudFreq = 2.0; // higher = more clouds
+    float cloudFreq = 2.0;
     float cloudSpeed = 0.01;
 
-    // Move through noise space over time
     float cloud = noise(dir * cloudFreq + vec3(0.0, time * cloudSpeed, 0.0));
-
-    // Cloud alpha ramp
     float cloudAlpha = smoothstep(0.5, 0.8, cloud);
 
-    // Blend sky color + cloud
-    vec3 sky = vec3(0.3, 0.6, 1.0);  // base sky blue
-    vec3 clouds = vec3(1.0);         // white clouds
+    vec3 sky = vec3(0.3, 0.6, 1.0);
+    vec3 clouds = vec3(1.0);
     vec3 result = mix(sky, clouds, cloudAlpha);
 
     finalColor = vec4(result, 1.0);

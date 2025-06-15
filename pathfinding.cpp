@@ -137,10 +137,11 @@ Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeleton
 }
 
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
+    //raymarch the pixels in the players direction stopping at walls and closed doors. 
     float dx = end.x - start.x;
     float dy = end.y - start.y;
     float distance = sqrtf(dx*dx + dy*dy);
-    
+
     if (distance == 0) return true;
 
     float stepX = dx / distance;
@@ -158,7 +159,19 @@ bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int
             return false;
 
         Color c = GetImageColor(dungeonMap, tileX, tileY);
-        if (c.r < 50) return false; // Blocked by wall
+
+        // Check for wall
+        if (c.r < 50 && c.g < 50 && c.b < 50) {
+            return false; // solid wall
+        }
+
+        // Check for purple door pixel
+        if (c.r == 128 && c.g == 0 && c.b == 128) {
+            if (!IsDoorOpenAt(tileX, tileY)) {
+                //std::cout << "doorway found! blocking sight\n";
+                return false; // closed door blocks vision
+            }
+        }
 
         x += stepX;
         y += stepY;
@@ -166,6 +179,7 @@ bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int
 
     return true;
 }
+
 
 std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& dungeonMap) {
     std::vector<Vector2> result;

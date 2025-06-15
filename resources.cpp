@@ -5,7 +5,7 @@
 #include <iostream>
 
 RenderTexture2D sceneTexture;
-Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet;
+Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, doorTexture;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, 
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel;
@@ -32,6 +32,7 @@ void LoadAllResources() {
     backDrop = LoadTexture("assets/screenshots/MiddleIsland.png");
     smokeSheet = LoadTexture("assets/sprites/smokeSheet.png");
     bloodSheet = LoadTexture("assets/sprites/bloodSheet.png");
+    doorTexture = LoadTexture("assets/sprites/door.png");
     // Models
     palmTree = LoadModel("assets/models/bigPalmTree.glb");
     palm2 = LoadModel("assets/models/smallPalmTree.glb");
@@ -44,6 +45,7 @@ void LoadAllResources() {
     wall = LoadModel("assets/models/wall1.glb");
     barrelModel = LoadModel("assets/models/barrel.glb");
     pillarModel = LoadModel("assets/models/pillar.glb");
+
 
     // Heightmap 
     // heightmap = LoadImage("assets/MiddleIsland.png"); ///////////////////////// current map
@@ -118,6 +120,10 @@ void UpdateShaders(Camera& camera){
     //float time = GetTime();
     SetShaderValue(skyShader, GetShaderLocation(skyShader, "time"), &t, SHADER_UNIFORM_FLOAT);
 
+    int isDungeonLoc = GetShaderLocation(skyShader, "isDungeon");
+    int dungeonFlag = isDungeon ? 1 : 0;
+    SetShaderValue(skyShader, isDungeonLoc, &dungeonFlag, SHADER_UNIFORM_INT);
+
     //red vignette intensity over time
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
@@ -169,7 +175,7 @@ void UnloadAllResources() {
     UnloadModel(doorWay);
     UnloadModel(barrelModel);
     UnloadModel(pillarModel);
-    
+
 
 
     UnloadImage(heightmap);

@@ -5,6 +5,7 @@
 #include "player.h"
 #include "vector"
 #include "world.h"
+#include "rlgl.h"
 //static std::vector<Vector3> floorTilePositions;
 std::vector<FloorTile> floorTiles;
 
@@ -12,6 +13,8 @@ static std::vector<WallInstance> wallInstances;
 
 std::vector<CeilingTile> ceilingTiles;
 std::vector<BarrelInstance> barrelInstances;
+std::vector<DoorwayInstance> doorways;
+std::vector<Door> doors;
 std::vector<PillarInstance> pillars;
 std::vector<WallRun> wallRunColliders;
 std::vector<LightSource> dungeonLights; //static lights. 
@@ -125,6 +128,7 @@ inline bool IsEnemyColor(Color c) {
 
 
 
+
 void GenerateWallTiles(float tileSize, float baseY) {
     //and create bounding boxes
     wallInstances.clear();
@@ -184,6 +188,110 @@ void GenerateWallTiles(float tileSize, float baseY) {
             }
         }
     }
+}
+
+void GenerateDoorways(float tileSize, float baseY) {
+    doorways.clear();
+
+    for (int y = 1; y < dungeonHeight - 1; y++) {
+        for (int x = 1; x < dungeonWidth - 1; x++) {
+            Color current = dungeonPixels[y * dungeonWidth + x];
+
+            // Check for purple doorway pixel
+            if (current.r == 128 && current.g == 0 && current.b == 128) {
+         
+                // Neighbor checks
+                Color left = dungeonPixels[y * dungeonWidth + (x - 1)];
+                Color right = dungeonPixels[y * dungeonWidth + (x + 1)];
+                Color up = dungeonPixels[(y - 1) * dungeonWidth + x];
+                Color down = dungeonPixels[(y + 1) * dungeonWidth + x];
+
+                bool wallLeft = left.r == 0 && left.g == 0 && left.b == 0;
+                bool wallRight = right.r == 0 && right.g == 0 && right.b == 0;
+                bool wallUp = up.r == 0 && up.g == 0 && up.b == 0;
+                bool wallDown = down.r == 0 && down.g == 0 && down.b == 0;
+
+                float rotationY = 0.0f;
+                //the model is backward so we flipped this. 
+                if (wallLeft && wallRight) {
+                    rotationY = 90.0f * DEG2RAD; // Horizontal archway
+                }
+                else if (wallUp && wallDown) {
+                    rotationY = 0.0f; // Vertical archway
+                }
+                else {
+                    continue; // skip if it's not a valid door gap
+                }
+
+                Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
+                doorways.push_back({ pos, rotationY, false, WHITE,  x, y });
+                
+            }
+        }
+    }
+
+    GenerateDoorsFromArchways();
+}
+
+void GenerateDoorsFromArchways() {
+    doors.clear();
+
+    for (const DoorwayInstance& dw : doorways) {
+        if (dw.isOpen) continue; // skip if this archway should remain open
+
+        // Match position/rotation of archway
+        Door door;
+        door.position = dw.position;
+        door.rotationY = dw.rotationY + DEG2RAD * 90.0f;
+        door.isOpen = false;
+        door.doorTexture = &doorTexture;
+        door.scale = {300, 365, 1};
+        door.tileX = dw.tileX;
+        door.tileY = dw.tileY;
+
+        float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
+        float height = 365.0f;
+        float depth = 20.0f;        // Thickness into the doorway (forward axis)
+
+        Vector3 forward = Vector3RotateByAxisAngle({0, 0, 1}, {0, 1, 0}, door.rotationY);
+        Vector3 right = Vector3CrossProduct({0, 1, 0}, forward);
+
+        // If the sprite is offset 100 units along z, shift position -100 in local foward
+        //door.position = Vector3Subtract(door.position, Vector3Scale(forward, 175.0f));
+
+        // Get door extents (half-size box dimensions)
+        Vector3 halfExtents = Vector3Add(
+            Vector3Scale(right, halfWidth),
+            Vector3Scale(forward, depth)
+        );
+
+        // Construct axis-aligned min/max box
+        Vector3 boxMin = {
+            door.position.x - fabsf(halfExtents.x),
+            door.position.y,
+            door.position.z - fabsf(halfExtents.z)
+        };
+
+        Vector3 boxMax = {
+            door.position.x + fabsf(halfExtents.x),
+            door.position.y + height,
+            door.position.z + fabsf(halfExtents.z)
+        };
+
+        door.collider = { boxMin, boxMax };
+
+        doors.push_back(door);
+
+    }
+}
+
+bool IsDoorOpenAt(int x, int y) {
+    for (const Door& door : doors) {
+        if (door.tileX == x && door.tileY == y) {
+            return door.isOpen;
+        }
+    }
+    return true; // If no door is found, assume it's open (or not a real door)
 }
 
 
@@ -333,7 +441,7 @@ void DrawDungeonFloor(Model floorModel) {
 
 
 void DrawDungeonWalls(Model wallModel) {
-    const float wallHeight = 200.0f; // Match your actual wall height
+    const float wallHeight = 445.0f; // Match your actual wall height
 
     for (const WallInstance& wall : wallInstances) {
         // Draw base wall
@@ -346,9 +454,107 @@ void DrawDungeonWalls(Model wallModel) {
     }
 }
 
+void DrawDungeonDoorways(Model archwayModel){
+
+    for (const DoorwayInstance& d : doorways) {
+        DrawModelEx(archwayModel, d.position, {0, 1, 0}, d.rotationY * RAD2DEG, {0.7f, 0.85f, 0.68f}, d.tint);
+    
+    }
+
+    for (const Door& door : doors){
+   
+        DrawFlatDoor(door);
+        //DrawBoundingBox(door.collider, RED);
+        //DrawSphere(player.position, player.radius, GREEN);
+    }
+
+
+}
+
+void DrawFlatDoor(const Door& door) {
+    if (door.isOpen) return;
+
+    float w = door.scale.x;
+    float h = door.scale.y;
+
+    // Determine local axes
+    Vector3 forward = Vector3RotateByAxisAngle({0, 0, 1}, {0, 1, 0}, door.rotationY);
+    Vector3 right = Vector3CrossProduct({0, 1, 0}, forward);
+
+    // Use door.position directly as the center
+    Vector3 center = door.position;
+
+    // Compute quad corners (centered on door.position)
+    Vector3 bottomLeft  = Vector3Add(center, Vector3Add(Vector3Scale(right, -w * 0.5f), Vector3Scale(forward, -door.scale.z * 0.5f)));
+    Vector3 bottomRight = Vector3Add(center, Vector3Add(Vector3Scale(right,  w * 0.5f), Vector3Scale(forward, -door.scale.z * 0.5f)));
+    Vector3 topLeft     = Vector3Add(bottomLeft, {0, h, 0});
+    Vector3 topRight    = Vector3Add(bottomRight, {0, h, 0});
+
+    rlSetTexture(door.doorTexture->id);
+    rlBegin(RL_QUADS);
+        rlColor4ub(door.tint.r, door.tint.g, door.tint.b, door.tint.a); //tint the door
+
+        rlTexCoord2f(0, 1); rlVertex3f(bottomLeft.x,  bottomLeft.y,  bottomLeft.z);
+        rlTexCoord2f(1, 1); rlVertex3f(bottomRight.x, bottomRight.y, bottomRight.z);
+        rlTexCoord2f(1, 0); rlVertex3f(topRight.x,    topRight.y,    topRight.z);
+        rlTexCoord2f(0, 0); rlVertex3f(topLeft.x,     topLeft.y,     topLeft.z);
+    rlEnd();
+    rlSetTexture(0);
+    rlColor4ub(255, 255, 255, 255); // Reset color for next draw calls
+}
+
+
+
+
+
+void DrawDungeonCeiling(Model ceilingTileModel) {
+    for (const CeilingTile& ceiling : ceilingTiles) {
+        DrawModelEx(
+            ceilingTileModel,
+            ceiling.position,
+            Vector3{1, 0, 0}, // Flip to face downward
+            180.0f,
+            Vector3{1, 1, 1},
+            ceiling.tint
+        );
+    }
+}
+
+
 void DrawDungeonPillars(Model pillarModel){
     for (const PillarInstance& pillar : pillars){
         DrawModelEx(pillarModel, pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{1, 1, 1}, WHITE);
+    }
+}
+
+void UpdateDoorwayTints(Vector3 playerPos) {
+    const float playerLightRange = 1000.0f;
+    const float minBrightness = 0.2f;
+
+    for (DoorwayInstance& door : doorways) {
+        // Player light
+        float distToPlayer = Vector3Distance(playerPos, door.position);
+        float brightness = Clamp(1.0f - (distToPlayer / playerLightRange), minBrightness, 1.0f);
+
+        // Dynamic lights
+        for (const LightSource& light : bulletLights){
+            float distToLight = Vector3Distance(light.position, door.position);
+            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);  
+            brightness += lightContribution * light.intensity;
+        }
+
+        //static lights
+        for (const LightSource& light : dungeonLights) {
+            float distToLight = Vector3Distance(light.position, door.position);
+            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);  // Uses light.range!
+            brightness += lightContribution * light.intensity;
+        }
+
+        brightness = Clamp(brightness, minBrightness, 1.0f);
+
+        Vector3 warmTint = Vector3{1.0f, 0.85f, 0.7f};
+        Vector3 tinted = Vector3Scale(warmTint, brightness);
+        door.tint = ColorFromNormalized({ tinted.x, tinted.y, tinted.z, 1.0f });
     }
 }
 
@@ -468,18 +674,20 @@ void UpdateBarrelTints(Vector3 playerPos) {
     }
 }
 
-void DrawDungeonCeiling(Model ceilingTileModel) {
-    for (const CeilingTile& ceiling : ceilingTiles) {
-        DrawModelEx(
-            ceilingTileModel,
-            ceiling.position,
-            Vector3{1, 0, 0}, // Flip to face downward
-            180.0f,
-            Vector3{1, 1, 1},
-            ceiling.tint
-        );
+void UpdateDoorTints(Vector3 playerPos) {
+    const float maxLightDistance = 4000.0f;
+    const float minBrightness = 0.2f;
+
+    Vector3 baseDoorColor = {0.8f, 0.6f, 0.4f}; // warm wood tone
+
+    for (Door& door : doors) {
+        float dist = Vector3Distance(playerPos, door.position);
+        float brightness = Clamp(1.0f - (dist / maxLightDistance), minBrightness, 1.0f);
+        Vector3 tinted = Vector3Scale(baseDoorColor, brightness);
+        door.tint = ColorFromNormalized((Vector4){ tinted.x, tinted.y, tinted.z, 1.0f });
     }
 }
+
 
 bool IsDungeonFloorTile(int x, int y) {
     if (x < 0 || x >= dungeonWidth || y < 0 || y >= dungeonHeight) return false;

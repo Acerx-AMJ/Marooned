@@ -49,11 +49,11 @@ public:
     float randomTime = 0.0f;
     float pathCooldownTimer = 0.0f;
     Vector2 lastPlayerTile = {-1, -1}; // Initialized to invalid tile
-    float skeleSpeed = 500;
+    float skeleSpeed = 650;
     bool playerVisible = false;
     float timeSinceLastSeen = 9999.0f;  // Large to start
     float forgetTime = 10.0f;           // After 3 seconds of no visibility, give up
-
+    float radius = 100;
 
     int maxHealth = 150;
     int currentHealth = maxHealth;

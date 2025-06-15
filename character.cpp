@@ -223,7 +223,8 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player, Image heightmap,
 
         case DinoState::Stagger: {
             //do nothing
-            if (stateTimer >= 0.6f && playerVisible) {
+            stateTimer += deltaTime;
+            if (stateTimer >= 0.6f) {
                 state = DinoState::Chase;
                 SetAnimation(1, 5, 0.12f);
                 stateTimer = 0.0f;
@@ -511,8 +512,9 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
 
 
         case DinoState::Stagger: {
+            stateTimer += deltaTime;
             //do nothing
-            if (stateTimer >= 0.6f && playerVisible) {
+            if (stateTimer >= 0.6f) {
                 state = DinoState::Chase;
                 SetAnimation(1, 4, 0.25f);
                 stateTimer = 0.0f;
@@ -589,6 +591,7 @@ void Character::TakeDamage(int amount) {
         SetAnimation(4, 1, 1.0f); // Use row 4, 1 frame, 1 second per frame
         currentFrame = 0;         // Always start at first frame
         stateTimer = 0.0f;
+
 
         SoundManager::GetInstance().Play("dinoHit");
 
