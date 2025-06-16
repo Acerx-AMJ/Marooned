@@ -9,6 +9,8 @@
 #include "sound_manager.h"
 
 Weapon weapon;
+MeleeWeapon meleeWeapon;
+WeaponType activeWeapon = WeaponType::Blunderbuss;
 
 void InitPlayer(Player& player, Vector3 startPosition) {
     player.position = startPosition;
@@ -20,11 +22,14 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     weapon.scale = { 2.0f, 2.0f, 2.0f };
 
     weapon.muzzleFlashTexture = muzzleFlash;
-    weapon.forwardOffset = 80.0f;
-    weapon.sideOffset = 20.0f;
-    weapon.verticalOffset = -30.0f;
+
 
     weapon.fireCooldown = 2.0f;
+
+    meleeWeapon.model = swordModel;
+    meleeWeapon.scale = {2, 2, 2};
+
+    
     
 }
 
@@ -71,6 +76,15 @@ void HandleKeyboardInput(float deltaTime) {
         player.velocity.y = player.jumpStrength;
         player.grounded = false;
     }
+
+
+    if (IsKeyPressed(KEY_Q)) {
+        if (activeWeapon == WeaponType::Blunderbuss)
+            activeWeapon = WeaponType::Sword;
+        else
+            activeWeapon = WeaponType::Blunderbuss;
+    }
+
 }
 
 void HandleStickLook(float deltaTime){
@@ -143,6 +157,23 @@ void Player::TakeDamage(int amount){
 
 }
 
+void Player::PlaySwipe(){
+    std::cout << "swiping\n";
+    static std::vector<std::string> swipes = {"swipe1", "swipe2", "swipe3"};
+    static int lastIndex = -1;
+
+    int index;
+    do {
+        index = GetRandomValue(0, swipes.size() - 1);
+    } while (index == lastIndex && swipes.size() > 1);  // avoid repeat if more than 1
+
+    lastIndex = index;
+    std::string stepKey = swipes[index];
+
+    SoundManager::GetInstance().Play(stepKey);
+
+}
+
 
 
 void PlayFootstepSound() {
@@ -175,11 +206,42 @@ void UpdateFootsteps(float deltaTime){
     }
 }
 
+void UpdateMeleeHitbox(Camera& camera){
+    if (meleeWeapon.hitboxActive) {
+        Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+        Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, { 0, 1, 0 }));
+
+        Vector3 hitboxCenter = Vector3Add(player.position, Vector3Scale(forward, 200.0f));
+        hitboxCenter.y += 0.0f; 
+
+        Vector3 boxSize = {100.0f, 100.0f, 100.0f}; // tweak to taste
+
+        Vector3 min = {
+            hitboxCenter.x - boxSize.x * 0.5f,
+            hitboxCenter.y - boxSize.y * 0.5f,
+            hitboxCenter.z - boxSize.z * 0.5f
+        };
+        Vector3 max = {
+            hitboxCenter.x + boxSize.x * 0.5f,
+            hitboxCenter.y + boxSize.y * 0.5f,
+            hitboxCenter.z + boxSize.z * 0.5f
+        };
+
+        player.meleeHitbox = { min, max };
+    } else {
+        // Collapse the hitbox to prevent accidental damage
+        player.meleeHitbox = { player.position, player.position };
+    }
+}
+
+
 
 
 
 void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& camera) {
     weapon.Update(deltaTime);
+    meleeWeapon.Update(deltaTime);
+    UpdateMeleeHitbox(camera);
     UpdateFootsteps(deltaTime);
     vignetteFade += deltaTime * 2.0f; // tweak fade speed
     vignetteIntensity = Clamp(1.0f - vignetteFade, 0.0f, 1.0f);
@@ -207,11 +269,21 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         if (!player.isSwimming){
-            weapon.Fire(camera);        
+           if (activeWeapon == WeaponType::Blunderbuss) weapon.Fire(camera);   
+           if (activeWeapon == WeaponType::Sword){
+                meleeWeapon.StartSwing();
+                player.PlaySwipe();
+           }     
         }else{
             SoundManager::GetInstance().Play("reload");
         }
         
+    }
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
+        if (!meleeWeapon.swinging){
+            //meleeWeapon.StartSwing();
+        }
     }
 
 
@@ -302,7 +374,6 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
         player.canMove = false;
         vignetteIntensity = 1.0f; //should stay red becuase its set to 1 everyframe. 
         vignetteFade = 0.0f;
-        
         isFading = true;
         fadeIn = true;      // fade to black
         fadeSpeed = 1.5f;   
@@ -342,7 +413,18 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
 void DrawPlayer(const Player& player, Camera& camera) {
     DrawCapsule(player.position, Vector3 {player.position.x, player.height, player.position.z}, 10, 4, 4, RED);
 
-    if (controlPlayer) weapon.Draw(camera); 
+    if (controlPlayer){
+        if (activeWeapon == WeaponType::Blunderbuss){
+            weapon.Draw(camera); 
+        
+        }else if (activeWeapon == WeaponType::Sword){
+            meleeWeapon.Draw(camera);
+            if (meleeWeapon.hitboxActive){
+                //DrawBoundingBox(player.meleeHitbox, RED);
+            }
+        }
+        
+    }
 
 
 }

@@ -115,6 +115,7 @@ void UpdateBarrelTints(Vector3 playerPos);
 void UpdateDoorTints(Vector3 playerPos);
 void UpdateDoorwayTints(Vector3 playerPos);
 bool IsDoorOpenAt(int x, int y);
+BoundingBox MakeDoorBoundingBox(Vector3 position, float rotationY, float halfWidth, float height, float depth); 
 int GetDungeonImageX(float worldX, float tileSize, int dungeonWidth);
 int GetDungeonImageY(float worldZ, float tileSize, int dungeonHeight);
 bool IsDungeonFloorTile(int x, int y); 

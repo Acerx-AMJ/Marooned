@@ -4,6 +4,10 @@
 #include "rlgl.h"
 #include "bullet.h"
 #include "sound_manager.h"
+#include "resources.h"
+#include "player.h"
+
+
 
 void Weapon::Fire(Camera& camera) {
 
@@ -24,7 +28,7 @@ void Weapon::Fire(Camera& camera) {
 
         // Offsets in local space
         float forwardOffset = 0.0f;
-        float sideOffset = 20.0f;
+        float sideOffset = 30.0f;
         float verticalOffset = -30.0f; // down
 
         // Final origin for bullets in world space
@@ -114,3 +118,93 @@ void Weapon::Draw(const Camera& camera) {
 
 
 }
+
+
+void MeleeWeapon::StartSwing() {
+    if (timeSinceLastSwing >= cooldown) {
+ 
+        swinging = true;
+        swingTimer = 0.0f;
+        timeSinceLastSwing = 0.0f;
+
+        hitboxActive = false;
+        hitboxTimer = 0.0f;
+        hitboxTriggered = false;
+    }
+}
+
+void MeleeWeapon::Update(float deltaTime) {
+
+
+
+    if (swinging) {
+        swingTimer += deltaTime;
+
+        float t = swingTimer / swingDuration;
+        if (t > 1.0f) t = 1.0f;
+
+        // Nice arcs using sine curve
+        float arc = sinf(t * PI);  // goes 0 → 1 → 0
+        swingOffset = arc * swingAmount;
+        verticalSwingOffset = sinf((t + 0.25f) * 2 * PI) * verticalSwingAmount;
+        horizontalSwingOffset = -sinf(t * PI) * horizontalSwingAmount;
+
+        // Delay turning off swinging until next frame
+        if (swingTimer >= swingDuration) {
+            swinging = false;
+        }
+
+                // Hitbox activation window
+        if (!hitboxTriggered && swingTimer >= hitWindowStart && swingTimer <= hitWindowEnd) {
+            hitboxActive = true;
+            hitboxTriggered = true;
+            hitboxTimer = 0.0f;
+        }
+    } else {
+        swingOffset = 0.0f;
+        verticalSwingOffset = 0.0f;
+        horizontalSwingOffset = 0.0f;
+    }
+
+    timeSinceLastSwing += deltaTime;
+
+    // Hitbox timing
+    if (hitboxActive) {
+        hitboxTimer += deltaTime;
+        if (hitboxTimer > hitboxDuration) {
+            hitboxActive = false;
+        }
+    }
+}
+
+
+
+
+
+void MeleeWeapon::Draw(const Camera& camera) {
+    //if (!swinging) return;
+
+    // === Rotation logic copied from firearm draw ===
+    Matrix lookAt = MatrixLookAt(camera.position, camera.target, { 0, 1, 0 });
+    Matrix swordRotation = MatrixInvert(lookAt);
+    Quaternion q = QuaternionFromMatrix(swordRotation);
+
+    float angle = 2.0f * acosf(q.w);
+    float angleDeg = angle * RAD2DEG;
+    float sinTheta = sqrtf(1.0f - q.w * q.w);
+    Vector3 axis = (sinTheta < 0.001f) ? Vector3{1, 0, 0} : Vector3{ q.x / sinTheta, q.y / sinTheta, q.z / sinTheta };
+
+    Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+    Vector3 camRight = Vector3Normalize(Vector3CrossProduct(camForward, { 0, 1, 0 }));
+    Vector3 camUp = { 0, 1, 0 };
+
+
+    Vector3 swordPos = camera.position;
+    swordPos = Vector3Add(swordPos, Vector3Scale(camForward, forwardOffset + swingOffset));
+    swordPos = Vector3Add(swordPos, Vector3Scale(camRight, sideOffset + horizontalSwingOffset));
+    swordPos = Vector3Add(swordPos, Vector3Scale(camUp, verticalOffset + verticalSwingOffset));
+
+    DrawModelEx(model, swordPos, axis, angleDeg, scale, WHITE);
+
+}
+

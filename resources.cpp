@@ -8,7 +8,7 @@ RenderTexture2D sceneTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, doorTexture;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, 
-bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel;
+bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel;
 Image heightmap;
 Mesh terrainMesh;
 Sound musket;
@@ -45,6 +45,7 @@ void LoadAllResources() {
     wall = LoadModel("assets/models/wall1.glb");
     barrelModel = LoadModel("assets/models/barrel.glb");
     pillarModel = LoadModel("assets/models/pillar.glb");
+    swordModel = LoadModel("assets/models/sword.glb");
 
 
     // Heightmap 
@@ -105,6 +106,11 @@ void LoadAllResources() {
 
     SoundManager::GetInstance().LoadSound("doorOpen", "assets/sounds/doorOpen.ogg");
     SoundManager::GetInstance().LoadSound("doorClose", "assets/sounds/doorCLose.ogg");
+    SoundManager::GetInstance().LoadSound("swipe1", "assets/sounds/swipe1.ogg");
+    SoundManager::GetInstance().LoadSound("swipe2", "assets/sounds/swipe2.ogg");
+    SoundManager::GetInstance().LoadSound("swipe3", "assets/sounds/swipe3.ogg");
+    SoundManager::GetInstance().LoadSound("swordHit", "assets/sounds/swordHit.ogg");
+
 
 
 }
@@ -178,7 +184,7 @@ void UnloadAllResources() {
     UnloadModel(doorWay);
     UnloadModel(barrelModel);
     UnloadModel(pillarModel);
-
+    UnloadModel(swordModel);
 
 
     UnloadImage(heightmap);

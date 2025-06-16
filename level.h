@@ -7,7 +7,6 @@
 
 struct DungeonEntrance {
     Vector3 position;
-    BoundingBox collider;
     int linkedLevelIndex;
     std::string entranceID;         // Optional: for tracking visited status
 

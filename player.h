@@ -3,6 +3,8 @@
 #include "raylib.h"
 #include "weapon.h"
 
+
+
 struct Player {
     Vector3 position;
     Vector3 velocity;
@@ -10,7 +12,8 @@ struct Player {
     Vector3 forward;
     Vector3 startPosition;
     Weapon weapon;
-    
+    MeleeWeapon meleeWeapon;
+    BoundingBox meleeHitbox;
     bool running = false;
     float runSpeed = 800.0f; // faster than walk speed
     float walkSpeed = 500.0f; // regular speed
@@ -41,7 +44,7 @@ struct Player {
 
     void PlayFootstepSound();
     void TakeDamage(int amount);
-    
+    void PlaySwipe();
 };
 
 // Initializes the player at a given position

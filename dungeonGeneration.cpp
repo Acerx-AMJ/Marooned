@@ -262,32 +262,7 @@ void GenerateDoorsFromArchways() {
         float height = 365.0f;
         float depth = 20.0f;        // Thickness into the doorway (forward axis)
 
-        Vector3 forward = Vector3RotateByAxisAngle({0, 0, 1}, {0, 1, 0}, door.rotationY);
-        Vector3 right = Vector3CrossProduct({0, 1, 0}, forward);
-
-        // If the sprite is offset 100 units along z, shift position -100 in local foward
-        //door.position = Vector3Subtract(door.position, Vector3Scale(forward, 175.0f));
-
-        // Get door extents (half-size box dimensions)
-        Vector3 halfExtents = Vector3Add(
-            Vector3Scale(right, halfWidth),
-            Vector3Scale(forward, depth)
-        );
-
-        // Construct axis-aligned min/max box
-        Vector3 boxMin = {
-            door.position.x - fabsf(halfExtents.x),
-            door.position.y,
-            door.position.z - fabsf(halfExtents.z)
-        };
-
-        Vector3 boxMax = {
-            door.position.x + fabsf(halfExtents.x),
-            door.position.y + height,
-            door.position.z + fabsf(halfExtents.z)
-        };
-
-        door.collider = { boxMin, boxMax };
+        door.collider = MakeDoorBoundingBox(door.position, door.rotationY, halfWidth, height, depth);
 
         doors.push_back(door);
 
@@ -726,6 +701,32 @@ void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float 
         position = Vector3Add(position, correction);
     }
 }
+
+BoundingBox MakeDoorBoundingBox(Vector3 position, float rotationY, float halfWidth, float height, float depth) {
+    Vector3 forward = Vector3RotateByAxisAngle({0, 0, 1}, {0, 1, 0}, rotationY);
+    Vector3 right = Vector3CrossProduct({0, 1, 0}, forward);
+
+    // Calculate combined half extents
+    Vector3 halfExtents = Vector3Add(
+        Vector3Scale(right, halfWidth),
+        Vector3Scale(forward, depth)
+    );
+
+    Vector3 boxMin = {
+        position.x - fabsf(halfExtents.x),
+        position.y,
+        position.z - fabsf(halfExtents.z)
+    };
+
+    Vector3 boxMax = {
+        position.x + fabsf(halfExtents.x),
+        position.y + height,
+        position.z + fabsf(halfExtents.z)
+    };
+
+    return { boxMin, boxMax };
+}
+
 
 
 void ClearDungeon() {

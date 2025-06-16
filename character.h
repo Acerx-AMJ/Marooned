@@ -53,8 +53,8 @@ public:
     bool playerVisible = false;
     float timeSinceLastSeen = 9999.0f;  // Large to start
     float forgetTime = 10.0f;           // After 3 seconds of no visibility, give up
-    float radius = 100;
-
+    float radius = 50;
+    BoundingBox collider;
     int maxHealth = 150;
     int currentHealth = maxHealth;
     CharacterType type;
@@ -70,7 +70,7 @@ public:
     void UpdateRaptorAI(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors);
     void UpdateAI(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors); 
     void UpdateSkeletonAI(float deltaTime, Player& player, const std::vector<Character*>& allRaptors);
-
+    void UpdateCollider(); // declare update method
 
     void eraseCharacters();
     void setPath();

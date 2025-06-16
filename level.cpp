@@ -3,9 +3,8 @@
 #include <vector>
 
 DungeonEntrance entranceToDungeon1 = {
-    {0, 200, 0},                             // position
-    {{5300, 200, -6100}, {5500, 500, -5900}},       // bounding box
-    2                                               // linkedLevelIndex
+    {0, 200, 0}, // position
+    2, // linkedLevelIndex
 };
 
 std::vector<LevelData> levels = {
@@ -17,7 +16,7 @@ std::vector<LevelData> levels = {
         {0, 0, 0}, //raptor spawn center
         10, //raptor count
         false, //isDungeon
-        {entranceToDungeon1}
+        {entranceToDungeon1} //add entrance struct to level's vector of entrances. 
        
     },
     {

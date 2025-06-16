@@ -38,9 +38,9 @@ void main()
         final *= 1.0 - dungeonDarkness;
         float midpoint = 0.5;
         final = (final - midpoint) * dungeonContrast + midpoint;
-        final = mix(final, vec3(0.6, 0.3, 0.2), 0.1); // slight blue tint
+        final = mix(final, vec3(0.3, 0.4, 0.8), 0.13); // slight blue tint
     }
-    colorBleedAmount = 0.0;
+    //colorBleedAmount = 0.0;
     // === Color Bleed (uses original `center`) ===
     if (colorBleedAmount > 0.0) {
         vec3 blend = center;

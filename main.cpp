@@ -478,6 +478,37 @@ void DrawMenu() {
     DrawText(selectedOption == 2 ? "> Quit" : "  Quit", titleX, 380, 30, WHITE);
 }
 
+void GenerateEntrances(){
+    for (const DungeonEntrance& e : dungeonEntrances) {
+            Door d;
+            d.position = e.position;
+            d.rotationY = 0.0f; // or whatever fits
+            d.doorTexture = &doorTexture;
+            d.isOpen = false;
+            d.scale = {300, 365, 1};
+            d.tint = WHITE;
+            d.linkedLevelIndex = e.linkedLevelIndex; //map4
+
+            float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
+            float height = 365.0f;
+            float depth = 20.0f;        // Thickness into the doorway (forward axis)
+
+            d.collider = MakeDoorBoundingBox(d.position, d.rotationY, halfWidth, height, depth);
+
+            doors.push_back(d);
+
+            DoorwayInstance dw;
+            dw.position = e.position;
+            dw.rotationY = 90.0f * DEG2RAD;
+            dw.isOpen = false;
+
+
+            
+            doorways.push_back(dw);
+        }
+
+}
+
 
 
 
@@ -522,27 +553,10 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateSkeletonsFromImage(tileSize, 165);
 
     }else{
-        generateRaptors(level.raptorCount, level.raptorSpawnCenter, 3000);
+        generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
         dungeonEntrances = level.entrances;
-        for (const DungeonEntrance& e : dungeonEntrances) {
-                Door d;
-                d.position = e.position;
-                d.rotationY = 0.0f; // or whatever fits
-                d.doorTexture = &doorTexture;
-                d.isOpen = false;
-                d.scale = {300, 365, 1};
-                d.tint = WHITE;
-                d.linkedLevelIndex = e.linkedLevelIndex; //map4
-                // collider and other settings...
-                doors.push_back(d);
+        GenerateEntrances();
 
-                DoorwayInstance dw;
-                dw.position = e.position;
-                dw.rotationY = 90.0f * DEG2RAD;
-                dw.isOpen = false;
-                
-                doorways.push_back(dw);
-            }
 
        
     }
@@ -555,6 +569,8 @@ void InitLevel(const LevelData& level, Camera camera) {
         //Overriding start position with green pixel
     }
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. 
+
+    
 
 }
 
@@ -674,6 +690,7 @@ void HandleDoorInteraction(Camera& camera) {
     float deltaTime = GetFrameTime();
 
     if (!isWaiting && IsKeyPressed(KEY_E)) {
+
         for (size_t i = 0; i < doors.size(); ++i) {
             float distanceTo = Vector3Distance(doors[i].position, player.position);
             if (distanceTo < 300) {
@@ -686,6 +703,7 @@ void HandleDoorInteraction(Camera& camera) {
 
                 if (!isDungeon && doors[i].linkedLevelIndex != -1) {
                     isDungeon = true;
+
                     InitLevel(levels[doors[i].linkedLevelIndex], camera); //Enter the Dungeon
                 }
 
@@ -696,9 +714,11 @@ void HandleDoorInteraction(Camera& camera) {
 
     if (isWaiting) {
         openTimer += deltaTime;
+
         if (openTimer >= 0.5f && pendingDoorIndex != -1) {
             doors[pendingDoorIndex].isOpen = !doors[pendingDoorIndex].isOpen;
             doorways[pendingDoorIndex].isOpen = doors[pendingDoorIndex].isOpen;
+
 
             // Reset
             isWaiting = false;
@@ -708,7 +728,20 @@ void HandleDoorInteraction(Camera& camera) {
     }
 }
 
+void HandleMeleeHitboxCollision() {
+    //if (!player.meleeWeapon.swinging) return;
 
+    for (Character& skeleton : skeletons) {
+        if (skeleton.isDead) continue;
+        if (skeleton.hitTimer > 0.0f) continue; // ← SKIP if recently hit
+
+        if (CheckCollisionBoxes(skeleton.collider, player.meleeHitbox) && skeleton.hitTimer <= 0) {
+            skeleton.TakeDamage(50);
+            SoundManager::GetInstance().Play("swordHit");
+            
+        }
+    }
+}
 
 
 
@@ -736,6 +769,12 @@ int main() {
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
     DisableCursor();
+
+    for (int i = 0; i < swordModel.materialCount; i++) {
+        Material mat = swordModel.materials[i];
+        Texture2D tex = mat.maps[MATERIAL_MAP_DIFFUSE].texture;
+        std::cout << "Material " << i << " diffuse width: " << tex.width << ", height: " << tex.height << std::endl;
+}
     
     //main game loop
     while (!WindowShouldClose()) {
@@ -786,6 +825,7 @@ int main() {
         TreeCollision(camera); //player and raptor vs tree
         DoorCollision();
         HandleDoorInteraction(camera);
+        HandleMeleeHitboxCollision();
 
         if (!isDungeon) UpdateMusicStream(jungleAmbience);
         if (isDungeon){
@@ -847,6 +887,7 @@ int main() {
         drawRaptors(camera); //sort and draw raptors
         drawSkeletons(camera);
         DrawPlayer(player, camera);
+        
 
         DrawBullets(camera); //and decals
 
