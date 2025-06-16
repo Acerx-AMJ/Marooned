@@ -71,6 +71,11 @@ std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
         return {}; // goal unreachable
     }
 
+    // Trim final step so skeleton stops adjacent to player
+    // if (path.size() > 1) {
+    //     path.pop_back();
+    // }
+
     return path;
 }
 
@@ -85,9 +90,9 @@ void ConvertImageToWalkableGrid(const Image& dungeonMap) {
         for (int y = 0; y < dungeonMap.height; ++y) {
             Color c = GetImageColor(dungeonMap, x, y);
 
-            // Define colors precisely
+            // Define colors
             bool isWall = (c.r < 50 && c.g < 50 && c.b < 50); // black
-            bool isBarrel = (c.b > 200 && c.r < 100 && c.g < 100); // blue barrel
+            bool isBarrel = (c.b > 200 && c.r < 100 && c.g < 100); // blue barrel, skeletons will also navigate around barrels
             
 
             walkable[x][y] = !(isWall || isBarrel);
@@ -114,7 +119,7 @@ bool IsWalkable(int x, int y) {
 
 bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, const Character* self) {
     for (const Character* s : skeletons) {
-        if (s == self || s->state == DinoState::Death) continue;
+        if (s == self || s->state == DinoState::Death) continue; 
 
         Vector2 tile = WorldToImageCoords(s->position);
         if ((int)tile.x == x && (int)tile.y == y) {
@@ -138,12 +143,39 @@ Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeleton
 }
 
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
-    //raymarch the pixels in the players direction stopping at walls and closed doors. otherwises return true. 
+    const int numRays = 10;
+    const float spread = 0.2f; // how wide the ray cluster is
+
+    Vector2 dir = { end.x - start.x, end.y - start.y };
+    float distance = sqrtf(dir.x * dir.x + dir.y * dir.y);
+    if (distance == 0) return true;
+
+    dir.x /= distance;
+    dir.y /= distance;
+
+    for (int i = 0; i < numRays; ++i) {
+        // Offset rays slightly in a perpendicular direction
+        float offset = ((float)i - numRays / 2) * spread / (float)numRays;
+
+        Vector2 perp = { -dir.y, dir.x }; // 90-degree rotation
+        Vector2 offsetStart = {
+            start.x + perp.x * offset,
+            start.y + perp.y * offset
+        };
+
+        if (SingleRayBlocked(offsetStart, end, dungeonMap, maxSteps)) {
+            return false; // any blocked ray = no vision
+        }
+    }
+
+    return true;
+}
+
+bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
     float dx = end.x - start.x;
     float dy = end.y - start.y;
     float distance = sqrtf(dx*dx + dy*dy);
-
-    if (distance == 0) return true;
+    if (distance == 0) return false;
 
     float stepX = dx / distance;
     float stepY = dy / distance;
@@ -151,40 +183,30 @@ bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int
     float x = start.x;
     float y = start.y;
 
-    for (int i = 0; i < distance && i < maxSteps; i++) {
+    for (int i = 0; i < distance && i < maxSteps; ++i) {
         int tileX = (int)x;
         int tileY = (int)y;
 
-        // Bounds check
         if (tileX < 0 || tileX >= dungeonMap.width || tileY < 0 || tileY >= dungeonMap.height)
-            return false;
+            return true;
 
         Color c = GetImageColor(dungeonMap, tileX, tileY);
 
-        // Check for wall
-        if (c.r < 50 && c.g < 50 && c.b < 50) {
-            return false; // solid wall
-        }
-
-        // Check for purple door pixel
-        if (c.r == 128 && c.g == 0 && c.b == 128) {
-            if (!IsDoorOpenAt(tileX, tileY)) {
-                //std::cout << "doorway found! blocking sight\n";
-                return false; // closed door blocks vision
-            }
-        }
+        if (c.r < 50 && c.g < 50 && c.b < 50) return true; // wall
+        if (c.r == 128 && c.g == 0 && c.b == 128 && !IsDoorOpenAt(tileX, tileY))
+            return true; // closed door
 
         x += stepX;
         y += stepY;
     }
 
-    return true;
+    return false;
 }
 
 
 std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& dungeonMap) {
     //check for short cuts. skip points if you can connect stright to a point further along. 
-    //A B C D -> A D, skip B and C if A can connect straight to D 
+   
     std::vector<Vector2> result;
 
     if (path.empty()) return result;

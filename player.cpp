@@ -133,13 +133,21 @@ void HandleGamepadInput(float deltaTime) {
 }
 
 void Player::TakeDamage(int amount){
+    if (player.blocking){
+        if (rand()%2 == 0){
+            SoundManager::GetInstance().Play("swordBlock");
+        } else{
+            SoundManager::GetInstance().Play("swordBlock2");
+        }
+        return; //dont activate vignette
+    } 
+
     if (!player.dying && !player.dead) {
         player.currentHealth -= amount;
 
         if (player.currentHealth <= 0) {
             player.dying = true;
             player.deathTimer = 0.0f;
-
            
         }
     }
@@ -153,26 +161,9 @@ void Player::TakeDamage(int amount){
         SoundManager::GetInstance().Play("phit2");
     }
 
-
-
 }
 
-void Player::PlaySwipe(){
-    std::cout << "swiping\n";
-    static std::vector<std::string> swipes = {"swipe1", "swipe2", "swipe3"};
-    static int lastIndex = -1;
 
-    int index;
-    do {
-        index = GetRandomValue(0, swipes.size() - 1);
-    } while (index == lastIndex && swipes.size() > 1);  // avoid repeat if more than 1
-
-    lastIndex = index;
-    std::string stepKey = swipes[index];
-
-    SoundManager::GetInstance().Play(stepKey);
-
-}
 
 
 
@@ -264,6 +255,13 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
         }
     }
 
+    if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
+        meleeWeapon.StartBlock();
+        player.blocking = true;
+    } else {
+        meleeWeapon.EndBlock();
+        player.blocking = false;
+    }
 
 
 
@@ -272,19 +270,17 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
            if (activeWeapon == WeaponType::Blunderbuss) weapon.Fire(camera);   
            if (activeWeapon == WeaponType::Sword){
                 meleeWeapon.StartSwing();
-                player.PlaySwipe();
+            
+                  
            }     
         }else{
-            SoundManager::GetInstance().Play("reload");
+            if (activeWeapon == WeaponType::Blunderbuss) SoundManager::GetInstance().Play("reload"); //play "click" if in water with gun
         }
         
     }
 
-    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
-        if (!meleeWeapon.swinging){
-            //meleeWeapon.StartSwing();
-        }
-    }
+
+
 
 
     // --- Boarding Check ---

@@ -50,6 +50,61 @@ void Weapon::Fire(Camera& camera) {
 
 }
 
+void MeleeWeapon::Update(float deltaTime) {
+
+    // Smooth transition into and out of block pose
+    if (blocking) {
+        blockLerp += deltaTime * blockSpeed;
+    } else {
+        blockLerp -= deltaTime * blockSpeed;
+    }
+    blockLerp = Clamp(blockLerp, 0.0f, 1.0f);
+
+
+    if (swinging) {
+        swingTimer += deltaTime;
+
+        float t = swingTimer / swingDuration;
+        if (t > 1.0f) t = 1.0f;
+
+        // Nice arcs using sine curve
+        float arc = sinf(t * PI);  // goes 0 → 1 → 0
+        swingOffset = arc * swingAmount;
+        float halfArc = sinf(t * PI); // goes 0 → 1 → 0
+        verticalSwingOffset = -(halfArc - 0.25f) * 2.0f * verticalSwingAmount;
+
+        //verticalSwingOffset = sinf((t + 0.25f) * 2 * PI) * verticalSwingAmount;
+        horizontalSwingOffset = -sinf(t * PI) * horizontalSwingAmount;
+
+        // Delay turning off swinging until next frame
+        if (swingTimer >= swingDuration) {
+            swinging = false;
+        }
+
+                // Hitbox activation window
+        if (!hitboxTriggered && swingTimer >= hitWindowStart && swingTimer <= hitWindowEnd) {
+            hitboxActive = true;
+            hitboxTriggered = true;
+            hitboxTimer = 0.0f;
+        }
+    } else {
+        swingOffset = 0.0f;
+        verticalSwingOffset = 0.0f;
+        horizontalSwingOffset = 0.0f;
+    }
+
+    timeSinceLastSwing += deltaTime;
+
+    // Hitbox timing
+    if (hitboxActive) {
+        hitboxTimer += deltaTime;
+        if (hitboxTimer > hitboxDuration) {
+            hitboxActive = false;
+        }
+    }
+}
+
+
 void Weapon::Update(float deltaTime) {
     if (recoil > 0.0f) {
         recoil -= recoilRecoverySpeed * deltaTime;
@@ -120,71 +175,8 @@ void Weapon::Draw(const Camera& camera) {
 }
 
 
-void MeleeWeapon::StartSwing() {
-    if (timeSinceLastSwing >= cooldown) {
- 
-        swinging = true;
-        swingTimer = 0.0f;
-        timeSinceLastSwing = 0.0f;
-
-        hitboxActive = false;
-        hitboxTimer = 0.0f;
-        hitboxTriggered = false;
-    }
-}
-
-void MeleeWeapon::Update(float deltaTime) {
-
-
-
-    if (swinging) {
-        swingTimer += deltaTime;
-
-        float t = swingTimer / swingDuration;
-        if (t > 1.0f) t = 1.0f;
-
-        // Nice arcs using sine curve
-        float arc = sinf(t * PI);  // goes 0 → 1 → 0
-        swingOffset = arc * swingAmount;
-        verticalSwingOffset = sinf((t + 0.25f) * 2 * PI) * verticalSwingAmount;
-        horizontalSwingOffset = -sinf(t * PI) * horizontalSwingAmount;
-
-        // Delay turning off swinging until next frame
-        if (swingTimer >= swingDuration) {
-            swinging = false;
-        }
-
-                // Hitbox activation window
-        if (!hitboxTriggered && swingTimer >= hitWindowStart && swingTimer <= hitWindowEnd) {
-            hitboxActive = true;
-            hitboxTriggered = true;
-            hitboxTimer = 0.0f;
-        }
-    } else {
-        swingOffset = 0.0f;
-        verticalSwingOffset = 0.0f;
-        horizontalSwingOffset = 0.0f;
-    }
-
-    timeSinceLastSwing += deltaTime;
-
-    // Hitbox timing
-    if (hitboxActive) {
-        hitboxTimer += deltaTime;
-        if (hitboxTimer > hitboxDuration) {
-            hitboxActive = false;
-        }
-    }
-}
-
-
-
-
 
 void MeleeWeapon::Draw(const Camera& camera) {
-    //if (!swinging) return;
-
-    // === Rotation logic copied from firearm draw ===
     Matrix lookAt = MatrixLookAt(camera.position, camera.target, { 0, 1, 0 });
     Matrix swordRotation = MatrixInvert(lookAt);
     Quaternion q = QuaternionFromMatrix(swordRotation);
@@ -198,13 +190,63 @@ void MeleeWeapon::Draw(const Camera& camera) {
     Vector3 camRight = Vector3Normalize(Vector3CrossProduct(camForward, { 0, 1, 0 }));
     Vector3 camUp = { 0, 1, 0 };
 
+    // === Blend offsets between normal and block pose ===
+    float blendedForward = Lerp(forwardOffset, blockForwardOffset, blockLerp);
+    float blendedSide = Lerp(sideOffset, blockSideOffset, blockLerp);
+    float blendedVertical = Lerp(verticalOffset, blockVerticalOffset, blockLerp);
 
+    // === Apply swing arc if not blocking ===
+    blendedForward += swingOffset;
+    blendedSide += horizontalSwingOffset;
+    blendedVertical += verticalSwingOffset;
+
+    // === Final sword position ===
     Vector3 swordPos = camera.position;
-    swordPos = Vector3Add(swordPos, Vector3Scale(camForward, forwardOffset + swingOffset));
-    swordPos = Vector3Add(swordPos, Vector3Scale(camRight, sideOffset + horizontalSwingOffset));
-    swordPos = Vector3Add(swordPos, Vector3Scale(camUp, verticalOffset + verticalSwingOffset));
+    swordPos = Vector3Add(swordPos, Vector3Scale(camForward, blendedForward));
+    swordPos = Vector3Add(swordPos, Vector3Scale(camRight, blendedSide));
+    swordPos = Vector3Add(swordPos, Vector3Scale(camUp, blendedVertical));
 
     DrawModelEx(model, swordPos, axis, angleDeg, scale, WHITE);
-
 }
 
+
+
+void MeleeWeapon::StartBlock() {
+    blocking = true;
+    swinging = false; // cancel any swings
+}
+
+void MeleeWeapon::EndBlock() {
+    blocking = false;
+}
+
+void MeleeWeapon::StartSwing() {
+    if (timeSinceLastSwing >= cooldown) {
+        PlaySwipe();
+        swinging = true;
+        swingTimer = 0.0f;
+        timeSinceLastSwing = 0.0f;
+
+        hitboxActive = false;
+        hitboxTimer = 0.0f;
+        hitboxTriggered = false;
+    }
+}
+
+
+void MeleeWeapon::PlaySwipe(){
+
+    static std::vector<std::string> swipes = {"swipe1", "swipe2", "swipe3"};
+    static int lastIndex = -1;
+
+    int index;
+    do {
+        index = GetRandomValue(0, swipes.size() - 1);
+    } while (index == lastIndex && swipes.size() > 1);  // avoid repeat if more than 1
+
+    lastIndex = index;
+    std::string stepKey = swipes[index];
+
+    SoundManager::GetInstance().Play(stepKey);
+
+}

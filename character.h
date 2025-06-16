@@ -43,6 +43,7 @@ public:
     float chaseDuration = 0.0f;
     float hitTimer = 0.0f;
     float runawayAngleOffset = 0.0f;
+    int patrolRadius = 3;
     bool hasRunawayAngle = false;
     float idleThreshold = 0.0f; // for random movements when idle
     float randomDistance = 0.0f; //how far away to run before stopping. 
@@ -70,6 +71,7 @@ public:
     void UpdateRaptorAI(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors);
     void UpdateAI(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors); 
     void UpdateSkeletonAI(float deltaTime, Player& player, const std::vector<Character*>& allRaptors);
+    void AlertNearbySkeletons(Vector3 alertOrigin, float radius);
     void UpdateCollider(); // declare update method
 
     void eraseCharacters();

@@ -14,7 +14,7 @@ struct MeleeWeapon {
     Vector3 scale = { 1.0f, 1.0f, 1.0f };
 
     float swingTimer = 0.0f;
-    float swingDuration = 0.75f;
+    float swingDuration = 0.7f;
     bool swinging = false;
 
     bool hitboxActive = false;
@@ -25,14 +25,22 @@ struct MeleeWeapon {
     float hitWindowEnd = 0.25f;   // seconds into the swing
     bool hitboxTriggered = false;
 
+    bool blocking = false;
+    float blockLerp = 0.0f; // 0 → 1 smooth transition
+    float blockSpeed = 6.0f; // how fast it moves to blocking position
+
+    // Block pose offsets
+    float blockForwardOffset = 50.0f;
+    float blockVerticalOffset = -30.0f;
+    float blockSideOffset = 0.0f;
 
 
 
-    float swingAmount = 50.0f;   // how far forward it jabs or sweeps
+    float swingAmount = 20.0f;   // how far forward it jabs or sweeps
     float swingOffset = 0.0f;    // forward movement
 
     float verticalSwingOffset = 0.0f;
-    float verticalSwingAmount = 60.0f; // how far it chops down
+    float verticalSwingAmount = 45.0f; // how far it chops down
 
     float horizontalSwingOffset = 0.0f;
     float horizontalSwingAmount = 20.0f; // little lateral arc
@@ -42,10 +50,12 @@ struct MeleeWeapon {
     float timeSinceLastSwing = 999.0f;
 
     float forwardOffset = 60.0f;
-    float sideOffset = 30.0f; // pull it left of the screen
+    float sideOffset = 20.0f; // pull it left of the screen
     float verticalOffset = -40.0f;
-
+    void StartBlock();
+    void EndBlock();
     void StartSwing();
+    void PlaySwipe();
     void Update(float deltaTime);
     void Draw(const Camera& camera);
 };

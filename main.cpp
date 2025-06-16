@@ -282,7 +282,6 @@ void CheckBulletHits(Camera& camera) {
     for (WallRun& w : wallRunColliders){
         for (Bullet& b: activeBullets){
             if (CheckCollisionPointBox(b.GetPosition(), w.bounds)){
-                std::cout << "wall hit\n";
                 b.kill(camera);
             }
         }
@@ -729,7 +728,6 @@ void HandleDoorInteraction(Camera& camera) {
 }
 
 void HandleMeleeHitboxCollision() {
-    //if (!player.meleeWeapon.swinging) return;
 
     for (Character& skeleton : skeletons) {
         if (skeleton.isDead) continue;
@@ -741,12 +739,22 @@ void HandleMeleeHitboxCollision() {
             
         }
     }
+
+    for (Character& raptor : raptors){
+        if (raptor.isDead) continue;
+        if (raptor.hitTimer >0.0f) continue;
+
+        if (CheckCollisionBoxes(raptor.collider, player.meleeHitbox) && raptor.hitTimer <= 0) {
+            raptor.TakeDamage(50);
+            SoundManager::GetInstance().Play("swordHit");
+        }
+    }
 }
 
 
 
 int main() {
-    //SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
+    SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
     InitWindow(1600, 900, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
@@ -770,11 +778,6 @@ int main() {
     camera.projection = CAMERA_PERSPECTIVE;
     DisableCursor();
 
-    for (int i = 0; i < swordModel.materialCount; i++) {
-        Material mat = swordModel.materials[i];
-        Texture2D tex = mat.maps[MATERIAL_MAP_DIFFUSE].texture;
-        std::cout << "Material " << i << " diffuse width: " << tex.width << ", height: " << tex.height << std::endl;
-}
     
     //main game loop
     while (!WindowShouldClose()) {

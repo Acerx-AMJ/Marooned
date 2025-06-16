@@ -169,6 +169,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player, Image heightmap,
             if (distance > 200.0f) { //maybe this should be like 160, player would get bit more. 
                 state = DinoState::Chase;
                 SetAnimation(1, 5, 0.12f);
+                stateTimer = 0.0f;
             }
 
             attackCooldown -= deltaTime;
@@ -292,7 +293,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
         Vector2 start = WorldToImageCoords(position);
         Vector2 goal = WorldToImageCoords(player.position);
 
-        bool canSee = LineOfSightRaycast(start, goal, dungeonImg, 30);
+        bool canSee = LineOfSightRaycast(start, goal, dungeonImg, 100);
 
         if (canSee) {
             playerVisible = true;
@@ -309,8 +310,9 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
     switch (state){
         case DinoState::Idle:
             if (distance < 4000.0f && stateTimer > 1.0f && playerVisible) {
+                AlertNearbySkeletons(position, 1000.0f);
                 state = DinoState::Chase;
-                SetAnimation(1, 4, 0.25f);
+                SetAnimation(1, 4, 0.2f);
                 stateTimer = 0.0f;
 
                 Vector2 start = WorldToImageCoords(position);
@@ -331,21 +333,28 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
                 Vector2 randomTile;
                 bool found = false;
 
-                int patrolRadius = 3;
+                //patrol radius = 3 normaly
 
-                for (int i = 0; i < 10; ++i) { // try 10 random nearby tiles
+                for (int i = 0; i < 10; ++i) {
                     int rx = (int)start.x + GetRandomValue(-patrolRadius, patrolRadius);
                     int ry = (int)start.y + GetRandomValue(-patrolRadius, patrolRadius);
 
                     if (rx < 0 || ry < 0 || rx >= dungeonWidth || ry >= dungeonHeight)
                         continue;
 
-                    if (walkable[rx][ry] && !IsTileOccupied(rx, ry, skeletonPtrs, this)) {
-                        randomTile = {(float)rx, (float)ry};
-                        found = true;
-                        break;
-                    }
+                    if (!walkable[rx][ry]) continue;
+                    if (IsTileOccupied(rx, ry, skeletonPtrs, this)) continue;
+
+                    Vector2 target = {(float)rx, (float)ry};
+
+                    if (!LineOfSightRaycast(start, target, dungeonImg, 20)) // 20 = max ray steps
+                        continue;
+
+                    randomTile = target;
+                    found = true;
+                    break;
                 }
+
 
                 if (found) {
                     std::vector<Vector2> tilePath = FindPath(start, randomTile);
@@ -360,7 +369,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
 
                     if (!currentWorldPath.empty()) {
                         state = DinoState::Patrol;
-                        SetAnimation(1, 2, 0.12f); // reuse walk anim
+                        SetAnimation(1, 4, 0.2f); // reuse walk anim
                     }
                 }
     }
@@ -371,7 +380,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
             stateTimer += deltaTime;
             pathCooldownTimer -= deltaTime;
 
-            if (distance < 150.0f) {
+            if (distance < 300.0f) {
                 state = DinoState::Attack;
                 SetAnimation(2, 4, 0.2f);
                 stateTimer = 0.0f;
@@ -396,7 +405,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
                     currentWorldPath.clear();
                     for (const Vector2& tile : tilePath) {
                         Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
-                        worldPos.y += 80.0f;
+                        worldPos.y += 80.0f; //move up to match character height.
                         currentWorldPath.push_back(worldPos);
                     }
                 }
@@ -410,8 +419,8 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
                     rotationY = RAD2DEG * atan2f(dir.x, dir.z);
                     position.y = targetPos.y;
 
-                    if (Vector3Distance(position, targetPos) < 100.0f) {
-                        currentWorldPath.erase(currentWorldPath.begin());
+                    if (Vector3Distance(position, targetPos) < 100.0f) { 
+                        currentWorldPath.erase(currentWorldPath.begin()); //erase point on arrival, your always chasing the first point on the list. 
                     }
                 }
             }
@@ -428,7 +437,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
                 // Only the one with the "greater" pointer backs off
                 if (this > occupier) {
                     state = DinoState::Reposition;
-                    SetAnimation(1, 4, 0.12f);
+                    SetAnimation(1, 4, 0.2f);
                     stateTimer = 0.0f;
                     break;
                 } else {
@@ -437,28 +446,30 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
                 }
             }
 
-            if (distance > 200.0f) { //maybe this should be like 160, player would get bit more. 
+            if (distance > 350.0f) { 
                 state = DinoState::Chase;
-                SetAnimation(1, 4, 0.25f);
+                SetAnimation(1, 4, 0.2f);
                 stateTimer = 0.0;
             }
 
 
 
             attackCooldown -= deltaTime;
-            if (attackCooldown <= 0.0f) {
-                attackCooldown = 1.5f; // seconds between attacks
+            if (attackCooldown <= 0.0f && currentFrame == 2) {
+                attackCooldown = 1.0f; // 1 second cooldown for 1 second of animation. 
 
                 // Play attack sound
-                SoundManager::GetInstance().Play("dinoBite");
+                SoundManager::GetInstance().Play("swipe3");
 
                 // Damage the player
+                
                 player.TakeDamage(10);
             }
             break;
         }
         case DinoState::Reposition: {
-            
+            stateTimer += deltaTime;
+            //this is buggy as hell. 
             const int offsets[8][2] = {
                 {  1,  0 }, { -1,  0 }, { 0,  1 }, { 0, -1 },
                 {  1,  1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }
@@ -487,12 +498,14 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
 
                 float dist = Vector3Distance(position, target);
 
-                if (dist < 150.0f) {
+                if (dist < 350.0f && stateTimer > 1.0f) {
                     state = DinoState::Attack;
                     SetAnimation(2, 5, 0.2f);
-                } else if (dist > 200.0f) {
+                    stateTimer = 0.0f;
+                } else if (dist > 350.0f && stateTimer > 1.0f) {
                     state = DinoState::Chase;
-                    SetAnimation(1, 4, 0.25f);
+                    SetAnimation(1, 4, 0.2f);
+                    stateTimer = 0.0f;
                 }
 
                 break;
@@ -506,13 +519,15 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
 
             if (distance < 4000 && playerVisible){
                 state = DinoState::Chase;
-                SetAnimation(1, 4, 0.25f);
+                SetAnimation(1, 4, 0.2f);
+                AlertNearbySkeletons(position, 1000.0f);
+                stateTimer = 0.0f;
             }
 
             if (!currentWorldPath.empty()) {
                 Vector3 targetPos = currentWorldPath[0];
                 Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
-                Vector3 move = Vector3Scale(dir, 500 * deltaTime); // maybe slower than chase
+                Vector3 move = Vector3Scale(dir, 500 * deltaTime); // slower than chase
                 position = Vector3Add(position, move);
                 rotationY = RAD2DEG * atan2f(dir.x, dir.z);
                 position.y = targetPos.y;
@@ -611,12 +626,35 @@ void Character::TakeDamage(int amount) {
         SetAnimation(4, 1, 1.0f); // Use row 4, 1 frame, 1 second per frame
         currentFrame = 0;         // Always start at first frame
         stateTimer = 0.0f;
-
+        AlertNearbySkeletons(position, 1000.0f);
 
         SoundManager::GetInstance().Play("dinoHit");
 
     }
 }
+
+void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
+    Vector2 originTile = WorldToImageCoords(alertOrigin);
+
+    for (Character& other : skeletons) {
+        if (other.isDead || other.state == DinoState::Chase) continue;
+
+        float distSqr = Vector3DistanceSqr(alertOrigin, other.position);
+        if (distSqr > radius * radius) continue;
+
+        Vector2 targetTile = WorldToImageCoords(other.position);
+        
+        if (!LineOfSightRaycast(originTile, targetTile, dungeonImg, 20)) continue;
+
+        // Passed all checks → alert the skeleton
+        other.state = DinoState::Chase;
+        other.SetAnimation(1, 4, 0.2f); // probably should be `other.SetAnimation(...)`
+        other.stateTimer = 0.0f;
+        other.playerVisible = true;
+    }
+}
+
+
 
 
 

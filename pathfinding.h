@@ -10,5 +10,6 @@ bool IsWalkable(int x, int y);
 bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, const Character* self);
 Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeletons, const Character* self);
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps);
+bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps);
 std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& dungeonMap);
 std::vector<Vector2> FindPath(Vector2 start, Vector2 goal);

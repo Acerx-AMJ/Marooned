@@ -36,6 +36,7 @@ struct Player {
     bool isMoving = false;
     bool onBoard = false;
     bool disableMovement = false;
+    bool blocking = false;
 
     float stamina = 100.0f;
     float maxStamina = 100.0f;
@@ -44,7 +45,7 @@ struct Player {
 
     void PlayFootstepSound();
     void TakeDamage(int amount);
-    void PlaySwipe();
+    //void PlaySwipe();
 };
 
 // Initializes the player at a given position

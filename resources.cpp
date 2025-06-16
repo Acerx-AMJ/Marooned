@@ -110,6 +110,8 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("swipe2", "assets/sounds/swipe2.ogg");
     SoundManager::GetInstance().LoadSound("swipe3", "assets/sounds/swipe3.ogg");
     SoundManager::GetInstance().LoadSound("swordHit", "assets/sounds/swordHit.ogg");
+    SoundManager::GetInstance().LoadSound("swordBlock", "assets/sounds/swordBlock.ogg");
+    SoundManager::GetInstance().LoadSound("swordBlock2", "assets/sounds/swordBlock2.ogg");
 
 
 
