@@ -19,6 +19,7 @@ struct DungeonEntrance {
 struct LevelData {
     std::string name;                 // Display name
     std::string heightmapPath;       // Path to the heightmap image
+    std::string dungeonPath;
     Vector3 terrainScale;            // Scale of the terrain mesh
     Vector3 startPosition;           // Player starting position
     Vector3 raptorSpawnCenter;       // Center point for raptor spawns

@@ -288,29 +288,33 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
 
     float distance = Vector3Distance(position, player.position);
     playerVisible = false;
-    if (isDungeon){
+    Vector2 start = WorldToImageCoords(position);
+    Vector2 goal = WorldToImageCoords(player.position);
 
-        Vector2 start = WorldToImageCoords(position);
-        Vector2 goal = WorldToImageCoords(player.position);
+    bool canSee = LineOfSightRaycast(start, goal, dungeonImg, 100); //Vision test
 
-        bool canSee = LineOfSightRaycast(start, goal, dungeonImg, 100);
-
-        if (canSee) {
-            playerVisible = true;
-            timeSinceLastSeen = 0.0f;
-        } else {
-            timeSinceLastSeen += deltaTime;
-            if (timeSinceLastSeen > forgetTime) {
-                playerVisible = false;
-            }
+    if (canSee) {
+        playerVisible = true;
+        timeSinceLastSeen = 0.0f;
+    } else {
+        timeSinceLastSeen += deltaTime;
+        if (timeSinceLastSeen > forgetTime) {
+            playerVisible = false;
         }
-
     }
+
+    float distSqr = Vector3DistanceSqr(position, player.position); //Hearing test
+    if (distSqr <= hearingRadius * hearingRadius) {
+        heardPlayer = true;
+    }
+
+    
  
     switch (state){
         case DinoState::Idle:
-            if (distance < 4000.0f && stateTimer > 1.0f && playerVisible) {
-                AlertNearbySkeletons(position, 1000.0f);
+            stateTimer += deltaTime;
+            if (distance < 4000.0f && stateTimer > 1.0f && (playerVisible || heardPlayer)) {
+                AlertNearbySkeletons(position, 3000.0f);
                 state = DinoState::Chase;
                 SetAnimation(1, 4, 0.2f);
                 stateTimer = 0.0f;
@@ -335,7 +339,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
 
                 //patrol radius = 3 normaly
 
-                for (int i = 0; i < 10; ++i) {
+                for (int i = 0; i < 100; ++i) { //try 100 times to find a open spot. 
                     int rx = (int)start.x + GetRandomValue(-patrolRadius, patrolRadius);
                     int ry = (int)start.y + GetRandomValue(-patrolRadius, patrolRadius);
 
@@ -347,7 +351,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
 
                     Vector2 target = {(float)rx, (float)ry};
 
-                    if (!LineOfSightRaycast(start, target, dungeonImg, 20)) // 20 = max ray steps
+                    if (!LineOfSightRaycast(start, target, dungeonImg, 100)) // 100 max ray steps
                         continue;
 
                     randomTile = target;
@@ -469,26 +473,32 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
         }
         case DinoState::Reposition: {
             stateTimer += deltaTime;
-            //this is buggy as hell. 
-            const int offsets[8][2] = {
+
+            const int offsets[8][2] = { // 8 tiles around the player
                 {  1,  0 }, { -1,  0 }, { 0,  1 }, { 0, -1 },
                 {  1,  1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }
             };
 
-            Vector2 myTile = WorldToImageCoords(position);
+            Vector2 playerTile = WorldToImageCoords(player.position);
+            Vector3 target = position; // fallback
+
+            bool foundSpot = false;
 
             for (int i = 0; i < 8; ++i) {
-                int tx = (int)myTile.x + offsets[i][0];
-                int ty = (int)myTile.y + offsets[i][1];
+                int tx = (int)playerTile.x + offsets[i][0];
+                int ty = (int)playerTile.y + offsets[i][1];
 
                 if (tx < 0 || ty < 0 || tx >= dungeonWidth || ty >= dungeonHeight) continue;
                 if (!IsWalkable(tx, ty)) continue;
                 if (IsTileOccupied(tx, ty, skeletonPtrs, this)) continue;
 
-                // Found a free spot
-                Vector3 target = GetDungeonWorldPos(tx, ty, tileSize, dungeonPlayerHeight);
+                target = GetDungeonWorldPos(tx, ty, tileSize, dungeonPlayerHeight);
                 target.y += 80.0f;
+                foundSpot = true;
+                break;
+            }
 
+            if (foundSpot) {
                 Vector3 dir = Vector3Normalize(Vector3Subtract(target, position));
                 Vector3 move = Vector3Scale(dir, skeleSpeed * deltaTime);
                 position = Vector3Add(position, move);
@@ -507,20 +517,19 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
                     SetAnimation(1, 4, 0.2f);
                     stateTimer = 0.0f;
                 }
-
-                break;
             }
 
             break;
         }
 
+
         case DinoState::Patrol: {
             stateTimer += deltaTime;
 
-            if (distance < 4000 && playerVisible){
+            if (distance < 4000.0f && (playerVisible || heardPlayer)){
                 state = DinoState::Chase;
                 SetAnimation(1, 4, 0.2f);
-                AlertNearbySkeletons(position, 1000.0f);
+                AlertNearbySkeletons(position, 3000.0f);
                 stateTimer = 0.0f;
             }
 
@@ -626,7 +635,7 @@ void Character::TakeDamage(int amount) {
         SetAnimation(4, 1, 1.0f); // Use row 4, 1 frame, 1 second per frame
         currentFrame = 0;         // Always start at first frame
         stateTimer = 0.0f;
-        AlertNearbySkeletons(position, 1000.0f);
+        AlertNearbySkeletons(position, 3000.0f);
 
         SoundManager::GetInstance().Play("dinoHit");
 
@@ -644,11 +653,11 @@ void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
 
         Vector2 targetTile = WorldToImageCoords(other.position);
         
-        if (!LineOfSightRaycast(originTile, targetTile, dungeonImg, 20)) continue;
+        if (!LineOfSightRaycast(originTile, targetTile, dungeonImg, 60)) continue;
 
         // Passed all checks → alert the skeleton
         other.state = DinoState::Chase;
-        other.SetAnimation(1, 4, 0.2f); // probably should be `other.SetAnimation(...)`
+        other.SetAnimation(1, 4, 0.2f); 
         other.stateTimer = 0.0f;
         other.playerVisible = true;
     }

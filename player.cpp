@@ -257,7 +257,7 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
 
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
         meleeWeapon.StartBlock();
-        player.blocking = true;
+        if (activeWeapon == WeaponType::Sword) player.blocking = true; //only block with the sword
     } else {
         meleeWeapon.EndBlock();
         player.blocking = false;
@@ -270,8 +270,6 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& cam
            if (activeWeapon == WeaponType::Blunderbuss) weapon.Fire(camera);   
            if (activeWeapon == WeaponType::Sword){
                 meleeWeapon.StartSwing();
-            
-                  
            }     
         }else{
             if (activeWeapon == WeaponType::Blunderbuss) SoundManager::GetInstance().Play("reload"); //play "click" if in water with gun

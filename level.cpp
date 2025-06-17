@@ -11,6 +11,7 @@ std::vector<LevelData> levels = {
     {
         "Middle Island", //display name
         "assets/MiddleIsland.png", //heightmap
+        "",
         {16000.0f, 200.0f, 16000.0f}, //terrain scale
         {5475.0f, 300.0f, -5665.0f}, //starting position
         {0, 0, 0}, //raptor spawn center
@@ -22,6 +23,7 @@ std::vector<LevelData> levels = {
     {
         "EyeballIsle",
         "assets/EyeballIsle.png",
+        "",
         {16000.0f, 300.0f, 16000.0f},
         {0.0f, 300.0f, 0.0f},
         {0.0f, 0, 0.0f},
@@ -32,6 +34,19 @@ std::vector<LevelData> levels = {
     {
         "Dungeon1",
         "assets/blank.png",
+        "assets/maps/map4.png",
+        {16000.0f, 300.0f, 16000.0f},
+        {0.0f, 300.0f, 0.0f},
+        {0.0f, 0.0f, 0.0f},
+        0, 
+        true, //isDungeon is true
+       
+
+    },
+    {
+        "Dungeon2",
+        "assets/blank.png",
+        "assets/maps/map6.png",
         {16000.0f, 300.0f, 16000.0f},
         {0.0f, 300.0f, 0.0f},
         {0.0f, 0.0f, 0.0f},

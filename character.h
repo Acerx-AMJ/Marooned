@@ -55,6 +55,8 @@ public:
     float timeSinceLastSeen = 9999.0f;  // Large to start
     float forgetTime = 10.0f;           // After 3 seconds of no visibility, give up
     float radius = 50;
+    float hearingRadius = 600.0f;
+    bool heardPlayer = false;
     BoundingBox collider;
     int maxHealth = 150;
     int currentHealth = maxHealth;

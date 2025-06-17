@@ -19,6 +19,7 @@ extern bool controlPlayer;
 extern bool isDungeon;
 extern float dungeonPlayerHeight;
 extern float floorHeight;
+extern float wallHeight;
 extern unsigned char* heightmapPixels;
 extern Vector3 startPosition;
 extern Vector3 playerSpawnPoint;

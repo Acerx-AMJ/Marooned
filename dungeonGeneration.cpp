@@ -91,7 +91,7 @@ Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, flo
 
 void GenerateFloorTiles(float tileSize, float baseY) {
     floorTiles.clear();
-
+    //cover the full area of the dungeon, walls are placed on top
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);

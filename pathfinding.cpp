@@ -143,33 +143,33 @@ Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeleton
 }
 
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
-    const int numRays = 10;
-    const float spread = 0.2f; // how wide the ray cluster is
+    const int numRays = 5;
+    const float spread = 0.1f; // widen fan
 
-    Vector2 dir = { end.x - start.x, end.y - start.y };
-    float distance = sqrtf(dir.x * dir.x + dir.y * dir.y);
+    Vector2 dir = Vector2Normalize(Vector2Subtract(end, start));
+    float distance = Vector2Length(Vector2Subtract(end, start));
     if (distance == 0) return true;
 
-    dir.x /= distance;
-    dir.y /= distance;
+    Vector2 perp = { -dir.y, dir.x };
+
+    int blockedCount = 0;
+    const int maxBlocked = 3;
 
     for (int i = 0; i < numRays; ++i) {
-        // Offset rays slightly in a perpendicular direction
-        float offset = ((float)i - numRays / 2) * spread / (float)numRays;
+        
+        float offset = ((float)i - numRays / 2) * (spread / (float)numRays);
+        Vector2 offsetStart = Vector2Add(start, Vector2Scale(perp, offset));
 
-        Vector2 perp = { -dir.y, dir.x }; // 90-degree rotation
-        Vector2 offsetStart = {
-            start.x + perp.x * offset,
-            start.y + perp.y * offset
-        };
-
+        
         if (SingleRayBlocked(offsetStart, end, dungeonMap, maxSteps)) {
-            return false; // any blocked ray = no vision
+            blockedCount++;
+            if (blockedCount > maxBlocked) return false;
         }
     }
 
     return true;
 }
+
 
 bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
     float dx = end.x - start.x;

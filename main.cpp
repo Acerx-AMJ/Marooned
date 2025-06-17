@@ -524,7 +524,7 @@ void InitLevel(const LevelData& level, Camera camera) {
     terrainModel = LoadModelFromMesh(terrainMesh);
 
     // Generate vegetation like trees and bushes
-    if (!isDungeon) generateVegetation();
+    
 
     // Initialize the player at the specified start position
     
@@ -538,24 +538,22 @@ void InitLevel(const LevelData& level, Camera camera) {
 
     if (level.isDungeon){
         isDungeon = true;
-        LoadDungeonLayout("assets/maps/map4.png");
+        LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);
         GenerateFloorTiles(200.0f, floorHeight);
-        GenerateWallTiles(200.0f, floorHeight+190);
+        GenerateWallTiles(200.0f, wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
         GenerateCeilingTiles(400.0f);
         GenerateBarrels(200, floorHeight);
         GenerateLightSources(200, floorHeight);
         GenerateDoorways(tileSize, floorHeight);
         //Vector3 dungeonCenter = GetDungeonWorldPos(dungeonWidth / 2, dungeonHeight / 2, 200, floorHeight);
-        //generateRaptors(level.raptorCount, dungeonCenter, 10000);
-        //GenerateRaptorsFromImage(200, floorHeight);
         GenerateSkeletonsFromImage(tileSize, 165);
 
     }else{
         generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
         dungeonEntrances = level.entrances;
         GenerateEntrances();
-
+        generateVegetation();   
 
        
     }
@@ -755,7 +753,7 @@ void HandleMeleeHitboxCollision() {
 
 int main() {
     SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
-    InitWindow(1600, 900, "Marooned");
+    InitWindow(1024, 1024, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
     LoadAllResources();

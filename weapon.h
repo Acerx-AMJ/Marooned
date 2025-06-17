@@ -40,7 +40,7 @@ struct MeleeWeapon {
     float swingOffset = 0.0f;    // forward movement
 
     float verticalSwingOffset = 0.0f;
-    float verticalSwingAmount = 45.0f; // how far it chops down
+    float verticalSwingAmount = 60.0f; // how far it chops down
 
     float horizontalSwingOffset = 0.0f;
     float horizontalSwingAmount = 20.0f; // little lateral arc

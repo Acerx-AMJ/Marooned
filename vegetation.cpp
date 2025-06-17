@@ -26,6 +26,7 @@ void sortTrees(Camera& camera){
 
 
 void generateVegetation(){
+
     float treeSpacing = 150.0f;
     float minTreeSpacing = 50.0f;
     float treeHeightThreshold = terrainScale.y * TREE_HEIGHT_RATIO;
@@ -50,7 +51,7 @@ void generateVegetation(){
 std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, Vector3 terrainScale,
                                         float treeSpacing, float minTreeSpacing, float treeHeightThreshold) {
     std::vector<TreeInstance> trees;
-
+    Vector3 ePos = dungeonEntrances[0].position; 
     for (int z = 0; z < heightmap.height; z += (int)treeSpacing) {
         for (int x = 0; x < heightmap.width; x += (int)treeSpacing) {
             int i = z * heightmap.width + x;
@@ -69,6 +70,13 @@ std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, 
                     if (Vector3Distance(pos, other.position) < minTreeSpacing) {
                         tooClose = true;
                         break;
+                    }
+
+                    for (DungeonEntrance& d : dungeonEntrances){//dont spawn trees ontop of entrances
+                        if (Vector3Distance(pos, d.position) < minTreeSpacing * 2){
+                            tooClose = true;
+                            break;
+                        }
                     }
                 }
 
@@ -141,7 +149,7 @@ std::vector<BushInstance> GenerateBushes(Image heightmap, unsigned char* pixels,
                 bush.yOffset = ((float)GetRandomValue(-200, 200)) / 100.0f;     // -2.0 to 2.0
                 bush.xOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2));
                 bush.zOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2)); //space them out wider, then cull more aggresively. 
-                bush.cullFactor = 1.07f; //agressively cull bushes. 
+                bush.cullFactor = 1.09f; //agressively cull bushes. 
                 bushes.push_back(bush);
             }
         }
