@@ -112,6 +112,8 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("swordHit", "assets/sounds/swordHit.ogg");
     SoundManager::GetInstance().LoadSound("swordBlock", "assets/sounds/swordBlock.ogg");
     SoundManager::GetInstance().LoadSound("swordBlock2", "assets/sounds/swordBlock2.ogg");
+    SoundManager::GetInstance().LoadSound("bones", "assets/sounds/bones.ogg");
+    SoundManager::GetInstance().LoadSound("bones2", "assets/sounds/bones2.ogg");
 
 
 

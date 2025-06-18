@@ -15,18 +15,25 @@ enum class GameState {
     Quit
 };
 
+
+extern Player player;
+extern Vector3 boatPosition;
+extern Vector3 startPosition;
+extern Vector3 playerSpawnPoint;
+
+extern Vector3 bottomPos;
+
 extern bool controlPlayer;
 extern bool isDungeon;
-extern float dungeonPlayerHeight;
+extern float dungeonPlayerHeight; 
 extern float floorHeight;
 extern float wallHeight;
 extern unsigned char* heightmapPixels;
-extern Vector3 startPosition;
-extern Vector3 playerSpawnPoint;
+
 extern int selectedOption; // 0 = Start, 1 = Quit
 extern int levelIndex;
-extern Player player;
-extern Vector3 boatPosition;
+extern int previousLevelIndex;
+
 extern float fadeToBlack;
 extern float vignetteIntensity;
 extern float vignetteFade;
@@ -38,6 +45,7 @@ extern float tileSize;
 extern bool isFading;
 extern float fadeSpeed; // units per second
 extern bool fadeIn;     // true = fade in (to black), false = fade out (to visible)
+extern bool first;
 
 
 extern GameState currentGameState;

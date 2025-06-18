@@ -8,8 +8,6 @@
 struct DungeonEntrance {
     Vector3 position;
     int linkedLevelIndex;
-    std::string entranceID;         // Optional: for tracking visited status
-
     bool isTriggered = false;
 
 
@@ -22,6 +20,7 @@ struct LevelData {
     std::string dungeonPath;
     Vector3 terrainScale;            // Scale of the terrain mesh
     Vector3 startPosition;           // Player starting position
+    float startingRotationY; // ← new
     Vector3 raptorSpawnCenter;       // Center point for raptor spawns
     int raptorCount;                 // Number of raptors to spawn
     bool isDungeon;

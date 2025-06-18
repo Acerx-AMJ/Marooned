@@ -61,16 +61,22 @@ void LoadDungeonLayout(const std::string& imagePath) {
     dungeonPixels = LoadImageColors(dungeonImg);
     dungeonWidth = dungeonImg.width;
     dungeonHeight = dungeonImg.height;
+
+    //⬛ Black = Wall
+
+    //⬜ White = Floor
     
     //🟩 Green = Player Start
 
     //🔵 Blue = Barrel
 
-    //🟥 Red = Raptor
+    //🟥 Red = Skeleton
 
     //🟨 Yellow = Light
 
-    //🟪 Purple = Key
+    //🟪 Purple = Doorway
+
+    //🔹 Teal = Dungeon Exit
     
 }
 
@@ -89,16 +95,36 @@ Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, flo
 
 
 
+// void GenerateFloorTiles(float tileSize, float baseY) {
+//     floorTiles.clear();
+//     //cover the full area of the dungeon, walls are placed on top
+//     for (int y = 0; y < dungeonHeight; y++) {
+//         for (int x = 0; x < dungeonWidth; x++) {
+//             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
+
+//             FloorTile tile;
+//             tile.position = pos;
+//             tile.tint = WHITE;
+
+//             floorTiles.push_back(tile);
+//         }
+//     }
+// }
 void GenerateFloorTiles(float tileSize, float baseY) {
     floorTiles.clear();
-    //cover the full area of the dungeon, walls are placed on top
+
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
+            Color pixel = GetImageColor(dungeonImg, x, y);
+
+            // Only skip transparent pixels
+            if (pixel.a == 0) continue;
+
             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
 
             FloorTile tile;
             tile.position = pos;
-            tile.tint = WHITE;
+            tile.tint = WHITE; // Or tint based on pixel.r/g/b if you want variety
 
             floorTiles.push_back(tile);
         }
@@ -206,41 +232,50 @@ void GenerateDoorways(float tileSize, float baseY) {
         for (int x = 1; x < dungeonWidth - 1; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
 
-            // Check for purple doorway pixel
-            if (current.r == 128 && current.g == 0 && current.b == 128) {
-         
-                // Neighbor checks
-                Color left = dungeonPixels[y * dungeonWidth + (x - 1)];
-                Color right = dungeonPixels[y * dungeonWidth + (x + 1)];
-                Color up = dungeonPixels[(y - 1) * dungeonWidth + x];
-                Color down = dungeonPixels[(y + 1) * dungeonWidth + x];
+            bool isDoor = (current.r == 128 && current.g == 0 && current.b == 128);   // purple
+            bool isExit     = (current.r == 0 && current.g == 128 && current.b == 128);   // teal
+            bool nextLevel = (current.r == 255 && current.g == 128 && current.b == 0); //orange
 
-                bool wallLeft = left.r == 0 && left.g == 0 && left.b == 0;
-                bool wallRight = right.r == 0 && right.g == 0 && right.b == 0;
-                bool wallUp = up.r == 0 && up.g == 0 && up.b == 0;
-                bool wallDown = down.r == 0 && down.g == 0 && down.b == 0;
+            if (!isDoor && !isExit && !nextLevel) continue;
 
-                float rotationY = 0.0f;
-                //the model is backward so we flipped this. 
-                if (wallLeft && wallRight) {
-                    rotationY = 90.0f * DEG2RAD; // Horizontal archway
-                }
-                else if (wallUp && wallDown) {
-                    rotationY = 0.0f; // Vertical archway
-                }
-                else {
-                    continue; // skip if it's not a valid door gap
-                }
+            // Check surrounding walls to determine door orientation
+            Color left = dungeonPixels[y * dungeonWidth + (x - 1)];
+            Color right = dungeonPixels[y * dungeonWidth + (x + 1)];
+            Color up = dungeonPixels[(y - 1) * dungeonWidth + x];
+            Color down = dungeonPixels[(y + 1) * dungeonWidth + x];
 
-                Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
-                doorways.push_back({ pos, rotationY, false, WHITE,  x, y });
-                
+            bool wallLeft = left.r == 0 && left.g == 0 && left.b == 0;
+            bool wallRight = right.r == 0 && right.g == 0 && right.b == 0;
+            bool wallUp = up.r == 0 && up.g == 0 && up.b == 0;
+            bool wallDown = down.r == 0 && down.g == 0 && down.b == 0;
+
+            float rotationY = 0.0f;
+            if (wallLeft && wallRight) {
+                rotationY = 90.0f * DEG2RAD;
+            } else if (wallUp && wallDown) {
+                rotationY = 0.0f;
+            } else {
+                continue; // not a valid doorway
             }
+
+            Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
+            DoorwayInstance archway = { pos, rotationY, false, WHITE, x, y };
+
+            if (isExit) {
+                archway.linkedLevelIndex = previousLevelIndex; // ← assign actual index here
+            }else if (nextLevel){
+                archway.linkedLevelIndex = 3;
+            } else {
+                archway.linkedLevelIndex = -1; // entrance archway (could be reused later)
+            }
+
+            doorways.push_back(archway);
         }
     }
 
     GenerateDoorsFromArchways();
 }
+
 
 void GenerateDoorsFromArchways() {
     doors.clear();
@@ -263,7 +298,7 @@ void GenerateDoorsFromArchways() {
         float depth = 20.0f;        // Thickness into the doorway (forward axis)
 
         door.collider = MakeDoorBoundingBox(door.position, door.rotationY, halfWidth, height, depth);
-
+        door.linkedLevelIndex = dw.linkedLevelIndex; //get the level index from the archway
         doors.push_back(door);
 
     }

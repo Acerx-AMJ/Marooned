@@ -514,19 +514,26 @@ void GenerateEntrances(){
 void InitLevel(const LevelData& level, Camera camera) {
     ClearLevel();
     ClearDungeon();
-    // Load and format the heightmap image
-    heightmap = LoadImage(level.heightmapPath.c_str());
-    ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
+
+
 
     // Generate the terrain mesh and model from the heightmap
-    terrainScale = level.terrainScale;
-    terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
-    terrainModel = LoadModelFromMesh(terrainMesh);
+    if (!isDungeon){
 
-    // Generate vegetation like trees and bushes
+        // Load and format the heightmap image
+        heightmap = LoadImage(level.heightmapPath.c_str());
+        ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
+        terrainScale = level.terrainScale;
+        terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
+        terrainModel = LoadModelFromMesh(terrainMesh);
+
+    }
+
+
+  
     
 
-    // Initialize the player at the specified start position
+ 
     
     camera.position = player.position;
 
@@ -536,7 +543,7 @@ void InitLevel(const LevelData& level, Camera camera) {
     player.currentHealth = player.maxHealth; //regain health on reloading
     
 
-    if (level.isDungeon){
+    if (level.isDungeon && !level.dungeonPath.empty()){
         isDungeon = true;
         LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);
@@ -548,8 +555,13 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateDoorways(tileSize, floorHeight);
         //Vector3 dungeonCenter = GetDungeonWorldPos(dungeonWidth / 2, dungeonHeight / 2, 200, floorHeight);
         GenerateSkeletonsFromImage(tileSize, 165);
+        waterHeightY = 0;
+        bottomPos = {0, waterHeightY - 100, 0};
+        
 
     }else{
+        waterHeightY = 60;
+        bottomPos = {0, waterHeightY - 100, 0};
         generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
         dungeonEntrances = level.entrances;
         GenerateEntrances();
@@ -559,12 +571,22 @@ void InitLevel(const LevelData& level, Camera camera) {
     }
 
     Vector3 resolvedSpawn = level.startPosition; // default fallback
-
-    Vector3 pixelSpawn = FindSpawnPoint(dungeonPixels, dungeonWidth, dungeonHeight, 200, floorHeight);
-    if (pixelSpawn.x != 0 || pixelSpawn.z != 0) {
-        resolvedSpawn = pixelSpawn;
-        //Overriding start position with green pixel
+    if (first){
+        resolvedSpawn = {5475.0f, 300.0f, -5665.0f}; //overriding start position with first spwan point
+        first = false;
     }
+    
+
+    if (isDungeon){
+        Vector3 pixelSpawn = FindSpawnPoint(dungeonPixels, dungeonWidth, dungeonHeight, 200, floorHeight);
+        if (pixelSpawn.x != 0 || pixelSpawn.z != 0) {
+            resolvedSpawn = pixelSpawn;
+            //Overriding start position with green pixel
+    } 
+
+    }
+
+    
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. 
 
     
@@ -700,8 +722,12 @@ void HandleDoorInteraction(Camera& camera) {
 
                 if (!isDungeon && doors[i].linkedLevelIndex != -1) {
                     isDungeon = true;
-
+                    previousLevelIndex = levelIndex;
                     InitLevel(levels[doors[i].linkedLevelIndex], camera); //Enter the Dungeon
+                }else if (isDungeon && doors[i].linkedLevelIndex != -1){
+                    isDungeon = false;
+                    previousLevelIndex = levelIndex;
+                    InitLevel(levels[doors[i].linkedLevelIndex], camera);
                 }
 
                 break; // only process one door at a time
@@ -753,7 +779,7 @@ void HandleMeleeHitboxCollision() {
 
 int main() {
     SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
-    InitWindow(1024, 1024, "Marooned");
+    InitWindow(1600, 900, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
     LoadAllResources();
@@ -855,7 +881,7 @@ int main() {
         float wave = sin(GetTime() * 0.9f) * 0.9f;  // slow, subtle vertical motion
         float animatedWaterLevel = waterHeightY + wave;
         Vector3 waterPos = {0, animatedWaterLevel, 0};
-        Vector3 bottomPos = {0, waterHeightY - 100, 0};
+        bottomPos = {0, waterHeightY - 100, 0};
 
         // === RENDER TO TEXTURE ===
         BeginTextureMode(sceneTexture);
@@ -876,13 +902,17 @@ int main() {
         //DrawDungeonCeiling(floorTile, 400.0f); // Or whatever offset looks good
         DrawDungeonCeiling(floorTile);
 
-        DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
+        
        
-        DrawModel(waterModel, waterPos, 1.0f, WHITE); 
-        DrawModel(bottomPlane, bottomPos, 1.0f, DARKBLUE); //a second plane below water plane. to prevent seeing through the world when looking down.
+        if (!isDungeon) {
+            DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
+            DrawModel(waterModel, waterPos, 1.0f, WHITE); 
+            DrawModel(bottomPlane, bottomPos, 1.0f, DARKBLUE); //a second plane below water plane. to prevent seeing through the world when looking down.
+            DrawBoat(player_boat);
+        }
         DrawTrees(trees, palmTree, palm2, shadowQuad); //maybe models should be global, i think they are 
         DrawBushes(bushes, shadowQuad);
-        if (!isDungeon) DrawBoat(player_boat);
+
         //DrawModel(floorTile, Vector3{0, 200, 0}, 0.5, WHITE);
         //DrawModel(doorWay, Vector3{0, 200, 0}, 0.5, WHITE);
         drawRaptors(camera); //sort and draw raptors

@@ -7,15 +7,23 @@ DungeonEntrance entranceToDungeon1 = {
     2, // linkedLevelIndex
 };
 
+DungeonEntrance exitDungeon1 = {
+    {0, 0, 0}, // position
+    0, // linkedLevelIndex
+};
+
+
+
 std::vector<LevelData> levels = {
     {
         "Middle Island", //display name
         "assets/MiddleIsland.png", //heightmap
         "",
         {16000.0f, 200.0f, 16000.0f}, //terrain scale
-        {5475.0f, 300.0f, -5665.0f}, //starting position
+        {0.0f, 300.0f, 0.0f}, //starting position
+        -90.0f,
         {0, 0, 0}, //raptor spawn center
-        10, //raptor count
+        5, //raptor count
         false, //isDungeon
         {entranceToDungeon1} //add entrance struct to level's vector of entrances. 
        
@@ -26,6 +34,7 @@ std::vector<LevelData> levels = {
         "",
         {16000.0f, 300.0f, 16000.0f},
         {0.0f, 300.0f, 0.0f},
+        180.0f,
         {0.0f, 0, 0.0f},
         0,
         false, 
@@ -37,9 +46,12 @@ std::vector<LevelData> levels = {
         "assets/maps/map4.png",
         {16000.0f, 300.0f, 16000.0f},
         {0.0f, 300.0f, 0.0f},
+        -90.0f,
         {0.0f, 0.0f, 0.0f},
         0, 
         true, //isDungeon is true
+        {exitDungeon1}
+        
        
 
     },
@@ -49,6 +61,7 @@ std::vector<LevelData> levels = {
         "assets/maps/map6.png",
         {16000.0f, 300.0f, 16000.0f},
         {0.0f, 300.0f, 0.0f},
+        180.0f,
         {0.0f, 0.0f, 0.0f},
         0, 
         true, //isDungeon is true

@@ -8,6 +8,7 @@
 #include "rlgl.h"
 #include "sound_manager.h"
 
+
 Weapon weapon;
 MeleeWeapon meleeWeapon;
 WeaponType activeWeapon = WeaponType::Blunderbuss;
@@ -15,12 +16,13 @@ WeaponType activeWeapon = WeaponType::Blunderbuss;
 void InitPlayer(Player& player, Vector3 startPosition) {
     player.position = startPosition;
     player.startPosition = startPosition;
+    
+    player.rotation.y = levels[levelIndex].startingRotationY;
     player.velocity = {0, 0, 0};
     player.grounded = false;
     player.groundY = 0.0;
     weapon.model = blunderbuss;
     weapon.scale = { 2.0f, 2.0f, 2.0f };
-
     weapon.muzzleFlashTexture = muzzleFlash;
 
 

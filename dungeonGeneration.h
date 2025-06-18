@@ -14,6 +14,7 @@ struct DoorwayInstance {
     Color tint = WHITE;
     int tileX;
     int tileY;
+    int linkedLevelIndex = -1;
 
 };
 
@@ -28,7 +29,7 @@ struct Door {
     int tileX;
     int tileY;
 
-    int linkedLevelIndex = -1; // ← NEW: -1 means no linked level
+    int linkedLevelIndex = -1; // -1 means no linked level
 };
 
 

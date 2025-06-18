@@ -459,7 +459,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
 
 
             attackCooldown -= deltaTime;
-            if (attackCooldown <= 0.0f && currentFrame == 2) {
+            if (attackCooldown <= 0.0f && currentFrame == 1) {
                 attackCooldown = 1.0f; // 1 second cooldown for 1 second of animation. 
 
                 // Play attack sound
@@ -625,10 +625,11 @@ void Character::TakeDamage(int amount) {
         isDead = true;
         state = DinoState::Death;
         if (type == CharacterType::Raptor) SetAnimation(4, 5, 0.12f);
-        if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f); //less froms for skele death. 
+        if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f); //less frames for skele death. 
         deathTimer = 0.0f;
         SoundManager::GetInstance().Play("dinoDeath");
-        // Play death sound here if desired
+        if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play("bones");
+     
     } else {
         hitTimer = 0.5f;
         state = DinoState::Stagger;
@@ -638,13 +639,14 @@ void Character::TakeDamage(int amount) {
         AlertNearbySkeletons(position, 3000.0f);
 
         SoundManager::GetInstance().Play("dinoHit");
+        //SoundManager::GetInstance().Play("bones2");
 
     }
 }
 
 void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
     Vector2 originTile = WorldToImageCoords(alertOrigin);
-
+    //alert skeletons within vision, set state to chase. 
     for (Character& other : skeletons) {
         if (other.isDead || other.state == DinoState::Chase) continue;
 
@@ -669,7 +671,7 @@ void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
 
 Vector3 Character::ComputeRepulsionForce(const std::vector<Character*>& allRaptors, float repulsionRadius, float repulsionStrength) {
     Vector3 repulsion = { 0 };
-
+    //prevent raptors overlapping 
     for (Character* other : allRaptors) {
         if (other == this) continue;
 
@@ -706,6 +708,7 @@ void Character::Update(float deltaTime, Player& player,  Image heightmap, Vector
     previousPosition = position;
     float groundY = GetHeightAtWorldPosition(position, heightmap, terrainScale);
     if (isDungeon) groundY = dungeonPlayerHeight;
+
     if (hitTimer > 0){
         hitTimer -= deltaTime;
     }else{

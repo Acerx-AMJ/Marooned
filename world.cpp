@@ -8,7 +8,11 @@
 
 
 GameState currentGameState = GameState::Menu;
-int levelIndex = 0;
+//global variables, should probably be put into a struct or something. 
+
+int levelIndex = 0; //current level, levels[levelIndex]
+int previousLevelIndex = 0;
+bool first = true;
 bool controlPlayer = false;
 bool isDungeon = false;
 unsigned char* heightmapPixels = nullptr;
@@ -16,8 +20,10 @@ Player player = {};
 Vector3 startPosition = {5475.0f, 300.0f, -5665.0f}; //middle island start pos
 Vector3 boatPosition = {6000, -20, 0.0};
 Vector3 playerSpawnPoint = {0,0,0};
+
 float boatSpeed = 200;
 float waterHeightY = 60;
+Vector3 bottomPos = {0, waterHeightY - 100, 0};
 float dungeonPlayerHeight = 100;
 float fadeToBlack = 0.0f;
 float vignetteIntensity = 0.0f;

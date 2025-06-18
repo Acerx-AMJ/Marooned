@@ -17,6 +17,7 @@ struct Player {
     bool running = false;
     float runSpeed = 800.0f; // faster than walk speed
     float walkSpeed = 500.0f; // regular speed
+    float startingRotationY = 0.0f; // in degrees
 
     float gravity = 980.0f;
     float height = 200.0f;
