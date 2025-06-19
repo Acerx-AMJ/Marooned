@@ -268,7 +268,7 @@ void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex) {
             } else {
                 archway.linkedLevelIndex = -1; //regular door
             }
-            std::cout << "archway.linkedLevelIndex = : " << archway.linkedLevelIndex << "\n";
+        
             doorways.push_back(archway);
         }
     }
@@ -303,7 +303,7 @@ void GenerateDoorsFromArchways() {
             door.doorType = DoorType::ExitToPrevious;
         } else if (dw.linkedLevelIndex == levels[levelIndex].nextLevel) {
             door.doorType = DoorType::GoToNext;
-            std::cout << "generating next level door\n";
+            
         } else {
             door.doorType = DoorType::Normal;
 }

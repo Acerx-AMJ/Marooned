@@ -794,7 +794,7 @@ void HandleMeleeHitboxCollision() {
         if (raptor.isDead) continue;
         if (raptor.hitTimer >0.0f) continue;
 
-        if (CheckCollisionBoxes(raptor.collider, player.meleeHitbox) && raptor.hitTimer <= 0) {
+        if (CheckCollisionBoxes(raptor.GetBoundingBox(), player.meleeHitbox) && raptor.hitTimer <= 0) {
             raptor.TakeDamage(50);
             SoundManager::GetInstance().Play("swordHit");
         }
@@ -935,12 +935,11 @@ int main() {
             DrawModel(waterModel, waterPos, 1.0f, WHITE); 
             DrawModel(bottomPlane, bottomPos, 1.0f, DARKBLUE); //a second plane below water plane. to prevent seeing through the world when looking down.
             DrawBoat(player_boat);
+            DrawTrees(trees, palmTree, palm2, shadowQuad); 
+            DrawBushes(bushes, shadowQuad);
         }
-        DrawTrees(trees, palmTree, palm2, shadowQuad); //maybe models should be global, i think they are 
-        DrawBushes(bushes, shadowQuad);
 
-        //DrawModel(floorTile, Vector3{0, 200, 0}, 0.5, WHITE);
-        //DrawModel(doorWay, Vector3{0, 200, 0}, 0.5, WHITE);
+
         drawRaptors(camera); //sort and draw raptors
         drawSkeletons(camera);
         DrawPlayer(player, camera);
@@ -967,7 +966,7 @@ int main() {
 
 
         ///2D on top of render texture
-        if (pendingLevelIndex != -1) { //fading out
+        if (pendingLevelIndex != -1) { //fading out...draw loading text and nothing else. 
             DrawText("Loading...", GetScreenWidth() / 2 - MeasureText("Loading...", 20) / 2, GetScreenHeight() / 2, 20, WHITE);
         }else{
             DrawHealthBar();
@@ -982,8 +981,9 @@ int main() {
     }
 
     // Cleanup
+    ClearDungeon();
     UnloadAllResources();
-    removeAllRaptors();
+    removeAllCharacters();
     RemoveAllVegetation();
     CloseAudioDevice();
     CloseWindow();

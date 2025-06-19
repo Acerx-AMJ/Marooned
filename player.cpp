@@ -13,6 +13,7 @@ Weapon weapon;
 MeleeWeapon meleeWeapon;
 WeaponType activeWeapon = WeaponType::Blunderbuss;
 
+
 void InitPlayer(Player& player, Vector3 startPosition) {
     player.position = startPosition;
     player.startPosition = startPosition;
@@ -43,6 +44,8 @@ void HandleMouseLook(float deltaTime){
     player.rotation.x = Clamp(player.rotation.x, -89.0f, 89.0f);
 
 }
+
+
 
 void HandleKeyboardInput(float deltaTime) {
     if (!player.canMove) return;
@@ -81,6 +84,11 @@ void HandleKeyboardInput(float deltaTime) {
 
 
     if (IsKeyPressed(KEY_Q)) {
+        // if (IsKeyPressed(KEY_Q) && player.switchState == WeaponSwitchState::Idle) {
+        //     player.BeginWeaponSwitch(activeWeapon == WeaponType::Blunderbuss ? WeaponType::Sword : WeaponType::Blunderbuss);
+        // }
+
+        
         if (activeWeapon == WeaponType::Blunderbuss)
             activeWeapon = WeaponType::Sword;
         else
@@ -88,6 +96,9 @@ void HandleKeyboardInput(float deltaTime) {
     }
 
 }
+
+
+
 
 void HandleStickLook(float deltaTime){
 
@@ -230,12 +241,12 @@ void UpdateMeleeHitbox(Camera& camera){
 
 
 
-
-void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& camera) {
+void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& camera) {
     weapon.Update(deltaTime);
     meleeWeapon.Update(deltaTime);
     UpdateMeleeHitbox(camera);
     UpdateFootsteps(deltaTime);
+
     vignetteFade += deltaTime * 2.0f; // tweak fade speed
     vignetteIntensity = Clamp(1.0f - vignetteFade, 0.0f, 1.0f);
 

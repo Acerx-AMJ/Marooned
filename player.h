@@ -44,8 +44,17 @@ struct Player {
     bool canRun = true;
     bool canMove = true;
 
+    //WeaponType pendingWeapon; // store the one we're switching to
+    //WeaponSwitchState switchState = WeaponSwitchState::Idle;
+    WeaponType activeWeapon = WeaponType::Blunderbuss;
+
+    float switchTimer = 0.0f;
+    float switchDuration = 0.3f; // time to lower or raise
+
     void PlayFootstepSound();
     void TakeDamage(int amount);
+
+
     //void PlaySwipe();
 };
 
@@ -53,11 +62,11 @@ struct Player {
 void InitPlayer(Player& player, Vector3 startPosition);
 
 // Updates player movement and physics
-void UpdatePlayer(Player& player, float deltaTime, Mesh terrainMesh, Camera& camera);
+void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& camera);
 
 void DrawPlayer(const Player& player, Camera& camera);
 void HandleGamepadInput(float deltaTime);
 void HandleKeyboardInput(float deltaTime);
 void HandleMouseLook(float deltaTime);
 void HandleStickLook(float deltaTime);
-float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
+//float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);

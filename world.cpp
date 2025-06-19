@@ -12,7 +12,7 @@ GameState currentGameState = GameState::Menu;
 
 int levelIndex = 0; //current level, levels[levelIndex]
 int previousLevelIndex = 0;
-bool first = true;
+bool first = true; //for first player start position
 bool controlPlayer = false;
 bool isDungeon = false;
 bool loadingLevel = false;
@@ -21,8 +21,8 @@ Player player = {};
 Vector3 startPosition = {5475.0f, 300.0f, -5665.0f}; //middle island start pos
 Vector3 boatPosition = {6000, -20, 0.0};
 Vector3 playerSpawnPoint = {0,0,0};
-int pendingLevelIndex = -1;
-float boatSpeed = 200;
+int pendingLevelIndex = -1; //wait to switch level until faded out. UpdateFade() needs to know the next level index. 
+//float boatSpeed = 200;
 float waterHeightY = 60;
 Vector3 bottomPos = {0, waterHeightY - 100, 0};
 float dungeonPlayerHeight = 100;
@@ -56,6 +56,15 @@ std::vector<DungeonEntrance> dungeonEntrances;
 void removeAllRaptors(){
     raptorPtrs.clear();
     raptors.clear();
+
+}
+
+void removeAllCharacters(){
+    raptorPtrs.clear();
+    raptors.clear();
+
+    skeletons.clear();
+    skeletonPtrs.clear();
 
 }
 

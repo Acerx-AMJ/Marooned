@@ -25,26 +25,6 @@ Character::Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, fl
       type(t) {}
 
 
-
-// void Character::UpdateCollider() {
-//     //This is for melee attacks. //character has getBoundingbox also for trees i think. // probably should use one or the other not both. 
-//     float height = 150.0f; 
-//     float width = radius;
-
-//     Vector3 min = {
-//         position.x - width,
-//         position.y - height/2,
-//         position.z - width
-//     };
-
-//     Vector3 max = {
-//         position.x + width,
-//         position.y + height,
-//         position.z + width
-//     };
-
-//     collider = { min, max };
-// }
       
 void Character::setPath(){
     Vector2 start = {
@@ -64,7 +44,7 @@ void Character::setPath(){
 
 }
 
-void Character::UpdateRaptorAI(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors) {
+void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors) {
     
     float distance = Vector3Distance(position, player.position);
     playerVisible = false;
@@ -269,7 +249,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player, Image heightmap,
 
 
 
-void Character::UpdateAI(float deltaTime, Player& player, Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors) {
+void Character::UpdateAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors) {
     switch (type) {
         case CharacterType::Raptor:
             UpdateRaptorAI(deltaTime, player, heightmap, terrainScale, allRaptors);
@@ -416,7 +396,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
                 }
 
                 // 🧭 Move along current path
-                if (!currentWorldPath.empty()) {
+                if (!currentWorldPath.empty() && state != DinoState::Stagger) {
                     Vector3 targetPos = currentWorldPath[0];
                     Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
                     Vector3 move = Vector3Scale(dir, skeleSpeed * deltaTime);
@@ -559,7 +539,9 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
         case DinoState::Stagger: {
             stateTimer += deltaTime;
             //do nothing
-            if (stateTimer >= 0.6f) {
+    
+            currentWorldPath.clear(); //loose the path on stagger
+            if (stateTimer >= 1.0f) {
                 state = DinoState::Chase;
                 SetAnimation(1, 4, 0.25f);
                 stateTimer = 0.0f;
@@ -595,9 +577,9 @@ BoundingBox Character::GetBoundingBox() const {
 
 void Character::playRaptorSounds(){
 
-    int number = GetRandomValue(1, 3);
+    int rn = GetRandomValue(1, 3);
     //std::cout << "playing sound";
-    switch (number)
+    switch (rn)
     {
     case 1:
         SoundManager::GetInstance().PlaySoundAtPosition("dinoTweet", position, player.position, player.rotation.y, 8000);
@@ -621,7 +603,8 @@ void Character::TakeDamage(int amount) {
 
     currentHealth -= amount;
 
-    if (currentHealth <= 0) {
+    if (currentHealth <= 0) { //die
+        hitTimer = 0.5;
         currentHealth = 0;
         isDead = true;
         state = DinoState::Death;
@@ -632,9 +615,10 @@ void Character::TakeDamage(int amount) {
         if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play("bones");
      
     } else {
-        hitTimer = 0.5f;
+        hitTimer = 0.5f; //tint red
         state = DinoState::Stagger;
-        SetAnimation(4, 1, 1.0f); // Use row 4, 1 frame, 1 second per frame
+
+        SetAnimation(4, 1, 1.0f); // Use first frame of death anim for 1 second. 
         currentFrame = 0;         // Always start at first frame
         stateTimer = 0.0f;
         AlertNearbySkeletons(position, 3000.0f);
@@ -647,20 +631,20 @@ void Character::TakeDamage(int amount) {
 
 void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
     Vector2 originTile = WorldToImageCoords(alertOrigin);
-    //alert skeletons within vision, set state to chase. 
+
     for (Character& other : skeletons) {
+        if (&other == this) continue; // 🛡️ Don't alert yourself
         if (other.isDead || other.state == DinoState::Chase) continue;
 
         float distSqr = Vector3DistanceSqr(alertOrigin, other.position);
         if (distSqr > radius * radius) continue;
 
         Vector2 targetTile = WorldToImageCoords(other.position);
-        
         if (!LineOfSightRaycast(originTile, targetTile, dungeonImg, 60)) continue;
 
         // Passed all checks → alert the skeleton
         other.state = DinoState::Chase;
-        other.SetAnimation(1, 4, 0.2f); 
+        other.SetAnimation(1, 4, 0.2f);
         other.stateTimer = 0.0f;
         other.playerVisible = true;
     }
@@ -703,7 +687,7 @@ void Character::eraseCharacters(){
 }
 
 
-void Character::Update(float deltaTime, Player& player,  Image heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors ) {
+void Character::Update(float deltaTime, Player& player,const  Image& heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors ) {
     animationTimer += deltaTime;
     stateTimer += deltaTime;
     previousPosition = position;

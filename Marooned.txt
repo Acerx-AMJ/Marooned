@@ -1,0 +1,56 @@
+Marooned on an island full of dinosaurs 
+
+Set in the 1700s in the Caribbean. Some one marooned you on purpose. You lost your memory? 
+Trapped on an island lost to time. Find a treasure chest with a gun in it. Add a sword at some point. 
+Need a way of making structures like lost temple ruins. caves. Huts. villagers? hostile locals? Go full Turok? 
+Need to keep the scope small enough to finish. It's already hugely complicated. 
+
+Level switching. Change heightmaps from a menu, destroy all objects, regenerate vegetation, and raptors. A menu screen that shows before the level loads? For development it makes sense to be able to swap heightmaps before and during runtime. 
+
+Terrain has a hard limit to how big it can be. 4k textures scaled to 16k. sounds like a lot but everything else is scaled big. Need serpenteen paths that loop around. Need a way to block player besides water. invisible walls where thick jungle is. Create bounding boxes around trees. make areas where trees are too dense to pass. 
+
+invisible wall at the edge of water plane. make a boundary at 30k radius from center for all maps?  
+
+create bounding boxes around trees that collide with the player. and raptors? x
+
+Bridges.
+
+Treasure chest model. Use the mimic from fools path. It's fully rigged and animated. it would be good to know how to do that with raylib. 
+
+Day/Night cycle?
+
+foot steps x
+
+Player Take Damage x
+
+raptors should make more noise. when exiting idle maybe.  x
+
+positional sound - volume attenuation only. raylib can't do 3d audio. or it can but I would have to rewrite sound manager. which I should do anyway. 
+
+raptor agro vision should be higher, sounds heard from further away as well. 
+
+make a handleHeightmap.h or something where we can switch between heightmaps. 
+
+made level select menu.
+
+made dungeon generator. need a way to clear the dungeon, when switching levels. x
+
+dungeons are generated from a 32x32 png image. Where black pixels are walls and white pixels are floor tiles. Red is skeletons, blue is barrels, green is starting position, yellow is light source. 
+
+Need a way to make doors work. Need some kind of barrier that can be removed. making the door arch model fit and be rotated right sounds like a nightmare. 
+
+-Doorways are purple pixels. DoorWays spawn doors which are centered on the doorway arch. Doors can also lead to other levels. Teal pixels are exits that lead to the previous level. Orange pixels are next level doors that lead to the next level. Terrain generated levels have dungeonEnterance struct that spawns a archway with a door that leads to dungeon1. We keep a vector of entrances in level data so we can have multiple entrances to different dungeons from the same over world. 
+
+
+runaway time for raptors. x 
+
+added skeletons + pathfinding. Simple BFS with smoothPath function. Skeletons have vision by marching through the pixel map. it's not very reliable, but raylib doesn't have built in 3D raycasts. I would need to implement it myself. maybe later.
+-Improved ray marching to be mostly reliable. Skeletons now have a alertNearbySkeleton() that looks for other skele's within vision and sets them to chase when they gain visibility of the player, or if they take damage. 
+
+separated raptor AI and skeleton AI into there own functions. So they each have there own switch. Raptors are now only for outdoor use. and skeletons are for dungeons only. I tried raptors in dungeon but their run away behavior messed everything up.
+So raptors follow the heightmap and skeletons follow the dungeon Image. 
+
+Add a chest. 
+
+game pad inputs for shoot/swing/block/jump/run/swap weapon
+

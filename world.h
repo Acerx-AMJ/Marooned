@@ -61,6 +61,7 @@ extern std::vector<Decal> decals;
 
 float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
 void removeAllRaptors();
+void removeAllCharacters();
 void generateRaptors(int amount, Vector3 centerPos, float radius);
 void regenerateRaptors(int amount, Vector3 centerPos, float radius);
 bool CheckTreeCollision(const TreeInstance& tree, const Vector3& playerPos);
