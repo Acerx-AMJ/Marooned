@@ -8,7 +8,7 @@ DungeonEntrance entranceToDungeon1 = {
 };
 
 DungeonEntrance exitDungeon1 = {
-    {0, 0, 0}, // position
+    {0, 0, 0}, // position, location of the entrance to dungeon
     0, // linkedLevelIndex
 };
 
@@ -21,11 +21,14 @@ std::vector<LevelData> levels = {
         "",
         {16000.0f, 200.0f, 16000.0f}, //terrain scale
         {0.0f, 300.0f, 0.0f}, //starting position
-        -90.0f,
+        -90.0f, //starting player rotation
         {0, 0, 0}, //raptor spawn center
         5, //raptor count
         false, //isDungeon
-        {entranceToDungeon1} //add entrance struct to level's vector of entrances. 
+        {entranceToDungeon1}, //add entrance struct to level's vector of entrances. 
+        0, //current level
+        2, //next level, index 2
+
        
     },
     {
@@ -37,7 +40,10 @@ std::vector<LevelData> levels = {
         180.0f,
         {0.0f, 0, 0.0f},
         0,
-        false, 
+        false,
+        {},
+        1, 
+        -1, 
    
     },
     {
@@ -50,7 +56,9 @@ std::vector<LevelData> levels = {
         {0.0f, 0.0f, 0.0f},
         0, 
         true, //isDungeon is true
-        {exitDungeon1}
+        {exitDungeon1},
+        2, 
+        3, //next level index 3
         
        
 
@@ -65,6 +73,9 @@ std::vector<LevelData> levels = {
         {0.0f, 0.0f, 0.0f},
         0, 
         true, //isDungeon is true
+        {},
+        3, 
+        4,
        
 
     }

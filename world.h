@@ -15,7 +15,7 @@ enum class GameState {
     Quit
 };
 
-
+//gobal vars
 extern Player player;
 extern Vector3 boatPosition;
 extern Vector3 startPosition;
@@ -25,6 +25,7 @@ extern Vector3 bottomPos;
 
 extern bool controlPlayer;
 extern bool isDungeon;
+extern bool loadingLevel;
 extern float dungeonPlayerHeight; 
 extern float floorHeight;
 extern float wallHeight;
@@ -33,12 +34,13 @@ extern unsigned char* heightmapPixels;
 extern int selectedOption; // 0 = Start, 1 = Quit
 extern int levelIndex;
 extern int previousLevelIndex;
-
+extern int pendingLevelIndex;
 extern float fadeToBlack;
 extern float vignetteIntensity;
 extern float vignetteFade;
 extern float boatSpeed;
 extern float waterHeightY;
+extern float ceilingHeight;
 extern const float TREE_HEIGHT_RATIO;
 extern const float BUSH_HEIGHT_RATIO;
 extern float tileSize;

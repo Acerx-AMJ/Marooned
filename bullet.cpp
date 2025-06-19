@@ -32,9 +32,10 @@ void Bullet::Update(Camera& camera, float deltaTime) {
     age += deltaTime;
     if (age >= maxLifetime) alive = false;
 
-    //hit floor
+    //hit floor or ceiling
     if (isDungeon){
-        if (position.y <= dungeonPlayerHeight) kill(camera);     
+        if (position.y <= dungeonPlayerHeight) kill(camera);
+        if (position.y >= ceilingHeight) kill(camera);     
     }else{
         if (position.y <= player.groundY) kill(camera);       
     }

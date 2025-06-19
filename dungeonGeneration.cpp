@@ -225,9 +225,9 @@ void GenerateWallTiles(float tileSize, float baseY) {
     }
 }
 
-void GenerateDoorways(float tileSize, float baseY) {
+void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex) {
     doorways.clear();
-
+    
     for (int y = 1; y < dungeonHeight - 1; y++) {
         for (int x = 1; x < dungeonWidth - 1; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
@@ -259,16 +259,16 @@ void GenerateDoorways(float tileSize, float baseY) {
             }
 
             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
-            DoorwayInstance archway = { pos, rotationY, false, WHITE, x, y };
+            DoorwayInstance archway = { pos, rotationY, false, false, WHITE, x, y };
 
             if (isExit) {
-                archway.linkedLevelIndex = previousLevelIndex; // ← assign actual index here
+                archway.linkedLevelIndex = previousLevelIndex; //go back outside. 
             }else if (nextLevel){
-                archway.linkedLevelIndex = 3;
+                archway.linkedLevelIndex = levels[currentLevelIndex].nextLevel; //door to next level
             } else {
-                archway.linkedLevelIndex = -1; // entrance archway (could be reused later)
+                archway.linkedLevelIndex = -1; //regular door
             }
-
+            std::cout << "archway.linkedLevelIndex = : " << archway.linkedLevelIndex << "\n";
             doorways.push_back(archway);
         }
     }
@@ -298,7 +298,18 @@ void GenerateDoorsFromArchways() {
         float depth = 20.0f;        // Thickness into the doorway (forward axis)
 
         door.collider = MakeDoorBoundingBox(door.position, door.rotationY, halfWidth, height, depth);
+
+        if (dw.linkedLevelIndex == previousLevelIndex) {
+            door.doorType = DoorType::ExitToPrevious;
+        } else if (dw.linkedLevelIndex == levels[levelIndex].nextLevel) {
+            door.doorType = DoorType::GoToNext;
+            std::cout << "generating next level door\n";
+        } else {
+            door.doorType = DoorType::Normal;
+}
+
         door.linkedLevelIndex = dw.linkedLevelIndex; //get the level index from the archway
+
         doors.push_back(door);
 
     }

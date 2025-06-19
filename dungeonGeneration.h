@@ -4,6 +4,11 @@
 #include <string>
 #include <vector>
 
+enum class DoorType {
+    Normal,
+    ExitToPrevious,
+    GoToNext
+};
 
 
 
@@ -11,6 +16,7 @@ struct DoorwayInstance {
     Vector3 position;
     float rotationY;
     bool isOpen = false;
+    bool isLocked = false;
     Color tint = WHITE;
     int tileX;
     int tileY;
@@ -28,6 +34,7 @@ struct Door {
     Color tint = WHITE;
     int tileX;
     int tileY;
+    DoorType doorType = DoorType::Normal;
 
     int linkedLevelIndex = -1; // -1 means no linked level
 };
@@ -97,7 +104,7 @@ void GenerateWallTiles(float tileSize, float baseY);
 void GenerateCeilingTiles(float ceilingOffsetY);
 void GenerateBarrels(float tileSize, float baseY);
 void GenerateLightSources(float tileSize, float baseY);
-void GenerateDoorways(float tileSize, float baseY);
+void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex);
 void GenerateDoorsFromArchways();
 void DrawDungeonFloor(Model floorTileModel);
 void DrawDungeonWalls(Model wallSegmentModel);

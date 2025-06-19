@@ -26,6 +26,8 @@ struct LevelData {
     bool isDungeon;
 
     std::vector<DungeonEntrance> entrances;
+    int levelIndex; // <-- Add this!
+    int nextLevel;
     
     
 };

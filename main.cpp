@@ -17,9 +17,22 @@
 #include "dungeonGeneration.h"
 #include "pathfinding.h"
 
-#define GLSL_VERSION 330
 
 
+void BeginCustom3D(Camera3D camera, float farClip) {
+    rlDrawRenderBatchActive();
+    rlMatrixMode(RL_PROJECTION);
+    rlLoadIdentity();
+    float nearClip = 60.0f; //20 wider than the capsule. to 50k 
+    Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), nearClip, farClip);
+
+    rlMultMatrixf(MatrixToFloat(proj));
+
+    rlMatrixMode(RL_MODELVIEW);
+    rlLoadIdentity();
+    Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
+    rlMultMatrixf(MatrixToFloat(view));
+}
 
 void UpdateCustomCamera(Camera3D* camera, float deltaTime) {
     //Free camera control
@@ -145,20 +158,7 @@ void HandleCameraPlayerToggle(Camera& camera, Player& player, bool& controlPlaye
 
 
 
-void BeginCustom3D(Camera3D camera, float farClip) {
-    rlDrawRenderBatchActive();
-    rlMatrixMode(RL_PROJECTION);
-    rlLoadIdentity();
-    float nearClip = 60.0f; //20 wider than the capsule. to 50k 
-    Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), nearClip, farClip);
 
-    rlMultMatrixf(MatrixToFloat(proj));
-
-    rlMatrixMode(RL_MODELVIEW);
-    rlLoadIdentity();
-    Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
-    rlMultMatrixf(MatrixToFloat(view));
-}
 
 void SpawnRaptor(Vector3 pos) {
     Character raptor(pos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
@@ -178,8 +178,6 @@ void drawRaptors(Camera& camera){
     for (Character* raptor : raptorPtrs){
         raptor->Draw(camera);
     }
-
-
 
 }
 
@@ -201,6 +199,7 @@ void drawSkeletons(Camera& camera){
 }
 
 Color ColorLerp(Color a, Color b, float t) {
+    //We use our own color lerp because we are using raylib 4.5, tried raylib 5 but it fucked my walls up. 
     Color result;
     result.r = (unsigned char)Lerp((float)a.r, (float)b.r, t);
     result.g = (unsigned char)Lerp((float)a.g, (float)b.g, t);
@@ -487,7 +486,7 @@ void GenerateEntrances(){
             d.scale = {300, 365, 1};
             d.tint = WHITE;
             d.linkedLevelIndex = e.linkedLevelIndex; //map4
-
+            d.doorType = DoorType::GoToNext;  // ← THIS IS THE FIX
             float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
             float height = 365.0f;
             float depth = 20.0f;        // Thickness into the doorway (forward axis)
@@ -500,9 +499,8 @@ void GenerateEntrances(){
             dw.position = e.position;
             dw.rotationY = 90.0f * DEG2RAD;
             dw.isOpen = false;
+            dw.isLocked = false;
 
-
-            
             doorways.push_back(dw);
         }
 
@@ -515,7 +513,7 @@ void InitLevel(const LevelData& level, Camera camera) {
     ClearLevel();
     ClearDungeon();
 
-
+    levelIndex = level.levelIndex; //update current level index to new level. 
 
     // Generate the terrain mesh and model from the heightmap
     if (!isDungeon){
@@ -526,25 +524,20 @@ void InitLevel(const LevelData& level, Camera camera) {
         terrainScale = level.terrainScale;
         terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
         terrainModel = LoadModelFromMesh(terrainMesh);
-
+        InitBoat(player_boat, boatPosition);
+            
+        terrainModel.materials[0].shader = terrainShader;
     }
 
-
-  
-    
-
- 
     
     camera.position = player.position;
 
-    if (!isDungeon) InitBoat(player_boat, boatPosition);
-    
-    terrainModel.materials[0].shader = terrainShader;
     player.currentHealth = player.maxHealth; //regain health on reloading
     
 
     if (level.isDungeon && !level.dungeonPath.empty()){
         isDungeon = true;
+
         LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);
         GenerateFloorTiles(200.0f, floorHeight);
@@ -552,18 +545,15 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateCeilingTiles(400.0f);
         GenerateBarrels(200, floorHeight);
         GenerateLightSources(200, floorHeight);
-        GenerateDoorways(tileSize, floorHeight);
-        //Vector3 dungeonCenter = GetDungeonWorldPos(dungeonWidth / 2, dungeonHeight / 2, 200, floorHeight);
+        GenerateDoorways(tileSize, floorHeight, levelIndex); //calls generate doors from archways
         GenerateSkeletonsFromImage(tileSize, 165);
-        waterHeightY = 0;
-        bottomPos = {0, waterHeightY - 100, 0};
         
 
     }else{
-        waterHeightY = 60;
-        bottomPos = {0, waterHeightY - 100, 0};
+
         generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
         dungeonEntrances = level.entrances;
+        //levels[levelIndex].entrances[0].linkedLevelIndex = level.nextLevel;
         GenerateEntrances();
         generateVegetation();   
 
@@ -572,7 +562,7 @@ void InitLevel(const LevelData& level, Camera camera) {
 
     Vector3 resolvedSpawn = level.startPosition; // default fallback
     if (first){
-        resolvedSpawn = {5475.0f, 300.0f, -5665.0f}; //overriding start position with first spwan point
+        resolvedSpawn = {5475.0f, 300.0f, -5665.0f}; //overriding start position with first level spwan point
         first = false;
     }
     
@@ -580,21 +570,21 @@ void InitLevel(const LevelData& level, Camera camera) {
     if (isDungeon){
         Vector3 pixelSpawn = FindSpawnPoint(dungeonPixels, dungeonWidth, dungeonHeight, 200, floorHeight);
         if (pixelSpawn.x != 0 || pixelSpawn.z != 0) {
-            resolvedSpawn = pixelSpawn;
-            //Overriding start position with green pixel
+            resolvedSpawn = pixelSpawn;//Overriding start position with green pixel
+            
     } 
 
     }
 
     
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. 
-
+    loadingLevel = false;
     
 
 }
 
 void WallCollision(){
-    for (const WallRun& run : wallRunColliders) {
+    for (const WallRun& run : wallRunColliders) { //player wall collision
         if (CheckCollisionBoxSphere(run.bounds, player.position, player.radius)) {
             ResolveBoxSphereCollision(run.bounds, player.position, player.radius);
         }
@@ -648,24 +638,51 @@ void lightBullets(float deltaTime){
     bulletLights.insert(bulletLights.end(), newBulletLights.begin(), newBulletLights.end());
 }
 
-void UpdateFade(float deltaTime){
-    if (isFading) {
-        if (fadeIn) {
-            fadeToBlack += fadeSpeed * deltaTime;
-            if (fadeToBlack >= 1.0f) {
-                fadeToBlack = 1.0f;
-                isFading = false;
-            }
-        } else {
-            fadeToBlack -= fadeSpeed * deltaTime;
-            if (fadeToBlack <= 0.0f) {
-                fadeToBlack = 0.0f;
-                isFading = false;
+void UpdateFade(float deltaTime, Camera& camera){
+if (isFading) {
+    if (fadeIn) {
+        fadeToBlack += fadeSpeed * deltaTime;
+        if (fadeToBlack >= 1.0f) {
+            fadeToBlack = 1.0f;
+            isFading = false;
+
+            if (pendingLevelIndex != -1) {
+                InitLevel(levels[pendingLevelIndex], camera);
+                pendingLevelIndex = -1;
+
+                // Start fading back in
+                fadeIn = false;
+                isFading = true;
             }
         }
-
-        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
+    } else {
+        fadeToBlack -= fadeSpeed * deltaTime;
+        if (fadeToBlack <= 0.0f) {
+            fadeToBlack = 0.0f;
+            isFading = false;
+        }
     }
+
+    SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
+}
+
+    // if (isFading) {
+    //     if (fadeIn) {
+    //         fadeToBlack += fadeSpeed * deltaTime;
+    //         if (fadeToBlack >= 1.0f) {
+    //             fadeToBlack = 1.0f;
+    //             isFading = false;
+    //         }
+    //     } else {
+    //         fadeToBlack -= fadeSpeed * deltaTime;
+    //         if (fadeToBlack <= 0.0f) {
+    //             fadeToBlack = 0.0f;
+    //             isFading = false;
+    //         }
+    //     }
+
+    //     SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
+    // }
 
 }
 
@@ -709,7 +726,6 @@ void HandleDoorInteraction(Camera& camera) {
     float deltaTime = GetFrameTime();
 
     if (!isWaiting && IsKeyPressed(KEY_E)) {
-
         for (size_t i = 0; i < doors.size(); ++i) {
             float distanceTo = Vector3Distance(doors[i].position, player.position);
             if (distanceTo < 300) {
@@ -720,17 +736,27 @@ void HandleDoorInteraction(Camera& camera) {
                 std::string s = doors[i].isOpen ? "doorClose" : "doorOpen";
                 SoundManager::GetInstance().Play(s);
 
-                if (!isDungeon && doors[i].linkedLevelIndex != -1) {
-                    isDungeon = true;
+                DoorType type = doors[i].doorType;
+
+
+
+                // If it's a door that changes the level, handle immediately
+                if (type == DoorType::GoToNext || type == DoorType::ExitToPrevious) {
                     previousLevelIndex = levelIndex;
-                    InitLevel(levels[doors[i].linkedLevelIndex], camera); //Enter the Dungeon
-                }else if (isDungeon && doors[i].linkedLevelIndex != -1){
-                    isDungeon = false;
-                    previousLevelIndex = levelIndex;
-                    InitLevel(levels[doors[i].linkedLevelIndex], camera);
+
+                    // Reset the interaction state BEFORE changing level
+                    isWaiting = false;
+                    openTimer = 0.0f;
+                    //pendingDoorIndex = -1;
+
+                    fadeIn = true;
+                    isFading = true;
+                    pendingLevelIndex = doors[i].linkedLevelIndex; //wait until fadeout is complete before calling InitLevel.
+                    //handled in updateFade()
+                    
                 }
 
-                break; // only process one door at a time
+                break; // only interact with one door at a time
             }
         }
     }
@@ -742,7 +768,6 @@ void HandleDoorInteraction(Camera& camera) {
             doors[pendingDoorIndex].isOpen = !doors[pendingDoorIndex].isOpen;
             doorways[pendingDoorIndex].isOpen = doors[pendingDoorIndex].isOpen;
 
-
             // Reset
             isWaiting = false;
             openTimer = 0.0f;
@@ -751,13 +776,14 @@ void HandleDoorInteraction(Camera& camera) {
     }
 }
 
+
 void HandleMeleeHitboxCollision() {
 
     for (Character& skeleton : skeletons) {
         if (skeleton.isDead) continue;
         if (skeleton.hitTimer > 0.0f) continue; // ← SKIP if recently hit
 
-        if (CheckCollisionBoxes(skeleton.collider, player.meleeHitbox) && skeleton.hitTimer <= 0) {
+        if (CheckCollisionBoxes(skeleton.GetBoundingBox(), player.meleeHitbox) && skeleton.hitTimer <= 0) {
             skeleton.TakeDamage(50);
             SoundManager::GetInstance().Play("swordHit");
             
@@ -841,7 +867,7 @@ int main() {
         UpdateShaders(camera);
         sortTrees(camera); //sort trees by distance to player, draw closest trees last.
         
-        UpdateFade(deltaTime);
+        UpdateFade(deltaTime, camera);
         UpdateBullets(camera, deltaTime);
         UpdateDecals(deltaTime);
         CheckBulletHits(camera);
@@ -941,11 +967,15 @@ int main() {
 
 
         ///2D on top of render texture
-        DrawHealthBar();
-        DrawStaminaBar();
-        DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
-        DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
-        DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 250, 30, 20, WHITE);
+        if (pendingLevelIndex != -1) { //fading out
+            DrawText("Loading...", GetScreenWidth() / 2 - MeasureText("Loading...", 20) / 2, GetScreenHeight() / 2, 20, WHITE);
+        }else{
+            DrawHealthBar();
+            DrawStaminaBar();
+            DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
+            DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
+            DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 250, 30, 20, WHITE);
+        }
 
         EndDrawing();
 

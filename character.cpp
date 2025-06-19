@@ -26,24 +26,25 @@ Character::Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, fl
 
 
 
-void Character::UpdateCollider() {
-    float height = 150.0f; // or whatever your enemy height is
-    float width = radius;
+// void Character::UpdateCollider() {
+//     //This is for melee attacks. //character has getBoundingbox also for trees i think. // probably should use one or the other not both. 
+//     float height = 150.0f; 
+//     float width = radius;
 
-    Vector3 min = {
-        position.x - width,
-        position.y - height/2,
-        position.z - width
-    };
+//     Vector3 min = {
+//         position.x - width,
+//         position.y - height/2,
+//         position.z - width
+//     };
 
-    Vector3 max = {
-        position.x + width,
-        position.y + height,
-        position.z + width
-    };
+//     Vector3 max = {
+//         position.x + width,
+//         position.y + height,
+//         position.z + width
+//     };
 
-    collider = { min, max };
-}
+//     collider = { min, max };
+// }
       
 void Character::setPath(){
     Vector2 start = {
@@ -459,7 +460,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
 
 
             attackCooldown -= deltaTime;
-            if (attackCooldown <= 0.0f && currentFrame == 1) {
+            if (attackCooldown <= 0.0f && currentFrame == 1 && playerVisible) { // make sure you can see what your attacking. 
                 attackCooldown = 1.0f; // 1 second cooldown for 1 second of animation. 
 
                 // Play attack sound
@@ -731,7 +732,7 @@ void Character::Update(float deltaTime, Player& player,  Image heightmap, Vector
     
    
     UpdateAI(deltaTime,player, heightmap, terrainScale, allRaptors);
-    UpdateCollider();
+
 
 
     if (animationTimer >= animationSpeed) {
@@ -768,7 +769,8 @@ void Character::Draw(Camera3D camera) {
 
     Color dinoTint = (hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
     rlDisableDepthMask();
-   //DrawBoundingBox(collider, RED);
+
+    //DrawBoundingBox(GetBoundingBox(), RED);
     DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, dinoTint);
 
     rlEnableDepthMask();
