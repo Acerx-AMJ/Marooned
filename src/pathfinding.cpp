@@ -80,8 +80,6 @@ std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
 }
 
 
-
-
 void ConvertImageToWalkableGrid(const Image& dungeonMap) {
     walkable.clear();
     walkable.resize(dungeonMap.width, std::vector<bool>(dungeonMap.height, false));
@@ -90,15 +88,38 @@ void ConvertImageToWalkableGrid(const Image& dungeonMap) {
         for (int y = 0; y < dungeonMap.height; ++y) {
             Color c = GetImageColor(dungeonMap, x, y);
 
-            // Define colors
+            // If pixel is fully transparent, mark it not walkable
+            if (c.a == 0) {
+                walkable[x][y] = false;
+                continue;
+            }
+
             bool isWall = (c.r < 50 && c.g < 50 && c.b < 50); // black
-            bool isBarrel = (c.b > 200 && c.r < 100 && c.g < 100); // blue barrel, skeletons will also navigate around barrels
-            
+            bool isBarrel = (c.b > 200 && c.r < 100 && c.g < 100); // blue barrel
 
             walkable[x][y] = !(isWall || isBarrel);
         }
     }
 }
+
+
+// void ConvertImageToWalkableGrid(const Image& dungeonMap) {
+//     walkable.clear();
+//     walkable.resize(dungeonMap.width, std::vector<bool>(dungeonMap.height, false));
+
+//     for (int x = 0; x < dungeonMap.width; ++x) {
+//         for (int y = 0; y < dungeonMap.height; ++y) {
+//             Color c = GetImageColor(dungeonMap, x, y);
+
+//             // Define colors
+//             bool isWall = (c.r < 50 && c.g < 50 && c.b < 50); // black
+//             bool isBarrel = (c.b > 200 && c.r < 100 && c.g < 100); // blue barrel, skeletons will also navigate around barrels
+            
+
+//             walkable[x][y] = !(isWall || isBarrel);
+//         }
+//     }
+// }
 
 Vector2 WorldToImageCoords(Vector3 worldPos) {
     int x = (int)(worldPos.x / tileSize);
@@ -119,7 +140,7 @@ bool IsWalkable(int x, int y) {
 
 bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, const Character* self) {
     for (const Character* s : skeletons) {
-        if (s == self || s->state == DinoState::Death) continue; 
+        if (s == self || s->state == CharacterState::Death) continue; 
 
         Vector2 tile = WorldToImageCoords(s->position);
         if ((int)tile.x == x && (int)tile.y == y) {
@@ -132,7 +153,7 @@ bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, cons
 Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeletons, const Character* self) {
     //skeles can't occupy the same tile while stoped. 
     for (Character* s : skeletons) {
-        if (s == self || s->state == DinoState::Death) continue;
+        if (s == self || s->state == CharacterState::Death) continue;
 
         Vector2 tile = WorldToImageCoords(s->position);
         if ((int)tile.x == x && (int)tile.y == y) {

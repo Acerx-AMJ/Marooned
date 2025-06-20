@@ -2,7 +2,7 @@
 
 #include "raylib.h"
 #include "weapon.h"
-
+#include "inventory.h"
 
 
 struct Player {
@@ -14,6 +14,10 @@ struct Player {
     Weapon weapon;
     MeleeWeapon meleeWeapon;
     BoundingBox meleeHitbox;
+    BoundingBox blockHitbox;
+
+    Inventory inventory;
+
     bool running = false;
     float runSpeed = 800.0f; // faster than walk speed
     float walkSpeed = 500.0f; // regular speed
@@ -50,9 +54,10 @@ struct Player {
 
     float switchTimer = 0.0f;
     float switchDuration = 0.3f; // time to lower or raise
-
+    BoundingBox GetBoundingBox() const;
     void PlayFootstepSound();
     void TakeDamage(int amount);
+
 
 
     //void PlaySwipe();

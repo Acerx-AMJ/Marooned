@@ -11,7 +11,7 @@ enum class CharacterType {
 };
 
 
-enum class DinoState {
+enum class CharacterState {
     Idle,
     Chase,
     Attack,
@@ -29,7 +29,7 @@ public:
     Vector3 position;
     Texture2D* texture;
     Vector3 previousPosition;
-    DinoState state = DinoState::Idle;
+    CharacterState state = CharacterState::Idle;
     int frameWidth, frameHeight;
     int currentFrame, maxFrames;
     int rowIndex;

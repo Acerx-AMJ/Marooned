@@ -48,7 +48,7 @@ void generateVegetation(){
     }
 }
 
-std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, Vector3 terrainScale,
+std::vector<TreeInstance> GenerateTrees(Image& heightmap, unsigned char* pixels, Vector3 terrainScale,
                                         float treeSpacing, float minTreeSpacing, float treeHeightThreshold) {
     std::vector<TreeInstance> trees;
     Vector3 ePos = dungeonEntrances[0].position; 
@@ -101,7 +101,7 @@ std::vector<TreeInstance> GenerateTrees(Image heightmap, unsigned char* pixels, 
     return trees;
 }
 
-std::vector<TreeInstance> FilterTreesAboveHeightThreshold(const std::vector<TreeInstance>& inputTrees, Image heightmap,
+std::vector<TreeInstance> FilterTreesAboveHeightThreshold(const std::vector<TreeInstance>& inputTrees, Image& heightmap,
                                                           unsigned char* pixels, Vector3 terrainScale,
                                                           float treeHeightThreshold) {
     std::vector<TreeInstance> filtered;
@@ -126,8 +126,8 @@ std::vector<TreeInstance> FilterTreesAboveHeightThreshold(const std::vector<Tree
     return filtered;
 }
 
-std::vector<BushInstance> GenerateBushes(Image heightmap, unsigned char* pixels, Vector3 terrainScale,
-                                         float bushSpacing, float heightThreshold, Model bushModel) {
+std::vector<BushInstance> GenerateBushes(Image& heightmap, unsigned char* pixels, Vector3 terrainScale,
+                                         float bushSpacing, float heightThreshold, Model& bushModel) {
     std::vector<BushInstance> bushes;
 
     for (int z = 0; z < heightmap.height; z += (int)bushSpacing) {
@@ -158,7 +158,7 @@ std::vector<BushInstance> GenerateBushes(Image heightmap, unsigned char* pixels,
     return bushes;
 }
 
-std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<BushInstance>& inputBushes, Image heightmap,
+std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<BushInstance>& inputBushes, Image& heightmap,
                                                           unsigned char* pixels, Vector3 terrainScale,
                                                           float treeHeightThreshold) {
     std::vector<BushInstance> filtered;

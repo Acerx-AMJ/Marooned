@@ -15,7 +15,6 @@ int previousLevelIndex = 0;
 bool first = true; //for first player start position
 bool controlPlayer = false;
 bool isDungeon = false;
-bool loadingLevel = false;
 unsigned char* heightmapPixels = nullptr;
 Player player = {};
 Vector3 startPosition = {5475.0f, 300.0f, -5665.0f}; //middle island start pos

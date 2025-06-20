@@ -480,24 +480,26 @@ void GenerateEntrances(){
     for (const DungeonEntrance& e : dungeonEntrances) {
             Door d;
             d.position = e.position;
-            d.rotationY = 0.0f; // or whatever fits
+            d.rotationY = 0.0f; 
             d.doorTexture = &doorTexture;
             d.isOpen = false;
             d.scale = {300, 365, 1};
             d.tint = WHITE;
-            d.linkedLevelIndex = e.linkedLevelIndex; //map4
-            d.doorType = DoorType::GoToNext;  // ← THIS IS THE FIX
+            d.linkedLevelIndex = e.linkedLevelIndex; //use entrance's linkedLevelIndex to determine which dungeon to enter from overworld
+            //allowing more than one enterance to dungeon per overworld
+            d.doorType = DoorType::GoToNext; 
+
             float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
             float height = 365.0f;
             float depth = 20.0f;        // Thickness into the doorway (forward axis)
 
-            d.collider = MakeDoorBoundingBox(d.position, d.rotationY, halfWidth, height, depth);
+            d.collider = MakeDoorBoundingBox(d.position, d.rotationY, halfWidth, height, depth); //the whole archway is covered by collider
 
             doors.push_back(d);
 
             DoorwayInstance dw;
             dw.position = e.position;
-            dw.rotationY = 90.0f * DEG2RAD;
+            dw.rotationY = 90.0f * DEG2RAD; //rotate to match door 0 rotation, we could rotate door to match arch instead.
             dw.isOpen = false;
             dw.isLocked = false;
 
@@ -532,9 +534,9 @@ void InitLevel(const LevelData& level, Camera camera) {
     
     camera.position = player.position;
 
-    player.currentHealth = player.maxHealth; //regain health on reloading
+    //player.currentHealth = player.maxHealth; //regain health on reloading, we have health potions now. 
     
-
+    
     if (level.isDungeon && !level.dungeonPath.empty()){
         isDungeon = true;
 
@@ -550,10 +552,10 @@ void InitLevel(const LevelData& level, Camera camera) {
         
 
     }else{
-
+        
         generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
-        dungeonEntrances = level.entrances;
-        //levels[levelIndex].entrances[0].linkedLevelIndex = level.nextLevel;
+        dungeonEntrances = level.entrances; //get level entrances from level data
+        
         GenerateEntrances();
         generateVegetation();   
 
@@ -563,7 +565,7 @@ void InitLevel(const LevelData& level, Camera camera) {
     Vector3 resolvedSpawn = level.startPosition; // default fallback
     if (first){
         resolvedSpawn = {5475.0f, 300.0f, -5665.0f}; //overriding start position with first level spwan point
-        first = false;
+        //first = false;
     }
     
 
@@ -578,8 +580,8 @@ void InitLevel(const LevelData& level, Camera camera) {
 
     
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. 
-    loadingLevel = false;
-    
+
+
 
 }
 
@@ -730,15 +732,13 @@ void HandleDoorInteraction(Camera& camera) {
             float distanceTo = Vector3Distance(doors[i].position, player.position);
             if (distanceTo < 300) {
                 isWaiting = true;
-                openTimer = 0.0f;
+                openTimer = 0.0f; //wait for sound to play
                 pendingDoorIndex = i;
 
                 std::string s = doors[i].isOpen ? "doorClose" : "doorOpen";
                 SoundManager::GetInstance().Play(s);
 
                 DoorType type = doors[i].doorType;
-
-
 
                 // If it's a door that changes the level, handle immediately
                 if (type == DoorType::GoToNext || type == DoorType::ExitToPrevious) {
@@ -747,7 +747,7 @@ void HandleDoorInteraction(Camera& camera) {
                     // Reset the interaction state BEFORE changing level
                     isWaiting = false;
                     openTimer = 0.0f;
-                    //pendingDoorIndex = -1;
+                    
 
                     fadeIn = true;
                     isFading = true;
@@ -764,8 +764,8 @@ void HandleDoorInteraction(Camera& camera) {
     if (isWaiting) {
         openTimer += deltaTime;
 
-        if (openTimer >= 0.5f && pendingDoorIndex != -1) {
-            doors[pendingDoorIndex].isOpen = !doors[pendingDoorIndex].isOpen;
+        if (openTimer >= 0.5f && pendingDoorIndex != -1) { 
+            doors[pendingDoorIndex].isOpen = !doors[pendingDoorIndex].isOpen;//open if closed, close if open. both the archway and the door. 
             doorways[pendingDoorIndex].isOpen = doors[pendingDoorIndex].isOpen;
 
             // Reset
@@ -804,12 +804,12 @@ void HandleMeleeHitboxCollision() {
 
 
 int main() {
-    SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
+    //SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
     InitWindow(1600, 900, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
     LoadAllResources();
-    SetExitKey(KEY_NULL);
+    SetExitKey(KEY_NULL); //Escape brings up menu, not quit
     Music dungeonAir = LoadMusicStream("assets/sounds/dungeonAir.ogg");
     Music jungleAmbience = LoadMusicStream("assets/sounds/jungleSounds.ogg"); 
     PlayMusicStream(jungleAmbience); // Starts playback
@@ -974,6 +974,9 @@ int main() {
             DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
             DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
             DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 250, 30, 20, WHITE);
+            player.inventory.DrawInventoryUIWithIcons(healthPotTexture, 64, GetScreenHeight() - 100,  64);
+            player.inventory.DrawInventoryUI();
+            
         }
 
         EndDrawing();

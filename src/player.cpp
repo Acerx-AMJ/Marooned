@@ -7,11 +7,14 @@
 #include "boat.h"
 #include "rlgl.h"
 #include "sound_manager.h"
+#include "inventory.h"
+
 
 
 Weapon weapon;
 MeleeWeapon meleeWeapon;
 WeaponType activeWeapon = WeaponType::Blunderbuss;
+
 
 
 void InitPlayer(Player& player, Vector3 startPosition) {
@@ -26,13 +29,19 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     weapon.scale = { 2.0f, 2.0f, 2.0f };
     weapon.muzzleFlashTexture = muzzleFlash;
 
-
+    
     weapon.fireCooldown = 2.0f;
 
     meleeWeapon.model = swordModel;
     meleeWeapon.scale = {2, 2, 2};
 
+    if (first){
+        first = false; // player first starting position uses first as well, it's set to false here
+        player.inventory.AddItem("HealthPotion");
+        player.inventory.AddItem("HealthPotion");
+        player.inventory.AddItem("HealthPotion");
     
+    }
     
 }
 
@@ -95,6 +104,18 @@ void HandleKeyboardInput(float deltaTime) {
             activeWeapon = WeaponType::Blunderbuss;
     }
 
+    if (IsKeyPressed(KEY_ONE)){
+        //temporary use health potion
+        if (player.inventory.HasItem("HealthPotion")){
+            
+            if (player.currentHealth < player.maxHealth){
+                player.currentHealth = player.maxHealth;
+                player.inventory.UseItem("HealthPotion");
+                SoundManager::GetInstance().Play("gulp");
+            }
+        }
+    }
+
 }
 
 
@@ -146,14 +167,14 @@ void HandleGamepadInput(float deltaTime) {
 }
 
 void Player::TakeDamage(int amount){
-    if (player.blocking){
-        if (rand()%2 == 0){
-            SoundManager::GetInstance().Play("swordBlock");
-        } else{
-            SoundManager::GetInstance().Play("swordBlock2");
-        }
-        return; //dont activate vignette
-    } 
+    // if (player.blocking){
+    //     if (rand()%2 == 0){
+    //         SoundManager::GetInstance().Play("swordBlock");
+    //     } else{
+    //         SoundManager::GetInstance().Play("swordBlock2");
+    //     }
+    //     return; //dont activate vignette
+    // } 
 
     if (!player.dying && !player.dead) {
         player.currentHealth -= amount;
@@ -176,7 +197,39 @@ void Player::TakeDamage(int amount){
 
 }
 
+void UpdateBlockHitbox(Player& player, float blockDistance = 500.0f, float width = 300.0f, float height = 64.0f) {
+    if (!player.blocking) return;
 
+    Vector3 forward = {
+        sinf(DEG2RAD * player.rotation.y),
+        0,
+        cosf(DEG2RAD * player.rotation.y)
+    };
+
+    Vector3 center = Vector3Add(player.position, Vector3Scale(forward, blockDistance));
+    center.y = player.position.y;
+
+    player.blockHitbox.min = {
+        center.x - width / 2.0f,
+        center.y - height / 2.0f,
+        center.z - width / 2.0f
+    };
+    player.blockHitbox.max = {
+        center.x + width / 2.0f,
+        center.y + height / 2.0f,
+        center.z + width / 2.0f
+    };
+}
+
+BoundingBox Player::GetBoundingBox() const {
+    float halfWidth = (200* 0.5f * 0.4f) / 2.0f;  // Only 40 percent the width of the frame
+    float halfHeight = (200 * 0.5f) / 2.0f;
+
+    return {
+        { player.position.x - halfWidth, player.position.y - halfHeight, player.position.z - halfWidth },
+        { player.position.x + halfWidth, player.position.y + halfHeight, player.position.z + halfWidth }
+    };
+}
 
 
 
@@ -246,7 +299,7 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
     meleeWeapon.Update(deltaTime);
     UpdateMeleeHitbox(camera);
     UpdateFootsteps(deltaTime);
-
+    UpdateBlockHitbox(player, 250, 300, 100);
     vignetteFade += deltaTime * 2.0f; // tweak fade speed
     vignetteIntensity = Clamp(1.0f - vignetteFade, 0.0f, 1.0f);
 
@@ -419,7 +472,7 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
 
 void DrawPlayer(const Player& player, Camera& camera) {
     DrawCapsule(player.position, Vector3 {player.position.x, player.height, player.position.z}, 10, 4, 4, RED);
-
+    DrawBoundingBox(player.GetBoundingBox(), RED);
     if (controlPlayer){
         if (activeWeapon == WeaponType::Blunderbuss){
             weapon.Draw(camera); 
@@ -428,6 +481,10 @@ void DrawPlayer(const Player& player, Camera& camera) {
             meleeWeapon.Draw(camera);
             if (meleeWeapon.hitboxActive){
                 //DrawBoundingBox(player.meleeHitbox, RED);
+            }
+
+            if (player.blocking){
+                //DrawBoundingBox(player.blockHitbox, RED);
             }
         }
         

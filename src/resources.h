@@ -4,7 +4,7 @@
 
 
 extern RenderTexture2D sceneTexture;
-extern Texture2D bushTex, shadowTex, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, doorTexture;
+extern Texture2D bushTex, shadowTex, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, doorTexture, healthPotTexture;
 extern Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 extern Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, 
 gunModel, bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel;

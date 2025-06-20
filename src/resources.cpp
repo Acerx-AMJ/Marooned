@@ -5,7 +5,7 @@
 #include <iostream>
 
 RenderTexture2D sceneTexture;
-Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, doorTexture;
+Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, doorTexture, healthPotTexture;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, 
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel;
@@ -33,6 +33,7 @@ void LoadAllResources() {
     smokeSheet = LoadTexture("assets/sprites/smokeSheet.png");
     bloodSheet = LoadTexture("assets/sprites/bloodSheet.png");
     doorTexture = LoadTexture("assets/sprites/door.png");
+    healthPotTexture = LoadTexture("assets/sprites/Healthpot.png");
     // Models
     palmTree = LoadModel("assets/models/bigPalmTree.glb");
     palm2 = LoadModel("assets/models/smallPalmTree.glb");
@@ -114,6 +115,7 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("swordBlock2", "assets/sounds/swordBlock2.ogg");
     SoundManager::GetInstance().LoadSound("bones", "assets/sounds/bones.ogg");
     SoundManager::GetInstance().LoadSound("bones2", "assets/sounds/bones2.ogg");
+    SoundManager::GetInstance().LoadSound("gulp", "assets/sounds/gulp.ogg");
 
 
 
@@ -141,16 +143,10 @@ void UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
     //dungeonDarkness
-    float dungeonDarkness = 0.05f;
+    float dungeonDarkness = 0.05f;//darkened 5 percent. it darkens the gun model as well, so go easy. 
     float dungeonContrast = 1.125f;
-    int isDungeonVal = 0;
 
-    if (isDungeon){
-        isDungeonVal = 1;
-    }else{
-        isDungeonVal = 0;
-    }
-
+    int isDungeonVal = isDungeon ? 1 : 0;
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
 
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "isDungeon"), &isDungeonVal, SHADER_UNIFORM_INT);
@@ -168,6 +164,7 @@ void UnloadAllResources() {
     UnloadTexture(smokeSheet);
     UnloadTexture(bloodSheet);
     UnloadTexture(skeletonSheet);
+    UnloadTexture(healthPotTexture);
 
     UnloadShader(fogShader);
     UnloadShader(skyShader);

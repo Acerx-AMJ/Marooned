@@ -25,7 +25,6 @@ extern Vector3 bottomPos;
 
 extern bool controlPlayer;
 extern bool isDungeon;
-extern bool loadingLevel;
 extern float dungeonPlayerHeight; 
 extern float floorHeight;
 extern float wallHeight;

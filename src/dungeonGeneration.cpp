@@ -95,21 +95,6 @@ Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, flo
 
 
 
-// void GenerateFloorTiles(float tileSize, float baseY) {
-//     floorTiles.clear();
-//     //cover the full area of the dungeon, walls are placed on top
-//     for (int y = 0; y < dungeonHeight; y++) {
-//         for (int x = 0; x < dungeonWidth; x++) {
-//             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
-
-//             FloorTile tile;
-//             tile.position = pos;
-//             tile.tint = WHITE;
-
-//             floorTiles.push_back(tile);
-//         }
-//     }
-// }
 void GenerateFloorTiles(float tileSize, float baseY) {
     floorTiles.clear();
 
@@ -289,7 +274,7 @@ void GenerateDoorsFromArchways() {
         door.rotationY = dw.rotationY + DEG2RAD * 90.0f;
         door.isOpen = false;
         door.doorTexture = &doorTexture;
-        door.scale = {300, 365, 1};
+        door.scale = {300, 365, 1}; //stretch it taller
         door.tileX = dw.tileX;
         door.tileY = dw.tileY;
 
