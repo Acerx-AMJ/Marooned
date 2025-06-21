@@ -54,3 +54,12 @@ Add a chest.
 
 game pad inputs for shoot/swing/block/jump/run/swap weapon
 
+add simple inventory. 4 boxes in the bottom left. It's a map of strings and amounts. so you can have multiple potions in 1 inventory slot. We should make another consumable to justify this type of inventory. like food? maybe you can have multiple keys. and there's just generic keys that opens locked doors and are used up. lock picks? lock picking mini game? 
+
+limit number of health potions you can have? nah. 
+
+Mana potions? Maybe player can throw fireballs. 
+
+stealth? We have working vision cones. sort of. We could make them cones. then draw the cones to show the player the enemies sight. Lean into the grid based nature of the game maybe. If we could highlight floor tiles with a shader we could highlight vision that way. I just want the ability to turn a specific floor tile red. But since it's .glb with baked in texture I can't easily do that. and I never figured out how to apply a texture to some mesh. Everything is just solid colors with shaders or baked in texture of the dungeon. Maybe just make a cube and try to apply a texture to it. a box, a breakable box?
+
+We have multiple models of the barrel. One of which is the barrel smashed. We could give the barrels health and when you hit them with a sword we swap in the broken model. barrels should be like 30 percent bigger. they don't line up with the walls. I want barrels in the corners of the dungeon but since the wall is in the middle of the tile there a gap. could push walls in somehow. 

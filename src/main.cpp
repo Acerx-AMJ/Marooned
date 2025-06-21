@@ -16,6 +16,7 @@
 #include "level.h"
 #include "dungeonGeneration.h"
 #include "pathfinding.h"
+#include "collectable.h"
 
 
 
@@ -508,7 +509,19 @@ void GenerateEntrances(){
 
 }
 
+void UpdateCollectables(Camera& camera, float deltaTime){
+    for (int i = 0; i < collectables.size(); i++) {
+        collectables[i].Update(deltaTime);
+        collectables[i].Draw(healthPotTexture, camera);
 
+        if (collectables[i].CheckPickup(player.position, 100.0f)) {
+            SoundManager::GetInstance().Play("clink");
+            player.inventory.AddItem("HealthPotion");
+            collectables.erase(collectables.begin() + i);
+            i--; 
+        }
+    }
+}
 
 
 void InitLevel(const LevelData& level, Camera camera) {
@@ -533,23 +546,21 @@ void InitLevel(const LevelData& level, Camera camera) {
 
     
     camera.position = player.position;
-
-    //player.currentHealth = player.maxHealth; //regain health on reloading, we have health potions now. 
-    
-    
+   
     if (level.isDungeon && !level.dungeonPath.empty()){
         isDungeon = true;
 
         LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);
-        GenerateFloorTiles(200.0f, floorHeight);
-        GenerateWallTiles(200.0f, wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
+        GenerateFloorTiles(tileSize, floorHeight);
+        GenerateWallTiles(tileSize, wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
         GenerateCeilingTiles(400.0f);
-        GenerateBarrels(200, floorHeight);
-        GenerateLightSources(200, floorHeight);
+        GenerateBarrels(tileSize, floorHeight);
+        GeneratePotions(tileSize, floorHeight);
+        GenerateLightSources(tileSize, floorHeight);
         GenerateDoorways(tileSize, floorHeight, levelIndex); //calls generate doors from archways
         GenerateSkeletonsFromImage(tileSize, 165);
-        
+      
 
     }else{
         
@@ -557,15 +568,13 @@ void InitLevel(const LevelData& level, Camera camera) {
         dungeonEntrances = level.entrances; //get level entrances from level data
         
         GenerateEntrances();
-        generateVegetation();   
-
-       
+        generateVegetation(); 
     }
 
     Vector3 resolvedSpawn = level.startPosition; // default fallback
     if (first){
         resolvedSpawn = {5475.0f, 300.0f, -5665.0f}; //overriding start position with first level spwan point
-        //first = false;
+        //first = false; first is set to false later. after another thing needs to happen first time only.
     }
     
 
@@ -574,15 +583,11 @@ void InitLevel(const LevelData& level, Camera camera) {
         if (pixelSpawn.x != 0 || pixelSpawn.z != 0) {
             resolvedSpawn = pixelSpawn;//Overriding start position with green pixel
             
-    } 
+        } 
 
     }
-
-    
+  
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. 
-
-
-
 }
 
 void WallCollision(){
@@ -641,50 +646,33 @@ void lightBullets(float deltaTime){
 }
 
 void UpdateFade(float deltaTime, Camera& camera){
-if (isFading) {
-    if (fadeIn) {
-        fadeToBlack += fadeSpeed * deltaTime;
-        if (fadeToBlack >= 1.0f) {
-            fadeToBlack = 1.0f;
-            isFading = false;
+    if (isFading) {
+        if (fadeIn) {
+            fadeToBlack += fadeSpeed * deltaTime;
+            if (fadeToBlack >= 1.0f) {
+                fadeToBlack = 1.0f;
+                isFading = false;
 
-            if (pendingLevelIndex != -1) {
-                InitLevel(levels[pendingLevelIndex], camera);
-                pendingLevelIndex = -1;
+                if (pendingLevelIndex != -1) {
+                    InitLevel(levels[pendingLevelIndex], camera);
+                    pendingLevelIndex = -1;
 
-                // Start fading back in
-                fadeIn = false;
-                isFading = true;
+                    // Start fading back in
+                    fadeIn = false;
+                    isFading = true;
+                }
+            }
+        } else {
+            fadeToBlack -= fadeSpeed * deltaTime;
+            if (fadeToBlack <= 0.0f) {
+                fadeToBlack = 0.0f;
+                isFading = false;
             }
         }
-    } else {
-        fadeToBlack -= fadeSpeed * deltaTime;
-        if (fadeToBlack <= 0.0f) {
-            fadeToBlack = 0.0f;
-            isFading = false;
-        }
+
+        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
     }
 
-    SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
-}
-
-    // if (isFading) {
-    //     if (fadeIn) {
-    //         fadeToBlack += fadeSpeed * deltaTime;
-    //         if (fadeToBlack >= 1.0f) {
-    //             fadeToBlack = 1.0f;
-    //             isFading = false;
-    //         }
-    //     } else {
-    //         fadeToBlack -= fadeSpeed * deltaTime;
-    //         if (fadeToBlack <= 0.0f) {
-    //             fadeToBlack = 0.0f;
-    //             isFading = false;
-    //         }
-    //     }
-
-    //     SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
-    // }
 
 }
 
@@ -717,6 +705,14 @@ void DoorCollision(){
             }
             
         }
+
+        for (Character& r : raptors){ //raptors collide with dungeon entrance
+            if (!door.isOpen && CheckCollisionBoxSphere(door.collider, r.position, r.radius)){
+                ResolveBoxSphereCollision(door.collider, r.position, r.radius);
+
+            }
+            
+        }
     }
 }
 
@@ -732,7 +728,7 @@ void HandleDoorInteraction(Camera& camera) {
             float distanceTo = Vector3Distance(doors[i].position, player.position);
             if (distanceTo < 300) {
                 isWaiting = true;
-                openTimer = 0.0f; //wait for sound to play
+                openTimer = 0.0f; //wait for sound 
                 pendingDoorIndex = i;
 
                 std::string s = doors[i].isOpen ? "doorClose" : "doorOpen";
@@ -828,6 +824,12 @@ int main() {
     camera.projection = CAMERA_PERSPECTIVE;
     DisableCursor();
 
+    Vector3 terrainPosition = { //center the terrain around 0, 0, 0
+            -terrainScale.x / 2.0f,
+            0.0f,
+            -terrainScale.z / 2.0f
+    }; 
+
     
     //main game loop
     while (!WindowShouldClose()) {
@@ -873,6 +875,7 @@ int main() {
         CheckBulletHits(camera);
         UpdateDecals(deltaTime);
         UpdateBoat(player_boat, deltaTime);
+        
         UpdateRaptors(deltaTime);
         UpdateSkeletons(deltaTime);
         TreeCollision(camera); //player and raptor vs tree
@@ -889,14 +892,6 @@ int main() {
         if (IsGamepadAvailable(0)) {  //free camera with gamepad
             UpdateCameraWithGamepad(camera);
         }
-
-        Vector3 terrainPosition = { //center the terrain around 0, 0, 0
-            -terrainScale.x / 2.0f,
-            0.0f,
-            -terrainScale.z / 2.0f
-        }; 
-
-
 
 
 
@@ -925,9 +920,9 @@ int main() {
         DrawDungeonBarrels(barrelModel);
         DrawDungeonPillars(pillarModel);
         DrawDungeonDoorways(doorWay);
-        //DrawDungeonCeiling(floorTile, 400.0f); // Or whatever offset looks good
+        
         DrawDungeonCeiling(floorTile);
-
+        UpdateCollectables(camera, deltaTime); //Update and draw
         
        
         if (!isDungeon) {

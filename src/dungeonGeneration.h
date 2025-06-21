@@ -106,6 +106,7 @@ void GenerateBarrels(float tileSize, float baseY);
 void GenerateLightSources(float tileSize, float baseY);
 void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex);
 void GenerateDoorsFromArchways();
+void GeneratePotions(float tileSize, float baseY); 
 void DrawDungeonFloor(Model floorTileModel);
 void DrawDungeonWalls(Model wallSegmentModel);
 void DrawDungeonFloor(Model floorModel);

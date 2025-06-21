@@ -7,18 +7,16 @@
 RenderTexture2D sceneTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, doorTexture, healthPotTexture;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
-Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, gunModel, 
+Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, 
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel;
 Image heightmap;
 Mesh terrainMesh;
 Sound musket;
 
-Vector3 terrainScale;
+Vector3 terrainScale = {16000.0f, 200.0f, 16000.0f};
 
 Vector2 screenResolution;
 
-int lightPosLoc;
-int camPosLocD;
 
 void LoadAllResources() {
     screenResolution = {(float)GetScreenWidth(), (float)GetScreenHeight()};
@@ -27,7 +25,7 @@ void LoadAllResources() {
     raptorTexture = LoadTexture("assets/sprites/raptorSheet.png");
     skeletonSheet = LoadTexture("assets/sprites/skeletonSheet.png");
     gunTexture = LoadTexture("assets/sprites/flintlock.png");
-    gunModel = LoadModel("assets/models/blunderbus.glb");
+    //gunModel = LoadModel("assets/models/blunderbus.glb");
     muzzleFlash = LoadTexture("assets/sprites/muzzleFlash.png");
     backDrop = LoadTexture("assets/screenshots/MiddleIsland.png");
     smokeSheet = LoadTexture("assets/sprites/smokeSheet.png");
@@ -48,14 +46,6 @@ void LoadAllResources() {
     pillarModel = LoadModel("assets/models/pillar.glb");
     swordModel = LoadModel("assets/models/sword.glb");
 
-
-    // Heightmap 
-    // heightmap = LoadImage("assets/MiddleIsland.png"); ///////////////////////// current map
-    // ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
-    // terrainScale = {16000.0f, 200.0f, 16000.0f}; //4K height maps scaled to 16k looks best. 
-
-    // terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
-    // terrainModel = LoadModelFromMesh(terrainMesh);
 
     terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
 
@@ -116,6 +106,7 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("bones", "assets/sounds/bones.ogg");
     SoundManager::GetInstance().LoadSound("bones2", "assets/sounds/bones2.ogg");
     SoundManager::GetInstance().LoadSound("gulp", "assets/sounds/gulp.ogg");
+    SoundManager::GetInstance().LoadSound("clink", "assets/sounds/clink.ogg");
 
 
 
@@ -179,7 +170,6 @@ void UnloadAllResources() {
     UnloadModel(palm2);
     UnloadModel(bush);
     UnloadModel(boatModel);
-    UnloadModel(gunModel);
     UnloadModel(wall);
     UnloadModel(floorTile);
     UnloadModel(doorWay);

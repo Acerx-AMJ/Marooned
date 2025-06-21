@@ -8,6 +8,7 @@
 #include "vegetation.h"
 #include "decal.h"
 #include "level.h"
+#include "collectable.h"
 
 enum class GameState {
     Menu,
@@ -57,6 +58,7 @@ extern std::vector<Character*> skeletonPtrs;
 extern std::vector<DungeonEntrance> dungeonEntrances;
 extern std::vector<Bullet> activeBullets;
 extern std::vector<Decal> decals;
+extern std::vector<Collectable> collectables;
 
 float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
 void removeAllRaptors();

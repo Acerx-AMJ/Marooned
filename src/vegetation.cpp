@@ -73,7 +73,9 @@ std::vector<TreeInstance> GenerateTrees(Image& heightmap, unsigned char* pixels,
                     }
 
                     for (DungeonEntrance& d : dungeonEntrances){//dont spawn trees ontop of entrances
-                        if (Vector3Distance(pos, d.position) < minTreeSpacing * 2){
+                        
+                        if (Vector3Distance(pos, d.position) < treeSpacing * 2 ){
+                            
                             tooClose = true;
                             break;
                         }

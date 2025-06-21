@@ -338,6 +338,20 @@ void GenerateBarrels(float tileSize, float baseY) {
     }
 }
 
+void GeneratePotions(float tileSize, float baseY) {
+    for (int y = 0; y < dungeonHeight; y++) {
+        for (int x = 0; x < dungeonWidth; x++) {
+            Color current = dungeonPixels[y * dungeonWidth + x];
+
+            if (current.r == 255 && current.g == 105 && current.b == 180) { // pink for potions
+                Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 50); // raised slightly off floor
+                collectables.push_back(Collectable(CollectableType::HealthPotion, pos));
+            }
+        }
+    }
+}
+
+
 void GenerateRaptorsFromImage(float tileSize, float baseY) {
     raptors.clear(); // Clear existing raptors
     raptorPtrs.clear();

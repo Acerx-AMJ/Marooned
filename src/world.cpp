@@ -50,7 +50,7 @@ std::vector<Decal> decals;
 
 std::vector<DungeonEntrance> dungeonEntrances;
 
-
+std::vector<Collectable> collectables;
 
 void removeAllRaptors(){
     raptorPtrs.clear();
