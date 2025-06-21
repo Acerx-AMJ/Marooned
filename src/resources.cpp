@@ -5,7 +5,8 @@
 #include <iostream>
 
 RenderTexture2D sceneTexture;
-Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, doorTexture, healthPotTexture;
+Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, 
+doorTexture, healthPotTexture, keyTexture;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, 
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel;
@@ -32,10 +33,11 @@ void LoadAllResources() {
     bloodSheet = LoadTexture("assets/sprites/bloodSheet.png");
     doorTexture = LoadTexture("assets/sprites/door.png");
     healthPotTexture = LoadTexture("assets/sprites/Healthpot.png");
+    keyTexture = LoadTexture("assets/sprites/key.png");
     // Models
     palmTree = LoadModel("assets/models/bigPalmTree.glb");
     palm2 = LoadModel("assets/models/smallPalmTree.glb");
-    bush = LoadModel("assets/models/grass2.glb");
+    bush = LoadModel("assets/models/grass(stripped).glb");
     boatModel = LoadModel("assets/models/boat.glb");
     blunderbuss = LoadModel("assets/models/blunderbus.glb");
     bushTex = LoadTexture("assets/bush.png");
@@ -107,6 +109,8 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("bones2", "assets/sounds/bones2.ogg");
     SoundManager::GetInstance().LoadSound("gulp", "assets/sounds/gulp.ogg");
     SoundManager::GetInstance().LoadSound("clink", "assets/sounds/clink.ogg");
+    SoundManager::GetInstance().LoadSound("lockedDoor", "assets/sounds/lockedDoor.ogg");
+    SoundManager::GetInstance().LoadSound("unlock", "assets/sounds/unlock.ogg");
 
 
 
@@ -147,6 +151,7 @@ void UpdateShaders(Camera& camera){
 }
 
 void UnloadAllResources() {
+    //textures
     UnloadRenderTexture(sceneTexture);
     UnloadTexture(bushTex);
     UnloadTexture(shadowTex);
@@ -155,14 +160,16 @@ void UnloadAllResources() {
     UnloadTexture(smokeSheet);
     UnloadTexture(bloodSheet);
     UnloadTexture(skeletonSheet);
+    UnloadTexture(doorTexture);
     UnloadTexture(healthPotTexture);
-
+    UnloadTexture(keyTexture);
+    //shaders
     UnloadShader(fogShader);
     UnloadShader(skyShader);
     UnloadShader(waterShader);
     UnloadShader(terrainShader);
     UnloadShader(shadowShader);
-
+    //models
     UnloadModel(skyModel);
     UnloadModel(waterModel);
     UnloadModel(shadowQuad);
@@ -176,10 +183,9 @@ void UnloadAllResources() {
     UnloadModel(barrelModel);
     UnloadModel(pillarModel);
     UnloadModel(swordModel);
-
-
+    //Img
     UnloadImage(heightmap);
-
+    //mesh
     UnloadMesh(terrainMesh);
     
 

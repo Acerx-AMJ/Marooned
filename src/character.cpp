@@ -296,10 +296,10 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
         }
     }
 
-    float distSqr = Vector3DistanceSqr(position, player.position); //Hearing test
-    if (distSqr <= hearingRadius * hearingRadius) {
-        heardPlayer = true;
-    }
+    // float distSqr = Vector3DistanceSqr(position, player.position); //Hearing test
+    // if (distSqr <= hearingRadius * hearingRadius) {
+    //     heardPlayer = true;
+    // }
 
     
  
@@ -452,7 +452,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vec
 
 
             attackCooldown -= deltaTime;
-            if (attackCooldown <= 0.0f && currentFrame == 1 && playerVisible) { // make sure you can see what your attacking. 
+            if (attackCooldown <= 0.0f && currentFrame == 1 && canSee) { // make sure you can see what your attacking. 
                 attackCooldown = 1.0f; // 1 second cooldown for 1 second of animation. 
 
                 // Play attack sound
@@ -780,14 +780,14 @@ void Character::Draw(Camera3D camera) {
     // Calculate a slight camera-facing offset to reduce z-fighting
     Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.position, position));
     Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 10.0f)); // Adjust 0.1f if needed
-    if (type == CharacterType::Skeleton) scale = 0.8;
+    if (type == CharacterType::Skeleton) scale = 0.8; //resize skele before drawing
     Vector2 size = { frameWidth * scale, frameHeight * scale };
 
-    Color dinoTint = (hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
+    Color redTint = (hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
     rlDisableDepthMask();
 
-    //DrawBoundingBox(GetBoundingBox(), RED);
-    DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, dinoTint);
+    //DrawBoundingBox(GetBoundingBox(), RED); //debug visible bounding boxes
+    DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, redTint);
 
     rlEnableDepthMask();
 }

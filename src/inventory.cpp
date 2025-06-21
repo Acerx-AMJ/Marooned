@@ -1,5 +1,24 @@
 #include "Inventory.h"
 #include "raylib.h" // Only needed for DrawText
+#include <vector>
+#include "resources.h"
+
+
+
+std::vector<std::string> slotOrder = {
+    "HealthPotion",
+    "GoldKey",
+    "RustyKey",
+    "MagicScroll"
+};
+
+std::map<std::string, Texture2D> itemTextures;
+
+void Inventory::SetupItemTextures() {
+    itemTextures["HealthPotion"] = healthPotTexture;
+    itemTextures["GoldKey"] = keyTexture;
+}
+
 
 void Inventory::AddItem(const std::string& itemId) {
     items[itemId]++;
@@ -32,32 +51,34 @@ void Inventory::DrawInventoryUI(int x, int y) const {
     }
 }
 
-void Inventory::DrawInventoryUIWithIcons(Texture2D healthPotionTex, int x, int y, int slotSize) const {
+void Inventory::DrawInventoryUIWithIcons(const std::map<std::string, Texture2D>& itemTextures, const std::vector<std::string>& slotOrder, int x, int y, int slotSize) const {
     int spacing = slotSize + 10;
 
-    for (int i = 0; i < 4; ++i) {
-        // Slot position
+    for (int i = 0; i < slotOrder.size(); ++i) {
+        const std::string& itemId = slotOrder[i];
+
         Rectangle slotRect = { (float)(x + i * spacing), (float)y, (float)slotSize, (float)slotSize };
-        
-        // Draw empty slot outline
+
+        // Draw slot outline
         DrawRectangleLinesEx(slotRect, 2, WHITE);
 
-        // Draw potion if we have it and this is slot 0
-        if (i == 0 && HasItem("HealthPotion")) {
+        // If we have the item and a texture for it
+        if (HasItem(itemId) && itemTextures.count(itemId) > 0) {
+            const Texture2D& tex = itemTextures.at(itemId);
+
             DrawTexturePro(
-                healthPotionTex,
-                { 0, 0, (float)healthPotionTex.width, (float)healthPotionTex.height },
+                tex,
+                { 0, 0, (float)tex.width, (float)tex.height },
                 { slotRect.x, slotRect.y, slotRect.width, slotRect.height },
                 { 0, 0 },
                 0.0f,
                 WHITE
             );
 
-            // Draw quantity number
-            int count = GetItemCount("HealthPotion");
-            DrawText(TextFormat("x%d", count), (int)slotRect.x + 4, (int)slotRect.y + slotSize - 20, 16, WHITE);
+            int count = GetItemCount(itemId);
+            if (count > 1) {
+                DrawText(TextFormat("x%d", count), (int)slotRect.x + 4, (int)slotRect.y + slotSize - 20, 16, WHITE);
+            }
         }
-
-        // TODO: add more items to other slots later
     }
 }

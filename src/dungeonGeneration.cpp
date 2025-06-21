@@ -220,8 +220,9 @@ void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex) {
             bool isDoor = (current.r == 128 && current.g == 0 && current.b == 128);   // purple
             bool isExit     = (current.r == 0 && current.g == 128 && current.b == 128);   // teal
             bool nextLevel = (current.r == 255 && current.g == 128 && current.b == 0); //orange
+            bool lockedDoor = (current.r == 0 && current.g == 255 && current.b == 255); //Aqua
 
-            if (!isDoor && !isExit && !nextLevel) continue;
+            if (!isDoor && !isExit && !nextLevel && !lockedDoor) continue;
 
             // Check surrounding walls to determine door orientation
             Color left = dungeonPixels[y * dungeonWidth + (x - 1)];
@@ -250,6 +251,9 @@ void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex) {
                 archway.linkedLevelIndex = previousLevelIndex; //go back outside. 
             }else if (nextLevel){
                 archway.linkedLevelIndex = levels[currentLevelIndex].nextLevel; //door to next level
+            }else if (lockedDoor){
+                std::cout << "locking door\n";
+                archway.isLocked = true; //locked door
             } else {
                 archway.linkedLevelIndex = -1; //regular door
             }
@@ -273,11 +277,12 @@ void GenerateDoorsFromArchways() {
         door.position = dw.position;
         door.rotationY = dw.rotationY + DEG2RAD * 90.0f;
         door.isOpen = false;
+        door.isLocked = dw.isLocked;
         door.doorTexture = &doorTexture;
         door.scale = {300, 365, 1}; //stretch it taller
         door.tileX = dw.tileX;
         door.tileY = dw.tileY;
-
+        
         float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
         float height = 365.0f;
         float depth = 20.0f;        // Thickness into the doorway (forward axis)
@@ -346,6 +351,19 @@ void GeneratePotions(float tileSize, float baseY) {
             if (current.r == 255 && current.g == 105 && current.b == 180) { // pink for potions
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 50); // raised slightly off floor
                 collectables.push_back(Collectable(CollectableType::HealthPotion, pos));
+            }
+        }
+    }
+}
+
+void GenerateKeys(float tileSize, float baseY) {
+    for (int y = 0; y < dungeonHeight; y++) {
+        for (int x = 0; x < dungeonWidth; x++) {
+            Color current = dungeonPixels[y * dungeonWidth + x];
+
+            if (current.r == 255 && current.g == 200 && current.b == 0) { // Gold for keys
+                Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 50); // raised slightly off floor
+                collectables.push_back(Collectable(CollectableType::Key, pos));
             }
         }
     }

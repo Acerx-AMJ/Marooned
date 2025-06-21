@@ -29,6 +29,7 @@ struct Door {
     float rotationY;
     BoundingBox collider;
     bool isOpen = false;
+    bool isLocked = false;
     Texture2D* doorTexture;
     Vector3 scale = {100.0f, 200.0f, 1.0f}; // width, height, unused
     Color tint = WHITE;
@@ -106,7 +107,8 @@ void GenerateBarrels(float tileSize, float baseY);
 void GenerateLightSources(float tileSize, float baseY);
 void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex);
 void GenerateDoorsFromArchways();
-void GeneratePotions(float tileSize, float baseY); 
+void GeneratePotions(float tileSize, float baseY);
+void GenerateKeys(float tileSize, float baseY);
 void DrawDungeonFloor(Model floorTileModel);
 void DrawDungeonWalls(Model wallSegmentModel);
 void DrawDungeonFloor(Model floorModel);

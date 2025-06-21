@@ -17,6 +17,7 @@
 #include "dungeonGeneration.h"
 #include "pathfinding.h"
 #include "collectable.h"
+#include "inventory.h"
 
 
 
@@ -484,6 +485,7 @@ void GenerateEntrances(){
             d.rotationY = 0.0f; 
             d.doorTexture = &doorTexture;
             d.isOpen = false;
+            d.isLocked = false;
             d.scale = {300, 365, 1};
             d.tint = WHITE;
             d.linkedLevelIndex = e.linkedLevelIndex; //use entrance's linkedLevelIndex to determine which dungeon to enter from overworld
@@ -509,19 +511,35 @@ void GenerateEntrances(){
 
 }
 
-void UpdateCollectables(Camera& camera, float deltaTime){
+void UpdateCollectables(Camera& camera, float deltaTime) {
     for (int i = 0; i < collectables.size(); i++) {
         collectables[i].Update(deltaTime);
-        collectables[i].Draw(healthPotTexture, camera);
 
+        // Draw correct icon
+        if (collectables[i].type == CollectableType::HealthPotion) {
+            collectables[i].Draw(healthPotTexture, camera);
+        }
+        else if (collectables[i].type == CollectableType::Key) {
+            collectables[i].Draw(keyTexture, camera);
+        }
+
+        // Pickup logic
         if (collectables[i].CheckPickup(player.position, 100.0f)) {
             SoundManager::GetInstance().Play("clink");
-            player.inventory.AddItem("HealthPotion");
+
+            if (collectables[i].type == CollectableType::HealthPotion) {
+                player.inventory.AddItem("HealthPotion");
+            }
+            else if (collectables[i].type == CollectableType::Key) {
+                player.inventory.AddItem("GoldKey");
+            }
+
             collectables.erase(collectables.begin() + i);
-            i--; 
+            i--;
         }
     }
 }
+
 
 
 void InitLevel(const LevelData& level, Camera camera) {
@@ -542,6 +560,11 @@ void InitLevel(const LevelData& level, Camera camera) {
         InitBoat(player_boat, boatPosition);
             
         terrainModel.materials[0].shader = terrainShader;
+        generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
+        dungeonEntrances = level.entrances; //get level entrances from level data
+        
+        GenerateEntrances();
+        generateVegetation(); 
     }
 
     
@@ -557,18 +580,11 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateCeilingTiles(400.0f);
         GenerateBarrels(tileSize, floorHeight);
         GeneratePotions(tileSize, floorHeight);
+        GenerateKeys(tileSize, floorHeight);
         GenerateLightSources(tileSize, floorHeight);
         GenerateDoorways(tileSize, floorHeight, levelIndex); //calls generate doors from archways
         GenerateSkeletonsFromImage(tileSize, 165);
       
-
-    }else{
-        
-        generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
-        dungeonEntrances = level.entrances; //get level entrances from level data
-        
-        GenerateEntrances();
-        generateVegetation(); 
     }
 
     Vector3 resolvedSpawn = level.startPosition; // default fallback
@@ -727,35 +743,42 @@ void HandleDoorInteraction(Camera& camera) {
         for (size_t i = 0; i < doors.size(); ++i) {
             float distanceTo = Vector3Distance(doors[i].position, player.position);
             if (distanceTo < 300) {
+
+                // If locked and no key, deny access
+                if (doors[i].isLocked) {
+                    if (player.inventory.HasItem("GoldKey")) {
+                        player.inventory.UseItem("GoldKey");
+                        doors[i].isLocked = false;
+                        SoundManager::GetInstance().Play("unlock");
+                    } else {
+                        SoundManager::GetInstance().Play("lockedDoor");
+                        return; // skip the rest of this function
+                    }
+                }
+
+                // Start door interaction (fade, open, etc)
                 isWaiting = true;
-                openTimer = 0.0f; //wait for sound 
+                openTimer = 0.0f;
                 pendingDoorIndex = i;
 
                 std::string s = doors[i].isOpen ? "doorClose" : "doorOpen";
                 SoundManager::GetInstance().Play(s);
 
                 DoorType type = doors[i].doorType;
-
-                // If it's a door that changes the level, handle immediately
                 if (type == DoorType::GoToNext || type == DoorType::ExitToPrevious) {
                     previousLevelIndex = levelIndex;
-
-                    // Reset the interaction state BEFORE changing level
                     isWaiting = false;
                     openTimer = 0.0f;
-                    
-
                     fadeIn = true;
                     isFading = true;
-                    pendingLevelIndex = doors[i].linkedLevelIndex; //wait until fadeout is complete before calling InitLevel.
-                    //handled in updateFade()
-                    
+                    pendingLevelIndex = doors[i].linkedLevelIndex;
                 }
 
-                break; // only interact with one door at a time
+                break; // done with this door
             }
         }
     }
+
 
     if (isWaiting) {
         openTimer += deltaTime;
@@ -919,7 +942,7 @@ int main() {
         DrawDungeonWalls(wall);
         DrawDungeonBarrels(barrelModel);
         DrawDungeonPillars(pillarModel);
-        DrawDungeonDoorways(doorWay);
+        
         
         DrawDungeonCeiling(floorTile);
         UpdateCollectables(camera, deltaTime); //Update and draw
@@ -933,7 +956,7 @@ int main() {
             DrawTrees(trees, palmTree, palm2, shadowQuad); 
             DrawBushes(bushes, shadowQuad);
         }
-
+        DrawDungeonDoorways(doorWay); //draw after vegetation
 
         drawRaptors(camera); //sort and draw raptors
         drawSkeletons(camera);
@@ -969,7 +992,8 @@ int main() {
             DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
             DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
             DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 250, 30, 20, WHITE);
-            player.inventory.DrawInventoryUIWithIcons(healthPotTexture, 64, GetScreenHeight() - 100,  64);
+            player.inventory.DrawInventoryUIWithIcons(itemTextures, slotOrder, 20, GetScreenHeight() - 100, 64);
+
             player.inventory.DrawInventoryUI();
             
         }

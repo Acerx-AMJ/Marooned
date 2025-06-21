@@ -35,6 +35,8 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     meleeWeapon.model = swordModel;
     meleeWeapon.scale = {2, 2, 2};
 
+    player.inventory.SetupItemTextures();
+
     if (first){
         first = false; // player first starting position uses first as well, it's set to false here
         player.inventory.AddItem("HealthPotion");

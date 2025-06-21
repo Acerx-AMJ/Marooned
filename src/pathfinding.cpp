@@ -214,8 +214,9 @@ bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int m
         Color c = GetImageColor(dungeonMap, tileX, tileY);
 
         if (c.r < 50 && c.g < 50 && c.b < 50) return true; // wall
-        if (c.r == 128 && c.g == 0 && c.b == 128 && !IsDoorOpenAt(tileX, tileY))
-            return true; // closed door
+        if (c.r == 128 && c.g == 0 && c.b == 128 && !IsDoorOpenAt(tileX, tileY)) return true; // closed door
+        if (c.r == 0 && c.g == 255 && c.b == 255 && !IsDoorOpenAt(tileX, tileY)) return true; //locked door, 
+        //skeletons can see through exit and entrance doors but it don't matter because how they are placed. 
 
         x += stepX;
         y += stepY;
