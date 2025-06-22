@@ -19,7 +19,7 @@ public:
     Collectable(CollectableType type, Vector3 position);
 
     void Update(float deltaTime);
-    void Draw(Texture2D icon, const Camera& camera) const;
+    void Draw(Texture2D icon, const Camera& camera, float scale) const;
     bool CheckPickup(const Vector3& playerPos, float pickupRadius) const;
 };
 

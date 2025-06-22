@@ -58,7 +58,7 @@ void debugControls(){
         RemoveAllVegetation();
     }
     if (IsKeyPressed(KEY_O)){
-        //regenerateRaptors(5, player.position, 6000);
+        //open all doors //what if a door is locked and open?
         for (DoorwayInstance& d : doorways){
             d.isOpen = true;
         }
@@ -69,6 +69,7 @@ void debugControls(){
     }
 
     if (IsKeyPressed(KEY_P)) {
+        //close all doors
         for (DoorwayInstance& d : doorways){
             d.isOpen = false;
         }

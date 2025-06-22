@@ -127,35 +127,26 @@ void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, f
 
 
 void HandleCameraPlayerToggle(Camera& camera, Player& player, bool& controlPlayer) {
+    static Vector3 savedForward;
 
     if (IsKeyPressed(KEY_TAB)) {
         controlPlayer = !controlPlayer;
 
         if (controlPlayer) {
-            // Entering player mode — copy camera orientation to player
-            Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
-            float yaw = atan2f(camForward.x, camForward.z) * RAD2DEG;
-            float pitch = -asinf(camForward.y) * RAD2DEG;
+            savedForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+            float yaw = atan2f(savedForward.x, savedForward.z) * RAD2DEG;
+            float pitch = -asinf(savedForward.y) * RAD2DEG;
 
             player.position = camera.position;
             player.velocity = { 0 };
             player.rotation.y = yaw;
             player.rotation.x = Clamp(pitch, -89.0f, 89.0f);
         } else {
-            // Exiting player mode — copy player orientation back to camera
-            float yawRad = DEG2RAD * player.rotation.y;
-            float pitchRad = DEG2RAD * player.rotation.x;
-
-            Vector3 forward = {
-                cosf(pitchRad) * sinf(yawRad),
-                sinf(pitchRad),
-                cosf(pitchRad) * cosf(yawRad)
-            };
-
-            camera.position = Vector3Add(player.position, (Vector3){ 0, 1.5f, 0 });
-            camera.target = Vector3Add(camera.position, forward);
+            camera.position = Vector3Add(player.position, { 0, 1.5f, 0 });
+            camera.target = Vector3Add(camera.position, savedForward);
         }
     }
+
 }
 
 
@@ -224,13 +215,13 @@ bool CheckCollisionPointBox(Vector3 point, BoundingBox box) {
 
 void UpdateRaptors(float deltaTime){
     for (Character& raptor : raptors) {
-        raptor.Update(deltaTime, player,  heightmap, terrainScale, raptorPtrs);
+        raptor.Update(deltaTime, player,  heightmap, terrainScale);
     }
 }
 
 void UpdateSkeletons(float deltaTime){
     for (Character& skeleton : skeletons) {
-        skeleton.Update(deltaTime, player, heightmap, terrainScale, skeletonPtrs);
+        skeleton.Update(deltaTime, player, heightmap, terrainScale);
     }
 }
 
@@ -381,8 +372,8 @@ void DrawHealthBar(){
     healthPercent = Clamp(healthPercent, 0.0f, 1.0f); // safety first
     int barWidth = 300;
     int barHeight = 30;
-    int barX = GetScreenWidth()/2 - barWidth/2;
-    int barY = 20;
+    int barX = GetScreenWidth()/3 - barWidth/2;
+    int barY = GetScreenHeight() -80;
 
     Rectangle healthBarFull = { (float)barX, (float)barY, (float)barWidth, (float)barHeight };
 
@@ -393,7 +384,7 @@ void DrawHealthBar(){
         (float)barHeight 
     };
 
-    // Background frame (gray or black)
+    // Background frame 
     DrawRectangleLines(barX - 1, barY - 1, barWidth + 2, barHeight + 2, WHITE);
 
     // Tint white to red based on health
@@ -416,8 +407,8 @@ void DrawStaminaBar(){
 
     int staminaBarWidth = 300;
     int staminaBarHeight = 10;
-    int staminaBarX = GetScreenWidth()/2 - staminaBarWidth/2;
-    int staminaBarY = 60;  // health bar was probably at y = 20
+    int staminaBarX = GetScreenWidth()/3 - staminaBarWidth/2;
+    int staminaBarY = GetScreenHeight() - 40;  
 
     Rectangle staminaBarBack = { (float)staminaBarX, (float)staminaBarY, (float)staminaBarWidth, (float)staminaBarHeight };
     Rectangle staminaBarCurrent = {
@@ -517,21 +508,23 @@ void UpdateCollectables(Camera& camera, float deltaTime) {
 
         // Draw correct icon
         if (collectables[i].type == CollectableType::HealthPotion) {
-            collectables[i].Draw(healthPotTexture, camera);
+            collectables[i].Draw(healthPotTexture, camera, 40.0f);
         }
         else if (collectables[i].type == CollectableType::Key) {
-            collectables[i].Draw(keyTexture, camera);
+            collectables[i].Draw(keyTexture, camera, 80.0f);//double the scale for keys
         }
 
         // Pickup logic
         if (collectables[i].CheckPickup(player.position, 100.0f)) {
-            SoundManager::GetInstance().Play("clink");
+            
 
             if (collectables[i].type == CollectableType::HealthPotion) {
                 player.inventory.AddItem("HealthPotion");
+                SoundManager::GetInstance().Play("clink");
             }
             else if (collectables[i].type == CollectableType::Key) {
                 player.inventory.AddItem("GoldKey");
+                SoundManager::GetInstance().Play("key");
             }
 
             collectables.erase(collectables.begin() + i);
@@ -545,12 +538,12 @@ void UpdateCollectables(Camera& camera, float deltaTime) {
 void InitLevel(const LevelData& level, Camera camera) {
     ClearLevel();
     ClearDungeon();
+    dungeonEntrances.clear();
 
     levelIndex = level.levelIndex; //update current level index to new level. 
 
-    // Generate the terrain mesh and model from the heightmap
-    if (!isDungeon){
-
+    if (!isDungeon){ // Generate the terrain mesh and model from the heightmap
+       
         // Load and format the heightmap image
         heightmap = LoadImage(level.heightmapPath.c_str());
         ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
@@ -815,6 +808,9 @@ void HandleMeleeHitboxCollision() {
 
         if (CheckCollisionBoxes(raptor.GetBoundingBox(), player.meleeHitbox) && raptor.hitTimer <= 0) {
             raptor.TakeDamage(50);
+            if (raptor.currentHealth <= 0){
+                swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordBloody;
+            }
             SoundManager::GetInstance().Play("swordHit");
         }
     }
@@ -837,8 +833,10 @@ int main() {
     SetMusicVolume(dungeonAir, 1.0f);
     controlPlayer = true; //start as player
 
-    
-    // Camera
+    if (fireSheet.id == 0) {
+        TraceLog(LOG_ERROR, "🔥 fireSheet failed to load!");
+    }
+    // Camera //we pass camera around like crazy maybe make a global camera. 
     Camera3D camera = { 0 };
     camera.position = startPosition;
     camera.target = (Vector3){ 0.0f, 0.0f, 1.0f };
@@ -941,12 +939,13 @@ int main() {
         DrawDungeonFloor(floorTile);
         DrawDungeonWalls(wall);
         DrawDungeonBarrels(barrelModel);
-        DrawDungeonPillars(pillarModel);
-        
-        
+
+        DrawDungeonDoorways(doorWay); 
         DrawDungeonCeiling(floorTile);
+
+        //draw things with transparecy last.
         UpdateCollectables(camera, deltaTime); //Update and draw
-        
+        DrawDungeonPillars(deltaTime, camera);
        
         if (!isDungeon) {
             DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
@@ -956,7 +955,7 @@ int main() {
             DrawTrees(trees, palmTree, palm2, shadowQuad); 
             DrawBushes(bushes, shadowQuad);
         }
-        DrawDungeonDoorways(doorWay); //draw after vegetation
+        
 
         drawRaptors(camera); //sort and draw raptors
         drawSkeletons(camera);
@@ -992,7 +991,7 @@ int main() {
             DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
             DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
             DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 250, 30, 20, WHITE);
-            player.inventory.DrawInventoryUIWithIcons(itemTextures, slotOrder, 20, GetScreenHeight() - 100, 64);
+            player.inventory.DrawInventoryUIWithIcons(itemTextures, slotOrder, 20, GetScreenHeight() - 80, 64);
 
             player.inventory.DrawInventoryUI();
             

@@ -6,10 +6,10 @@
 
 RenderTexture2D sceneTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, 
-doorTexture, healthPotTexture, keyTexture;
+doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, 
-bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel;
+bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel;
 Image heightmap;
 Mesh terrainMesh;
 Sound musket;
@@ -34,6 +34,11 @@ void LoadAllResources() {
     doorTexture = LoadTexture("assets/sprites/door.png");
     healthPotTexture = LoadTexture("assets/sprites/Healthpot.png");
     keyTexture = LoadTexture("assets/sprites/key.png");
+    swordBloody = LoadTexture("assets/textures/swordBloody.png");
+    swordClean = LoadTexture("assets/textures/swordClean.png");
+    fireSheet = LoadTexture("assets/sprites/fireSheet.png");
+    
+
     // Models
     palmTree = LoadModel("assets/models/bigPalmTree.glb");
     palm2 = LoadModel("assets/models/smallPalmTree.glb");
@@ -47,6 +52,7 @@ void LoadAllResources() {
     barrelModel = LoadModel("assets/models/barrel.glb");
     pillarModel = LoadModel("assets/models/pillar.glb");
     swordModel = LoadModel("assets/models/sword.glb");
+    lampModel = LoadModel("assets/models/lamp.glb");
 
 
     terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
@@ -111,6 +117,7 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("clink", "assets/sounds/clink.ogg");
     SoundManager::GetInstance().LoadSound("lockedDoor", "assets/sounds/lockedDoor.ogg");
     SoundManager::GetInstance().LoadSound("unlock", "assets/sounds/unlock.ogg");
+    SoundManager::GetInstance().LoadSound("key", "assets/sounds/KeyGet.ogg");
 
 
 

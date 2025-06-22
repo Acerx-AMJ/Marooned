@@ -37,6 +37,13 @@ void InitPlayer(Player& player, Vector3 startPosition) {
 
     player.inventory.SetupItemTextures();
 
+    swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordBloody;
+
+    for (int i = 0; i < swordModel.materialCount; i++) {
+        Texture2D tex = swordModel.materials[i].maps[MATERIAL_MAP_DIFFUSE].texture;
+        TraceLog(LOG_INFO, "Material %d Texture ID: %d", i, tex.id);
+    }
+
     if (first){
         first = false; // player first starting position uses first as well, it's set to false here
         player.inventory.AddItem("HealthPotion");
@@ -96,7 +103,7 @@ void HandleKeyboardInput(float deltaTime) {
         // if (IsKeyPressed(KEY_Q) && player.switchState == WeaponSwitchState::Idle) {
         //     player.BeginWeaponSwitch(activeWeapon == WeaponType::Blunderbuss ? WeaponType::Sword : WeaponType::Blunderbuss);
         // }
-
+        swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean; //wipe the blood off the blade. 
         
         if (activeWeapon == WeaponType::Blunderbuss)
             activeWeapon = WeaponType::Sword;

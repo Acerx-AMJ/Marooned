@@ -18,7 +18,8 @@ std::vector<Door> doors;
 std::vector<PillarInstance> pillars;
 std::vector<WallRun> wallRunColliders;
 std::vector<LightSource> dungeonLights; //static lights. 
-std::vector<LightSource> bulletLights; //lights attached to bullets for testing. 
+std::vector<LightSource> bulletLights; //lights attached to bullets for testing.
+std::vector<Fire> fires;
 
 Image dungeonImg; //save the dungeon info globaly
 Color* dungeonPixels = nullptr;
@@ -29,6 +30,33 @@ int dungeonHeight = 0;
 const Color COLOR_BLACK  = { 0, 0, 0, 255 }; //walls
 const Color COLOR_BLUE   = { 0, 0, 255, 255 }; //barrels
 const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
+
+//⬛ Black = Wall
+
+//⬜ White = Floor (the whole dungeon is filled with floor not just white pixels)
+
+//🟩 Green = Player Start
+
+//🔵 Blue = Barrel
+
+//🟥 Red = Skeleton
+
+//🟨 Yellow = Light
+
+//🟪 Purple = Doorway (128, 0, 128)
+
+//  Teal = Dungeon Exit (0, 128, 128)
+
+//🟧 Orange = Next Level (255, 128, 0)
+
+//  Aqua = locked door (0, 255, 255)
+
+//💗  Pink = health pot (255, 105, 180)
+
+//⭐  Gold = key (255, 200, 0)
+
+
+    
 
 BoundingBox MakeWallBoundingBox(const Vector3& start, const Vector3& end, float thickness, float height) {
     Vector3 min = Vector3Min(start, end);
@@ -54,7 +82,7 @@ BoundingBox MakeWallBoundingBox(const Vector3& start, const Vector3& end, float 
 
 void LoadDungeonLayout(const std::string& imagePath) {
     if (dungeonPixels) {
-        UnloadImageColors(dungeonPixels);
+        UnloadImageColors(dungeonPixels); //erase the previous pixels 
     }
 
     dungeonImg = LoadImage(imagePath.c_str());
@@ -62,22 +90,7 @@ void LoadDungeonLayout(const std::string& imagePath) {
     dungeonWidth = dungeonImg.width;
     dungeonHeight = dungeonImg.height;
 
-    //⬛ Black = Wall
 
-    //⬜ White = Floor
-    
-    //🟩 Green = Player Start
-
-    //🔵 Blue = Barrel
-
-    //🟥 Red = Skeleton
-
-    //🟨 Yellow = Light
-
-    //🟪 Purple = Doorway
-
-    //🔹 Teal = Dungeon Exit
-    
 }
 
 Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, float baseY) {
@@ -85,7 +98,7 @@ Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, flo
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             Color current = pixels[y * width + x];
-            if (current.r == 0 && current.g == 255 && current.b == 0) {
+            if (current.r == 0 && current.g == 255 && current.b == 0) { //pure green
                 return GetDungeonWorldPos(x, y, tileSize, baseY);
             }
         }
@@ -247,14 +260,13 @@ void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex) {
             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
             DoorwayInstance archway = { pos, rotationY, false, false, WHITE, x, y };
 
-            if (isExit) {
+            if (isExit) { //teal
                 archway.linkedLevelIndex = previousLevelIndex; //go back outside. 
-            }else if (nextLevel){
+            }else if (nextLevel){ //orange
                 archway.linkedLevelIndex = levels[currentLevelIndex].nextLevel; //door to next level
-            }else if (lockedDoor){
-                std::cout << "locking door\n";
+            }else if (lockedDoor){ //Aqua
                 archway.isLocked = true; //locked door
-            } else {
+            } else { //purple
                 archway.linkedLevelIndex = -1; //regular door
             }
         
@@ -370,7 +382,7 @@ void GenerateKeys(float tileSize, float baseY) {
 }
 
 
-void GenerateRaptorsFromImage(float tileSize, float baseY) {
+void GenerateRaptorsFromImage(float tileSize, float baseY) { //unused. no raptors allowed in dungeons, red means skeleton
     raptors.clear(); // Clear existing raptors
     raptorPtrs.clear();
     for (int y = 0; y < dungeonHeight; y++) {
@@ -407,7 +419,7 @@ void GenerateSkeletonsFromImage(float tileSize, float baseY) {
 
                 Character skeleton(
                     spawnPos,
-                    &skeletonSheet, // use your actual texture
+                    &skeletonSheet, 
                     200, 200,         // frame width, height
                     1,                // max frames
                     0.5f, 0.5f,       // scale, speed
@@ -415,13 +427,13 @@ void GenerateSkeletonsFromImage(float tileSize, float baseY) {
                     CharacterType::Skeleton
                 );
                 skeleton.maxHealth = 200;
-                skeleton.currentHealth = 200; //at least 2 shots. 
+                skeleton.currentHealth = 200; //at least 2 shots. 4 sword swings 
                 skeletons.push_back(skeleton);
             }
         }
     }
 
-    for (Character& s : skeletons) {
+    for (Character& s : skeletons) { //Ptrs for sorting
         skeletonPtrs.push_back(&s);
     }
 }
@@ -443,6 +455,11 @@ void GenerateLightSources(float tileSize, float baseY) {
 
                 dungeonLights.push_back({ pos, 1.0f }); // 1.0f = full intensity
                 pillars.push_back({pPos, 1.0f}); //put a pillar wherever there is a lightsource, for now
+
+                Fire newFire;
+                newFire.fireFrame = GetRandomValue(0, 59); // Optional: desync the flames
+                fires.push_back(newFire);
+                
             }
         }
     }
@@ -568,11 +585,47 @@ void DrawDungeonCeiling(Model ceilingTileModel) {
 }
 
 
-void DrawDungeonPillars(Model pillarModel){
-    for (const PillarInstance& pillar : pillars){
-        DrawModelEx(pillarModel, pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{1, 1, 1}, WHITE);
+// void DrawDungeonPillars(){
+//     for (const PillarInstance& pillar : pillars){
+//         DrawModelEx(lampModel, pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{1, 1, 1}, WHITE);
+//     }
+// }
+
+void DrawDungeonPillars(float deltaTime, Camera3D camera) {
+    for (size_t i = 0; i < pillars.size(); ++i) {
+        const PillarInstance& pillar = pillars[i];
+        Fire& fire = fires[i];
+
+        // Draw the pedestal model
+        DrawModelEx(lampModel, pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{1, 1, 1}, WHITE);
+
+        // Animate fire
+        fire.fireAnimTimer += deltaTime;
+        if (fire.fireAnimTimer >= fire.fireFrameDuration) {
+            fire.fireAnimTimer -= fire.fireFrameDuration;
+            fire.fireFrame = (fire.fireFrame + 1) % 60;
+        }
+
+        // Calculate frame position in sheet
+        int frameX = fire.fireFrame % 10;
+        int frameY = fire.fireFrame / 10;
+        Rectangle sourceRect = {
+            (float)(frameX * 64),
+            (float)(frameY * 64),
+            64.0f,
+            64.0f
+        };
+
+        // Position the fire above the bowl
+        Vector3 firePos = pillar.position;
+        firePos.y += 130; // Adjust this to match your pedestal height
+
+        // Draw animated fire as billboard
+        Vector2 fireSize = {100, 100};
+        DrawBillboardRec(camera, fireSheet, sourceRect, firePos, fireSize, WHITE);
     }
 }
+
 
 void UpdateDoorwayTints(Vector3 playerPos) {
     const float playerLightRange = 1000.0f;
@@ -806,6 +859,7 @@ void ClearDungeon() {
     skeletonPtrs.clear();
     doors.clear();
     doorways.clear();
+    collectables.clear();
 
 }
 

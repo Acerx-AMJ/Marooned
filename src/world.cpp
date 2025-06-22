@@ -34,12 +34,12 @@ float fadeSpeed = 1.0f; // units per second
 bool fadeIn = true; 
 float tileSize = 200;
 const float TREE_HEIGHT_RATIO = 0.80f;
-const float BUSH_HEIGHT_RATIO = 0.80f;
+const float BUSH_HEIGHT_RATIO = 0.90f;
 int selectedOption = 0;
 float floorHeight = 80;
 float wallHeight = 270;
-std::vector<Character> raptors;
 
+std::vector<Character> raptors;
 std::vector<Character*> raptorPtrs;
 
 std::vector<Character> skeletons;

@@ -10,6 +10,11 @@ enum class DoorType {
     GoToNext
 };
 
+struct Fire {
+    int fireFrame = 0;
+    float fireAnimTimer = 0.0f;
+    const float fireFrameDuration = 1.0f / 16.0f; // 10 fps
+};
 
 
 struct DoorwayInstance {
@@ -86,7 +91,9 @@ struct CeilingTile {
     Color tint;
 };
 
+
 extern std::vector<PillarInstance> pillars;
+extern std::vector<Fire> fires;
 extern std::vector<LightSource> dungeonLights;
 extern std::vector<LightSource> bulletLights;
 extern std::vector<WallRun> wallRunColliders;
@@ -113,7 +120,7 @@ void DrawDungeonFloor(Model floorTileModel);
 void DrawDungeonWalls(Model wallSegmentModel);
 void DrawDungeonFloor(Model floorModel);
 void DrawDungeonBarrels(Model barrelModel);
-void DrawDungeonPillars(Model pillarModel);
+void DrawDungeonPillars(float deltaTime, Camera3D camera);
 void DrawDungeonDoorways(Model archwayModel);
 void DrawFlatDoor(const Door& door);
 //void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY);

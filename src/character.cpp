@@ -44,7 +44,7 @@ void Character::setPath(){
 
 }
 
-void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors) {
+void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale) {
     
     float distance = Vector3Distance(position, player.position);
     playerVisible = false;
@@ -116,7 +116,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
                 Vector3 horizontalMove = { dir.x, 0, dir.z };
 
                 // Add repulsion from other raptors
-                Vector3 repulsion = ComputeRepulsionForce(allRaptors, 50, 500);
+                Vector3 repulsion = ComputeRepulsionForce(raptorPtrs, 50, 500);
                 Vector3 moveWithRepulsion = Vector3Add(horizontalMove, Vector3Scale(repulsion, deltaTime));
 
                 Vector3 proposedPosition = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f)); //one step ahead. 
@@ -202,7 +202,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
             Vector3 horizontalMove = { veerDir.x, 0, veerDir.z };
 
             // Add repulsion
-            Vector3 repulsion = ComputeRepulsionForce(allRaptors, 50, 500);
+            Vector3 repulsion = ComputeRepulsionForce(raptorPtrs, 50, 500);
             Vector3 moveWithRepulsion = Vector3Add(horizontalMove, Vector3Scale(repulsion, deltaTime));
 
             Vector3 proposedPos = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f));
@@ -261,18 +261,18 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
 
 
 
-void Character::UpdateAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors) {
+void Character::UpdateAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale) {
     switch (type) {
         case CharacterType::Raptor:
-            UpdateRaptorAI(deltaTime, player, heightmap, terrainScale, allRaptors);
+            UpdateRaptorAI(deltaTime, player, heightmap, terrainScale);
             break;
         case CharacterType::Skeleton:
-            UpdateSkeletonAI(deltaTime, player, allRaptors);
+            UpdateSkeletonAI(deltaTime, player);
             break;
     }
 }
 
-void Character::UpdateSkeletonAI(float deltaTime, Player& player, const std::vector<Character*>& allRaptors) {
+void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
     static float repathTimer = 0.0f;
     repathTimer += deltaTime;
@@ -719,11 +719,11 @@ void Character::eraseCharacters(){
 }
 
 
-void Character::Update(float deltaTime, Player& player,const  Image& heightmap, Vector3 terrainScale, const std::vector<Character*>& allRaptors ) {
+void Character::Update(float deltaTime, Player& player,const  Image& heightmap, Vector3 terrainScale ) {
     animationTimer += deltaTime;
     stateTimer += deltaTime;
     previousPosition = position;
-    float groundY = GetHeightAtWorldPosition(position, heightmap, terrainScale);
+    float groundY = GetHeightAtWorldPosition(position, heightmap, terrainScale); //get groundY from heightmap
     if (isDungeon) groundY = dungeonPlayerHeight;
 
     if (hitTimer > 0){
@@ -732,8 +732,8 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
         hitTimer = 0;
     }
     // Gravity
-    float gravity = 800.0f;
-    if (isDungeon) gravity = 0.0f;
+    float gravity = 980.0f; //we need gravity for outside maps so characters stick to heightmap.
+    if (isDungeon) gravity = 0.0f; //no gravity in dungeons. floor is fixed. 
     static float verticalVelocity = 0.0f;
 
     float spriteHeight = frameHeight * scale;
@@ -747,7 +747,7 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
     }
     
    
-    UpdateAI(deltaTime,player, heightmap, terrainScale, allRaptors);
+    UpdateAI(deltaTime,player, heightmap, terrainScale);
 
 
 

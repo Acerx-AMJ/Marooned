@@ -21,8 +21,8 @@ void Collectable::Update(float deltaTime) {
     collider.max.y = position.y + 60.0f;
 }
 
-void Collectable::Draw(Texture2D icon, const Camera& camera) const {
-    DrawBillboard(camera, icon, position, 40.0f, WHITE);
+void Collectable::Draw(Texture2D icon, const Camera& camera, float scale) const {
+    DrawBillboard(camera, icon, position, scale, WHITE);
    
 }
 
