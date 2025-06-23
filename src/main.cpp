@@ -18,6 +18,7 @@
 #include "pathfinding.h"
 #include "collectable.h"
 #include "inventory.h"
+#include "collisions.h"
 
 
 
@@ -215,13 +216,6 @@ Color ColorLerp(Color a, Color b, float t) {
 
 
 
-bool CheckCollisionPointBox(Vector3 point, BoundingBox box) {
-    return (
-        point.x >= box.min.x && point.x <= box.max.x &&
-        point.y >= box.min.y && point.y <= box.max.y &&
-        point.z >= box.min.z && point.z <= box.max.z
-    );
-}
 
 
 
@@ -255,101 +249,8 @@ void UpdateBullets(Camera& camera, float deltaTime) {
 
 }
 
-void CheckBulletHits(Camera& camera) {
-    for (Bullet& b : activeBullets) {
-        if (!b.IsAlive()) continue;
-
-        if (CheckCollisionPointBox(b.GetPosition(), player.GetBoundingBox())){ //enemy bullet hits player
-            if (b.IsEnemy()){
-                b.kill(camera);
-                player.TakeDamage(25);
-            }
-        }
-
-        for (Character* r : raptorPtrs) {
-            if (r->isDead) continue;
-
-            BoundingBox box = r->GetBoundingBox();
-            if (CheckCollisionPointBox(b.GetPosition(), box)) {
-                r->TakeDamage(25);
-                b.kill(camera);
-                //blood decals on raptor hit
-                Vector3 camDir = Vector3Normalize(Vector3Subtract(b.GetPosition(), camera.position));
-                Vector3 offsetPos = Vector3Add(b.GetPosition(), Vector3Scale(camDir, -150.0f));
-  
-
-                decals.emplace_back(offsetPos, DecalType::Smoke, &bloodSheet, 7, 1.2f, 0.2f, 60.0f);
-                break;
-            }
-        }
-
-        for (Character* s : skeletonPtrs) {
-            if (s->isDead) continue;
-
-            BoundingBox box = s->GetBoundingBox();
-            if (CheckCollisionPointBox(b.GetPosition(), box)) {
-                s->TakeDamage(25);
-                b.kill(camera);
-
-                break;
-            }
-        }
-
-        for (Character* p : piratePtrs) {
-            if (p->isDead) continue;
-
-            BoundingBox box = p->GetBoundingBox();
-            if (CheckCollisionPointBox(b.GetPosition(), box)) {
-                if (!b.IsEnemy()){ //dont get hit by your own bullets. 
-                    p->TakeDamage(25);
-                    b.kill(camera);
-                    break;
-                }       
-            }
-        }
-    }
-    //bullet collision with dungeon walls. 
-    for (WallRun& w : wallRunColliders){
-        for (Bullet& b: activeBullets){
-            if (CheckCollisionPointBox(b.GetPosition(), w.bounds)){
-                b.kill(camera);
-            }
-        }
-    }
-
-    for (Door& d : doors){
-        for (Bullet& b: activeBullets){
-            if (CheckCollisionPointBox(b.GetPosition(), d.collider) && !d.isOpen){
-                b.kill(camera);
-            }
-        }
-    }
-
-    for (BarrelInstance& barrel : barrelInstances){
-        for (Bullet& b : activeBullets){
-            if (CheckCollisionPointBox(b.GetPosition(), barrel.bounds) && !barrel.destroyed){
-                barrel.destroyed = true;
-                b.kill(camera);
-                SoundManager::GetInstance().Play("barrelBreak");
-                if (barrel.containsPotion) {
-                    Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
-                    collectables.push_back(Collectable(CollectableType::HealthPotion, pos));
-                }
-                break;
-            }
-        }
-    }
-
-    for (PillarInstance& pillar : pillars){
-        for (Bullet& b : activeBullets){
-            if (CheckCollisionPointBox(b.GetPosition(), pillar.bounds)){
-                b.kill(camera); //kill spawns smoke decals
-            }
-        }
-    }
 
 
-}
 
 void DrawBullets(Camera& camera) {
     for (const Bullet& b : activeBullets) {
@@ -361,71 +262,17 @@ void DrawBullets(Camera& camera) {
         }
 }
 
-bool CheckBulletHitsTree(const TreeInstance& tree, const Vector3& bulletPos) {
-    Vector3 treeBase = {
-        tree.position.x + tree.xOffset,
-        tree.position.y + tree.yOffset,
-        tree.position.z + tree.zOffset
-    };
 
-    // Check vertical overlap
-    if (bulletPos.y < treeBase.y || bulletPos.y > treeBase.y + tree.colliderHeight) {
-        return false;
-    }
 
-    // Check horizontal distance from tree trunk center
-    float dx = bulletPos.x - treeBase.x;
-    float dz = bulletPos.z - treeBase.z;
-    float horizontalDistSq = dx * dx + dz * dz;
+void populateEnemyPtrs(){
+    enemyPtrs.clear();
 
-    return horizontalDistSq <= tree.colliderRadius * tree.colliderRadius;
+    for (Character& s : skeletons) enemyPtrs.push_back(&s);
+    for (Character& p : pirates) enemyPtrs.push_back(&p);
+    for (Character& r : raptors) enemyPtrs.push_back(&r);
 }
 
 
-
-void TreeCollision(Camera& camera){
-
-
-    for (TreeInstance& tree : trees) {
-        if (Vector3DistanceSqr(tree.position, player.position) < 500 * 500) { //check a smaller area not the whole map. 
-            if (CheckTreeCollision(tree, player.position)) {
-                ResolveTreeCollision(tree, player.position);
-            }
-        }
-    }
-
-    for (Character* raptor : raptorPtrs){
-        for (TreeInstance& tree : trees) {
-            if (Vector3DistanceSqr(tree.position, raptor->position) < 500*500) {
-                if (CheckTreeCollision(tree, raptor->position)) {
-                    ResolveTreeCollision(tree, raptor->position);
-                    
-                }
-            }
-        }
-
-    }
-
-
-
-    for (TreeInstance& tree : trees) {
-        for (Bullet& bullet : activeBullets){
-            if (!bullet.IsAlive()) continue; // <-- early out for dead bullets
-            if (Vector3DistanceSqr(tree.position, bullet.GetPosition()) < 500 * 500) { 
-                if (CheckBulletHitsTree(tree, bullet.GetPosition())) {
-                   
-                   
-                    //Tree hit by bullet. Play a sound. 
-                    bullet.kill(camera);
-                    break;
-                }
-
-            }
- 
-        }
-    }
-
-}
 
 
 
@@ -617,7 +464,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         terrainModel.materials[0].shader = terrainShader;
         generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
         dungeonEntrances = level.entrances; //get level entrances from level data
-        
+        populateEnemyPtrs();
         GenerateEntrances();
         generateVegetation(); 
     }
@@ -640,6 +487,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateDoorways(tileSize, floorHeight, levelIndex); //calls generate doors from archways
         GenerateSkeletonsFromImage(tileSize, 165);
         GeneratePiratesFromImage(tileSize, 165);
+        populateEnemyPtrs();
       
     }
 
@@ -662,25 +510,7 @@ void InitLevel(const LevelData& level, Camera camera) {
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. 
 }
 
-void WallCollision(){
-    for (const WallRun& run : wallRunColliders) { //player wall collision
-        if (CheckCollisionBoxSphere(run.bounds, player.position, player.radius)) {
-            ResolveBoxSphereCollision(run.bounds, player.position, player.radius);
-        }
 
-        for (Character& r : raptors){
-            if (CheckCollisionBoxSphere(run.bounds, r.position, 100)){
-                ResolveBoxSphereCollision(run.bounds, r.position, 100);
-            }
-        }
-
-        for (Character& skeleton : skeletons){
-            if (CheckCollisionBoxSphere(run.bounds, skeleton.position, 100)){
-                ResolveBoxSphereCollision(run.bounds, skeleton.position, 100);
-            }
-        }
-    }
-}
 
 void UpdateDecals(float deltaTime){
     for (auto& d : decals) {
@@ -763,148 +593,11 @@ void HandleDungeon(float deltaTime) {
     UpdateDoorTints(player.position);
 }
 
-void DoorCollision(){
-    for (Door& door : doors){
-        if (!door.isOpen && CheckCollisionBoxSphere(door.collider, player.position, player.radius)){
-           ResolveBoxSphereCollision(door.collider, player.position, player.radius);
-
-        }
-
-        for (Character& skeleton : skeletons){
-            if (!door.isOpen && CheckCollisionBoxSphere(door.collider, skeleton.position, skeleton.radius)){
-                ResolveBoxSphereCollision(door.collider, skeleton.position, skeleton.radius);
-
-            }
-            
-        }
-
-        for (Character& r : raptors){ //raptors collide with dungeon entrance
-            if (!door.isOpen && CheckCollisionBoxSphere(door.collider, r.position, r.radius)){
-                ResolveBoxSphereCollision(door.collider, r.position, r.radius);
-
-            }
-            
-        }
-    }
-}
-
-void HandleDoorInteraction(Camera& camera) {
-    static bool isWaiting = false;
-    static float openTimer = 0.0f;
-    static int pendingDoorIndex = -1;
-
-    float deltaTime = GetFrameTime();
-
-    if (!isWaiting && IsKeyPressed(KEY_E)) {
-        for (size_t i = 0; i < doors.size(); ++i) {
-            float distanceTo = Vector3Distance(doors[i].position, player.position);
-            if (distanceTo < 300) {
-
-                // If locked and no key, deny access
-                if (doors[i].isLocked) {
-                    if (player.inventory.HasItem("GoldKey")) {
-                        player.inventory.UseItem("GoldKey");
-                        doors[i].isLocked = false;
-                        SoundManager::GetInstance().Play("unlock");
-                    } else {
-                        SoundManager::GetInstance().Play("lockedDoor");
-                        return; // skip the rest of this function
-                    }
-                }
-
-                // Start door interaction (fade, open, etc)
-                isWaiting = true;
-                openTimer = 0.0f;
-                pendingDoorIndex = i;
-
-                std::string s = doors[i].isOpen ? "doorClose" : "doorOpen";
-                SoundManager::GetInstance().Play(s);
-
-                DoorType type = doors[i].doorType;
-                if (type == DoorType::GoToNext || type == DoorType::ExitToPrevious) {
-                    previousLevelIndex = levelIndex;
-                    isWaiting = false;
-                    openTimer = 0.0f;
-                    fadeIn = true;
-                    isFading = true;
-                    pendingLevelIndex = doors[i].linkedLevelIndex;
-                }
-
-                break; // done with this door
-            }
-        }
-    }
 
 
-    if (isWaiting) {
-        openTimer += deltaTime;
-
-        if (openTimer >= 0.5f && pendingDoorIndex != -1) { 
-            doors[pendingDoorIndex].isOpen = !doors[pendingDoorIndex].isOpen;//open if closed, close if open. both the archway and the door. 
-            doorways[pendingDoorIndex].isOpen = doors[pendingDoorIndex].isOpen;
-
-            // Reset
-            isWaiting = false;
-            openTimer = 0.0f;
-            pendingDoorIndex = -1;
-        }
-    }
-}
 
 
-void HandleMeleeHitboxCollision() {
 
-    for (BarrelInstance& barrel : barrelInstances){
-        if (barrel.destroyed) continue;
-        if (CheckCollisionBoxes(barrel.bounds, player.meleeHitbox)){
-            barrel.destroyed = true;
-            SoundManager::GetInstance().Play("barrelBreak");
-            if (barrel.containsPotion) {
-                Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
-                collectables.push_back(Collectable(CollectableType::HealthPotion, pos));
-            }
-
-        }
-    }
-
-    for (Character& pirate : pirates) {
-        if (pirate.isDead) continue;
-        if (pirate.hitTimer > 0.0f) continue; // ← SKIP if recently hit
-
-        if (CheckCollisionBoxes(pirate.GetBoundingBox(), player.meleeHitbox) && pirate.hitTimer <= 0) {
-            pirate.TakeDamage(50);
-            if (pirate.currentHealth <= 0){
-                swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordBloody;
-            }
-            SoundManager::GetInstance().Play("swordHit");
-            
-        }
-    }
-
-    for (Character& skeleton : skeletons) {
-        if (skeleton.isDead) continue;
-        if (skeleton.hitTimer > 0.0f) continue; // ← SKIP if recently hit
-
-        if (CheckCollisionBoxes(skeleton.GetBoundingBox(), player.meleeHitbox) && skeleton.hitTimer <= 0) {
-            skeleton.TakeDamage(50);
-            SoundManager::GetInstance().Play("swordHit");
-            
-        }
-    }
-
-    for (Character& raptor : raptors){
-        if (raptor.isDead) continue;
-        if (raptor.hitTimer >0.0f) continue;
-
-        if (CheckCollisionBoxes(raptor.GetBoundingBox(), player.meleeHitbox) && raptor.hitTimer <= 0) {
-            raptor.TakeDamage(50);
-            if (raptor.currentHealth <= 0){
-                swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordBloody;
-            }
-            SoundManager::GetInstance().Play("swordHit");
-        }
-    }
-}
 
 
 
@@ -983,7 +676,7 @@ int main() {
         UpdateFade(deltaTime, camera);
         UpdateBullets(camera, deltaTime);
         UpdateDecals(deltaTime);
-        CheckBulletHits(camera);
+        CheckBulletHits(camera); //bullet collision
         UpdateDecals(deltaTime);
         UpdateBoat(player_boat, deltaTime);
         
@@ -994,8 +687,8 @@ int main() {
         DoorCollision();
         barrelCollision();
         pillarCollision();
-        HandleDoorInteraction(camera);
         HandleMeleeHitboxCollision();
+        HandleDoorInteraction(camera);
 
         if (!isDungeon) UpdateMusicStream(jungleAmbience);
         if (isDungeon){

@@ -55,6 +55,8 @@ std::vector<DungeonEntrance> dungeonEntrances;
 
 std::vector<Collectable> collectables;
 
+std::vector<Character*> enemyPtrs;
+
 void removeAllRaptors(){
     raptorPtrs.clear();
     raptors.clear();
@@ -67,6 +69,11 @@ void removeAllCharacters(){
 
     skeletons.clear();
     skeletonPtrs.clear();
+
+    pirates.clear();
+    piratePtrs.clear();
+
+    enemyPtrs.clear();
 
 }
 

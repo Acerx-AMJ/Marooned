@@ -1044,6 +1044,12 @@ void Character::eraseCharacters(){
         return skeleton->isDead && skeleton->deathTimer > 5.0f;
     }),
     skeletonPtrs.end());
+
+    piratePtrs.erase(std::remove_if(piratePtrs.begin(), piratePtrs.end(),
+    [](Character* pirate) {
+        return pirate->isDead && pirate->deathTimer > 5.0f;
+    }),
+    piratePtrs.end());
 }
 
 

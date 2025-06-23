@@ -62,6 +62,8 @@ extern std::vector<Bullet> activeBullets;
 extern std::vector<Decal> decals;
 extern std::vector<Collectable> collectables;
 
+extern std::vector<Character*> enemyPtrs;
+
 float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
 void removeAllRaptors();
 void removeAllCharacters();

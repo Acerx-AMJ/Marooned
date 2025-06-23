@@ -121,8 +121,6 @@ void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex);
 void GenerateDoorsFromArchways();
 void GeneratePotions(float tileSize, float baseY);
 void GenerateKeys(float tileSize, float baseY);
-void barrelCollision();
-void pillarCollision();
 void DrawDungeonFloor(Model floorTileModel);
 void DrawDungeonWalls(Model wallSegmentModel);
 void DrawDungeonFloor(Model floorModel);
@@ -132,7 +130,7 @@ void DrawDungeonDoorways(Model archwayModel);
 void DrawFlatDoor(const Door& door);
 //void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY);
 void DrawDungeonCeiling(Model ceilingTileModel);
-void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float radius);
+
 void UpdateWallTints(Vector3 playerPos);
 void UpdateFloorTints(Vector3 playerPos);
 void UpdateCeilingTints(Vector3 playerPos);

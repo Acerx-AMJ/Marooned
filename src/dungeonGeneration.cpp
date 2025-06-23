@@ -499,22 +499,7 @@ void GeneratePiratesFromImage(float tileSize, float baseY) {
 }
 
 
-void pillarCollision() {
-    for (const PillarInstance& pillar : pillars){
-        ResolveBoxSphereCollision(pillar.bounds, player.position, player.radius);
-    }
-}
 
-void barrelCollision(){
-    
-    for (const BarrelInstance& barrel : barrelInstances) {
-        if (!barrel.destroyed){ //walk through broke barrels
-            ResolveBoxSphereCollision(barrel.bounds, player.position, player.radius);
-        }
-        
-    }
-
-}
 
 
 
@@ -885,28 +870,7 @@ bool IsDungeonFloorTile(int x, int y) {
     return c.r > 200 && c.g > 200 && c.b > 200;  // close to white
 }
 
-void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float radius) {
-    // Clamp player position to the inside of the box
-    float closestX = Clamp(position.x, box.min.x, box.max.x);
-    float closestY = Clamp(position.y, box.min.y, box.max.y);
-    float closestZ = Clamp(position.z, box.min.z, box.max.z);
 
-    Vector3 closestPoint = { closestX, closestY, closestZ };
-    Vector3 pushDir = Vector3Subtract(position, closestPoint);
-    float distance = Vector3Length(pushDir);
-
-    if (distance == 0.0f) {
-        // If player is exactly on the box surface, push arbitrarily
-        pushDir = {1.0f, 0.0f, 0.0f};
-        distance = 0.001f;
-    }
-
-    float overlap = radius - distance;
-    if (overlap > 0.0f) {
-        Vector3 correction = Vector3Scale(Vector3Normalize(pushDir), overlap);
-        position = Vector3Add(position, correction);
-    }
-}
 
 BoundingBox MakeDoorBoundingBox(Vector3 position, float rotationY, float halfWidth, float height, float depth) {
     //covers the full archway

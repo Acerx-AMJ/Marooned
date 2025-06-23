@@ -1,0 +1,335 @@
+#include "raylib.h"
+#include "bullet.h"
+#include "world.h"
+#include "dungeonGeneration.h"
+#include "sound_manager.h"
+#include "resources.h"
+#include "raymath.h"
+
+
+bool CheckCollisionPointBox(Vector3 point, BoundingBox box) {
+    return (
+        point.x >= box.min.x && point.x <= box.max.x &&
+        point.y >= box.min.y && point.y <= box.max.y &&
+        point.z >= box.min.z && point.z <= box.max.z
+    );
+}
+
+void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float radius) {
+    // Clamp player position to the inside of the box
+    float closestX = Clamp(position.x, box.min.x, box.max.x);
+    float closestY = Clamp(position.y, box.min.y, box.max.y);
+    float closestZ = Clamp(position.z, box.min.z, box.max.z);
+
+    Vector3 closestPoint = { closestX, closestY, closestZ };
+    Vector3 pushDir = Vector3Subtract(position, closestPoint);
+    float distance = Vector3Length(pushDir);
+
+    if (distance == 0.0f) {
+        // If player is exactly on the box surface, push arbitrarily
+        pushDir = {1.0f, 0.0f, 0.0f};
+        distance = 0.001f;
+    }
+
+    float overlap = radius - distance;
+    if (overlap > 0.0f) {
+        Vector3 correction = Vector3Scale(Vector3Normalize(pushDir), overlap);
+        position = Vector3Add(position, correction);
+    }
+}
+
+
+void DoorCollision(){
+    for (Door& door : doors){
+        if (!door.isOpen && CheckCollisionBoxSphere(door.collider, player.position, player.radius)){
+           ResolveBoxSphereCollision(door.collider, player.position, player.radius);
+
+        }
+
+        for (Character* enemy : enemyPtrs){
+            if (!door.isOpen && CheckCollisionBoxSphere(door.collider, enemy->position, enemy->radius)){
+                ResolveBoxSphereCollision(door.collider, enemy->position, enemy->radius);
+            }
+        }
+
+
+    }
+}
+
+void WallCollision(){
+    for (const WallRun& run : wallRunColliders) { //player wall collision
+
+        for (Character* enemy : enemyPtrs){ //all enemies
+            if (CheckCollisionBoxSphere(run.bounds, enemy->position, enemy->radius)){
+                ResolveBoxSphereCollision(run.bounds, enemy->position, enemy->radius);
+            }
+        }
+
+        if (CheckCollisionBoxSphere(run.bounds, player.position, player.radius)) { //player wall collision
+            ResolveBoxSphereCollision(run.bounds, player.position, player.radius);
+        }
+
+
+    }
+}
+
+void pillarCollision() {
+    for (const PillarInstance& pillar : pillars){
+        ResolveBoxSphereCollision(pillar.bounds, player.position, player.radius);
+        for (Character* enemy : enemyPtrs){
+            ResolveBoxSphereCollision(pillar.bounds, enemy->position, enemy->radius);
+        }
+    }
+
+
+}
+
+void barrelCollision(){
+    
+    for (const BarrelInstance& barrel : barrelInstances) {
+        if (!barrel.destroyed){ //walk through broke barrels
+            ResolveBoxSphereCollision(barrel.bounds, player.position, player.radius);
+            for (Character* enemy : enemyPtrs){
+                ResolveBoxSphereCollision(barrel.bounds, enemy->position, enemy->radius);
+            }
+        }
+        
+    }
+
+}
+
+
+void HandleMeleeHitboxCollision() {
+
+    for (BarrelInstance& barrel : barrelInstances){
+        if (barrel.destroyed) continue;
+        if (CheckCollisionBoxes(barrel.bounds, player.meleeHitbox)){
+            barrel.destroyed = true;
+            SoundManager::GetInstance().Play("barrelBreak");
+            if (barrel.containsPotion) {
+                Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
+                collectables.push_back(Collectable(CollectableType::HealthPotion, pos));
+            }
+
+        }
+    }
+
+    for (Character* enemy : enemyPtrs){ //iterate all enemyPtrs
+        if (enemy->isDead) continue;
+        if (enemy->hitTimer > 0.0f) continue;
+
+        if (CheckCollisionBoxes(enemy->GetBoundingBox(), player.meleeHitbox) && enemy->hitTimer <= 0){
+            enemy->TakeDamage(50);
+            if (enemy->type == CharacterType::Raptor || enemy->type == CharacterType::Pirate){ //if raptor or pirate, bloody sword on death. 
+                if (enemy->currentHealth <= 0) swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordBloody;
+            }
+            SoundManager::GetInstance().Play("swordHit");
+        }
+    }
+
+
+}
+
+void CheckBulletHits(Camera& camera) {
+    for (Bullet& b : activeBullets) {
+        if (!b.IsAlive()) continue;
+
+        Vector3 pos = b.GetPosition();
+
+        // 🔹 1. Hit player
+        if (CheckCollisionPointBox(pos, player.GetBoundingBox())) {
+            if (b.IsEnemy()) {
+                b.kill(camera);
+                player.TakeDamage(25);
+                continue;
+            }
+        }
+
+        // 🔹 2. Hit enemy
+        for (Character* enemy : enemyPtrs) {
+            if (enemy->isDead) continue;
+
+            if (CheckCollisionPointBox(pos, enemy->GetBoundingBox())) {
+                if (!b.IsEnemy()) {
+                    enemy->TakeDamage(25);
+                    b.kill(camera);
+                    break;
+                } else if (enemy->type == CharacterType::Skeleton) { // friendly fire
+                    enemy->TakeDamage(25);
+                    b.kill(camera);
+                    break;
+                }
+            }
+        }
+
+        // 🔹 3. Hit walls
+        for (WallRun& w : wallRunColliders) {
+            if (CheckCollisionPointBox(pos, w.bounds)) {
+                b.kill(camera);
+                break;
+            }
+        }
+
+        // 🔹 4. Hit doors
+        for (Door& d : doors) {
+            if (!d.isOpen && CheckCollisionPointBox(pos, d.collider)) {
+                b.kill(camera);
+                break;
+            }
+        }
+
+        // 🔹 5. Hit barrels
+        for (BarrelInstance& barrel : barrelInstances) {
+            if (!barrel.destroyed && CheckCollisionPointBox(pos, barrel.bounds)) {
+                barrel.destroyed = true;
+                b.kill(camera);
+                SoundManager::GetInstance().Play("barrelBreak");
+
+                if (barrel.containsPotion) {
+                    Vector3 dropPos = { barrel.position.x, barrel.position.y + 100, barrel.position.z };
+                    collectables.push_back(Collectable(CollectableType::HealthPotion, dropPos));
+                }
+                break;
+            }
+        }
+
+        // 🔹 6. Hit pillars
+        for (PillarInstance& pillar : pillars) {
+            if (CheckCollisionPointBox(pos, pillar.bounds)) {
+                b.kill(camera);
+                break;
+            }
+        }
+    }
+}
+
+bool CheckBulletHitsTree(const TreeInstance& tree, const Vector3& bulletPos) {
+    Vector3 treeBase = {
+        tree.position.x + tree.xOffset,
+        tree.position.y + tree.yOffset,
+        tree.position.z + tree.zOffset
+    };
+
+    // Check vertical overlap
+    if (bulletPos.y < treeBase.y || bulletPos.y > treeBase.y + tree.colliderHeight) {
+        return false;
+    }
+
+    // Check horizontal distance from tree trunk center
+    float dx = bulletPos.x - treeBase.x;
+    float dz = bulletPos.z - treeBase.z;
+    float horizontalDistSq = dx * dx + dz * dz;
+
+    return horizontalDistSq <= tree.colliderRadius * tree.colliderRadius;
+}
+
+
+void TreeCollision(Camera& camera){
+
+    for (TreeInstance& tree : trees) {
+        if (Vector3DistanceSqr(tree.position, player.position) < 500 * 500) { //check a smaller area not the whole map. 
+            if (CheckTreeCollision(tree, player.position)) {
+                ResolveTreeCollision(tree, player.position);
+            }
+        }
+    }
+
+    for (Character* raptor : raptorPtrs){
+        for (TreeInstance& tree : trees) {
+            if (Vector3DistanceSqr(tree.position, raptor->position) < 500*500) {
+                if (CheckTreeCollision(tree, raptor->position)) {
+                    ResolveTreeCollision(tree, raptor->position);
+                    
+                }
+            }
+        }
+
+    }
+
+
+
+    for (TreeInstance& tree : trees) {
+        for (Bullet& bullet : activeBullets){
+            if (!bullet.IsAlive()) continue; // <-- early out for dead bullets
+            if (Vector3DistanceSqr(tree.position, bullet.GetPosition()) < 500 * 500) { 
+                if (CheckBulletHitsTree(tree, bullet.GetPosition())) {
+                   
+                   
+                    //Tree hit by bullet. Play a sound. 
+                    bullet.kill(camera);
+                    break;
+                }
+
+            }
+ 
+        }
+    }
+
+}
+
+
+
+void HandleDoorInteraction(Camera& camera) {
+    static bool isWaiting = false;
+    static float openTimer = 0.0f;
+    static int pendingDoorIndex = -1;
+
+    float deltaTime = GetFrameTime();
+
+    if (!isWaiting && IsKeyPressed(KEY_E)) {
+        for (size_t i = 0; i < doors.size(); ++i) {
+            float distanceTo = Vector3Distance(doors[i].position, player.position);
+            if (distanceTo < 300) {
+
+                // If locked and no key, deny access
+                if (doors[i].isLocked) {
+                    if (player.inventory.HasItem("GoldKey")) {
+                        player.inventory.UseItem("GoldKey");
+                        doors[i].isLocked = false;
+                        SoundManager::GetInstance().Play("unlock");
+                    } else {
+                        SoundManager::GetInstance().Play("lockedDoor");
+                        return; // skip the rest of this function
+                    }
+                }
+
+                // Start door interaction (fade, open, etc)
+                isWaiting = true;
+                openTimer = 0.0f;
+                pendingDoorIndex = i;
+
+                std::string s = doors[i].isOpen ? "doorClose" : "doorOpen";
+                SoundManager::GetInstance().Play(s);
+
+                DoorType type = doors[i].doorType;
+                if (type == DoorType::GoToNext || type == DoorType::ExitToPrevious) {
+                    previousLevelIndex = levelIndex;
+                    isWaiting = false;
+                    openTimer = 0.0f;
+                    fadeIn = true;
+                    isFading = true;
+                    pendingLevelIndex = doors[i].linkedLevelIndex;
+                }
+
+                break; // done with this door
+            }
+        }
+    }
+
+
+    if (isWaiting) {
+        openTimer += deltaTime;
+
+        if (openTimer >= 0.5f && pendingDoorIndex != -1) { 
+            doors[pendingDoorIndex].isOpen = !doors[pendingDoorIndex].isOpen;//open if closed, close if open. both the archway and the door. 
+            doorways[pendingDoorIndex].isOpen = doors[pendingDoorIndex].isOpen;
+
+            // Reset
+            isWaiting = false;
+            openTimer = 0.0f;
+            pendingDoorIndex = -1;
+        }
+    }
+}
+
+
