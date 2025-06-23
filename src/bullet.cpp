@@ -10,12 +10,13 @@
 //     : position(startPos), direction(Vector3Normalize(dir)), speed(spd), alive(true), age(0.0f), maxLifetime(lifetime) {}
 
 // New constructor matching velocity-based logic
-Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime)
+Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en)
     : position(startPos),
       velocity(vel),
       alive(true),
       age(0.0f),
-      maxLifetime(lifetime)
+      maxLifetime(lifetime),
+      enemy(en)
 {}
 
 
@@ -23,7 +24,7 @@ void Bullet::Update(Camera& camera, float deltaTime) {
     if (!alive) return;
 
     // Apply gravity
-    velocity.y -= gravity * deltaTime;
+    if (!IsEnemy()) velocity.y -= gravity * deltaTime; //enemy bullets don't have gravity
 
     // Move
     position = Vector3Add(position, Vector3Scale(velocity, deltaTime));
@@ -53,6 +54,10 @@ bool Bullet::IsAlive() const {
     return alive;
 }
 
+bool Bullet::IsEnemy() const {
+    return enemy;
+}
+
 void Bullet::kill(Camera& camera){
     //smoke decals and bullet death
     Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
@@ -70,7 +75,7 @@ Vector3 Bullet::GetPosition() const {
 
 
 
-void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int pelletCount, float speed, float lifetime) {
+void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int pelletCount, float speed, float lifetime, bool enemy) {
     for (int i = 0; i < pelletCount; ++i) {
         // Convert spread from degrees to radians
         float spreadRad = spreadDegrees * DEG2RAD;
@@ -88,8 +93,15 @@ void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int p
         dir = Vector3Normalize(dir);
 
         Vector3 velocity = Vector3Scale(dir, speed);
-        activeBullets.emplace_back(origin, velocity, lifetime);
+        activeBullets.emplace_back(origin, velocity, lifetime, enemy);
 
     }
 }
 
+void FireBullet(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy) {
+    Vector3 direction = Vector3Subtract(target, origin);
+    direction = Vector3Normalize(direction);
+    Vector3 velocity = Vector3Scale(direction, speed);
+
+    activeBullets.emplace_back(origin, velocity, lifetime, enemy);
+}

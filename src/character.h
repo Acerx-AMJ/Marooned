@@ -7,7 +7,8 @@
 enum class CharacterType {
     Raptor,
     Skeleton,
-    // Add more later: Zombie, Goblin, etc.
+    Pirate,
+   
 };
 
 
@@ -34,10 +35,14 @@ public:
     int currentFrame, maxFrames;
     int rowIndex;
     float animationTimer, animationSpeed;
+    int animationStart = 0;
+    int animationFrameCount = 1;
     float scale;
     float rotationY = 0.0f; // in degrees
     float stateTimer = 0.0f;
     bool isDead = false;
+    bool hasFired = false;
+    bool animationLoop;
     float deathTimer = 0.0f;
     float attackCooldown = 0.0f;
     float chaseDuration = 0.0f;
@@ -73,14 +78,14 @@ public:
     void UpdateRaptorAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale);
     void UpdateAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale); 
     void UpdateSkeletonAI(float deltaTime, Player& player);
+    void UpdatePirateAI(float deltaTime, Player& player);
     void AlertNearbySkeletons(Vector3 alertOrigin, float radius);
-    //void UpdateCollider(); // declare update method
 
     void eraseCharacters();
     void setPath();
     void TakeDamage(int amount);
     void Draw(Camera3D camera);
-    void SetAnimation(int row, int frames, float speed);
+    void SetAnimation(int row, int frames, float speed, bool loop=true);
     void playRaptorSounds();
 };
 

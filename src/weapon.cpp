@@ -43,7 +43,8 @@ void Weapon::Fire(Camera& camera) {
             2.0f,    // spreadDegrees (tweak this!)
             6,        // pelletCount
             2000.0f,   // bulletSpeed
-            2.0f      // lifetimeSeconds
+            2.0f,      // lifetimeSeconds
+            false
         );
     }
 

@@ -13,7 +13,7 @@ enum class DoorType {
 struct Fire {
     int fireFrame = 0;
     float fireAnimTimer = 0.0f;
-    const float fireFrameDuration = 1.0f / 16.0f; // 10 fps
+    const float fireFrameDuration = 1.0f / 16.0f; // 16 slightly slower fps to match the bootleg aesthetic
 };
 
 
@@ -49,11 +49,15 @@ struct Door {
 struct BarrelInstance {
     Vector3 position;
     Color tint = WHITE;
+    BoundingBox bounds;
+    bool destroyed = false;
+    bool containsPotion = false;
 };
 
 struct PillarInstance {
     Vector3 position;
     float rotation;
+    BoundingBox bounds;
 };
 
 struct LightSource {
@@ -100,6 +104,7 @@ extern std::vector<WallRun> wallRunColliders;
 extern std::vector<BarrelInstance> barrelInstances;
 extern std::vector<DoorwayInstance> doorways;
 extern std::vector<Door> doors;
+
 extern Image dungeonImg;
 extern Color* dungeonPixels;
 extern int dungeonWidth;
@@ -116,10 +121,12 @@ void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex);
 void GenerateDoorsFromArchways();
 void GeneratePotions(float tileSize, float baseY);
 void GenerateKeys(float tileSize, float baseY);
+void barrelCollision();
+void pillarCollision();
 void DrawDungeonFloor(Model floorTileModel);
 void DrawDungeonWalls(Model wallSegmentModel);
 void DrawDungeonFloor(Model floorModel);
-void DrawDungeonBarrels(Model barrelModel);
+void DrawDungeonBarrels();
 void DrawDungeonPillars(float deltaTime, Camera3D camera);
 void DrawDungeonDoorways(Model archwayModel);
 void DrawFlatDoor(const Door& door);
@@ -141,4 +148,5 @@ Vector3 GetDungeonWorldPos(int x, int y, float tileSize, float baseY);
 Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, float baseY);
 void GenerateRaptorsFromImage(float tileSize, float baseY);
 void GenerateSkeletonsFromImage(float tileSize, float baseY);
+void GeneratePiratesFromImage(float tileSize, float baseY);
 void ClearDungeon();

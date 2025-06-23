@@ -248,7 +248,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
         }
         case CharacterState::Death:
             if (!isDead) {
-                SetAnimation(4, 5, 0.15f);  
+                SetAnimation(4, 5, 0.15f, false);  
                 isDead = true;
                 deathTimer = 0.0f;         // Start counting
             }
@@ -269,7 +269,330 @@ void Character::UpdateAI(float deltaTime, Player& player,const Image& heightmap,
         case CharacterType::Skeleton:
             UpdateSkeletonAI(deltaTime, player);
             break;
+
+        case CharacterType::Pirate:
+            UpdatePirateAI(deltaTime, player);
+            break;
     }
+}
+
+void Character::UpdatePirateAI(float deltaTime, Player& player) {
+    static float repathTimer = 0.0f;
+    repathTimer += deltaTime;
+
+    const float repathInterval = 0.4f; // seconds between path recalculations
+
+    float distance = Vector3Distance(position, player.position);
+    playerVisible = false;
+    Vector2 start = WorldToImageCoords(position);
+    Vector2 goal = WorldToImageCoords(player.position);
+
+    bool canSee = LineOfSightRaycast(start, goal, dungeonImg, 100); //Vision test
+
+    if (canSee) {
+        playerVisible = true;
+        timeSinceLastSeen = 0.0f;
+    } else {
+        timeSinceLastSeen += deltaTime;
+        if (timeSinceLastSeen > forgetTime) {
+            playerVisible = false;
+        }
+    }
+ 
+    switch (state){
+        case CharacterState::Idle:
+            stateTimer += deltaTime;
+            if (distance < 4000.0f && stateTimer > 1.0f && (playerVisible || heardPlayer)) {
+                AlertNearbySkeletons(position, 3000.0f);
+                state = CharacterState::Chase;
+                SetAnimation(1, 4, 0.2f);
+                stateTimer = 0.0f;
+
+                Vector2 start = WorldToImageCoords(position);
+                Vector2 goal = WorldToImageCoords(player.position);
+
+                std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
+                currentWorldPath.clear();
+                for (const Vector2& tile : tilePath) {
+                    Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
+                    worldPos.y += 80.0f;
+                    currentWorldPath.push_back(worldPos);
+                }
+            }
+
+            else if (stateTimer > 10.0f) { // ← idle too long? pick a new destination
+                                // Try random reachable tile in dungeon
+                Vector2 start = WorldToImageCoords(position);
+                Vector2 randomTile;
+                bool found = false;
+
+                //patrol radius = 3 normaly
+
+                for (int i = 0; i < 100; ++i) { //try 100 times to find a open spot. 
+                    int rx = (int)start.x + GetRandomValue(-patrolRadius, patrolRadius);
+                    int ry = (int)start.y + GetRandomValue(-patrolRadius, patrolRadius);
+
+                    if (rx < 0 || ry < 0 || rx >= dungeonWidth || ry >= dungeonHeight)
+                        continue;
+
+                    if (!walkable[rx][ry]) continue;
+                    if (IsTileOccupied(rx, ry, skeletonPtrs, this)) continue;
+
+                    Vector2 target = {(float)rx, (float)ry};
+
+                    if (!LineOfSightRaycast(start, target, dungeonImg, 100)) // 100 max ray steps
+                        continue;
+
+                    randomTile = target;
+                    found = true;
+                    break;
+                }
+
+
+                if (found) {
+                    std::vector<Vector2> tilePath = FindPath(start, randomTile);
+                    
+                    currentWorldPath.clear();
+
+                    for (const Vector2& tile : tilePath) {
+                        Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
+                        worldPos.y += 80.0f;
+                        currentWorldPath.push_back(worldPos);
+                    }
+
+                    if (!currentWorldPath.empty()) {
+                        state = CharacterState::Patrol;
+                        SetAnimation(1, 4, 0.2f); // reuse walk anim
+                    }
+                }
+    }
+            break;
+
+        
+        case CharacterState::Chase:
+            stateTimer += deltaTime;
+            pathCooldownTimer -= deltaTime;
+
+            if (distance < 800.0f) {
+                state = CharacterState::Attack;
+                SetAnimation(2, 4, 0.2f);
+                stateTimer = 0.0f;
+                attackCooldown = 0.0f;
+
+            } else if (distance > 4000.0f) {
+                state = CharacterState::Idle;
+                SetAnimation(0, 1, 1.0f);
+                stateTimer = 0.0f;
+
+            } else {
+                Vector2 currentPlayerTile = WorldToImageCoords(player.position);
+                if (((int)currentPlayerTile.x != (int)lastPlayerTile.x || (int)currentPlayerTile.y != (int)lastPlayerTile.y)
+                    && pathCooldownTimer <= 0.0f) {
+
+                    lastPlayerTile = currentPlayerTile; //save the last player tile so we aren't recalculating if the player hasn't moved. 
+                    pathCooldownTimer = 0.4f;
+
+                    Vector2 start = WorldToImageCoords(position);
+                    //std::vector<Vector2> tilePath = FindPath(start, currentPlayerTile);
+                    std::vector<Vector2> tilePath = SmoothPath(FindPath(start, currentPlayerTile), dungeonImg);
+                    currentWorldPath.clear();
+                    for (const Vector2& tile : tilePath) {
+                        Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
+                        worldPos.y += 80.0f; //move up to match character height.
+                        currentWorldPath.push_back(worldPos);
+                    }
+                }
+
+                // 🧭 Move along current path
+                if (!currentWorldPath.empty() && state != CharacterState::Stagger) {
+                    Vector3 targetPos = currentWorldPath[0];
+                    Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
+                    Vector3 move = Vector3Scale(dir, skeleSpeed * deltaTime);
+                    position = Vector3Add(position, move);
+                    rotationY = RAD2DEG * atan2f(dir.x, dir.z);
+                    position.y = targetPos.y;
+
+                    if (Vector3Distance(position, targetPos) < 100.0f) { 
+                        currentWorldPath.erase(currentWorldPath.begin()); //erase point on arrival, your always chasing the first point on the list. 
+                    }
+                }
+            }
+            break;
+
+
+
+        case CharacterState::Attack: { //Pirate attack
+            //dont stand on the same tile as another skele when attacking
+
+            if (stateTimer == 0.0f) {
+                SetAnimation(2, 4, 0.2f); // only when entering attack
+                std::cout << "setting attack animation\n";
+            }
+            stateTimer += deltaTime;
+            Vector2 myTile = WorldToImageCoords(position);
+            Character* occupier = GetTileOccupier(myTile.x, myTile.y, skeletonPtrs, this);
+
+            if (occupier && occupier != this) {
+                // Only the one with the "greater" pointer backs off
+                if (this > occupier) {
+                    state = CharacterState::Reposition;
+                    SetAnimation(1, 4, 0.2f);
+                    stateTimer = 0.0f;
+                    break;
+                } else {
+                    // Let the other one reposition — wait
+                    break;
+                }
+            }
+
+            if (distance > 800.0f) { 
+                state = CharacterState::Chase;
+                SetAnimation(1, 4, 0.2f);
+                stateTimer = 0.0;
+            }
+
+
+
+            attackCooldown -= deltaTime;
+            if (canSee && attackCooldown <= 0.0f && currentFrame == 1 && !hasFired) {
+                FireBullet(position, player.position, 1200.0f, 3.0f, true);
+                hasFired = true;
+                attackCooldown = 1.5f;
+                //SoundManager::GetInstance().Play("shotgun");
+                SoundManager::GetInstance().PlaySoundAtPosition("shotgun", position, player.position, 1.0, 900);
+            }
+
+            // Wait for next attack opportunity
+            if (hasFired && stateTimer > 1.5f) {
+                hasFired = false;
+                attackCooldown = 1.5f;
+                currentFrame = 0;
+                stateTimer = 0;
+                //state = CharacterState::Idle;
+
+               
+            }
+
+
+            break;
+        }
+        case CharacterState::Reposition: {
+            stateTimer += deltaTime;
+
+            Vector2 playerTile = WorldToImageCoords(player.position);
+            Vector3 target = position; // fallback
+
+            // Get player's facing direction
+            float playerYaw = player.rotation.y;
+            Vector3 forward = Vector3Normalize({ sinf(DEG2RAD * playerYaw), 0.0f, cosf(DEG2RAD * playerYaw) });
+            Vector3 right = Vector3Normalize(Vector3CrossProduct({ 0, 1, 0 }, forward));
+
+            // Generate 4 offsets relative to player facing
+            Vector2 relativeOffsets[4];
+            relativeOffsets[0] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(forward, tileSize))) - playerTile;         // front
+            relativeOffsets[1] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(right, tileSize))) - playerTile;           // right
+            relativeOffsets[2] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(Vector3Negate(right), tileSize))) - playerTile; // left
+            relativeOffsets[3] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(Vector3Negate(forward), tileSize))) - playerTile; // back
+
+            bool foundSpot = false;
+
+            for (int i = 0; i < 4; ++i) {
+                int tx = (int)playerTile.x + (int)roundf(relativeOffsets[i].x);
+                int ty = (int)playerTile.y + (int)roundf(relativeOffsets[i].y);
+
+                if (tx < 0 || ty < 0 || tx >= dungeonWidth || ty >= dungeonHeight) continue;
+                if (!IsWalkable(tx, ty)) continue;
+                if (IsTileOccupied(tx, ty, skeletonPtrs, this)) continue;
+
+                target = GetDungeonWorldPos(tx, ty, tileSize, dungeonPlayerHeight);
+                target.y += 80.0f;
+                foundSpot = true;
+                break;
+            }
+
+            if (foundSpot) {
+                Vector3 dir = Vector3Normalize(Vector3Subtract(target, position));
+                Vector3 move = Vector3Scale(dir, skeleSpeed * deltaTime);
+                position = Vector3Add(position, move);
+
+                rotationY = RAD2DEG * atan2f(dir.x, dir.z);
+                position.y = target.y;
+
+                float dist = Vector3Distance(position, target);
+
+                if (dist < 350.0f && stateTimer > 1.0f) {
+                    state = CharacterState::Attack;
+                    SetAnimation(2, 5, 0.2f);
+                    stateTimer = 0.0f;
+                } else if (dist > 350.0f && stateTimer > 1.0f) {
+                    state = CharacterState::Chase;
+                    SetAnimation(1, 4, 0.2f);
+                    stateTimer = 0.0f;
+                }
+            }
+
+            break;
+        }
+
+
+
+        case CharacterState::Patrol: {
+            stateTimer += deltaTime;
+
+            if (distance < 4000.0f && (playerVisible || heardPlayer)){
+                state = CharacterState::Chase;
+                SetAnimation(1, 4, 0.2f);
+                AlertNearbySkeletons(position, 3000.0f);
+                stateTimer = 0.0f;
+            }
+
+            if (!currentWorldPath.empty()) {
+                Vector3 targetPos = currentWorldPath[0];
+                Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
+                Vector3 move = Vector3Scale(dir, 500 * deltaTime); // slower than chase
+                position = Vector3Add(position, move);
+                rotationY = RAD2DEG * atan2f(dir.x, dir.z);
+                position.y = targetPos.y;
+
+                if (Vector3Distance(position, targetPos) < 100.0f) {
+                    currentWorldPath.erase(currentWorldPath.begin());
+                }
+            }
+            else {
+                state = CharacterState::Idle;
+                SetAnimation(0, 1, 1.0f);
+                stateTimer = 0.0f;
+            }
+
+            break;
+        }
+
+
+        case CharacterState::Stagger: {
+            stateTimer += deltaTime;
+            //do nothing
+    
+            //currentWorldPath.clear(); //loose the path on stagger
+            if (stateTimer >= 1.0f) {
+                state = CharacterState::Chase;
+                SetAnimation(1, 4, 0.25f);
+                stateTimer = 0.0f;
+                //chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
+            }
+            break;
+        }
+
+        case CharacterState::Death:
+            if (!isDead) {
+                SetAnimation(4, 3, 0.5f, false);  
+                isDead = true;
+                deathTimer = 0.0f;         // Start counting
+            }
+
+            deathTimer += deltaTime;
+            break;
+        }
+
 }
 
 void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
@@ -584,7 +907,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
         case CharacterState::Death:
             if (!isDead) {
-                SetAnimation(4, 3, 0.5f);  
+                SetAnimation(4, 3, 0.5f, false);  
                 isDead = true;
                 deathTimer = 0.0f;         // Start counting
             }
@@ -640,8 +963,9 @@ void Character::TakeDamage(int amount) {
         currentHealth = 0;
         isDead = true;
         state = CharacterState::Death;
-        if (type == CharacterType::Raptor) SetAnimation(4, 5, 0.12f);
-        if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f); //less frames for skele death. 
+        if (type == CharacterType::Raptor) SetAnimation(4, 5, 0.12f, false);
+        if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f, false); //less frames for skele death.
+        if (type == CharacterType::Pirate) SetAnimation(4, 2, 1, false);
         deathTimer = 0.0f;
         SoundManager::GetInstance().Play("dinoDeath");
         if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play("bones");
@@ -654,9 +978,13 @@ void Character::TakeDamage(int amount) {
         currentFrame = 0;         // Always start at first frame
         stateTimer = 0.0f;
         AlertNearbySkeletons(position, 3000.0f);
-
-        SoundManager::GetInstance().Play("dinoHit");
-        //SoundManager::GetInstance().Play("bones2");
+        if (type == CharacterType::Pirate){
+            SoundManager::GetInstance().Play("phit1");
+        }else{
+            SoundManager::GetInstance().Play("dinoHit");
+        }
+        
+       
 
     }
 }
@@ -751,8 +1079,10 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
 
 
 
+    // Advance animation frame
     if (animationTimer >= animationSpeed) {
         animationTimer = 0;
+
 
         if (state == CharacterState::Death) {
             if (currentFrame < maxFrames - 1) {
@@ -763,6 +1093,9 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
             currentFrame = (currentFrame + 1) % maxFrames; //loop
         }
     }
+
+
+
 
     eraseCharacters(); //clean up dead rators and skeletons
 
@@ -793,10 +1126,11 @@ void Character::Draw(Camera3D camera) {
 }
 
 
-void Character::SetAnimation(int row, int frames, float speed) {
+void Character::SetAnimation(int row, int frames, float speed, bool loop) {
     rowIndex = row;
     maxFrames = frames;
     animationSpeed = speed;
     currentFrame = 0;
     animationTimer = 0;
+    animationLoop = loop;
 }

@@ -55,6 +55,8 @@ extern std::vector<Character> raptors;
 extern std::vector<Character*> raptorPtrs;
 extern std::vector<Character> skeletons;
 extern std::vector<Character*> skeletonPtrs;
+extern std::vector<Character> pirates;
+extern std::vector<Character*> piratePtrs;
 extern std::vector<DungeonEntrance> dungeonEntrances;
 extern std::vector<Bullet> activeBullets;
 extern std::vector<Decal> decals;

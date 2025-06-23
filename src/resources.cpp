@@ -6,10 +6,10 @@
 
 RenderTexture2D sceneTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, 
-doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet;
+doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, 
-bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel;
+bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel;
 Image heightmap;
 Mesh terrainMesh;
 Sound musket;
@@ -37,6 +37,7 @@ void LoadAllResources() {
     swordBloody = LoadTexture("assets/textures/swordBloody.png");
     swordClean = LoadTexture("assets/textures/swordClean.png");
     fireSheet = LoadTexture("assets/sprites/fireSheet.png");
+    pirateSheet = LoadTexture("assets/sprites/pirateSheet.png");
     
 
     // Models
@@ -53,6 +54,7 @@ void LoadAllResources() {
     pillarModel = LoadModel("assets/models/pillar.glb");
     swordModel = LoadModel("assets/models/sword.glb");
     lampModel = LoadModel("assets/models/lamp.glb");
+    brokeBarrel = LoadModel("assets/models/brokeBarrel.glb");
 
 
     terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
@@ -118,6 +120,7 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("lockedDoor", "assets/sounds/lockedDoor.ogg");
     SoundManager::GetInstance().LoadSound("unlock", "assets/sounds/unlock.ogg");
     SoundManager::GetInstance().LoadSound("key", "assets/sounds/KeyGet.ogg");
+    SoundManager::GetInstance().LoadSound("barrelBreak", "assets/sounds/barrelBreak.ogg");
 
 
 
@@ -146,7 +149,7 @@ void UpdateShaders(Camera& camera){
 
     //dungeonDarkness
     float dungeonDarkness = 0.05f;//darkened 5 percent. it darkens the gun model as well, so go easy. 
-    float dungeonContrast = 1.125f;
+    float dungeonContrast = 1.127f; //makes darks darker
 
     int isDungeonVal = isDungeon ? 1 : 0;
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
@@ -190,10 +193,6 @@ void UnloadAllResources() {
     UnloadModel(barrelModel);
     UnloadModel(pillarModel);
     UnloadModel(swordModel);
-    //Img
-    UnloadImage(heightmap);
-    //mesh
-    UnloadMesh(terrainMesh);
     
 
 }

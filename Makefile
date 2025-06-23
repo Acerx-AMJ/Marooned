@@ -4,7 +4,7 @@ INCLUDE = -IC:\raylib\raylib\src
 LIBS = -LC:\raylib\raylib\src -lraylib -lopengl32 -lgdi32 -lwinmm
 
 SRC =  $(wildcard src/*.cpp)
-OUT = game.exe
+OUT = Marooned.exe
 
 all:
 	$(CC) $(CFLAGS) $(INCLUDE) $(SRC) -o $(OUT) $(LIBS)

@@ -15,3 +15,7 @@ Sounds:
 	https://pixabay.com/sound-effects/dungeon-air-6983/
 
 	https://pixabay.com/sound-effects/nature-soundstropicaljunglebirds-108380/
+
+
+Animations:
+	https://opengameart.org/content/animated-fire

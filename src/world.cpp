@@ -45,6 +45,9 @@ std::vector<Character*> raptorPtrs;
 std::vector<Character> skeletons;
 std::vector<Character*> skeletonPtrs;
 
+std::vector<Character> pirates;
+std::vector<Character*> piratePtrs;
+
 std::vector<Bullet> activeBullets;
 std::vector<Decal> decals;
 

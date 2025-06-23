@@ -187,7 +187,19 @@ void drawSkeletons(Camera& camera){
         skeleton->Draw(camera);
     }
 
+}
 
+void drawPirates(Camera& camera){
+
+    std::sort(piratePtrs.begin(), piratePtrs.end(), [&](Character* a, Character* b) {
+        float distA = Vector3Distance(camera.position, a->position);
+        float distB = Vector3Distance(camera.position, b->position);
+        return distA > distB; // Farthest first
+    });
+
+    for (Character* pirate : piratePtrs){
+        pirate->Draw(camera);
+    }
 
 }
 
@@ -225,6 +237,12 @@ void UpdateSkeletons(float deltaTime){
     }
 }
 
+void UpdatePirates(float deltaTime){
+    for (Character& pirate : pirates){
+        pirate.Update(deltaTime, player, heightmap, terrainScale);
+    }
+}
+
 void UpdateBullets(Camera& camera, float deltaTime) {
     for (Bullet& b : activeBullets) {
         b.Update(camera, deltaTime);
@@ -240,6 +258,13 @@ void UpdateBullets(Camera& camera, float deltaTime) {
 void CheckBulletHits(Camera& camera) {
     for (Bullet& b : activeBullets) {
         if (!b.IsAlive()) continue;
+
+        if (CheckCollisionPointBox(b.GetPosition(), player.GetBoundingBox())){ //enemy bullet hits player
+            if (b.IsEnemy()){
+                b.kill(camera);
+                player.TakeDamage(25);
+            }
+        }
 
         for (Character* r : raptorPtrs) {
             if (r->isDead) continue;
@@ -269,6 +294,19 @@ void CheckBulletHits(Camera& camera) {
                 break;
             }
         }
+
+        for (Character* p : piratePtrs) {
+            if (p->isDead) continue;
+
+            BoundingBox box = p->GetBoundingBox();
+            if (CheckCollisionPointBox(b.GetPosition(), box)) {
+                if (!b.IsEnemy()){ //dont get hit by your own bullets. 
+                    p->TakeDamage(25);
+                    b.kill(camera);
+                    break;
+                }       
+            }
+        }
     }
     //bullet collision with dungeon walls. 
     for (WallRun& w : wallRunColliders){
@@ -286,6 +324,31 @@ void CheckBulletHits(Camera& camera) {
             }
         }
     }
+
+    for (BarrelInstance& barrel : barrelInstances){
+        for (Bullet& b : activeBullets){
+            if (CheckCollisionPointBox(b.GetPosition(), barrel.bounds) && !barrel.destroyed){
+                barrel.destroyed = true;
+                b.kill(camera);
+                SoundManager::GetInstance().Play("barrelBreak");
+                if (barrel.containsPotion) {
+                    Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
+                    collectables.push_back(Collectable(CollectableType::HealthPotion, pos));
+                }
+                break;
+            }
+        }
+    }
+
+    for (PillarInstance& pillar : pillars){
+        for (Bullet& b : activeBullets){
+            if (CheckCollisionPointBox(b.GetPosition(), pillar.bounds)){
+                b.kill(camera); //kill spawns smoke decals
+            }
+        }
+    }
+
+
 }
 
 void DrawBullets(Camera& camera) {
@@ -434,9 +497,10 @@ void ClearLevel() {
     isDungeon = false;
     ClearDungeon();
     RemoveAllVegetation();
-    removeAllRaptors();
-    UnloadImage(heightmap);
-    UnloadModel(terrainModel);
+    removeAllCharacters();
+    if (terrainMesh.vertexCount > 0) UnloadMesh(terrainMesh); //unload mesh when switching levels. 
+    if (heightmap.data != nullptr) UnloadImage(heightmap);
+
 }
 
 
@@ -471,34 +535,34 @@ void DrawMenu() {
 
 void GenerateEntrances(){
     for (const DungeonEntrance& e : dungeonEntrances) {
-            Door d;
-            d.position = e.position;
-            d.rotationY = 0.0f; 
-            d.doorTexture = &doorTexture;
-            d.isOpen = false;
-            d.isLocked = false;
-            d.scale = {300, 365, 1};
-            d.tint = WHITE;
-            d.linkedLevelIndex = e.linkedLevelIndex; //use entrance's linkedLevelIndex to determine which dungeon to enter from overworld
-            //allowing more than one enterance to dungeon per overworld
-            d.doorType = DoorType::GoToNext; 
+        Door d;
+        d.position = e.position;
+        d.rotationY = 0.0f; 
+        d.doorTexture = &doorTexture;
+        d.isOpen = false;
+        d.isLocked = false;
+        d.scale = {300, 365, 1};
+        d.tint = WHITE;
+        d.linkedLevelIndex = e.linkedLevelIndex; //use entrance's linkedLevelIndex to determine which dungeon to enter from overworld
+        //allowing more than one enterance to dungeon per overworld
+        d.doorType = DoorType::GoToNext; 
 
-            float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
-            float height = 365.0f;
-            float depth = 20.0f;        // Thickness into the doorway (forward axis)
+        float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
+        float height = 365.0f;
+        float depth = 20.0f;        // Thickness into the doorway (forward axis)
 
-            d.collider = MakeDoorBoundingBox(d.position, d.rotationY, halfWidth, height, depth); //the whole archway is covered by collider
+        d.collider = MakeDoorBoundingBox(d.position, d.rotationY, halfWidth, height, depth); //the whole archway is covered by collider
 
-            doors.push_back(d);
+        doors.push_back(d);
 
-            DoorwayInstance dw;
-            dw.position = e.position;
-            dw.rotationY = 90.0f * DEG2RAD; //rotate to match door 0 rotation, we could rotate door to match arch instead.
-            dw.isOpen = false;
-            dw.isLocked = false;
+        DoorwayInstance dw;
+        dw.position = e.position;
+        dw.rotationY = 90.0f * DEG2RAD; //rotate to match door 0 rotation, we could rotate door to match arch instead.
+        dw.isOpen = false;
+        dw.isLocked = false;
 
-            doorways.push_back(dw);
-        }
+        doorways.push_back(dw);
+    }
 
 }
 
@@ -516,8 +580,6 @@ void UpdateCollectables(Camera& camera, float deltaTime) {
 
         // Pickup logic
         if (collectables[i].CheckPickup(player.position, 100.0f)) {
-            
-
             if (collectables[i].type == CollectableType::HealthPotion) {
                 player.inventory.AddItem("HealthPotion");
                 SoundManager::GetInstance().Play("clink");
@@ -577,6 +639,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateLightSources(tileSize, floorHeight);
         GenerateDoorways(tileSize, floorHeight, levelIndex); //calls generate doors from archways
         GenerateSkeletonsFromImage(tileSize, 165);
+        GeneratePiratesFromImage(tileSize, 165);
       
     }
 
@@ -791,6 +854,33 @@ void HandleDoorInteraction(Camera& camera) {
 
 void HandleMeleeHitboxCollision() {
 
+    for (BarrelInstance& barrel : barrelInstances){
+        if (barrel.destroyed) continue;
+        if (CheckCollisionBoxes(barrel.bounds, player.meleeHitbox)){
+            barrel.destroyed = true;
+            SoundManager::GetInstance().Play("barrelBreak");
+            if (barrel.containsPotion) {
+                Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
+                collectables.push_back(Collectable(CollectableType::HealthPotion, pos));
+            }
+
+        }
+    }
+
+    for (Character& pirate : pirates) {
+        if (pirate.isDead) continue;
+        if (pirate.hitTimer > 0.0f) continue; // ← SKIP if recently hit
+
+        if (CheckCollisionBoxes(pirate.GetBoundingBox(), player.meleeHitbox) && pirate.hitTimer <= 0) {
+            pirate.TakeDamage(50);
+            if (pirate.currentHealth <= 0){
+                swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordBloody;
+            }
+            SoundManager::GetInstance().Play("swordHit");
+            
+        }
+    }
+
     for (Character& skeleton : skeletons) {
         if (skeleton.isDead) continue;
         if (skeleton.hitTimer > 0.0f) continue; // ← SKIP if recently hit
@@ -899,8 +989,11 @@ int main() {
         
         UpdateRaptors(deltaTime);
         UpdateSkeletons(deltaTime);
+        UpdatePirates(deltaTime);
         TreeCollision(camera); //player and raptor vs tree
         DoorCollision();
+        barrelCollision();
+        pillarCollision();
         HandleDoorInteraction(camera);
         HandleMeleeHitboxCollision();
 
@@ -938,7 +1031,7 @@ int main() {
 
         DrawDungeonFloor(floorTile);
         DrawDungeonWalls(wall);
-        DrawDungeonBarrels(barrelModel);
+        DrawDungeonBarrels();
 
         DrawDungeonDoorways(doorWay); 
         DrawDungeonCeiling(floorTile);
@@ -959,6 +1052,7 @@ int main() {
 
         drawRaptors(camera); //sort and draw raptors
         drawSkeletons(camera);
+        drawPirates(camera);
         DrawPlayer(player, camera);
         
 
@@ -1002,10 +1096,8 @@ int main() {
     }
 
     // Cleanup
-    ClearDungeon();
+    ClearLevel();
     UnloadAllResources();
-    removeAllCharacters();
-    RemoveAllVegetation();
     CloseAudioDevice();
     CloseWindow();
 

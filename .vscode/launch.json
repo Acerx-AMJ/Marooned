@@ -5,7 +5,7 @@
       "name": "Run Raylib Game",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/game.exe",
+      "program": "${workspaceFolder}/Marooned.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

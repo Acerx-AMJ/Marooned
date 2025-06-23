@@ -340,6 +340,9 @@ void GenerateCeilingTiles(float ceilingOffsetY) {
 }
 
 
+
+
+
 void GenerateBarrels(float tileSize, float baseY) {
     barrelInstances.clear();
 
@@ -347,13 +350,37 @@ void GenerateBarrels(float tileSize, float baseY) {
         for (int x = 0; x < dungeonWidth; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
 
-            if (current.r == 0 && current.g == 0 && current.b == 255) {
+            if (current.r == 0 && current.g == 0 && current.b == 255) { // Blue = Barrel
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
-                barrelInstances.push_back({ pos });
+
+                // Define bounding box as 100x100x100 cube centered on pos
+                float halfSize = 50.0f;
+                BoundingBox box;
+                box.min = {
+                    pos.x - halfSize,
+                    pos.y,
+                    pos.z - halfSize
+                };
+                box.max = {
+                    pos.x + halfSize,
+                    pos.y + 100.0f,
+                    pos.z + halfSize
+                };
+                bool willContainPotion = (GetRandomValue(0, 99) < 25); // 25% chance
+
+                barrelInstances.push_back({
+                    pos,
+                    WHITE,
+                    box,
+                    false,
+                    willContainPotion
+                });
+                //barrelInstances.push_back({ pos, WHITE, box });
             }
         }
     }
 }
+
 
 void GeneratePotions(float tileSize, float baseY) {
     for (int y = 0; y < dungeonHeight; y++) {
@@ -438,6 +465,58 @@ void GenerateSkeletonsFromImage(float tileSize, float baseY) {
     }
 }
 
+void GeneratePiratesFromImage(float tileSize, float baseY) {
+    pirates.clear();
+    piratePtrs.clear();
+
+    for (int y = 0; y < dungeonHeight; y++) {
+        for (int x = 0; x < dungeonWidth; x++) {
+            Color current = dungeonPixels[y * dungeonWidth + x];
+
+            // Look for magenta pixels (255, 0, 255) → Pirate spawn
+            if (current.r == 255 && current.g == 0 && current.b == 255) {
+                Vector3 spawnPos = GetDungeonWorldPos(x, y, tileSize, baseY);
+
+                Character pirate(
+                    spawnPos,
+                    &pirateSheet, 
+                    200, 200,         // frame width, height (adjust if different)
+                    1,                // max frames (change for animated pirates)
+                    0.5f, 0.5f,       // scale, speed
+                    0,                // initial animation frame
+                    CharacterType::Pirate
+                );
+                pirate.maxHealth = 300; // tougher than skeletons?
+                pirate.currentHealth = 300;
+                pirates.push_back(pirate);
+            }
+        }
+    }
+
+    for (Character& p : pirates) { //Ptrs for sorting
+        piratePtrs.push_back(&p);
+    }
+}
+
+
+void pillarCollision() {
+    for (const PillarInstance& pillar : pillars){
+        ResolveBoxSphereCollision(pillar.bounds, player.position, player.radius);
+    }
+}
+
+void barrelCollision(){
+    
+    for (const BarrelInstance& barrel : barrelInstances) {
+        if (!barrel.destroyed){ //walk through broke barrels
+            ResolveBoxSphereCollision(barrel.bounds, player.position, player.radius);
+        }
+        
+    }
+
+}
+
+
 
 
 void GenerateLightSources(float tileSize, float baseY) {
@@ -449,18 +528,22 @@ void GenerateLightSources(float tileSize, float baseY) {
 
             // Check for yellow (pure R + G, no B)
             if (current.r == 255 && current.g == 255 && current.b == 0) {
-             
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
-                Vector3 pPos = GetDungeonWorldPos(x, y, tileSize, baseY);
 
-                dungeonLights.push_back({ pos, 1.0f }); // 1.0f = full intensity
-                pillars.push_back({pPos, 1.0f}); //put a pillar wherever there is a lightsource, for now
+                dungeonLights.push_back({ pos, 1.0f });
+
+                // Create a 100x100x100 bounding box centered on pos
+                BoundingBox box;
+                box.min = Vector3Subtract(pos, Vector3{50.0f, 0.0f, 50.0f});
+                box.max = Vector3Add(pos, Vector3{50.0f, 100.0f, 50.0f});
+
+                pillars.push_back({ pos, 1.0f, box });
 
                 Fire newFire;
-                newFire.fireFrame = GetRandomValue(0, 59); // Optional: desync the flames
+                newFire.fireFrame = GetRandomValue(0, 59);
                 fires.push_back(newFire);
-                
             }
+
         }
     }
 }
@@ -484,13 +567,18 @@ int GetDungeonImageY(float worldZ, float tileSize, int dungeonHeight) {
     return dungeonHeight - 1 - (int)(worldZ / tileSize);
 }
 
+// for (const BarrelInstance& barrel : barrelInstances) {
+//     Model modelToDraw = barrel.destroyed ? brokeBarrelModel : regularBarrelModel;
+//     DrawModel(modelToDraw, barrel.position, 1.0f, barrel.tint);
+// }
 
 
 
-void DrawDungeonBarrels(Model barrelModel) {
+void DrawDungeonBarrels() {
     for (const BarrelInstance& barrel : barrelInstances) {
         Vector3 offsetPos = {barrel.position.x, barrel.position.y + 20, barrel.position.z}; //move the barrel up a bit
-        DrawModelEx(barrelModel, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{0.5f, 0.5f, 0.5f}, barrel.tint); //scaled half size
+        Model modelToDraw = barrel.destroyed ? brokeBarrel : barrelModel;
+        DrawModelEx(modelToDraw, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{0.5f, 0.5f, 0.5f}, barrel.tint); //scaled half size
     }
 }
 
@@ -618,7 +706,7 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera) {
 
         // Position the fire above the bowl
         Vector3 firePos = pillar.position;
-        firePos.y += 130; // Adjust this to match your pedestal height
+        firePos.y += 130; 
 
         // Draw animated fire as billboard
         Vector2 fireSize = {100, 100};
@@ -760,6 +848,8 @@ void UpdateCeilingTints(Vector3 playerPos) {
 }
 
 
+
+
 void UpdateBarrelTints(Vector3 playerPos) {
     const float maxLightDistance = 4000.0f;
     const float minBrightness = 0.2f;
@@ -819,6 +909,7 @@ void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float 
 }
 
 BoundingBox MakeDoorBoundingBox(Vector3 position, float rotationY, float halfWidth, float height, float depth) {
+    //covers the full archway
     Vector3 forward = Vector3RotateByAxisAngle({0, 0, 1}, {0, 1, 0}, rotationY);
     Vector3 right = Vector3CrossProduct({0, 1, 0}, forward);
 
@@ -860,6 +951,7 @@ void ClearDungeon() {
     doors.clear();
     doorways.clear();
     collectables.clear();
+
 
 }
 
