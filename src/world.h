@@ -48,6 +48,7 @@ extern bool isFading;
 extern float fadeSpeed; // units per second
 extern bool fadeIn;     // true = fade in (to black), false = fade out (to visible)
 extern bool first;
+extern float dungeonEnemyHeight;
 
 
 extern GameState currentGameState;

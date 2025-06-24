@@ -300,18 +300,21 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
     }
  
     switch (state){
-        case CharacterState::Idle:
+        case CharacterState::Idle: {
             stateTimer += deltaTime;
+
+            Vector2 start = WorldToImageCoords(position);
+
+            // Transition to chase if player detected
             if (distance < 4000.0f && stateTimer > 1.0f && (playerVisible || heardPlayer)) {
                 AlertNearbySkeletons(position, 3000.0f);
                 state = CharacterState::Chase;
                 SetAnimation(1, 4, 0.2f);
                 stateTimer = 0.0f;
 
-                Vector2 start = WorldToImageCoords(position);
                 Vector2 goal = WorldToImageCoords(player.position);
-
                 std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
+
                 currentWorldPath.clear();
                 for (const Vector2& tile : tilePath) {
                     Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
@@ -319,54 +322,17 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                     currentWorldPath.push_back(worldPos);
                 }
             }
-
-            else if (stateTimer > 10.0f) { // ← idle too long? pick a new destination
-                                // Try random reachable tile in dungeon
-                Vector2 start = WorldToImageCoords(position);
-                Vector2 randomTile;
-                bool found = false;
-
-                //patrol radius = 3 normaly
-
-                for (int i = 0; i < 100; ++i) { //try 100 times to find a open spot. 
-                    int rx = (int)start.x + GetRandomValue(-patrolRadius, patrolRadius);
-                    int ry = (int)start.y + GetRandomValue(-patrolRadius, patrolRadius);
-
-                    if (rx < 0 || ry < 0 || rx >= dungeonWidth || ry >= dungeonHeight)
-                        continue;
-
-                    if (!walkable[rx][ry]) continue;
-                    if (IsTileOccupied(rx, ry, skeletonPtrs, this)) continue;
-
-                    Vector2 target = {(float)rx, (float)ry};
-
-                    if (!LineOfSightRaycast(start, target, dungeonImg, 100)) // 100 max ray steps
-                        continue;
-
-                    randomTile = target;
-                    found = true;
-                    break;
+            // Wander if idle too long
+            else if (stateTimer > 10.0f) {
+                if (TrySetRandomPatrolPath(start, this, currentWorldPath)) {
+                    state = CharacterState::Patrol;
+                    SetAnimation(1, 4, 0.2f); // walk anim
                 }
+            }
 
-
-                if (found) {
-                    std::vector<Vector2> tilePath = FindPath(start, randomTile);
-                    
-                    currentWorldPath.clear();
-
-                    for (const Vector2& tile : tilePath) {
-                        Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
-                        worldPos.y += 80.0f;
-                        currentWorldPath.push_back(worldPos);
-                    }
-
-                    if (!currentWorldPath.empty()) {
-                        state = CharacterState::Patrol;
-                        SetAnimation(1, 4, 0.2f); // reuse walk anim
-                    }
-                }
-    }
             break;
+        }
+
 
         
         case CharacterState::Chase:
@@ -408,7 +374,11 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                     Vector3 targetPos = currentWorldPath[0];
                     Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
                     Vector3 move = Vector3Scale(dir, skeleSpeed * deltaTime);
-                    position = Vector3Add(position, move);
+
+                                    // Add repulsion from other raptors
+                    Vector3 repulsion = ComputeRepulsionForce(piratePtrs, 50, 500);
+                    Vector3 moveWithRepulsion = Vector3Add(move, Vector3Scale(repulsion, deltaTime));
+                    position = Vector3Add(position, moveWithRepulsion);
                     rotationY = RAD2DEG * atan2f(dir.x, dir.z);
                     position.y = targetPos.y;
 
@@ -421,14 +391,14 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
 
 
-        case CharacterState::Attack: { //Pirate attack
-            //dont stand on the same tile as another skele when attacking
-
+        case CharacterState::Attack: { //Pirate attack with gun
+        
+            stateTimer += deltaTime;
             if (stateTimer == 0.0f) {
                 SetAnimation(2, 4, 0.2f); // only when entering attack
-                std::cout << "setting attack animation\n";
+                
             }
-            stateTimer += deltaTime;
+            
             Vector2 myTile = WorldToImageCoords(position);
             Character* occupier = GetTileOccupier(myTile.x, myTile.y, skeletonPtrs, this);
 
@@ -450,32 +420,84 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 SetAnimation(1, 4, 0.2f);
                 stateTimer = 0.0;
             }
-
-
-
             attackCooldown -= deltaTime;
-            if (canSee && attackCooldown <= 0.0f && currentFrame == 1 && !hasFired) {
-                FireBullet(position, player.position, 1200.0f, 3.0f, true);
-                hasFired = true;
-                attackCooldown = 1.5f;
-                //SoundManager::GetInstance().Play("shotgun");
-                SoundManager::GetInstance().PlaySoundAtPosition("shotgun", position, player.position, 1.0, 900);
+            if (distance < 800 && distance > 350){
+                
+                if (canSee && attackCooldown <= 0.0f && currentFrame == 1 && !hasFired) {
+                    FireBullet(position, player.position, 1200.0f, 3.0f, true);
+                    hasFired = true;
+                    attackCooldown = 1.5f;
+                    //SoundManager::GetInstance().Play("shotgun");
+                    SoundManager::GetInstance().PlaySoundAtPosition("musket", position, player.position, 1.0, 2000);
+                }
+
+            }else if (distance < 350){
+                state = CharacterState::MeleeAttack;
+                SetAnimation(3, 5, 0.12);
+                stateTimer = 0;
             }
 
             // Wait for next attack opportunity
             if (hasFired && stateTimer > 1.5f) {
                 hasFired = false;
-                attackCooldown = 1.5f;
+                attackCooldown = 3.5f;
                 currentFrame = 0;
                 stateTimer = 0;
-                //state = CharacterState::Idle;
 
+                if (TrySetRandomPatrolPath(start, this, currentWorldPath)) {
+                    state = CharacterState::Patrol;
+                    SetAnimation(1, 4, 0.2f); // walk anim
+                }
+                //state = CharacterState::Idle;
                
             }
 
+            break;
+        }
+
+        case CharacterState::MeleeAttack: {
+            stateTimer += deltaTime;
+
+            // Wait until animation is done to apply damage
+            if (stateTimer >= 0.6f && !hasFired) { // 5 frames * 0.12s = 0.6s
+                hasFired = true;
+
+                if (distance < 300.0f && playerVisible) {
+                    if (CheckCollisionBoxes(GetBoundingBox(), player.blockHitbox) && player.blocking) {
+                        // Blocked!
+                        if (rand() % 2 == 0) {
+                            SoundManager::GetInstance().Play("swordBlock");
+                        } else {
+                            SoundManager::GetInstance().Play("swordBlock2");
+                        }
+                    } else {
+                        // Direct hit
+                        player.TakeDamage(10);
+                    }
+                }
+            }
+
+            // Exit state after full animation plays
+            if (stateTimer >= 1.5f) {
+                if (distance > 350.0f) {
+                    state = CharacterState::Patrol;
+                    currentFrame = 0;
+                    SetAnimation(1, 5, 0.12f); // walk anim
+                } else {
+                    
+                    // Maybe prepare another melee attack?
+                    state = CharacterState::MeleeAttack; // or re-enter melee logic
+                    currentFrame = 0;
+                    SetAnimation(3, 5, 0.12f); // idle anim
+                }
+                hasFired= false;
+                stateTimer = 0.0f;
+            }
 
             break;
         }
+
+
         case CharacterState::Reposition: {
             stateTimer += deltaTime;
 
@@ -511,6 +533,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             }
 
             if (foundSpot) {
+                foundSpot = false;
                 Vector3 dir = Vector3Normalize(Vector3Subtract(target, position));
                 Vector3 move = Vector3Scale(dir, skeleSpeed * deltaTime);
                 position = Vector3Add(position, move);
@@ -520,11 +543,11 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
                 float dist = Vector3Distance(position, target);
 
-                if (dist < 350.0f && stateTimer > 1.0f) {
-                    state = CharacterState::Attack;
+                if (dist < 350.0f && stateTimer > 2.0f) {
+                    state = CharacterState::MeleeAttack;
                     SetAnimation(2, 5, 0.2f);
                     stateTimer = 0.0f;
-                } else if (dist > 350.0f && stateTimer > 1.0f) {
+                } else if (dist > 350.0f && stateTimer > 2.0f) {
                     state = CharacterState::Chase;
                     SetAnimation(1, 4, 0.2f);
                     stateTimer = 0.0f;
@@ -536,15 +559,15 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
 
 
-        case CharacterState::Patrol: {
+        case CharacterState::Patrol: { //Pirate Patrol after every shot. 
             stateTimer += deltaTime;
 
-            if (distance < 4000.0f && (playerVisible || heardPlayer)){
-                state = CharacterState::Chase;
-                SetAnimation(1, 4, 0.2f);
-                AlertNearbySkeletons(position, 3000.0f);
-                stateTimer = 0.0f;
-            }
+            // if (distance < 4000.0f && (playerVisible)){ //forget about player
+            //     state = CharacterState::Chase;
+            //     SetAnimation(1, 4, 0.2f);
+            //     AlertNearbySkeletons(position, 3000.0f);
+            //     stateTimer = 0.0f;
+            // }
 
             if (!currentWorldPath.empty()) {
                 Vector3 targetPos = currentWorldPath[0];
@@ -627,18 +650,21 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
     
  
     switch (state){
-        case CharacterState::Idle:
+        case CharacterState::Idle: {
             stateTimer += deltaTime;
+
+            Vector2 start = WorldToImageCoords(position);
+
+            // Transition to chase if player detected
             if (distance < 4000.0f && stateTimer > 1.0f && (playerVisible || heardPlayer)) {
                 AlertNearbySkeletons(position, 3000.0f);
                 state = CharacterState::Chase;
                 SetAnimation(1, 4, 0.2f);
                 stateTimer = 0.0f;
 
-                Vector2 start = WorldToImageCoords(position);
                 Vector2 goal = WorldToImageCoords(player.position);
-
                 std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
+
                 currentWorldPath.clear();
                 for (const Vector2& tile : tilePath) {
                     Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
@@ -647,38 +673,12 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 }
             }
 
-            else if (stateTimer > 10.0f) { // ← idle too long? pick a new destination
-                                // Try random reachable tile in dungeon
-                Vector2 start = WorldToImageCoords(position);
-                Vector2 randomTile;
-                bool found = false;
+            // Wander if idle too long
+            else if (stateTimer > 10.0f) {
+                Vector2 randomTile = GetRandomReachableTile(start, this);
 
-                //patrol radius = 3 normaly
-
-                for (int i = 0; i < 100; ++i) { //try 100 times to find a open spot. 
-                    int rx = (int)start.x + GetRandomValue(-patrolRadius, patrolRadius);
-                    int ry = (int)start.y + GetRandomValue(-patrolRadius, patrolRadius);
-
-                    if (rx < 0 || ry < 0 || rx >= dungeonWidth || ry >= dungeonHeight)
-                        continue;
-
-                    if (!walkable[rx][ry]) continue;
-                    if (IsTileOccupied(rx, ry, skeletonPtrs, this)) continue;
-
-                    Vector2 target = {(float)rx, (float)ry};
-
-                    if (!LineOfSightRaycast(start, target, dungeonImg, 100)) // 100 max ray steps
-                        continue;
-
-                    randomTile = target;
-                    found = true;
-                    break;
-                }
-
-
-                if (found) {
+                if (randomTile.x != -1) {
                     std::vector<Vector2> tilePath = FindPath(start, randomTile);
-                    
                     currentWorldPath.clear();
 
                     for (const Vector2& tile : tilePath) {
@@ -689,11 +689,13 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
                     if (!currentWorldPath.empty()) {
                         state = CharacterState::Patrol;
-                        SetAnimation(1, 4, 0.2f); // reuse walk anim
+                        SetAnimation(1, 4, 0.2f); // walk anim
                     }
                 }
-    }
+            }
+
             break;
+        }
 
         
         case CharacterState::Chase:
@@ -720,7 +722,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                     pathCooldownTimer = 0.4f;
 
                     Vector2 start = WorldToImageCoords(position);
-                    //std::vector<Vector2> tilePath = FindPath(start, currentPlayerTile);
+                
                     std::vector<Vector2> tilePath = SmoothPath(FindPath(start, currentPlayerTile), dungeonImg);
                     currentWorldPath.clear();
                     for (const Vector2& tile : tilePath) {
@@ -959,6 +961,8 @@ void Character::TakeDamage(int amount) {
     currentHealth -= amount;
 
     if (currentHealth <= 0) { //die
+
+
         hitTimer = 0.5;
         currentHealth = 0;
         isDead = true;

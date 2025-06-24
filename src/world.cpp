@@ -38,6 +38,7 @@ const float BUSH_HEIGHT_RATIO = 0.90f;
 int selectedOption = 0;
 float floorHeight = 80;
 float wallHeight = 270;
+float dungeonEnemyHeight = 165;
 
 std::vector<Character> raptors;
 std::vector<Character*> raptorPtrs;

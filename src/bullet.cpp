@@ -38,7 +38,7 @@ void Bullet::Update(Camera& camera, float deltaTime) {
         if (position.y <= dungeonPlayerHeight) kill(camera);
         if (position.y >= ceilingHeight) kill(camera);     
     }else{
-        if (position.y <= player.groundY) kill(camera);       
+        if (position.y <= waterHeightY) kill(camera);       
     }
 
 }
@@ -67,6 +67,17 @@ void Bullet::kill(Camera& camera){
 
     alive = false;
     
+}
+
+void Bullet::Blood(Camera camera){
+    //spawn blood decals at bullet position, if it's not a skeleton.
+    Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
+    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
+
+    decals.emplace_back(offsetPos, DecalType::Blood, &bloodSheet, 7, 1.0f, 0.1f, 60.0f);
+
+    alive = false;
+
 }
 
 Vector3 Bullet::GetPosition() const {

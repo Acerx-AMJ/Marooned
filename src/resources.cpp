@@ -12,7 +12,7 @@ Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boa
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel;
 Image heightmap;
 Mesh terrainMesh;
-Sound musket;
+
 
 Vector3 terrainScale = {16000.0f, 200.0f, 16000.0f};
 
@@ -121,6 +121,8 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("unlock", "assets/sounds/unlock.ogg");
     SoundManager::GetInstance().LoadSound("key", "assets/sounds/KeyGet.ogg");
     SoundManager::GetInstance().LoadSound("barrelBreak", "assets/sounds/barrelBreak.ogg");
+    SoundManager::GetInstance().LoadSound("musket", "assets/sounds/musket.ogg");
+
 
 
 

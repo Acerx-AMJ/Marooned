@@ -13,6 +13,7 @@ public:
     void kill(Camera& camera);
     bool IsAlive() const;
     bool IsEnemy() const;
+    void Blood(Camera camera);
     Vector3 GetPosition() const;
     
 

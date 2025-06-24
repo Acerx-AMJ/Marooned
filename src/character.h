@@ -20,6 +20,7 @@ enum class CharacterState {
     Stagger,
     Reposition,
     Patrol,
+    MeleeAttack,
     Death
 };
 

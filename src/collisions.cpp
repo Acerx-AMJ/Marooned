@@ -99,7 +99,7 @@ void barrelCollision(){
 }
 
 
-void HandleMeleeHitboxCollision() {
+void HandleMeleeHitboxCollision(Camera& camera) {
 
     for (BarrelInstance& barrel : barrelInstances){
         if (barrel.destroyed) continue;
@@ -109,6 +109,7 @@ void HandleMeleeHitboxCollision() {
             if (barrel.containsPotion) {
                 Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
                 collectables.push_back(Collectable(CollectableType::HealthPotion, pos));
+
             }
 
         }
@@ -120,8 +121,18 @@ void HandleMeleeHitboxCollision() {
 
         if (CheckCollisionBoxes(enemy->GetBoundingBox(), player.meleeHitbox) && enemy->hitTimer <= 0){
             enemy->TakeDamage(50);
-            if (enemy->type == CharacterType::Raptor || enemy->type == CharacterType::Pirate){ //if raptor or pirate, bloody sword on death. 
-                if (enemy->currentHealth <= 0) swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordBloody;
+            if (enemy->type != CharacterType::Skeleton){ //if raptor or pirate, bloody sword on death. 
+                if (enemy->currentHealth <= 0){
+                    swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordBloody;
+                    //spawning decals here doesn't work for whatever reason
+
+                    Vector3 camDir = Vector3Normalize(Vector3Subtract(enemy->position, camera.position));
+                    Vector3 offsetPos = Vector3Add(enemy->position, Vector3Scale(camDir, -100.0f));
+                    offsetPos.y += 10; 
+                    decals.emplace_back(offsetPos, DecalType::Blood, &bloodSheet, 7, 0.7f, 0.1f, 60.0f);
+                    
+                    
+                } 
             }
             SoundManager::GetInstance().Play("swordHit");
         }
@@ -152,13 +163,21 @@ void CheckBulletHits(Camera& camera) {
             if (CheckCollisionPointBox(pos, enemy->GetBoundingBox())) {
                 if (!b.IsEnemy()) {
                     enemy->TakeDamage(25);
-                    b.kill(camera);
+                    
+                    if (enemy->type != CharacterType::Skeleton && enemy->currentHealth <= 0){
+                        b.Blood(camera); //spawn blood decals on non skeleton death. 
+                    }else{
+                        b.kill(camera);
+                    }
+
                     break;
                 } else if (enemy->type == CharacterType::Skeleton) { // friendly fire
                     enemy->TakeDamage(25);
                     b.kill(camera);
                     break;
                 }
+
+                
             }
         }
 

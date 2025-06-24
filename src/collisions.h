@@ -7,7 +7,7 @@
 #include "vegetation.h"
 
 void CheckBulletHits(Camera& camera);
-void HandleMeleeHitboxCollision();
+void HandleMeleeHitboxCollision(Camera& camera);
 bool CheckCollisionPointBox(Vector3 point, BoundingBox box);
 void HandleDoorInteraction(Camera& camera);
 void DoorCollision();

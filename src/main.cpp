@@ -160,52 +160,8 @@ void SpawnRaptor(Vector3 pos) {
 }
 
 
-
-void drawRaptors(Camera& camera){
-
-    std::sort(raptorPtrs.begin(), raptorPtrs.end(), [&](Character* a, Character* b) {
-        float distA = Vector3Distance(camera.position, a->position);
-        float distB = Vector3Distance(camera.position, b->position);
-        return distA > distB; // Farthest first
-    });
-
-    for (Character* raptor : raptorPtrs){
-        raptor->Draw(camera);
-    }
-
-}
-
-
-void drawSkeletons(Camera& camera){
-
-    std::sort(skeletonPtrs.begin(), skeletonPtrs.end(), [&](Character* a, Character* b) {
-        float distA = Vector3Distance(camera.position, a->position);
-        float distB = Vector3Distance(camera.position, b->position);
-        return distA > distB; // Farthest first
-    });
-
-    for (Character* skeleton : skeletonPtrs){
-        skeleton->Draw(camera);
-    }
-
-}
-
-void drawPirates(Camera& camera){
-
-    std::sort(piratePtrs.begin(), piratePtrs.end(), [&](Character* a, Character* b) {
-        float distA = Vector3Distance(camera.position, a->position);
-        float distB = Vector3Distance(camera.position, b->position);
-        return distA > distB; // Farthest first
-    });
-
-    for (Character* pirate : piratePtrs){
-        pirate->Draw(camera);
-    }
-
-}
-
 Color ColorLerp(Color a, Color b, float t) {
-    //We use our own color lerp because we are using raylib 4.5, tried raylib 5 but it fucked my walls up. 
+    
     Color result;
     result.r = (unsigned char)Lerp((float)a.r, (float)b.r, t);
     result.g = (unsigned char)Lerp((float)a.g, (float)b.g, t);
@@ -258,13 +214,14 @@ void DrawBullets(Camera& camera) {
     }
 
     for (auto& d : decals) {
-            d.Draw(camera);
-        }
+        
+        d.Draw(camera);
+
+    }
+
 }
 
-
-
-void populateEnemyPtrs(){
+void PopulateEnemyPtrs(){
     enemyPtrs.clear();
 
     for (Character& s : skeletons) enemyPtrs.push_back(&s);
@@ -343,6 +300,7 @@ void DrawStaminaBar(){
 void ClearLevel() {
     isDungeon = false;
     ClearDungeon();
+    dungeonEntrances.clear();
     RemoveAllVegetation();
     removeAllCharacters();
     if (terrainMesh.vertexCount > 0) UnloadMesh(terrainMesh); //unload mesh when switching levels. 
@@ -445,10 +403,9 @@ void UpdateCollectables(Camera& camera, float deltaTime) {
 
 
 void InitLevel(const LevelData& level, Camera camera) {
-    ClearLevel();
-    ClearDungeon();
-    dungeonEntrances.clear();
-
+    //Called when starting game and changing level. init the level you pass. 
+    ClearLevel();//clears everything. 
+    camera.position = player.position;
     levelIndex = level.levelIndex; //update current level index to new level. 
 
     if (!isDungeon){ // Generate the terrain mesh and model from the heightmap
@@ -459,47 +416,45 @@ void InitLevel(const LevelData& level, Camera camera) {
         terrainScale = level.terrainScale;
         terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
         terrainModel = LoadModelFromMesh(terrainMesh);
-        InitBoat(player_boat, boatPosition);
-            
         terrainModel.materials[0].shader = terrainShader;
-        generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
         dungeonEntrances = level.entrances; //get level entrances from level data
-        populateEnemyPtrs();
+
+        generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
+        PopulateEnemyPtrs();//add raptors to all enemies list. 
         GenerateEntrances();
         generateVegetation(); 
+        InitBoat(player_boat, boatPosition);
     }
 
-    
-    camera.position = player.position;
    
-    if (level.isDungeon && !level.dungeonPath.empty()){
+    if (level.isDungeon){
         isDungeon = true;
 
         LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);
-        GenerateFloorTiles(tileSize, floorHeight);
-        GenerateWallTiles(tileSize, wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
-        GenerateCeilingTiles(400.0f);
-        GenerateBarrels(tileSize, floorHeight);
-        GeneratePotions(tileSize, floorHeight);
-        GenerateKeys(tileSize, floorHeight);
-        GenerateLightSources(tileSize, floorHeight);
-        GenerateDoorways(tileSize, floorHeight, levelIndex); //calls generate doors from archways
-        GenerateSkeletonsFromImage(tileSize, 165);
-        GeneratePiratesFromImage(tileSize, 165);
-        populateEnemyPtrs();
+        GenerateFloorTiles(floorHeight);//80
+        GenerateWallTiles(wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
+        GenerateCeilingTiles(ceilingHeight);//400
+        GenerateBarrels(floorHeight); 
+        GeneratePotions(floorHeight);
+        GenerateKeys(floorHeight);
+        GenerateLightSources(floorHeight);
+        GenerateDoorways(floorHeight, levelIndex); //calls generate doors from archways
+        GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
+        GeneratePiratesFromImage(dungeonEnemyHeight);
+        PopulateEnemyPtrs(); //add pirates and skeletons to the enemyPtrs vector. iterate this list for collision, sorting, drawing, but not removal.
       
     }
 
     Vector3 resolvedSpawn = level.startPosition; // default fallback
     if (first){
         resolvedSpawn = {5475.0f, 300.0f, -5665.0f}; //overriding start position with first level spwan point
-        //first = false; first is set to false later. after another thing needs to happen first time only.
+        //first = false; first is set to false in player. after another thing needs to happen first time only.
     }
     
 
     if (isDungeon){
-        Vector3 pixelSpawn = FindSpawnPoint(dungeonPixels, dungeonWidth, dungeonHeight, 200, floorHeight);
+        Vector3 pixelSpawn = FindSpawnPoint(dungeonPixels, dungeonWidth, dungeonHeight, tileSize, floorHeight);
         if (pixelSpawn.x != 0 || pixelSpawn.z != 0) {
             resolvedSpawn = pixelSpawn;//Overriding start position with green pixel
             
@@ -507,7 +462,7 @@ void InitLevel(const LevelData& level, Camera camera) {
 
     }
   
-    InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. 
+    InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
 }
 
 
@@ -548,6 +503,7 @@ void lightBullets(float deltaTime){
 }
 
 void UpdateFade(float deltaTime, Camera& camera){
+    //fades out on death, and level transition if pendingLevelIndex != -1
     if (isFading) {
         if (fadeIn) {
             fadeToBlack += fadeSpeed * deltaTime;
@@ -556,7 +512,7 @@ void UpdateFade(float deltaTime, Camera& camera){
                 isFading = false;
 
                 if (pendingLevelIndex != -1) {
-                    InitLevel(levels[pendingLevelIndex], camera);
+                    InitLevel(levels[pendingLevelIndex], camera); //Start new Level
                     pendingLevelIndex = -1;
 
                     // Start fading back in
@@ -583,8 +539,11 @@ void HandleDungeon(float deltaTime) {
     WallCollision();
 
     //lightBullets(deltaTime);
-    
+
+
+     //Vertex Color Lighting
     // === Update tints with updated light list ===
+   
     UpdateWallTints(player.position);
     UpdateCeilingTints(player.position);
     UpdateFloorTints(player.position);
@@ -595,7 +554,23 @@ void HandleDungeon(float deltaTime) {
 
 
 
+void DrawAllEnemies(Camera& camera){
+    //Sort all enemies in enemyPtrs before drawing. 
+    Vector3 camPos = camera.position;
+    std::sort(enemyPtrs.begin(), enemyPtrs.end(),
+        [camPos](Character* a, Character* b) {
+            float distA = Vector3DistanceSqr(a->position, camPos);
+            float distB = Vector3DistanceSqr(b->position, camPos);
+            return distA > distB; // draw furthest first
+        });
 
+    for (Character* enemy : enemyPtrs) {        
+        enemy->Draw(camera);
+        
+    }
+
+
+}
 
 
 
@@ -616,9 +591,6 @@ int main() {
     SetMusicVolume(dungeonAir, 1.0f);
     controlPlayer = true; //start as player
 
-    if (fireSheet.id == 0) {
-        TraceLog(LOG_ERROR, "🔥 fireSheet failed to load!");
-    }
     // Camera //we pass camera around like crazy maybe make a global camera. 
     Camera3D camera = { 0 };
     camera.position = startPosition;
@@ -673,21 +645,21 @@ int main() {
         UpdateShaders(camera);
         sortTrees(camera); //sort trees by distance to player, draw closest trees last.
         
-        UpdateFade(deltaTime, camera);
+        UpdateFade(deltaTime, camera); //triggers init level
         UpdateBullets(camera, deltaTime);
-        UpdateDecals(deltaTime);
-        CheckBulletHits(camera); //bullet collision
         UpdateDecals(deltaTime);
         UpdateBoat(player_boat, deltaTime);
         
         UpdateRaptors(deltaTime);
         UpdateSkeletons(deltaTime);
         UpdatePirates(deltaTime);
+
+        CheckBulletHits(camera); //bullet collision
         TreeCollision(camera); //player and raptor vs tree
         DoorCollision();
         barrelCollision();
         pillarCollision();
-        HandleMeleeHitboxCollision();
+        HandleMeleeHitboxCollision(camera);
         HandleDoorInteraction(camera);
 
         if (!isDungeon) UpdateMusicStream(jungleAmbience);
@@ -743,9 +715,11 @@ int main() {
         }
         
 
-        drawRaptors(camera); //sort and draw raptors
-        drawSkeletons(camera);
-        drawPirates(camera);
+        // drawRaptors(camera); //sort and draw raptors
+        // drawSkeletons(camera);
+        // drawPirates(camera);
+
+        DrawAllEnemies(camera);
         DrawPlayer(player, camera);
         
 

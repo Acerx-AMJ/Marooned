@@ -163,6 +163,50 @@ Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeleton
     return nullptr;
 }
 
+
+
+Vector2 GetRandomReachableTile(const Vector2& start, const Character* self, int maxAttempts) {
+    int patrolRadius = 3;
+    for (int i = 0; i < maxAttempts; ++i) {
+        int rx = (int)start.x + GetRandomValue(-patrolRadius, patrolRadius);
+        int ry = (int)start.y + GetRandomValue(-patrolRadius, patrolRadius);
+
+        if (rx < 0 || ry < 0 || rx >= dungeonWidth || ry >= dungeonHeight)
+            continue;
+
+        if (!walkable[rx][ry]) continue;
+        if (IsTileOccupied(rx, ry, skeletonPtrs, self)) continue;
+
+        Vector2 target = {(float)rx, (float)ry};
+        if (!LineOfSightRaycast(start, target, dungeonImg, 100)) continue;
+
+        return target;
+    }
+
+    // Return invalid coords if nothing found
+    return {-1, -1};
+}
+
+bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<Vector3>& outPath) {
+    Vector2 randomTile = GetRandomReachableTile(start, self);
+
+    if (randomTile.x == -1) return false;
+
+    std::vector<Vector2> tilePath = FindPath(start, randomTile);
+    if (tilePath.empty()) return false;
+
+    outPath.clear();
+    for (const Vector2& tile : tilePath) {
+        Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
+        worldPos.y += 80.0f;
+        outPath.push_back(worldPos);
+    }
+
+    return !outPath.empty();
+}
+
+
+
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
     const int numRays = 5;
     const float spread = 0.1f; // widen fan

@@ -112,15 +112,15 @@ extern int dungeonHeight;
 
 
 void LoadDungeonLayout(const std::string& imagePath); // Just loads and caches image
-void GenerateFloorTiles(float tileSize, float baseY);
-void GenerateWallTiles(float tileSize, float baseY);
+void GenerateFloorTiles(float baseY);
+void GenerateWallTiles(float baseY);
 void GenerateCeilingTiles(float ceilingOffsetY);
-void GenerateBarrels(float tileSize, float baseY);
-void GenerateLightSources(float tileSize, float baseY);
-void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex);
+void GenerateBarrels(float baseY);
+void GenerateLightSources(float baseY);
+void GenerateDoorways( float baseY, int currentLevelIndex);
 void GenerateDoorsFromArchways();
-void GeneratePotions(float tileSize, float baseY);
-void GenerateKeys(float tileSize, float baseY);
+void GeneratePotions(float baseY);
+void GenerateKeys(float baseY);
 void DrawDungeonFloor(Model floorTileModel);
 void DrawDungeonWalls(Model wallSegmentModel);
 void DrawDungeonFloor(Model floorModel);
@@ -144,7 +144,7 @@ int GetDungeonImageY(float worldZ, float tileSize, int dungeonHeight);
 bool IsDungeonFloorTile(int x, int y); 
 Vector3 GetDungeonWorldPos(int x, int y, float tileSize, float baseY);
 Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, float baseY);
-void GenerateRaptorsFromImage(float tileSize, float baseY);
-void GenerateSkeletonsFromImage(float tileSize, float baseY);
-void GeneratePiratesFromImage(float tileSize, float baseY);
+void GenerateRaptorsFromImage(float baseY);
+void GenerateSkeletonsFromImage(float baseY);
+void GeneratePiratesFromImage(float baseY);
 void ClearDungeon();

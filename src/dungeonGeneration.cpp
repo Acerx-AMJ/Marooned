@@ -31,6 +31,11 @@ const Color COLOR_BLACK  = { 0, 0, 0, 255 }; //walls
 const Color COLOR_BLUE   = { 0, 0, 255, 255 }; //barrels
 const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
 
+
+//Dungeon Legend
+
+//   Transparent = Void (no floor tiles)
+
 //⬛ Black = Wall
 
 //⬜ White = Floor (the whole dungeon is filled with floor not just white pixels)
@@ -45,15 +50,17 @@ const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
 
 //🟪 Purple = Doorway (128, 0, 128)
 
-//  Teal = Dungeon Exit (0, 128, 128)
+//   Teal = Dungeon Exit (0, 128, 128)
 
 //🟧 Orange = Next Level (255, 128, 0)
 
-//  Aqua = locked door (0, 255, 255)
+//   Aqua = locked door (0, 255, 255)
 
-//💗  Pink = health pot (255, 105, 180)
+//   Magenta = Pirate (255, 0, 255)
 
-//⭐  Gold = key (255, 200, 0)
+//💗 Pink = health pot (255, 105, 180)
+
+//⭐ Gold = key (255, 200, 0)
 
 
     
@@ -108,7 +115,7 @@ Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, flo
 
 
 
-void GenerateFloorTiles(float tileSize, float baseY) {
+void GenerateFloorTiles(float baseY) {
     floorTiles.clear();
 
     for (int y = 0; y < dungeonHeight; y++) {
@@ -153,7 +160,7 @@ inline bool IsEnemyColor(Color c) {
 
 
 
-void GenerateWallTiles(float tileSize, float baseY) {
+void GenerateWallTiles(float baseY) {
     //and create bounding boxes
     wallInstances.clear();
     wallRunColliders.clear();
@@ -171,6 +178,9 @@ void GenerateWallTiles(float tileSize, float baseY) {
             // === Horizontal Pair ===
             if (x < dungeonWidth - 1) {
                 Color right = dungeonPixels[y * dungeonWidth + (x + 1)];
+
+                if (current.a == 0 || right.a == 0) continue; // skip if either tile is void
+
                 if (IsWallColor(right) && !IsBarrelColor(right)) {
                     Vector3 a = GetDungeonWorldPos(x, y, tileSize, baseY);
                     Vector3 b = GetDungeonWorldPos(x + 1, y, tileSize, baseY);
@@ -198,6 +208,9 @@ void GenerateWallTiles(float tileSize, float baseY) {
             // === Vertical Pair ===
             if (y < dungeonHeight - 1) {
                 Color down = dungeonPixels[(y + 1) * dungeonWidth + x];
+
+                if (current.a == 0 || down.a == 0) continue; // skip if either tile is void
+
                 if (IsWallColor(down) && !IsBarrelColor(down)) {
                     Vector3 a = GetDungeonWorldPos(x, y, tileSize, baseY);
                     Vector3 b = GetDungeonWorldPos(x, y + 1, tileSize, baseY);
@@ -223,7 +236,7 @@ void GenerateWallTiles(float tileSize, float baseY) {
     }
 }
 
-void GenerateDoorways(float tileSize, float baseY, int currentLevelIndex) {
+void GenerateDoorways(float baseY, int currentLevelIndex) {
     doorways.clear();
     
     for (int y = 1; y < dungeonHeight - 1; y++) {
@@ -343,7 +356,7 @@ void GenerateCeilingTiles(float ceilingOffsetY) {
 
 
 
-void GenerateBarrels(float tileSize, float baseY) {
+void GenerateBarrels(float baseY) {
     barrelInstances.clear();
 
     for (int y = 0; y < dungeonHeight; y++) {
@@ -382,7 +395,7 @@ void GenerateBarrels(float tileSize, float baseY) {
 }
 
 
-void GeneratePotions(float tileSize, float baseY) {
+void GeneratePotions(float baseY) {
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
@@ -395,7 +408,7 @@ void GeneratePotions(float tileSize, float baseY) {
     }
 }
 
-void GenerateKeys(float tileSize, float baseY) {
+void GenerateKeys(float baseY) {
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
@@ -409,7 +422,7 @@ void GenerateKeys(float tileSize, float baseY) {
 }
 
 
-void GenerateRaptorsFromImage(float tileSize, float baseY) { //unused. no raptors allowed in dungeons, red means skeleton
+void GenerateRaptorsFromImage( float baseY) { //unused. no raptors allowed in dungeons, red means skeleton
     raptors.clear(); // Clear existing raptors
     raptorPtrs.clear();
     for (int y = 0; y < dungeonHeight; y++) {
@@ -432,7 +445,7 @@ void GenerateRaptorsFromImage(float tileSize, float baseY) { //unused. no raptor
     }
 }
 
-void GenerateSkeletonsFromImage(float tileSize, float baseY) {
+void GenerateSkeletonsFromImage(float baseY) {
     skeletons.clear();
     skeletonPtrs.clear();
 
@@ -465,7 +478,7 @@ void GenerateSkeletonsFromImage(float tileSize, float baseY) {
     }
 }
 
-void GeneratePiratesFromImage(float tileSize, float baseY) {
+void GeneratePiratesFromImage(float baseY) {
     pirates.clear();
     piratePtrs.clear();
 
@@ -504,7 +517,7 @@ void GeneratePiratesFromImage(float tileSize, float baseY) {
 
 
 
-void GenerateLightSources(float tileSize, float baseY) {
+void GenerateLightSources(float baseY) {
     dungeonLights.clear();
 
     for (int y = 0; y < dungeonHeight; y++) {
@@ -658,13 +671,9 @@ void DrawDungeonCeiling(Model ceilingTileModel) {
 }
 
 
-// void DrawDungeonPillars(){
-//     for (const PillarInstance& pillar : pillars){
-//         DrawModelEx(lampModel, pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{1, 1, 1}, WHITE);
-//     }
-// }
 
 void DrawDungeonPillars(float deltaTime, Camera3D camera) {
+    //Pillars means Pedestal fire light sources. Light sources are generated separatly and spawn at pillar positions. 
     for (size_t i = 0; i < pillars.size(); ++i) {
         const PillarInstance& pillar = pillars[i];
         Fire& fire = fires[i];
