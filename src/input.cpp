@@ -6,6 +6,7 @@
 #include "player.h"
 #include "dungeonGeneration.h"
 #include "pathfinding.h"
+#include "sound_manager.h"
 
 InputMode currentInputMode = InputMode::KeyboardMouse;
 
@@ -113,4 +114,90 @@ void UpdateInputMode() {
         GetMouseDelta().x != 0 || GetMouseDelta().y != 0) {
         currentInputMode = InputMode::KeyboardMouse;
     }
+}
+
+void HandleMouseLook(float deltaTime){
+    Vector2 mouseDelta = GetMouseDelta();
+    float mouseSensitivity = 0.03f;
+    player.rotation.y -= mouseDelta.x * mouseSensitivity;
+    player.rotation.x -= mouseDelta.y * mouseSensitivity;
+    player.rotation.x = Clamp(player.rotation.x, -89.0f, 89.0f);
+
+}
+
+
+void HandleStickLook(float deltaTime){
+
+    float lookSensitivity = 2.0f;
+    //float moveSensitivity = 1.0f;
+
+    float yaw = -GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_X) * lookSensitivity;
+    float pitch = -GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_Y) * lookSensitivity;
+
+    player.rotation.y += yaw;
+    player.rotation.x += pitch;
+    player.rotation.x = Clamp(player.rotation.x, -89.0f, 89.0f);
+
+}
+
+void HandleGamepadInput(float deltaTime) {
+
+
+    Vector2 moveStick = {
+        -GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X),
+        GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y)
+    };
+
+    float speed = player.running ? player.runSpeed : player.walkSpeed;
+
+    float yawRad = DEG2RAD * player.rotation.y;
+    Vector3 forward = { sinf(yawRad), 0, cosf(yawRad) };
+    Vector3 right = { forward.z, 0, -forward.x };
+
+    Vector3 moveDir = {
+        forward.x * -moveStick.y + right.x * moveStick.x,
+        0,
+        forward.z * -moveStick.y + right.z * moveStick.x
+    };
+
+    moveDir = Vector3Scale(Vector3Normalize(moveDir), speed * deltaTime);
+    player.position = Vector3Add(player.position, moveDir);
+    player.forward = forward;
+
+    if (player.grounded && IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+        player.velocity.y = player.jumpStrength;
+        player.grounded = false;
+        //std::cout << "jumping\n";
+    }
+}
+
+void Player::TakeDamage(int amount){
+    // if (player.blocking){
+    //     if (rand()%2 == 0){
+    //         SoundManager::GetInstance().Play("swordBlock");
+    //     } else{
+    //         SoundManager::GetInstance().Play("swordBlock2");
+    //     }
+    //     return; //dont activate vignette
+    // } 
+
+    if (!player.dying && !player.dead) {
+        player.currentHealth -= amount;
+
+        if (player.currentHealth <= 0) {
+            player.dying = true;
+            player.deathTimer = 0.0f;
+           
+        }
+    }
+
+    vignetteIntensity = 1.0f;
+    vignetteFade = 0.0f;
+
+    if (rand() % 2 == 0){
+        SoundManager::GetInstance().Play("phit1");
+    }else{
+        SoundManager::GetInstance().Play("phit2");
+    }
+
 }

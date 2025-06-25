@@ -70,8 +70,4 @@ void InitPlayer(Player& player, Vector3 startPosition);
 void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& camera);
 
 void DrawPlayer(const Player& player, Camera& camera);
-void HandleGamepadInput(float deltaTime);
-void HandleKeyboardInput(float deltaTime);
-void HandleMouseLook(float deltaTime);
-void HandleStickLook(float deltaTime);
-//float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
+

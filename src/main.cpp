@@ -172,26 +172,30 @@ Color ColorLerp(Color a, Color b, float t) {
 
 
 
-
-
-
-void UpdateRaptors(float deltaTime){
-    for (Character& raptor : raptors) {
-        raptor.Update(deltaTime, player,  heightmap, terrainScale);
+void UpdateEnemies(float deltaTime) {
+    for (Character& e : enemies){
+        e.Update(deltaTime, player, heightmap, terrainScale);
     }
 }
 
-void UpdateSkeletons(float deltaTime){
-    for (Character& skeleton : skeletons) {
-        skeleton.Update(deltaTime, player, heightmap, terrainScale);
-    }
-}
 
-void UpdatePirates(float deltaTime){
-    for (Character& pirate : pirates){
-        pirate.Update(deltaTime, player, heightmap, terrainScale);
-    }
-}
+// void UpdateRaptors(float deltaTime){
+//     for (Character& raptor : raptors) {
+//         raptor.Update(deltaTime, player,  heightmap, terrainScale);
+//     }
+// }
+
+// void UpdateSkeletons(float deltaTime){
+//     for (Character& skeleton : skeletons) {
+//         skeleton.Update(deltaTime, player, heightmap, terrainScale);
+//     }
+// }
+
+// void UpdatePirates(float deltaTime){
+//     for (Character& pirate : pirates){
+//         pirate.Update(deltaTime, player, heightmap, terrainScale);
+//     }
+// }
 
 void UpdateBullets(Camera& camera, float deltaTime) {
     for (Bullet& b : activeBullets) {
@@ -649,10 +653,11 @@ int main() {
         UpdateBullets(camera, deltaTime);
         UpdateDecals(deltaTime);
         UpdateBoat(player_boat, deltaTime);
-        
-        UpdateRaptors(deltaTime);
-        UpdateSkeletons(deltaTime);
-        UpdatePirates(deltaTime);
+        UpdateEnemies(deltaTime);
+
+        // UpdateRaptors(deltaTime);
+        // UpdateSkeletons(deltaTime);
+        // UpdatePirates(deltaTime);
 
         CheckBulletHits(camera); //bullet collision
         TreeCollision(camera); //player and raptor vs tree

@@ -1035,26 +1035,22 @@ Vector3 Character::ComputeRepulsionForce(const std::vector<Character*>& allRapto
     return repulsion;
 }
 
-void Character::eraseCharacters(){
-    //erase dead raptors from raptorPtrs 
-    raptorPtrs.erase(std::remove_if(raptorPtrs.begin(), raptorPtrs.end(),
-    [](Character* raptor) {
-        return raptor->isDead && raptor->deathTimer > 5.0f;
-    }),
-    raptorPtrs.end());
 
-    skeletonPtrs.erase(std::remove_if(skeletonPtrs.begin(), skeletonPtrs.end(),
-    [](Character* skeleton) {
-        return skeleton->isDead && skeleton->deathTimer > 5.0f;
-    }),
-    skeletonPtrs.end());
+void Character::eraseCharacters() {
+    // Remove dead enemies
+    enemies.erase(std::remove_if(enemies.begin(), enemies.end(),
+        [](const Character& e) {
+            return e.isDead && e.deathTimer > 5.0f;
+        }),
+        enemies.end());
 
-    piratePtrs.erase(std::remove_if(piratePtrs.begin(), piratePtrs.end(),
-    [](Character* pirate) {
-        return pirate->isDead && pirate->deathTimer > 5.0f;
-    }),
-    piratePtrs.end());
+    // Rebuild enemyPtrs
+    enemyPtrs.clear();
+    for (auto& e : enemies) {
+        enemyPtrs.push_back(&e);
+    }
 }
+
 
 
 void Character::Update(float deltaTime, Player& player,const  Image& heightmap, Vector3 terrainScale ) {

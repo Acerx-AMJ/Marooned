@@ -468,14 +468,14 @@ void GenerateSkeletonsFromImage(float baseY) {
                 );
                 skeleton.maxHealth = 200;
                 skeleton.currentHealth = 200; //at least 2 shots. 4 sword swings 
-                skeletons.push_back(skeleton);
+                //skeletons.push_back(skeleton);
+                enemies.push_back(skeleton);
+                enemyPtrs.push_back(&enemies.back()); 
             }
         }
     }
 
-    for (Character& s : skeletons) { //Ptrs for sorting
-        skeletonPtrs.push_back(&s);
-    }
+
 }
 
 void GeneratePiratesFromImage(float baseY) {
@@ -501,14 +501,12 @@ void GeneratePiratesFromImage(float baseY) {
                 );
                 pirate.maxHealth = 300; // tougher than skeletons?
                 pirate.currentHealth = 300;
-                pirates.push_back(pirate);
+                enemies.push_back(pirate);
+                enemyPtrs.push_back(&enemies.back()); 
             }
         }
     }
 
-    for (Character& p : pirates) { //Ptrs for sorting
-        piratePtrs.push_back(&p);
-    }
 }
 
 

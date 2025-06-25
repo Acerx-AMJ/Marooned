@@ -56,24 +56,13 @@ std::vector<DungeonEntrance> dungeonEntrances;
 
 std::vector<Collectable> collectables;
 
+std::vector<Character> enemies;  
 std::vector<Character*> enemyPtrs;
 
-void removeAllRaptors(){
-    raptorPtrs.clear();
-    raptors.clear();
 
-}
 
 void removeAllCharacters(){
-    raptorPtrs.clear();
-    raptors.clear();
-
-    skeletons.clear();
-    skeletonPtrs.clear();
-
-    pirates.clear();
-    piratePtrs.clear();
-
+    enemies.clear();
     enemyPtrs.clear();
 
 }
@@ -167,13 +156,12 @@ void generateRaptors(int amount, Vector3 centerPos, float radius) {
         //std::cout << "generated raptor\n";
 
         Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
-        raptors.push_back(raptor);
+        enemies.push_back(raptor);
+        enemyPtrs.push_back(&enemies.back()); 
         ++spawned;
     }
 
-    for (Character& r : raptors) {
-        raptorPtrs.push_back(&r); //push pointers to vector for sorting, use raptorPtrs when drawing. 
-    }
+
 }
 
 
