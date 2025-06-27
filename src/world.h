@@ -49,7 +49,8 @@ extern float fadeSpeed; // units per second
 extern bool fadeIn;     // true = fade in (to black), false = fade out (to visible)
 extern bool first;
 extern float dungeonEnemyHeight;
-
+extern float ElapsedTime;
+extern bool debugInfo;
 
 extern GameState currentGameState;
 extern std::vector<Character> raptors;

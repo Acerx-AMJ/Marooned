@@ -39,6 +39,8 @@ int selectedOption = 0;
 float floorHeight = 80;
 float wallHeight = 270;
 float dungeonEnemyHeight = 165;
+float ElapsedTime = 0.0f;
+bool debugInfo = true;
 
 std::vector<Character> raptors;
 std::vector<Character*> raptorPtrs;

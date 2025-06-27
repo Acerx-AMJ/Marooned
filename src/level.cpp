@@ -18,8 +18,7 @@ std::vector<LevelData> levels = {
     {
         "Middle Island", //display name
         "assets/MiddleIsland.png", //heightmap
-        "",
-        {16000.0f, 200.0f, 16000.0f}, //terrain scale
+        "",//dungeon path
         {0.0f, 300.0f, 0.0f}, //starting position
         -90.0f, //starting player rotation
         {0, 0, 0}, //raptor spawn center
@@ -35,7 +34,6 @@ std::vector<LevelData> levels = {
         "EyeballIsle", //place holder
         "assets/EyeballIsle.png",
         "",
-        {16000.0f, 300.0f, 16000.0f},
         {0.0f, 300.0f, 0.0f},
         180.0f,
         {0.0f, 0, 0.0f},
@@ -48,15 +46,14 @@ std::vector<LevelData> levels = {
     },
     {
         "Dungeon1",
-        "assets/blank.png",
+        "assets/blank.png", //big blank heightmap incase we want water underneath the dungeon. 
         "assets/maps/map4.png",
-        {16000.0f, 300.0f, 16000.0f},
-        {0.0f, 300.0f, 0.0f},
+        {0.0f, 300.0f, 0.0f}, //overwritten by green pixel 
         -90.0f,
         {0.0f, 0.0f, 0.0f},
         0, 
         true, //isDungeon is true
-        {exitDungeon1},
+        {}, //is this realy neccesary? wouldn't the teal door have 0 as it's level index anyway? but we need it for entrances from topside. 
         2, 
         3, //next level index 3
         
@@ -67,7 +64,6 @@ std::vector<LevelData> levels = {
         "Dungeon2",
         "assets/blank.png",
         "assets/maps/map6.png",
-        {16000.0f, 300.0f, 16000.0f},
         {0.0f, 300.0f, 0.0f},
         180.0f,
         {0.0f, 0.0f, 0.0f},
@@ -84,7 +80,6 @@ std::vector<LevelData> levels = {
         "Dungeon3",
         "assets/blank.png",
         "assets/maps/map7.png",
-        {16000.0f, 300.0f, 16000.0f},
         {0.0f, 300.0f, 0.0f},
         180.0f,
         {0.0f, 0.0f, 0.0f},

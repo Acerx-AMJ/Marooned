@@ -25,23 +25,19 @@ Character::Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, fl
       type(t) {}
 
 
-      
-void Character::setPath(){
-    Vector2 start = {
-        (float)GetDungeonImageX(position.x, tileSize, dungeonWidth),
-        (float)GetDungeonImageY(position.z, tileSize, dungeonHeight)
-    };
+void Character::UpdateAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale) {
+    switch (type) {
+        case CharacterType::Raptor:
+            UpdateRaptorAI(deltaTime, player, heightmap, terrainScale);
+            break;
+        case CharacterType::Skeleton:
+            UpdateSkeletonAI(deltaTime, player);
+            break;
 
-    Vector2 goal = {
-        (float)GetDungeonImageX(player.position.x, tileSize, dungeonWidth),
-        (float)GetDungeonImageY(player.position.z, tileSize, dungeonHeight)
-    };
-
-    // Optional: don't recalculate unless player tile has changed
-    if (currentPath.empty() || goal != currentPath.back()) {
-        currentPath = FindPath(start, goal);
+        case CharacterType::Pirate:
+            UpdatePirateAI(deltaTime, player);
+            break;
     }
-
 }
 
 void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale) {
@@ -49,11 +45,9 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
     float distance = Vector3Distance(position, player.position);
     playerVisible = false;
 
-
     if (!isDungeon && distance < 4000){
-        playerVisible = true;
+        playerVisible = true; //player is always visible to raptors within range. 
     }
-
 
     //idle, chase, attack, runaway, stagger, death
     //Raptors: roam around in the jungle untill they encounter player, chase player for 3-7 seconds, then run away, if close attack, if to far away roam.
@@ -261,32 +255,14 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
 
 
 
-void Character::UpdateAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale) {
-    switch (type) {
-        case CharacterType::Raptor:
-            UpdateRaptorAI(deltaTime, player, heightmap, terrainScale);
-            break;
-        case CharacterType::Skeleton:
-            UpdateSkeletonAI(deltaTime, player);
-            break;
 
-        case CharacterType::Pirate:
-            UpdatePirateAI(deltaTime, player);
-            break;
-    }
-}
 
 void Character::UpdatePirateAI(float deltaTime, Player& player) {
-    static float repathTimer = 0.0f;
-    repathTimer += deltaTime;
-
-    const float repathInterval = 0.4f; // seconds between path recalculations
 
     float distance = Vector3Distance(position, player.position);
     playerVisible = false;
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal = WorldToImageCoords(player.position);
-
     bool canSee = LineOfSightRaycast(start, goal, dungeonImg, 100); //Vision test
 
     if (canSee) {
@@ -359,7 +335,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                     pathCooldownTimer = 0.4f;
 
                     Vector2 start = WorldToImageCoords(position);
-                    //std::vector<Vector2> tilePath = FindPath(start, currentPlayerTile);
+                    
                     std::vector<Vector2> tilePath = SmoothPath(FindPath(start, currentPlayerTile), dungeonImg);
                     currentWorldPath.clear();
                     for (const Vector2& tile : tilePath) {
@@ -395,7 +371,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
         
             stateTimer += deltaTime;
             if (stateTimer == 0.0f) {
-                SetAnimation(2, 4, 0.2f); // only when entering attack
+                SetAnimation(2, 4, 0.2f); // only when entering attack, shoot anim is all the same frame. Try animating it again.
                 
             }
             
@@ -444,7 +420,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 currentFrame = 0;
                 stateTimer = 0;
 
-                if (TrySetRandomPatrolPath(start, this, currentWorldPath)) {
+                if (TrySetRandomPatrolPath(start, this, currentWorldPath)) { //shoot then move to a random tile and shoot again.
                     state = CharacterState::Patrol;
                     SetAnimation(1, 4, 0.2f); // walk anim
                 }
@@ -460,7 +436,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
             // Wait until animation is done to apply damage
             if (stateTimer >= 0.6f && !hasFired) { // 5 frames * 0.12s = 0.6s
-                hasFired = true;
+                hasFired = true; //reusing hasfired for sword attack. I think this is ok?
 
                 if (distance < 300.0f && playerVisible) {
                     if (CheckCollisionBoxes(GetBoundingBox(), player.blockHitbox) && player.blocking) {
@@ -480,7 +456,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             // Exit state after full animation plays
             if (stateTimer >= 1.5f) {
                 if (distance > 350.0f) {
-                    state = CharacterState::Patrol;
+                    state = CharacterState::Patrol; //we never set the path for this patrol. probably just switches straight to chase. 
                     currentFrame = 0;
                     SetAnimation(1, 5, 0.12f); // walk anim
                 } else {
@@ -499,6 +475,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
 
         case CharacterState::Reposition: {
+            //skeletons and pirates when close surround the player. Instead of all standing on the same tile. 
             stateTimer += deltaTime;
 
             Vector2 playerTile = WorldToImageCoords(player.position);
@@ -561,13 +538,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
         case CharacterState::Patrol: { //Pirate Patrol after every shot. 
             stateTimer += deltaTime;
-
-            // if (distance < 4000.0f && (playerVisible)){ //forget about player
-            //     state = CharacterState::Chase;
-            //     SetAnimation(1, 4, 0.2f);
-            //     AlertNearbySkeletons(position, 3000.0f);
-            //     stateTimer = 0.0f;
-            // }
+            //ignore player while patroling to new tile. 
 
             if (!currentWorldPath.empty()) {
                 Vector3 targetPos = currentWorldPath[0];
@@ -595,7 +566,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             stateTimer += deltaTime;
             //do nothing
     
-            //currentWorldPath.clear(); //loose the path on stagger
+           
             if (stateTimer >= 1.0f) {
                 state = CharacterState::Chase;
                 SetAnimation(1, 4, 0.25f);
@@ -620,10 +591,6 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
 void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
-    static float repathTimer = 0.0f;
-    repathTimer += deltaTime;
-
-    const float repathInterval = 0.4f; // seconds between path recalculations
 
     float distance = Vector3Distance(position, player.position);
     playerVisible = false;
@@ -802,6 +769,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             break;
         }
         case CharacterState::Reposition: {
+            //surround the player
             stateTimer += deltaTime;
 
             Vector2 playerTile = WorldToImageCoords(player.position);
@@ -997,7 +965,7 @@ void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
     Vector2 originTile = WorldToImageCoords(alertOrigin);
 
     for (Character& other : skeletons) {
-        if (&other == this) continue; // 🛡️ Don't alert yourself
+        if (&other == this) continue; // Don't alert yourself
         if (other.isDead || other.state == CharacterState::Chase) continue;
 
         float distSqr = Vector3DistanceSqr(alertOrigin, other.position);

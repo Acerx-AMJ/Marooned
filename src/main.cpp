@@ -417,7 +417,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         // Load and format the heightmap image
         heightmap = LoadImage(level.heightmapPath.c_str());
         ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
-        terrainScale = level.terrainScale;
+        
         terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
         terrainModel = LoadModelFromMesh(terrainMesh);
         terrainModel.materials[0].shader = terrainShader;
@@ -577,7 +577,35 @@ void DrawAllEnemies(Camera& camera){
 }
 
 
+void DrawTimer(){
+    int minutes = (int)(ElapsedTime / 60.0f);
+    int seconds = (int)ElapsedTime % 60;
 
+    char buffer[16];
+    sprintf(buffer, "Time: %02d:%02d", minutes, seconds);
+
+    DrawText(buffer, GetScreenWidth()-150, 30, 20, WHITE); 
+}
+
+void SetupFogShader(Camera& camera){
+    #define MAX_LIGHTS 8
+    Vector2 lightPositions[MAX_LIGHTS];
+    int numLights = std::min((int)dungeonLights.size(), MAX_LIGHTS);
+
+    // Convert world positions to screen-space UVs
+    for (int i = 0; i < numLights; i++) {
+        Vector3 worldPos = dungeonLights[i].position;
+        Vector2 screen = GetWorldToScreen(worldPos, camera);
+        lightPositions[i] = {
+            screen.x / (float)GetScreenWidth(),
+            screen.y / (float)GetScreenHeight()
+        };
+    }
+
+    // Pass to shader
+    SetShaderValueV(simpleFogShader, GetShaderLocation(simpleFogShader, "lightPositions"), lightPositions, SHADER_UNIFORM_VEC2, numLights);
+    SetShaderValue(simpleFogShader, GetShaderLocation(simpleFogShader, "numLights"), &numLights, SHADER_UNIFORM_INT);
+}
 
 
 int main() {
@@ -586,6 +614,7 @@ int main() {
     InitAudioDevice();
     SetTargetFPS(60);
     LoadAllResources();
+    
     SetExitKey(KEY_NULL); //Escape brings up menu, not quit
     Music dungeonAir = LoadMusicStream("assets/sounds/dungeonAir.ogg");
     Music jungleAmbience = LoadMusicStream("assets/sounds/jungleSounds.ogg"); 
@@ -604,6 +633,8 @@ int main() {
     camera.projection = CAMERA_PERSPECTIVE;
     DisableCursor();
 
+    SetupFogShader(camera);
+
     Vector3 terrainPosition = { //center the terrain around 0, 0, 0
             -terrainScale.x / 2.0f,
             0.0f,
@@ -613,6 +644,7 @@ int main() {
     
     //main game loop
     while (!WindowShouldClose()) {
+        ElapsedTime += GetFrameTime();
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
             if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Playing;
@@ -710,7 +742,7 @@ int main() {
         UpdateCollectables(camera, deltaTime); //Update and draw
         DrawDungeonPillars(deltaTime, camera);
        
-        if (!isDungeon) {
+        if (!isDungeon) { //not a dungeon, draw terrain. 
             DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
             DrawModel(waterModel, waterPos, 1.0f, WHITE); 
             DrawModel(bottomPlane, bottomPos, 1.0f, DARKBLUE); //a second plane below water plane. to prevent seeing through the world when looking down.
@@ -718,34 +750,35 @@ int main() {
             DrawTrees(trees, palmTree, palm2, shadowQuad); 
             DrawBushes(bushes, shadowQuad);
         }
-        
-
-        // drawRaptors(camera); //sort and draw raptors
-        // drawSkeletons(camera);
-        // drawPirates(camera);
 
         DrawAllEnemies(camera);
         DrawPlayer(player, camera);
-        
-
         DrawBullets(camera); //and decals
 
         EndBlendMode();
         EndMode3D(); //////////////////EndMode3
 
         rlDisableDepthTest();
-
         EndTextureMode();//////end drawing to texture
 
-        // === POSTPROCESS TO SCREEN ===
-        BeginDrawing();
-        ClearBackground(BLACK);
+        // === POSTPROCESS TO postProcessTexture ===
+        BeginTextureMode(postProcessTexture);
+            BeginShaderMode(fogShader); // original post shader
+                DrawTextureRec(sceneTexture.texture, 
+                    (Rectangle){0, 0, (float)GetScreenWidth(), -(float)GetScreenHeight()},
+                    (Vector2){0, 0}, WHITE);
+            EndShaderMode();
+        EndTextureMode(); // postProcessTexture now contains processed scene
 
-        BeginShaderMode(fogShader);
-        DrawTextureRec(sceneTexture.texture, 
-            (Rectangle){0, 0, (float)GetScreenWidth(), -(float)GetScreenHeight()},
-            (Vector2){0, 0}, WHITE);
-        EndShaderMode();
+        // === Final draw to screen ===
+        BeginDrawing();
+            ClearBackground(BLACK);
+
+            BeginShaderMode(simpleFogShader); // second pass
+                DrawTextureRec(postProcessTexture.texture,
+                    (Rectangle){0, 0, (float)GetScreenWidth(), -(float)GetScreenHeight()},
+                    (Vector2){0, 0}, WHITE);
+            EndShaderMode();
 
 
         ///2D on top of render texture
@@ -754,9 +787,14 @@ int main() {
         }else{
             DrawHealthBar();
             DrawStaminaBar();
-            DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
-            DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
-            DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 250, 30, 20, WHITE);
+            if (debugInfo){
+                DrawTimer();
+                DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
+                DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
+                DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 280, 30, 20, WHITE);
+
+            }
+
             player.inventory.DrawInventoryUIWithIcons(itemTextures, slotOrder, 20, GetScreenHeight() - 80, 64);
 
             player.inventory.DrawInventoryUI();

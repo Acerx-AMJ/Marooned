@@ -8,9 +8,7 @@
 #include "rlgl.h"
 //static std::vector<Vector3> floorTilePositions;
 std::vector<FloorTile> floorTiles;
-
-static std::vector<WallInstance> wallInstances;
-
+std::vector<WallInstance> wallInstances;
 std::vector<CeilingTile> ceilingTiles;
 std::vector<BarrelInstance> barrelInstances;
 std::vector<DoorwayInstance> doorways;
@@ -468,7 +466,7 @@ void GenerateSkeletonsFromImage(float baseY) {
                 );
                 skeleton.maxHealth = 200;
                 skeleton.currentHealth = 200; //at least 2 shots. 4 sword swings 
-                //skeletons.push_back(skeleton);
+                
                 enemies.push_back(skeleton);
                 enemyPtrs.push_back(&enemies.back()); 
             }
@@ -493,14 +491,15 @@ void GeneratePiratesFromImage(float baseY) {
                 Character pirate(
                     spawnPos,
                     &pirateSheet, 
-                    200, 200,         // frame width, height (adjust if different)
-                    1,                // max frames (change for animated pirates)
+                    200, 200,         // frame width, height 
+                    1,                // max frames, set when setting animations
                     0.5f, 0.5f,       // scale, speed
                     0,                // initial animation frame
                     CharacterType::Pirate
                 );
-                pirate.maxHealth = 300; // tougher than skeletons?
-                pirate.currentHealth = 300;
+                
+                pirate.maxHealth = 400; // twice as tough as skeletons, at least 3 shots. 8 slices.
+                pirate.currentHealth = 400;//bullets are 25 damage x 6 for the blunderbus. 150 if all the pellets hit 
                 enemies.push_back(pirate);
                 enemyPtrs.push_back(&enemies.back()); 
             }

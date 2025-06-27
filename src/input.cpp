@@ -48,6 +48,9 @@ void UpdateCameraWithGamepad(Camera3D& camera) {
 
 void debugControls(){
 
+    if (IsKeyPressed(KEY_GRAVE)){
+        debugInfo = !debugInfo;
+    }
 
     if (IsKeyPressed(KEY_L)) {
         std::cout << "Player Position: X=" << player.position.x

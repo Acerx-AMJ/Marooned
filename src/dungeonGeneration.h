@@ -101,6 +101,7 @@ extern std::vector<Fire> fires;
 extern std::vector<LightSource> dungeonLights;
 extern std::vector<LightSource> bulletLights;
 extern std::vector<WallRun> wallRunColliders;
+extern std::vector<WallInstance> wallinstances;
 extern std::vector<BarrelInstance> barrelInstances;
 extern std::vector<DoorwayInstance> doorways;
 extern std::vector<Door> doors;

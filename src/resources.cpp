@@ -4,10 +4,11 @@
 #include "raymath.h"
 #include <iostream>
 
-RenderTexture2D sceneTexture;
+RenderTexture2D sceneTexture, postProcessTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, 
 doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet;
-Shader fogShader, skyShader, waterShader, terrainShader, shadowShader;
+
+Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader;
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, 
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel;
 Image heightmap;
@@ -22,6 +23,7 @@ Vector2 screenResolution;
 void LoadAllResources() {
     screenResolution = {(float)GetScreenWidth(), (float)GetScreenHeight()};
     sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
+    postProcessTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
 
     raptorTexture = LoadTexture("assets/sprites/raptorSheet.png");
     skeletonSheet = LoadTexture("assets/sprites/skeletonSheet.png");
@@ -63,7 +65,7 @@ void LoadAllResources() {
 
     //Post processing shader. AO shader + red vignette + fade to black
     fogShader = LoadShader(0, "assets/shaders/fog_postprocess.fs");
-    
+    //simpleFogShader = LoadShader(0, "assets/shaders/simple_fog.fs"); 
 
     // Sky
     skyShader = LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
@@ -84,6 +86,20 @@ void LoadAllResources() {
     bottomPlane = LoadModelFromMesh(GenMeshPlane(30000, 30000, 1, 1));
     waterModel.materials[0].shader = waterShader;
     bottomPlane.materials[0].shader = waterShader;
+
+    //simple fog //post process second pass 
+    simpleFogShader = LoadShader(0, "assets/shaders/simple_fog.fs");
+
+    int locFogColor = GetShaderLocation(simpleFogShader, "fogColor");
+    int locFogStrength = GetShaderLocation(simpleFogShader, "fogStrength");
+    int locVerticalFade = GetShaderLocation(simpleFogShader, "verticalFade");
+
+    SetShaderValue(simpleFogShader, locFogColor, (float[3]){ 0.1f, 0.1f, 0.1f }, SHADER_UNIFORM_VEC3);
+    SetShaderValue(simpleFogShader, locFogStrength, (float[]){0.01f }, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(simpleFogShader, locVerticalFade, (float[]){ 0.0f }, SHADER_UNIFORM_FLOAT);
+
+
+
 
 
 

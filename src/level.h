@@ -18,7 +18,7 @@ struct LevelData {
     std::string name;                 // Display name
     std::string heightmapPath;       // Path to the heightmap image
     std::string dungeonPath;
-    Vector3 terrainScale;            // Scale of the terrain mesh
+
     Vector3 startPosition;           // Player starting position
     float startingRotationY; // ← new
     Vector3 raptorSpawnCenter;       // Center point for raptor spawns
@@ -26,7 +26,7 @@ struct LevelData {
     bool isDungeon;
 
     std::vector<DungeonEntrance> entrances;
-    int levelIndex; // <-- Add this!
+    int levelIndex; //current LevelIndex
     int nextLevel;
     
     

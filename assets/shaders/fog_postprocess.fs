@@ -54,6 +54,7 @@ void main()
         }
         final = mix(center, blend / 10.0, colorBleedAmount); // leave `center` for best result
     }
+    
 
     finalColor = vec4(final, 1.0);
 }
