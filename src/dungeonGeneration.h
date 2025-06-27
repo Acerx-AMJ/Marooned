@@ -26,6 +26,7 @@ struct DoorwayInstance {
     int tileX;
     int tileY;
     int linkedLevelIndex = -1;
+    std::vector<BoundingBox> sideColliders;
 
 };
 
@@ -33,6 +34,7 @@ struct Door {
     Vector3 position;
     float rotationY;
     BoundingBox collider;
+    std::vector<BoundingBox> sideColliders;
     bool isOpen = false;
     bool isLocked = false;
     Texture2D* doorTexture;
@@ -105,6 +107,8 @@ extern std::vector<WallInstance> wallinstances;
 extern std::vector<BarrelInstance> barrelInstances;
 extern std::vector<DoorwayInstance> doorways;
 extern std::vector<Door> doors;
+
+
 
 extern Image dungeonImg;
 extern Color* dungeonPixels;

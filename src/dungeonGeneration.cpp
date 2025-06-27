@@ -13,11 +13,14 @@ std::vector<CeilingTile> ceilingTiles;
 std::vector<BarrelInstance> barrelInstances;
 std::vector<DoorwayInstance> doorways;
 std::vector<Door> doors;
+
 std::vector<PillarInstance> pillars;
 std::vector<WallRun> wallRunColliders;
 std::vector<LightSource> dungeonLights; //static lights. 
 std::vector<LightSource> bulletLights; //lights attached to bullets for testing.
 std::vector<Fire> fires;
+
+
 
 Image dungeonImg; //save the dungeon info globaly
 Color* dungeonPixels = nullptr;
@@ -234,6 +237,62 @@ void GenerateWallTiles(float baseY) {
     }
 }
 
+void GenerateSideColliders(Vector3 pos, float rotationY, DoorwayInstance& archway){
+          // 1️⃣ Define local side offset in door-local space
+            Vector3 localOffset = { 150, 0, 0 };
+
+            // 2️⃣ Rotate local offset by (rotationY + 90°) so it's perpendicular to the door's opening
+            float sideRotation = rotationY + 90.0f * DEG2RAD;
+            float cosR = cosf(sideRotation);
+            float sinR = sinf(sideRotation);
+
+            Vector3 rotatedOffset = {
+                localOffset.x * cosR - localOffset.z * sinR,
+                0,
+                localOffset.x * sinR + localOffset.z * cosR
+            };
+
+            // 3️⃣ Compute world positions for side colliders
+            Vector3 leftPos = {
+                pos.x - rotatedOffset.x,
+                pos.y,
+                pos.z - rotatedOffset.z
+            };
+
+            Vector3 rightPos = {
+                pos.x + rotatedOffset.x,
+                pos.y,
+                pos.z + rotatedOffset.z
+            };
+
+            // 4️⃣ Dimensions for the side walls
+            float sideWidth = 20.0f;
+            float sideHeight = 400.0f;
+            float sideDepth = 50.0f;
+
+            // 5️⃣ Create bounding boxes
+            BoundingBox leftBox = MakeDoorBoundingBox(
+                leftPos,
+                rotationY,
+                sideWidth * 0.5f,
+                sideHeight,
+                sideDepth
+            );
+
+            BoundingBox rightBox = MakeDoorBoundingBox(
+                rightPos,
+                rotationY,
+                sideWidth * 0.5f,
+                sideHeight,
+                sideDepth
+            );
+
+            // 6️⃣ Store them
+            archway.sideColliders.push_back(leftBox);
+            archway.sideColliders.push_back(rightBox);
+
+}
+
 void GenerateDoorways(float baseY, int currentLevelIndex) {
     doorways.clear();
     
@@ -271,6 +330,11 @@ void GenerateDoorways(float baseY, int currentLevelIndex) {
             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
             DoorwayInstance archway = { pos, rotationY, false, false, WHITE, x, y };
 
+            GenerateSideColliders(pos, rotationY, archway);
+
+
+
+
             if (isExit) { //teal
                 archway.linkedLevelIndex = previousLevelIndex; //go back outside. 
             }else if (nextLevel){ //orange
@@ -305,6 +369,7 @@ void GenerateDoorsFromArchways() {
         door.scale = {300, 365, 1}; //stretch it taller
         door.tileX = dw.tileX;
         door.tileY = dw.tileY;
+        door.sideColliders = dw.sideColliders;
         
         float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
         float height = 365.0f;

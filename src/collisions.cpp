@@ -40,17 +40,34 @@ void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float 
 
 
 void DoorCollision(){
-    for (Door& door : doors){
+    for (Door& door : doors){//player collision
         if (!door.isOpen && CheckCollisionBoxSphere(door.collider, player.position, player.radius)){
            ResolveBoxSphereCollision(door.collider, player.position, player.radius);
 
         }
 
-        for (Character* enemy : enemyPtrs){
+        for (Character* enemy : enemyPtrs){ //enemy collilsion 
             if (!door.isOpen && CheckCollisionBoxSphere(door.collider, enemy->position, enemy->radius)){
                 ResolveBoxSphereCollision(door.collider, enemy->position, enemy->radius);
             }
         }
+        
+        //door side colliders
+        for (BoundingBox& side : door.sideColliders){
+            if (door.isOpen && CheckCollisionBoxSphere(side, player.position, 100)){
+                ResolveBoxSphereCollision(side, player.position, 100);
+            }
+
+            for (Character* enemy : enemyPtrs){
+                if (door.isOpen && CheckCollisionBoxSphere(side, enemy->position, enemy->radius)){
+                    ResolveBoxSphereCollision(side, enemy->position, enemy->radius);
+                }
+            }
+        }
+
+
+
+
 
 
     }
@@ -194,6 +211,13 @@ void CheckBulletHits(Camera& camera) {
             if (!d.isOpen && CheckCollisionPointBox(pos, d.collider)) {
                 b.kill(camera);
                 break;
+            }
+            //archway side colliders
+            for (BoundingBox& side : d.sideColliders){
+                if (d.isOpen && CheckCollisionPointBox(pos, side)){
+                    b.kill(camera);
+                    break;
+                }
             }
         }
 

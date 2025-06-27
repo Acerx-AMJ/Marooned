@@ -4,6 +4,7 @@
 #include "resources.h"
 #include "vegetation.h"
 #include "dungeonGeneration.h"
+#include "boat.h"
 
 
 
@@ -195,5 +196,120 @@ float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrai
     float heightValue = (float)pixels[index] / 255.0f;
     return heightValue * terrainScale.y;
 }
+
+
+void UpdateCustomCamera(Camera3D* camera, float deltaTime) {
+    //Free camera control
+    static float yaw = 0.0f;
+    static float pitch = 0.0f;
+
+    float moveSpeed = 1000.0f * deltaTime;
+    float lookSensitivityMouse = 0.03f;
+    float lookSensitivityGamepad = 100.0f * deltaTime;
+
+    // Get input from both controller and mouse
+    Vector2 mouseDelta = GetMouseDelta();
+    yaw   += mouseDelta.x * lookSensitivityMouse;
+    pitch += -mouseDelta.y * lookSensitivityMouse;
+
+
+    if (IsGamepadAvailable(0)) {
+        float rightX = GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_X);
+        float rightY = GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_Y);
+        yaw   += rightX * lookSensitivityGamepad;
+        pitch += -rightY * lookSensitivityGamepad;
+    }
+
+    // Clamp pitch to avoid flipping
+    pitch = Clamp(pitch, -89.0f, 89.0f);
+
+    // Direction vector based on yaw/pitch
+    Vector3 forward = {
+        cosf(pitch * DEG2RAD) * cosf(yaw * DEG2RAD),
+        sinf(pitch * DEG2RAD),
+        cosf(pitch * DEG2RAD) * sinf(yaw * DEG2RAD)
+    };
+    forward = Vector3Normalize(forward);
+    Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, camera->up));
+
+    // Combined movement input (keyboard + gamepad left stick)
+    float inputX = 0.0f;
+    float inputZ = 0.0f;
+    float inputY = 0.0f;
+
+    if (IsKeyDown(KEY_W)) inputZ += 1.0f;
+    if (IsKeyDown(KEY_S)) inputZ -= 1.0f;
+    if (IsKeyDown(KEY_A)) inputX -= 1.0f;
+    if (IsKeyDown(KEY_D)) inputX += 1.0f;
+    if (IsKeyDown(KEY_SPACE)) inputY += 1.0f; //fly up and down
+    if (IsKeyDown(KEY_LEFT_SHIFT)) inputY -= 1.0f;
+
+    if (IsGamepadAvailable(0)) {
+        inputX += GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X);
+        inputZ += -GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y); // Y axis is inverted
+    }
+
+    // Apply movement
+    Vector3 movement = Vector3Zero();
+    movement = Vector3Add(movement, Vector3Scale(right, inputX * moveSpeed));
+    movement = Vector3Add(movement, Vector3Scale(forward, inputZ * moveSpeed));
+    movement.y += inputY * moveSpeed;
+
+    camera->position = Vector3Add(camera->position, movement);
+    camera->target = Vector3Add(camera->position, forward);
+}
+
+void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, float deltaTime) {
+    if (controlPlayer) {
+        UpdatePlayer(player, GetFrameTime(), terrainMesh, camera);
+        DisableCursor();
+
+        float yawRad = DEG2RAD * player.rotation.y;
+        float pitchRad = DEG2RAD * player.rotation.x;
+
+        Vector3 forward = {
+            cosf(pitchRad) * sinf(yawRad),
+            sinf(pitchRad),
+            cosf(pitchRad) * cosf(yawRad)
+        };
+
+        float camYOffset = player.isSwimming ? -40.0f : 1.5f;  // swimming lowers the camera
+        camera.position = Vector3Add(player.position, (Vector3){ 0, camYOffset, 0 });
+        //camera.position = Vector3Add(player.position, (Vector3){ 0, 1.5f, 0 });
+        camera.target = Vector3Add(camera.position, forward);
+
+
+    } else {
+        UpdateCustomCamera(&camera, deltaTime);
+        if (player.onBoard) {
+            player.position = Vector3Add(player_boat.position, {0, 200.0f, 0});
+        }
+    }
+}
+
+
+void HandleCameraPlayerToggle(Camera& camera, Player& player, bool& controlPlayer) {
+    static Vector3 savedForward;
+
+    if (IsKeyPressed(KEY_TAB)) {
+        controlPlayer = !controlPlayer;
+
+        if (controlPlayer) {
+            savedForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+            float yaw = atan2f(savedForward.x, savedForward.z) * RAD2DEG;
+            float pitch = -asinf(savedForward.y) * RAD2DEG;
+
+            player.position = camera.position;
+            player.velocity = { 0 };
+            player.rotation.y = yaw;
+            player.rotation.x = Clamp(pitch, -89.0f, 89.0f);
+        } else {
+            camera.position = Vector3Add(player.position, { 0, 1.5f, 0 });
+            camera.target = Vector3Add(camera.position, savedForward);
+        }
+    }
+
+}
+
 
 

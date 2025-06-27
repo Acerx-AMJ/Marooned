@@ -74,3 +74,7 @@ void generateRaptors(int amount, Vector3 centerPos, float radius);
 void regenerateRaptors(int amount, Vector3 centerPos, float radius);
 bool CheckTreeCollision(const TreeInstance& tree, const Vector3& playerPos);
 void ResolveTreeCollision(const TreeInstance& tree, Vector3& playerPos);
+
+void UpdateCustomCamera(Camera3D* camera, float deltaTime);
+void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, float deltaTime);
+void HandleCameraPlayerToggle(Camera& camera, Player& player, bool& controlPlayer);
