@@ -24,7 +24,7 @@ void main()
     ao += length(center - texture(sceneTexture, fragTexCoord + texel * vec2( 1,  1)).rgb);
     ao = clamp(ao * 0.5, 0.0, 1.0);
 
-    vec3 final = center - ao * 0.2; //0.2
+    vec3 final = center - ao * 0.1; //0.2
 
     // Red Vignette Overlay
     float dist = distance(fragTexCoord, vec2(0.5));

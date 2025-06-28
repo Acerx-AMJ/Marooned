@@ -30,6 +30,7 @@ float ceilingHeight = 400;
 float fadeToBlack = 0.0f;
 float vignetteIntensity = 0.0f;
 float vignetteFade = 0.0f;
+float vignetteStrengthValue = 0.2;
 bool isFading = false;
 float fadeSpeed = 1.0f; // units per second
 bool fadeIn = true; 
@@ -43,14 +44,14 @@ float dungeonEnemyHeight = 165;
 float ElapsedTime = 0.0f;
 bool debugInfo = true;
 
-std::vector<Character> raptors;
-std::vector<Character*> raptorPtrs;
+// std::vector<Character> raptors;
+// std::vector<Character*> raptorPtrs;
 
-std::vector<Character> skeletons;
-std::vector<Character*> skeletonPtrs;
+// std::vector<Character> skeletons;
+// std::vector<Character*> skeletonPtrs;
 
-std::vector<Character> pirates;
-std::vector<Character*> piratePtrs;
+// std::vector<Character> pirates;
+// std::vector<Character*> piratePtrs;
 
 std::vector<Bullet> activeBullets;
 std::vector<Decal> decals;
@@ -119,8 +120,6 @@ void ResolveTreeCollision(const TreeInstance& tree, Vector3& playerPos) {
 
 
 void generateRaptors(int amount, Vector3 centerPos, float radius) {
-    raptors.clear();
-    raptorPtrs.clear();
 
     int spawned = 0;
     int attempts = 0;

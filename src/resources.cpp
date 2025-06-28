@@ -6,10 +6,10 @@
 
 RenderTexture2D sceneTexture, postProcessTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, 
-doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet;
+doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture;
 
-Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader;
-Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, 
+Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader;
+Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2, floorTile3, 
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel;
 Image heightmap;
 Mesh terrainMesh;
@@ -21,7 +21,7 @@ Vector2 screenResolution;
 
 
 void LoadAllResources() {
-    screenResolution = {(float)GetScreenWidth(), (float)GetScreenHeight()};
+    screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
     sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
     postProcessTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
 
@@ -40,6 +40,7 @@ void LoadAllResources() {
     swordClean = LoadTexture("assets/textures/swordClean.png");
     fireSheet = LoadTexture("assets/sprites/fireSheet.png");
     pirateSheet = LoadTexture("assets/sprites/pirateSheet.png");
+    coinTexture = LoadTexture("assets/sprites/coin.png");
     
 
     // Models
@@ -57,6 +58,8 @@ void LoadAllResources() {
     swordModel = LoadModel("assets/models/sword.glb");
     lampModel = LoadModel("assets/models/lamp.glb");
     brokeBarrel = LoadModel("assets/models/brokeBarrel.glb");
+    floorTile2 = LoadModel("assets/models/floorTile2.glb");
+    floorTile3 = LoadModel("assets/models/floorTile3.glb");
 
 
     terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
@@ -98,9 +101,17 @@ void LoadAllResources() {
     SetShaderValue(simpleFogShader, locFogStrength, (float[]){0.01f }, SHADER_UNIFORM_FLOAT);
     SetShaderValue(simpleFogShader, locVerticalFade, (float[]){ 0.0f }, SHADER_UNIFORM_FLOAT);
 
+    bloomShader = LoadShader(0, "assets/shaders/bloom.fs");
+    float bloomStrengthValue = 0.2f;
+    //vignetteStrengthValue = 0.2f; //set globaly for black vignette strength
+    
+    float bloomColor[3] = { 1.0f, 0.1f, 0.7f }; // Slight reddish-pink glow
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
 
 
-
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomColor"), bloomColor, SHADER_UNIFORM_VEC3);
 
 
     //Sounds
@@ -169,12 +180,21 @@ void UpdateShaders(Camera& camera){
     float dungeonDarkness = 0.05f;//darkened 5 percent. it darkens the gun model as well, so go easy. 
     float dungeonContrast = 1.127f; //makes darks darker
 
+    float aaStrengthValue = 0.5f; //maybe this does something? 
+
     int isDungeonVal = isDungeon ? 1 : 0;
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
 
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "isDungeon"), &isDungeonVal, SHADER_UNIFORM_INT);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonDarkness"), &dungeonDarkness, SHADER_UNIFORM_FLOAT);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonContrast"), &dungeonContrast, SHADER_UNIFORM_FLOAT);
+
+    //check every frame
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
+
+    
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "aaStrength"), &aaStrengthValue, SHADER_UNIFORM_FLOAT);
+
 
 }
 
@@ -191,12 +211,15 @@ void UnloadAllResources() {
     UnloadTexture(doorTexture);
     UnloadTexture(healthPotTexture);
     UnloadTexture(keyTexture);
+    UnloadTexture(pirateSheet);
+    UnloadTexture(coinTexture);
     //shaders
     UnloadShader(fogShader);
     UnloadShader(skyShader);
     UnloadShader(waterShader);
     UnloadShader(terrainShader);
     UnloadShader(shadowShader);
+    UnloadShader(bloomShader);
     //models
     UnloadModel(skyModel);
     UnloadModel(waterModel);

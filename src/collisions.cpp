@@ -129,6 +129,15 @@ void HandleMeleeHitboxCollision(Camera& camera) {
 
             }
 
+            if (barrel.containsGold) {
+                Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
+                int gvalue = GetRandomValue(1, 100);
+                Collectable gold = Collectable(CollectableType::Gold, pos);
+                gold.value = gvalue;
+                collectables.push_back(gold);
+
+            }
+
         }
     }
 
@@ -232,6 +241,15 @@ void CheckBulletHits(Camera& camera) {
                     Vector3 dropPos = { barrel.position.x, barrel.position.y + 100, barrel.position.z };
                     collectables.push_back(Collectable(CollectableType::HealthPotion, dropPos));
                 }
+
+                if (barrel.containsGold) {
+                    Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
+                    int gvalue = GetRandomValue(1, 100);
+                    Collectable gold = Collectable(CollectableType::Gold, pos);
+                    gold.value = gvalue;
+                    collectables.push_back(gold);
+
+                }
                 break;
             }
         }
@@ -277,11 +295,11 @@ void TreeCollision(Camera& camera){
         }
     }
 
-    for (Character* raptor : raptorPtrs){
+    for (Character* enemy : enemyPtrs){
         for (TreeInstance& tree : trees) {
-            if (Vector3DistanceSqr(tree.position, raptor->position) < 500*500) {
-                if (CheckTreeCollision(tree, raptor->position)) {
-                    ResolveTreeCollision(tree, raptor->position);
+            if (Vector3DistanceSqr(tree.position, enemy->position) < 500*500) {
+                if (CheckTreeCollision(tree, enemy->position)) {
+                    ResolveTreeCollision(tree, enemy->position);
                     
                 }
             }

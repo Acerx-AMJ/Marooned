@@ -229,7 +229,8 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
     vignetteFade += deltaTime * 2.0f; // tweak fade speed
     vignetteIntensity = Clamp(1.0f - vignetteFade, 0.0f, 1.0f);
 
-
+    float goldLerpSpeed = 5.0f;
+    player.displayedGold += (player.gold - player.displayedGold) * goldLerpSpeed * deltaTime;
 
     if (player.running && player.isMoving && player.grounded && player.stamina > 0.0f) {
         player.stamina -= deltaTime * 30.0f; // adjust drain rate

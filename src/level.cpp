@@ -7,11 +7,18 @@ DungeonEntrance entranceToDungeon1 = {
     2, // linkedLevelIndex
 };
 
-DungeonEntrance exitDungeon1 = {
-    {0, 0, 0}, // position, location of the entrance to dungeon
-    0, // linkedLevelIndex
+
+//Player Position: X=-5653.32 Y=289.804 Z=6073.24
+DungeonEntrance entranceToDungeon3 = {
+    {-5653, 150, 6073}, 
+    4,
 };
 
+//Player Position: X=6294.27 Y=299.216 Z=5515.47
+DungeonEntrance entranceToDungeon4 = {
+    {6294, 150, 5515},
+    5, 
+};
 
 
 std::vector<LevelData> levels = {
@@ -24,7 +31,7 @@ std::vector<LevelData> levels = {
         {0, 0, 0}, //raptor spawn center
         5, //raptor count
         false, //isDungeon
-        {entranceToDungeon1}, //add entrance struct to level's vector of entrances. 
+        {entranceToDungeon1, entranceToDungeon3, entranceToDungeon4}, //add entrance struct to level's vector of entrances. 
         0, //current level
         2, //next level, index 2
 
@@ -53,7 +60,7 @@ std::vector<LevelData> levels = {
         {0.0f, 0.0f, 0.0f},
         0, 
         true, //isDungeon is true
-        {}, //is this realy neccesary? wouldn't the teal door have 0 as it's level index anyway? but we need it for entrances from topside. 
+        {}, //dungeons don't have level entrances
         2, 
         3, //next level index 3
         
@@ -87,6 +94,33 @@ std::vector<LevelData> levels = {
         true, //isDungeon is true
         {},
         4, 
-        5,
+        0,
+    },
+    {
+        "Dungeon4",
+        "assets/blank.png",
+        "assets/maps/map8.png",
+        {0.0f, 300.0f, 0.0f},
+        180.0f,
+        {0.0f, 0.0f, 0.0f},
+        0, 
+        true, //isDungeon is true
+        {},
+        5, 
+        6,
+    },
+        {
+        "Dungeon5",
+        "assets/blank.png",
+        "assets/maps/map9.png",
+        {0.0f, 300.0f, 0.0f},
+        180.0f,
+        {0.0f, 0.0f, 0.0f},
+        0, 
+        true, //isDungeon is true
+        {},
+        6, 
+        7,
     }
 };
+

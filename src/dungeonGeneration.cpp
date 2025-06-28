@@ -131,6 +131,14 @@ void GenerateFloorTiles(float baseY) {
             FloorTile tile;
             tile.position = pos;
             tile.tint = WHITE; // Or tint based on pixel.r/g/b if you want variety
+            // int rn = GetRandomValue(1, 2);
+            // switch (rn){
+            //     case 1:tile.floorTile = floorTile; break; 
+            //     case 2:tile.floorTile = floorTile2; break;
+            //     ///case 3:tile.floorTile = floorTile3; break;
+            // }
+            tile.floorTile = floorTile;
+
 
             floorTiles.push_back(tile);
         }
@@ -443,13 +451,15 @@ void GenerateBarrels(float baseY) {
                     pos.z + halfSize
                 };
                 bool willContainPotion = (GetRandomValue(0, 99) < 25); // 25% chance
-
+                bool willContainGold = (GetRandomValue(0, 99) < 50);
+                if (willContainPotion) willContainGold = false;
                 barrelInstances.push_back({
                     pos,
                     WHITE,
                     box,
                     false,
-                    willContainPotion
+                    willContainPotion,
+                    willContainGold
                 });
                 //barrelInstances.push_back({ pos, WHITE, box });
             }
@@ -486,8 +496,7 @@ void GenerateKeys(float baseY) {
 
 
 void GenerateRaptorsFromImage( float baseY) { //unused. no raptors allowed in dungeons, red means skeleton
-    raptors.clear(); // Clear existing raptors
-    raptorPtrs.clear();
+
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
@@ -498,19 +507,17 @@ void GenerateRaptorsFromImage( float baseY) { //unused. no raptors allowed in du
                 
                 Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
 
-                raptors.push_back(raptor);
+                enemies.push_back(raptor);
+                enemyPtrs.push_back(&enemies.back());
             }
         }
     }
 
-    for (Character& r : raptors) { //don't forget raptorPtrs
-        raptorPtrs.push_back(&r);
-    }
+
 }
 
 void GenerateSkeletonsFromImage(float baseY) {
-    skeletons.clear();
-    skeletonPtrs.clear();
+
 
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
@@ -542,8 +549,7 @@ void GenerateSkeletonsFromImage(float baseY) {
 }
 
 void GeneratePiratesFromImage(float baseY) {
-    pirates.clear();
-    piratePtrs.clear();
+
 
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
@@ -645,9 +651,9 @@ void DrawDungeonBarrels() {
 
 
 
-void DrawDungeonFloor(Model floorModel) {
+void DrawDungeonFloor() {
     for (const FloorTile& tile : floorTiles) {
-        DrawModelEx(floorModel, tile.position, Vector3{0,1,0}, 0.0f, Vector3{1,1,1}, tile.tint);
+        DrawModelEx(tile.floorTile, tile.position, Vector3{0,1,0}, 0.0f, Vector3{1,1,1}, tile.tint);
     }
 }
 
@@ -670,17 +676,13 @@ void DrawDungeonDoorways(Model archwayModel){
 
     for (const DoorwayInstance& d : doorways) {
         DrawModelEx(archwayModel, d.position, {0, 1, 0}, d.rotationY * RAD2DEG, {0.7f, 0.85f, 0.68f}, d.tint);
-    
     }
 
     for (const Door& door : doors){
    
         DrawFlatDoor(door);
-        //DrawBoundingBox(door.collider, RED);
-        //DrawSphere(player.position, player.radius, GREEN);
+
     }
-
-
 }
 
 void DrawFlatDoor(const Door& door) {
@@ -979,10 +981,8 @@ void ClearDungeon() {
     pillars.clear();
     barrelInstances.clear();
     dungeonLights.clear();
-    raptorPtrs.clear();
-    raptors.clear();
-    skeletons.clear();
-    skeletonPtrs.clear();
+    enemies.clear();
+    enemyPtrs.clear();
     doors.clear();
     doorways.clear();
     collectables.clear();

@@ -110,7 +110,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
                 Vector3 horizontalMove = { dir.x, 0, dir.z };
 
                 // Add repulsion from other raptors
-                Vector3 repulsion = ComputeRepulsionForce(raptorPtrs, 50, 500);
+                Vector3 repulsion = ComputeRepulsionForce(enemyPtrs, 50, 500);
                 Vector3 moveWithRepulsion = Vector3Add(horizontalMove, Vector3Scale(repulsion, deltaTime));
 
                 Vector3 proposedPosition = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f)); //one step ahead. 
@@ -196,7 +196,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
             Vector3 horizontalMove = { veerDir.x, 0, veerDir.z };
 
             // Add repulsion
-            Vector3 repulsion = ComputeRepulsionForce(raptorPtrs, 50, 500);
+            Vector3 repulsion = ComputeRepulsionForce(enemyPtrs, 50, 500);
             Vector3 moveWithRepulsion = Vector3Add(horizontalMove, Vector3Scale(repulsion, deltaTime));
 
             Vector3 proposedPos = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f));
@@ -352,7 +352,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                     Vector3 move = Vector3Scale(dir, skeleSpeed * deltaTime);
 
                                     // Add repulsion from other raptors
-                    Vector3 repulsion = ComputeRepulsionForce(piratePtrs, 50, 500);
+                    Vector3 repulsion = ComputeRepulsionForce(enemyPtrs, 50, 500);
                     Vector3 moveWithRepulsion = Vector3Add(move, Vector3Scale(repulsion, deltaTime));
                     position = Vector3Add(position, moveWithRepulsion);
                     rotationY = RAD2DEG * atan2f(dir.x, dir.z);
@@ -376,7 +376,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             }
             
             Vector2 myTile = WorldToImageCoords(position);
-            Character* occupier = GetTileOccupier(myTile.x, myTile.y, skeletonPtrs, this);
+            Character* occupier = GetTileOccupier(myTile.x, myTile.y, enemyPtrs, this);
 
             if (occupier && occupier != this) {
                 // Only the one with the "greater" pointer backs off
@@ -501,7 +501,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
                 if (tx < 0 || ty < 0 || tx >= dungeonWidth || ty >= dungeonHeight) continue;
                 if (!IsWalkable(tx, ty)) continue;
-                if (IsTileOccupied(tx, ty, skeletonPtrs, this)) continue;
+                if (IsTileOccupied(tx, ty, enemyPtrs, this)) continue;
 
                 target = GetDungeonWorldPos(tx, ty, tileSize, dungeonPlayerHeight);
                 target.y += 80.0f;
@@ -720,7 +720,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
         case CharacterState::Attack: {
             //dont stand on the same tile as another skele when attacking
             Vector2 myTile = WorldToImageCoords(position);
-            Character* occupier = GetTileOccupier(myTile.x, myTile.y, skeletonPtrs, this);
+            Character* occupier = GetTileOccupier(myTile.x, myTile.y, enemyPtrs, this);
 
             if (occupier && occupier != this) {
                 // Only the one with the "greater" pointer backs off
@@ -795,7 +795,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
                 if (tx < 0 || ty < 0 || tx >= dungeonWidth || ty >= dungeonHeight) continue;
                 if (!IsWalkable(tx, ty)) continue;
-                if (IsTileOccupied(tx, ty, skeletonPtrs, this)) continue;
+                if (IsTileOccupied(tx, ty, enemyPtrs, this)) continue;
 
                 target = GetDungeonWorldPos(tx, ty, tileSize, dungeonPlayerHeight);
                 target.y += 80.0f;
@@ -964,7 +964,7 @@ void Character::TakeDamage(int amount) {
 void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
     Vector2 originTile = WorldToImageCoords(alertOrigin);
 
-    for (Character& other : skeletons) {
+    for (Character& other : enemies) {
         if (&other == this) continue; // Don't alert yourself
         if (other.isDead || other.state == CharacterState::Chase) continue;
 
@@ -1092,7 +1092,7 @@ void Character::Draw(Camera3D camera) {
 
     Color redTint = (hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
     rlDisableDepthMask();
-
+    if (isDead && type == CharacterType::Pirate) offsetPos.y -= 25; //dead pirates looked like they were floating in the air. Lower them a bit on death. 
     //DrawBoundingBox(GetBoundingBox(), RED); //debug visible bounding boxes
     DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, redTint);
 

@@ -54,6 +54,7 @@ struct BarrelInstance {
     BoundingBox bounds;
     bool destroyed = false;
     bool containsPotion = false;
+    bool containsGold = false;
 };
 
 struct PillarInstance {
@@ -90,6 +91,8 @@ struct WallRun {
 struct FloorTile {
     Vector3 position;
     Color tint;
+    Model floorTile;
+
 };
 
 struct CeilingTile {
@@ -126,7 +129,7 @@ void GenerateDoorways( float baseY, int currentLevelIndex);
 void GenerateDoorsFromArchways();
 void GeneratePotions(float baseY);
 void GenerateKeys(float baseY);
-void DrawDungeonFloor(Model floorTileModel);
+void DrawDungeonFloor();
 void DrawDungeonWalls(Model wallSegmentModel);
 void DrawDungeonFloor(Model floorModel);
 void DrawDungeonBarrels();

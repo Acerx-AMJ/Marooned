@@ -139,7 +139,7 @@ bool IsWalkable(int x, int y) {
 }
 
 bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, const Character* self) {
-    for (const Character* s : skeletons) {
+    for (const Character* s : enemyPtrs) {
         if (s == self || s->state == CharacterState::Death) continue; 
 
         Vector2 tile = WorldToImageCoords(s->position);
@@ -175,7 +175,7 @@ Vector2 GetRandomReachableTile(const Vector2& start, const Character* self, int 
             continue;
 
         if (!walkable[rx][ry]) continue;
-        if (IsTileOccupied(rx, ry, skeletonPtrs, self)) continue;
+        if (IsTileOccupied(rx, ry, enemyPtrs, self)) continue;
 
         Vector2 target = {(float)rx, (float)ry};
         if (!LineOfSightRaycast(start, target, dungeonImg, 100)) continue;

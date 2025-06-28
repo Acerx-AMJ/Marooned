@@ -44,7 +44,8 @@ void BeginCustom3D(Camera3D camera, float farClip) {
 
 void SpawnRaptor(Vector3 pos) {
     Character raptor(pos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
-    raptors.push_back(raptor);
+    enemies.push_back(raptor);
+    enemyPtrs.push_back(&enemies.back());
 }
 
 
@@ -113,13 +114,7 @@ void DrawBullets(Camera& camera) {
 
 }
 
-void PopulateEnemyPtrs(){
-    enemyPtrs.clear();
 
-    for (Character& s : skeletons) enemyPtrs.push_back(&s);
-    for (Character& p : pirates) enemyPtrs.push_back(&p);
-    for (Character& r : raptors) enemyPtrs.push_back(&r);
-}
 
 
 
@@ -274,6 +269,9 @@ void UpdateCollectables(Camera& camera, float deltaTime) {
         else if (collectables[i].type == CollectableType::Key) {
             collectables[i].Draw(keyTexture, camera, 80.0f);//double the scale for keys
         }
+        else if (collectables[i].type == CollectableType::Gold) {
+            collectables[i].Draw(coinTexture, camera, 40);
+        }
 
         // Pickup logic
         if (collectables[i].CheckPickup(player.position, 100.0f)) {
@@ -283,6 +281,10 @@ void UpdateCollectables(Camera& camera, float deltaTime) {
             }
             else if (collectables[i].type == CollectableType::Key) {
                 player.inventory.AddItem("GoldKey");
+                SoundManager::GetInstance().Play("key");
+            }
+            else if (collectables[i].type == CollectableType::Gold) {
+                player.gold += collectables[i].value;
                 SoundManager::GetInstance().Play("key");
             }
 
@@ -301,7 +303,7 @@ void InitLevel(const LevelData& level, Camera camera) {
     levelIndex = level.levelIndex; //update current level index to new level. 
 
     if (!isDungeon){ // Generate the terrain mesh and model from the heightmap
-       
+        vignetteStrengthValue = 0.2f; //less of vignette outdoors. 
         // Load and format the heightmap image
         heightmap = LoadImage(level.heightmapPath.c_str());
         ImageFormat(&heightmap, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
@@ -312,7 +314,6 @@ void InitLevel(const LevelData& level, Camera camera) {
         dungeonEntrances = level.entrances; //get level entrances from level data
 
         generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
-        PopulateEnemyPtrs();//add raptors to all enemies list. 
         GenerateEntrances();
         generateVegetation(); 
         InitBoat(player_boat, boatPosition);
@@ -321,7 +322,7 @@ void InitLevel(const LevelData& level, Camera camera) {
    
     if (level.isDungeon){
         isDungeon = true;
-
+        vignetteStrengthValue = 0.5f; //darker vignette in dungeons
         LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);
         GenerateFloorTiles(floorHeight);//80
@@ -333,8 +334,11 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateLightSources(floorHeight);
         GenerateDoorways(floorHeight, levelIndex); //calls generate doors from archways
         GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
-        GeneratePiratesFromImage(dungeonEnemyHeight);
-        PopulateEnemyPtrs(); //add pirates and skeletons to the enemyPtrs vector. iterate this list for collision, sorting, drawing, but not removal.
+        GeneratePiratesFromImage(dungeonEnemyHeight-25);
+        if (levelIndex == 4){
+            levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
+        }
+
       
     }
 
@@ -430,9 +434,6 @@ void UpdateFade(float deltaTime, Camera& camera){
 void HandleDungeon(float deltaTime) {
     WallCollision();
 
-    //lightBullets(deltaTime);
-
-
      //Vertex Color Lighting
     // === Update tints with updated light list ===
    
@@ -460,8 +461,6 @@ void DrawAllEnemies(Camera& camera){
         enemy->Draw(camera);
         
     }
-
-
 }
 
 
@@ -496,8 +495,7 @@ void SetupFogShader(Camera& camera){
 }
 
 
-int main() {
-    //SetConfigFlags(FLAG_MSAA_4X_HINT); //anti aliasing, I see no difference. 
+int main() { 
     InitWindow(1600, 900, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
@@ -591,6 +589,7 @@ int main() {
         if (isDungeon){
             HandleDungeon(deltaTime);
             UpdateMusicStream(dungeonAir);
+            
         }
 
         if (IsGamepadAvailable(0)) {  //free camera with gamepad
@@ -619,7 +618,7 @@ int main() {
         rlSetBlendMode(BLEND_ALPHA);
         rlEnableColorBlend();
 
-        DrawDungeonFloor(floorTile);
+        DrawDungeonFloor();
         DrawDungeonWalls(wall);
         DrawDungeonBarrels();
 
@@ -643,12 +642,6 @@ int main() {
         DrawPlayer(player, camera);
         DrawBullets(camera); //and decals
 
-        for (Door& door : doors){
-            for (BoundingBox& side : door.sideColliders){
-                DrawBoundingBox(side, RED);
-            }
-        }
-
         EndBlendMode();
         EndMode3D(); //////////////////EndMode3
 
@@ -668,7 +661,7 @@ int main() {
         BeginDrawing();
             ClearBackground(BLACK);
 
-            BeginShaderMode(simpleFogShader); // second pass
+            BeginShaderMode(bloomShader); // second pass
                 DrawTextureRec(postProcessTexture.texture,
                     (Rectangle){0, 0, (float)GetScreenWidth(), -(float)GetScreenHeight()},
                     (Vector2){0, 0}, WHITE);
@@ -681,6 +674,7 @@ int main() {
         }else{
             DrawHealthBar();
             DrawStaminaBar();
+            DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD);
             if (debugInfo){//press ~ to hide debug info
                 DrawTimer(); 
                 DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);

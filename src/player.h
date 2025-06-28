@@ -18,6 +18,9 @@ struct Player {
 
     Inventory inventory;
 
+    int gold = 0;
+    float displayedGold = 0.0f;
+
     bool running = false;
     float runSpeed = 800.0f; // faster than walk speed
     float walkSpeed = 500.0f; // regular speed
