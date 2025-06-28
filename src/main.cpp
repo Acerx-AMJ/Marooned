@@ -611,7 +611,7 @@ int main() {
         BeginTextureMode(sceneTexture);
         ClearBackground(SKYBLUE);
 
-        BeginCustom3D(camera, 50000.0f);
+        BeginCustom3D(camera, 50000.0f);//50k far clipping plane
         rlDisableBackfaceCulling(); rlDisableDepthMask(); rlDisableDepthTest();
         DrawModel(skyModel, camera.position, 10000.0f, WHITE); //draw skybox with no depthmask or test or backface culling, leave backfaceculling off. 
         rlEnableDepthMask(); rlEnableDepthTest();

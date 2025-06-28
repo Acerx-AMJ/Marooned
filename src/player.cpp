@@ -124,6 +124,8 @@ void HandleKeyboardInput(float deltaTime) {
 
 
 void UpdateBlockHitbox(Player& player, float blockDistance = 500.0f, float width = 300.0f, float height = 64.0f) {
+    //BlockHitbox is a large rectange that covers an area in front of the player. It is active when blocking. If enemies are inside the rectangle
+    //there attacks will be blocked. 
     if (!player.blocking) return;
 
     Vector3 forward = {
@@ -148,7 +150,7 @@ void UpdateBlockHitbox(Player& player, float blockDistance = 500.0f, float width
 }
 
 BoundingBox Player::GetBoundingBox() const {
-    float halfWidth = (200* 0.5f * 0.4f) / 2.0f;  // Only 40 percent the width of the frame
+    float halfWidth = (200* 0.5f * 0.4f) / 2.0f; 
     float halfHeight = (200 * 0.5f) / 2.0f;
 
     return {
@@ -216,8 +218,6 @@ void UpdateMeleeHitbox(Camera& camera){
         player.meleeHitbox = { player.position, player.position };
     }
 }
-
-
 
 
 void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& camera) {
@@ -393,6 +393,37 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
     } else {
         HandleKeyboardInput(deltaTime);
     }
+}
+
+void Player::TakeDamage(int amount){
+    // if (player.blocking){
+    //     if (rand()%2 == 0){
+    //         SoundManager::GetInstance().Play("swordBlock");
+    //     } else{
+    //         SoundManager::GetInstance().Play("swordBlock2");
+    //     }
+    //     return; //dont activate vignette
+    // } 
+
+    if (!player.dying && !player.dead) {
+        player.currentHealth -= amount;
+
+        if (player.currentHealth <= 0) {
+            player.dying = true;
+            player.deathTimer = 0.0f;
+           
+        }
+    }
+
+    vignetteIntensity = 1.0f;
+    vignetteFade = 0.0f;
+
+    if (rand() % 2 == 0){
+        SoundManager::GetInstance().Play("phit1");
+    }else{
+        SoundManager::GetInstance().Play("phit2");
+    }
+
 }
 
 

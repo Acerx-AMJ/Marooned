@@ -135,7 +135,7 @@ void GenerateFloorTiles(float baseY) {
             // switch (rn){
             //     case 1:tile.floorTile = floorTile; break; 
             //     case 2:tile.floorTile = floorTile2; break;
-            //     ///case 3:tile.floorTile = floorTile3; break;
+            //     ///case 3:tile.floorTile = floorTile3; break; I broke the other tile models in blender. 
             // }
             tile.floorTile = floorTile;
 

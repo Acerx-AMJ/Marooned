@@ -174,33 +174,3 @@ void HandleGamepadInput(float deltaTime) {
     }
 }
 
-void Player::TakeDamage(int amount){
-    // if (player.blocking){
-    //     if (rand()%2 == 0){
-    //         SoundManager::GetInstance().Play("swordBlock");
-    //     } else{
-    //         SoundManager::GetInstance().Play("swordBlock2");
-    //     }
-    //     return; //dont activate vignette
-    // } 
-
-    if (!player.dying && !player.dead) {
-        player.currentHealth -= amount;
-
-        if (player.currentHealth <= 0) {
-            player.dying = true;
-            player.deathTimer = 0.0f;
-           
-        }
-    }
-
-    vignetteIntensity = 1.0f;
-    vignetteFade = 0.0f;
-
-    if (rand() % 2 == 0){
-        SoundManager::GetInstance().Play("phit1");
-    }else{
-        SoundManager::GetInstance().Play("phit2");
-    }
-
-}
