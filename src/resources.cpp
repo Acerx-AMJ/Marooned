@@ -9,7 +9,7 @@ Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlas
 doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture;
 
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader;
-Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2, floorTile3, 
+Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2, floorTile3,chestModel,
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel;
 Image heightmap;
 Mesh terrainMesh;
@@ -60,6 +60,7 @@ void LoadAllResources() {
     brokeBarrel = LoadModel("assets/models/brokeBarrel.glb");
     floorTile2 = LoadModel("assets/models/floorTile2.glb");
     floorTile3 = LoadModel("assets/models/floorTile3.glb");
+    chestModel = LoadModel("assets/models/chest.glb");
 
 
     terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");

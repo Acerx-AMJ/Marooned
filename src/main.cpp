@@ -274,7 +274,7 @@ void UpdateCollectables(Camera& camera, float deltaTime) {
         }
 
         // Pickup logic
-        if (collectables[i].CheckPickup(player.position, 100.0f)) {
+        if (collectables[i].CheckPickup(player.position, 180.0f)) {
             if (collectables[i].type == CollectableType::HealthPotion) {
                 player.inventory.AddItem("HealthPotion");
                 SoundManager::GetInstance().Play("clink");
@@ -328,7 +328,8 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateFloorTiles(floorHeight);//80
         GenerateWallTiles(wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
         GenerateCeilingTiles(ceilingHeight);//400
-        GenerateBarrels(floorHeight); 
+        GenerateBarrels(floorHeight);
+        GenerateChests(floorHeight);
         GeneratePotions(floorHeight);
         GenerateKeys(floorHeight);
         GenerateLightSources(floorHeight);
@@ -441,6 +442,7 @@ void HandleDungeon(float deltaTime) {
     UpdateCeilingTints(player.position);
     UpdateFloorTints(player.position);
     UpdateBarrelTints(player.position);
+    UpdateChestTints(player.position);
     UpdateDoorwayTints(player.position);
     UpdateDoorTints(player.position);
 }
@@ -520,7 +522,7 @@ int main() {
     DisableCursor();
 
     SetupFogShader(camera);
-
+    InitChests();
     Vector3 terrainPosition = { //center the terrain around 0, 0, 0
             -terrainScale.x / 2.0f,
             0.0f,
@@ -581,6 +583,7 @@ int main() {
         TreeCollision(camera); //player and raptor vs tree
         DoorCollision();
         barrelCollision();
+        ChestCollision();
         pillarCollision();
         HandleMeleeHitboxCollision(camera);
         HandleDoorInteraction(camera);
@@ -621,7 +624,8 @@ int main() {
         DrawDungeonFloor();
         DrawDungeonWalls(wall);
         DrawDungeonBarrels();
-
+        DrawDungeonChests();
+        UpdateDungeonChests();
         DrawDungeonDoorways(doorWay); 
         DrawDungeonCeiling(floorTile);
 

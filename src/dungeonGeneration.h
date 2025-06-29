@@ -48,6 +48,17 @@ struct Door {
 };
 
 
+struct ChestInstance {
+    Vector3 position;
+    Color tint = WHITE;
+    BoundingBox bounds;
+    bool open = false;
+
+    float animFrame = 0.0f;
+    bool animPlaying = false;
+
+};
+
 struct BarrelInstance {
     Vector3 position;
     Color tint = WHITE;
@@ -108,6 +119,7 @@ extern std::vector<LightSource> bulletLights;
 extern std::vector<WallRun> wallRunColliders;
 extern std::vector<WallInstance> wallinstances;
 extern std::vector<BarrelInstance> barrelInstances;
+extern std::vector<ChestInstance> chestInstances;
 extern std::vector<DoorwayInstance> doorways;
 extern std::vector<Door> doors;
 
@@ -118,12 +130,15 @@ extern Color* dungeonPixels;
 extern int dungeonWidth;
 extern int dungeonHeight;
 
-
+void InitChests();
+void UpdateDungeonChests();
+void OpenChest(ChestInstance& chest); 
 void LoadDungeonLayout(const std::string& imagePath); // Just loads and caches image
 void GenerateFloorTiles(float baseY);
 void GenerateWallTiles(float baseY);
 void GenerateCeilingTiles(float ceilingOffsetY);
 void GenerateBarrels(float baseY);
+void GenerateChests(float baseY); 
 void GenerateLightSources(float baseY);
 void GenerateDoorways( float baseY, int currentLevelIndex);
 void GenerateDoorsFromArchways();
@@ -133,6 +148,7 @@ void DrawDungeonFloor();
 void DrawDungeonWalls(Model wallSegmentModel);
 void DrawDungeonFloor(Model floorModel);
 void DrawDungeonBarrels();
+void DrawDungeonChests(); 
 void DrawDungeonPillars(float deltaTime, Camera3D camera);
 void DrawDungeonDoorways(Model archwayModel);
 void DrawFlatDoor(const Door& door);
@@ -143,6 +159,7 @@ void UpdateWallTints(Vector3 playerPos);
 void UpdateFloorTints(Vector3 playerPos);
 void UpdateCeilingTints(Vector3 playerPos);
 void UpdateBarrelTints(Vector3 playerPos);
+void UpdateChestTints(Vector3 playerPos);
 void UpdateDoorTints(Vector3 playerPos);
 void UpdateDoorwayTints(Vector3 playerPos);
 bool IsDoorOpenAt(int x, int y);

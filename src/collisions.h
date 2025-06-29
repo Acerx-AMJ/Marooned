@@ -16,4 +16,5 @@ bool CheckBulletHitsTree(const TreeInstance& tree, const Vector3& bulletPos);
 void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float radius);
 void WallCollision();
 void barrelCollision();
+void ChestCollision();
 void pillarCollision(); 

@@ -11,6 +11,7 @@ std::vector<FloorTile> floorTiles;
 std::vector<WallInstance> wallInstances;
 std::vector<CeilingTile> ceilingTiles;
 std::vector<BarrelInstance> barrelInstances;
+std::vector<ChestInstance> chestInstances;
 std::vector<DoorwayInstance> doorways;
 std::vector<Door> doors;
 
@@ -32,6 +33,8 @@ const Color COLOR_BLACK  = { 0, 0, 0, 255 }; //walls
 const Color COLOR_BLUE   = { 0, 0, 255, 255 }; //barrels
 const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
 
+ModelAnimation *chestAnimations;
+int chestAnimCount = 0;
 
 //Dungeon Legend
 
@@ -64,7 +67,54 @@ const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
 //⭐ Gold = key (255, 200, 0)
 
 
+void InitChests() {
+    //chestModel = LoadModel("assets/models/chest.glb");
+    chestAnimations = LoadModelAnimations("assets/models/chest.glb", &chestAnimCount);
+
+}
+
+void OpenChest(ChestInstance& chest) {
+    if (!chest.open && !chest.animPlaying) {
+        chest.animPlaying = true;
+        chest.animFrame = 0.0f;
+    }
+}
+
+
+void UpdateDungeonChests() {
     
+    const int OPEN_START_FRAME = 0;
+    const int OPEN_END_FRAME = 10;
+
+    for (ChestInstance& chest : chestInstances) {
+        float distToPlayer = Vector3Distance(player.position, chest.position);
+        if (distToPlayer < 300 && IsKeyPressed(KEY_E) && !chest.open){
+            chest.animPlaying = true;
+            chest.animFrame = 0.0f;
+            Vector3 pos = {chest.position.x, chest.position.y + 100, chest.position.z};
+            Collectable coin = Collectable(CollectableType::Gold, pos);
+            coin.value = GetRandomValue(1, 100);
+            collectables.push_back(coin);
+        }
+
+        if (chest.animPlaying) {
+            chest.animFrame += GetFrameTime() * 1000.0f;
+
+            if (chest.animFrame > OPEN_END_FRAME) {
+                chest.animFrame = OPEN_END_FRAME;
+                chest.animPlaying = false;
+                chest.open = true;
+            }
+
+            UpdateModelAnimation(chestModel, chestAnimations[0], (int)chest.animFrame);
+        }
+        else if (chest.open) {
+            UpdateModelAnimation(chestModel, chestAnimations[0], OPEN_END_FRAME);
+        }
+    }
+
+}
+
 
 BoundingBox MakeWallBoundingBox(const Vector3& start, const Vector3& end, float thickness, float height) {
     Vector3 min = Vector3Min(start, end);
@@ -467,6 +517,42 @@ void GenerateBarrels(float baseY) {
     }
 }
 
+void GenerateChests(float baseY) {
+    chestInstances.clear();
+
+    for (int y = 0; y < dungeonHeight; y++) {
+        for (int x = 0; x < dungeonWidth; x++) {
+            Color current = dungeonPixels[y * dungeonWidth + x];
+
+            if (current.r == 0 && current.g == 128 && current.b == 255) { // SkyBlue = chest
+                Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
+
+                // Define bounding box as 100x100x100 cube centered on pos
+                float halfSize = 10.0f;
+                BoundingBox box;
+                box.min = {
+                    pos.x - halfSize,
+                    pos.y,
+                    pos.z - halfSize
+                };
+                box.max = {
+                    pos.x + halfSize,
+                    pos.y + 100.0f,
+                    pos.z + halfSize
+                };
+
+                chestInstances.push_back({
+                    pos,
+                    WHITE,
+                    box,
+                    false,
+                });
+                
+            }
+        }
+    }
+}
+
 
 void GeneratePotions(float baseY) {
     for (int y = 0; y < dungeonHeight; y++) {
@@ -645,6 +731,13 @@ void DrawDungeonBarrels() {
         Vector3 offsetPos = {barrel.position.x, barrel.position.y + 20, barrel.position.z}; //move the barrel up a bit
         Model modelToDraw = barrel.destroyed ? brokeBarrel : barrelModel;
         DrawModelEx(modelToDraw, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{0.5f, 0.5f, 0.5f}, barrel.tint); //scaled half size
+    }
+}
+
+void DrawDungeonChests() {
+    for (const ChestInstance& chest : chestInstances) {
+        Vector3 offsetPos = {chest.position.x, chest.position.y + 20, chest.position.z};
+        DrawModelEx(chestModel, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{60.0f, 60.0f, 60.0f}, chest.tint);
     }
 }
 
@@ -907,6 +1000,20 @@ void UpdateCeilingTints(Vector3 playerPos) {
 
 
 
+void UpdateChestTints(Vector3 playerPos) {
+    const float maxLightDistance = 4000.0f;
+    const float minBrightness = 0.2f;
+
+    Vector3 warmchestColor = {0.9f, 0.7f, 0.6f}; // slightly muted warm tone
+
+    for (ChestInstance& chest : chestInstances) {
+        float dist = Vector3Distance(playerPos, chest.position);
+        float brightness = Clamp(1.0f - (dist / maxLightDistance), minBrightness, 1.0f);
+        Vector3 tinted = Vector3Scale(warmchestColor, brightness);
+        chest.tint = ColorFromNormalized((Vector4){ tinted.x, tinted.y, tinted.z, 1.0f });
+    }
+}
+
 
 void UpdateBarrelTints(Vector3 playerPos) {
     const float maxLightDistance = 4000.0f;
@@ -986,6 +1093,7 @@ void ClearDungeon() {
     doors.clear();
     doorways.clear();
     collectables.clear();
+    chestInstances.clear();
 
 
 }

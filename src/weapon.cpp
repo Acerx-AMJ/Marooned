@@ -132,7 +132,7 @@ void Weapon::Update(float deltaTime) {
     }
 
     if (reloadDip > 0.0f) {
-        reloadDip -= 100.0f * deltaTime; // change speed as needed
+        reloadDip -= 100.0f * deltaTime; 
         if (reloadDip < 0.0f) reloadDip = 0.0f;
     }
 }

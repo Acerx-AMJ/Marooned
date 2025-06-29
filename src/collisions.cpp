@@ -115,6 +115,15 @@ void barrelCollision(){
 
 }
 
+void ChestCollision(){
+    for (const ChestInstance& chest : chestInstances){
+        ResolveBoxSphereCollision(chest.bounds, player.position, player.radius);
+        for (Character* enemy : enemyPtrs){
+            ResolveBoxSphereCollision(chest.bounds, enemy->position, enemy->radius);
+        }
+    }
+}
+
 
 void HandleMeleeHitboxCollision(Camera& camera) {
 
