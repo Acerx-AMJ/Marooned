@@ -84,13 +84,7 @@ void debugControls(){
         
     }
 
-    if (IsKeyPressed(KEY_C)) {
-        for (ChestInstance& chest : chestInstances){
-            if (!chest.animPlaying){
-                OpenChest(chest);
-            }
-        }
-    }
+
 
 
 

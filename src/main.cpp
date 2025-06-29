@@ -629,9 +629,14 @@ int main() {
         DrawDungeonDoorways(doorWay); 
         DrawDungeonCeiling(floorTile);
 
+        DrawBullets(camera); //and decals //draw bullets before enemies
+        DrawAllEnemies(camera);
+        DrawPlayer(player, camera);
+       
+
         //draw things with transparecy last.
         UpdateCollectables(camera, deltaTime); //Update and draw
-        DrawDungeonPillars(deltaTime, camera);
+        DrawDungeonPillars(deltaTime, camera); //light sources
        
         if (!isDungeon) { //not a dungeon, draw terrain. 
             DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
@@ -642,9 +647,6 @@ int main() {
             DrawBushes(bushes, shadowQuad);
         }
 
-        DrawAllEnemies(camera);
-        DrawPlayer(player, camera);
-        DrawBullets(camera); //and decals
 
         EndBlendMode();
         EndMode3D(); //////////////////EndMode3

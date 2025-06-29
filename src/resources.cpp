@@ -150,6 +150,7 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("key", "assets/sounds/KeyGet.ogg");
     SoundManager::GetInstance().LoadSound("barrelBreak", "assets/sounds/barrelBreak.ogg");
     SoundManager::GetInstance().LoadSound("musket", "assets/sounds/musket.ogg");
+    SoundManager::GetInstance().LoadSound("chestOpen", "assets/sounds/chestOpen.ogg");
 
 
 

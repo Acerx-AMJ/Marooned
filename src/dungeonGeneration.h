@@ -49,15 +49,17 @@ struct Door {
 
 
 struct ChestInstance {
+    Model model;
+    ModelAnimation *animations;
+    int animCount;
     Vector3 position;
-    Color tint = WHITE;
+    Color tint;
     BoundingBox bounds;
     bool open = false;
-
-    float animFrame = 0.0f;
     bool animPlaying = false;
-
+    float animFrame = 0.0f;
 };
+
 
 struct BarrelInstance {
     Vector3 position;

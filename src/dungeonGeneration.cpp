@@ -6,7 +6,10 @@
 #include "vector"
 #include "world.h"
 #include "rlgl.h"
-//static std::vector<Vector3> floorTilePositions;
+#include "sound_manager.h"
+
+
+
 std::vector<FloorTile> floorTiles;
 std::vector<WallInstance> wallInstances;
 std::vector<CeilingTile> ceilingTiles;
@@ -33,8 +36,6 @@ const Color COLOR_BLACK  = { 0, 0, 0, 255 }; //walls
 const Color COLOR_BLUE   = { 0, 0, 255, 255 }; //barrels
 const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
 
-ModelAnimation *chestAnimations;
-int chestAnimCount = 0;
 
 //Dungeon Legend
 
@@ -66,19 +67,15 @@ int chestAnimCount = 0;
 
 //⭐ Gold = key (255, 200, 0)
 
+//  Sky Blue = Chest (0, 128, 255)
+
 
 void InitChests() {
     //chestModel = LoadModel("assets/models/chest.glb");
-    chestAnimations = LoadModelAnimations("assets/models/chest.glb", &chestAnimCount);
+    //chestAnimations = LoadModelAnimations("assets/models/chest.glb", &chestAnimCount);
 
 }
 
-void OpenChest(ChestInstance& chest) {
-    if (!chest.open && !chest.animPlaying) {
-        chest.animPlaying = true;
-        chest.animFrame = 0.0f;
-    }
-}
 
 
 void UpdateDungeonChests() {
@@ -92,9 +89,12 @@ void UpdateDungeonChests() {
             chest.animPlaying = true;
             chest.animFrame = 0.0f;
             Vector3 pos = {chest.position.x, chest.position.y + 100, chest.position.z};
-            Collectable coin = Collectable(CollectableType::Gold, pos);
-            coin.value = GetRandomValue(1, 100);
-            collectables.push_back(coin);
+            Collectable key = Collectable(CollectableType::Key, pos);
+            collectables.push_back(key);
+            // Collectable coin = Collectable(CollectableType::Gold, pos);
+            // coin.value = GetRandomValue(1, 100);
+            // collectables.push_back(coin);
+            SoundManager::GetInstance().Play("chestOpen");
         }
 
         if (chest.animPlaying) {
@@ -106,10 +106,13 @@ void UpdateDungeonChests() {
                 chest.open = true;
             }
 
-            UpdateModelAnimation(chestModel, chestAnimations[0], (int)chest.animFrame);
+            UpdateModelAnimation(chest.model, chest.animations[0], (int)chest.animFrame);
+
+            
         }
         else if (chest.open) {
-            UpdateModelAnimation(chestModel, chestAnimations[0], OPEN_END_FRAME);
+            UpdateModelAnimation(chest.model, chest.animations[0], OPEN_END_FRAME);
+
         }
     }
 
@@ -132,7 +135,7 @@ BoundingBox MakeWallBoundingBox(const Vector3& start, const Vector3& end, float 
         max.z += thickness * 0.5f;
     }
 
-    max.y += height + 1000; // dont jump over walls. 1000 high
+    max.y += height + 400; // dont jump over walls.
 
     return { min, max };
 }
@@ -541,12 +544,24 @@ void GenerateChests(float baseY) {
                     pos.z + halfSize
                 };
 
-                chestInstances.push_back({
+                Model model = LoadModel("assets/models/chest.glb");
+
+                int animCount = 0;
+                ModelAnimation *anims = LoadModelAnimations("assets/models/chest.glb", &animCount);
+
+                ChestInstance chest = {
+                    model,
+                    anims,
+                    animCount,
                     pos,
                     WHITE,
                     box,
-                    false,
-                });
+                    false, // open
+                    false, // animPlaying
+                    0.0f   // animFrame
+                };
+
+                chestInstances.push_back(chest);
                 
             }
         }
@@ -737,7 +752,7 @@ void DrawDungeonBarrels() {
 void DrawDungeonChests() {
     for (const ChestInstance& chest : chestInstances) {
         Vector3 offsetPos = {chest.position.x, chest.position.y + 20, chest.position.z};
-        DrawModelEx(chestModel, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{60.0f, 60.0f, 60.0f}, chest.tint);
+        DrawModelEx(chest.model, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{60.0f, 60.0f, 60.0f}, chest.tint);
     }
 }
 
@@ -1093,8 +1108,11 @@ void ClearDungeon() {
     doors.clear();
     doorways.clear();
     collectables.clear();
+    for (ChestInstance& chest : chestInstances) {
+        UnloadModel(chest.model);
+        UnloadModelAnimations(chest.animations, chest.animCount);
+    }
     chestInstances.clear();
-
 
 }
 
