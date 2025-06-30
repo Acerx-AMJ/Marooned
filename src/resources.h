@@ -13,9 +13,11 @@ extern Image heightmap;
 extern Mesh terrainMesh;
 extern Vector3 terrainScale;
 
+extern int sceneTextureLoc;
+extern int sceneDepthLoc; 
+
 extern Vector2 screenResolution;
-//extern int lightPosLoc;
-//extern int camPosLocD;
+
 void UpdateShaders(Camera& camera);
 void LoadAllResources();
 void UnloadAllResources();

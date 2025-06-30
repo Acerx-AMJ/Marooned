@@ -94,9 +94,7 @@ void HandleKeyboardInput(float deltaTime) {
 
 
     if (IsKeyPressed(KEY_Q)) {
-        // if (IsKeyPressed(KEY_Q) && player.switchState == WeaponSwitchState::Idle) {
-        //     player.BeginWeaponSwitch(activeWeapon == WeaponType::Blunderbuss ? WeaponType::Sword : WeaponType::Blunderbuss);
-        // }
+
         swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean; //wipe the blood off the blade. 
         
         if (activeWeapon == WeaponType::Blunderbuss)
@@ -221,6 +219,7 @@ void UpdateMeleeHitbox(Camera& camera){
 
 
 void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& camera) {
+    //player should have been a class. but maybe it's too late...
     weapon.Update(deltaTime);
     meleeWeapon.Update(deltaTime);
     UpdateMeleeHitbox(camera);

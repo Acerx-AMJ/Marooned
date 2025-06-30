@@ -10,6 +10,7 @@ uniform float fadeToBlack; // 0.0 = no fade, 1.0 = full black
 uniform float dungeonDarkness;  // 0.0 = normal, 1.0 = fully dark
 uniform float dungeonContrast;  // 1.0 = normal, >1.0 = more contrast
 uniform float colorBleedAmount; // 0.0 = none, 0.2 = default
+
 uniform int isDungeon;
 
 void main()
@@ -38,7 +39,7 @@ void main()
         final *= 1.0 - dungeonDarkness;
         float midpoint = 0.5;
         final = (final - midpoint) * dungeonContrast + midpoint;
-        final = mix(final, vec3(0.3, 0.4, 0.8), 0.13); // slight blue tint
+        final = mix(final, vec3(0.1, 0.3, 0.7), 0.13); // slight blue tint
     }
     //colorBleedAmount = 0.0;
     // === Color Bleed (uses original `center`) ===
@@ -57,6 +58,8 @@ void main()
     
 
     finalColor = vec4(final, 1.0);
+    //finalColor = vec4(1.0, 0.0, 0.0, 1.0);
+
 }
 
 

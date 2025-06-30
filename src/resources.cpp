@@ -3,34 +3,39 @@
 #include "sound_manager.h"
 #include "raymath.h"
 #include <iostream>
+#include "rlgl.h"
+#include "custom_rendertexture.h"
 
 RenderTexture2D sceneTexture, postProcessTexture;
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, 
 doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture;
 
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader;
+
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2, floorTile3,chestModel,
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel;
+
 Image heightmap;
 Mesh terrainMesh;
 
+int sceneTextureLoc;
+int sceneDepthLoc; 
+Vector3 terrainScale = {16000.0f, 200.0f, 16000.0f}; //very large x and z, after testing, 16k is what felt natural. and it's till solid 60 fps
 
-Vector3 terrainScale = {16000.0f, 200.0f, 16000.0f};
-
-Vector2 screenResolution;
+Vector2 screenResolution; //global shader resolution
 
 
 void LoadAllResources() {
     screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
     sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
-    postProcessTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
+    //sceneTexture = LoadRenderTextureWithDepthTexture((int)screenResolution.x, (int)screenResolution.y);
 
+    postProcessTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
     raptorTexture = LoadTexture("assets/sprites/raptorSheet.png");
     skeletonSheet = LoadTexture("assets/sprites/skeletonSheet.png");
     gunTexture = LoadTexture("assets/sprites/flintlock.png");
-    //gunModel = LoadModel("assets/models/blunderbus.glb");
     muzzleFlash = LoadTexture("assets/sprites/muzzleFlash.png");
-    backDrop = LoadTexture("assets/screenshots/MiddleIsland.png");
+    backDrop = LoadTexture("assets/Screenshot4.png");
     smokeSheet = LoadTexture("assets/sprites/smokeSheet.png");
     bloodSheet = LoadTexture("assets/sprites/bloodSheet.png");
     doorTexture = LoadTexture("assets/sprites/door.png");
@@ -69,7 +74,14 @@ void LoadAllResources() {
 
     //Post processing shader. AO shader + red vignette + fade to black
     fogShader = LoadShader(0, "assets/shaders/fog_postprocess.fs");
-    //simpleFogShader = LoadShader(0, "assets/shaders/simple_fog.fs"); 
+
+    sceneTextureLoc = GetShaderLocation(fogShader, "sceneTexture");
+    //sceneDepthLoc = GetShaderLocation(fogShader, "sceneDepth");
+    //SetShaderValueTexture(fogShader, sceneDepthLoc, sceneTexture.depth);
+
+
+   
+
 
     // Sky
     skyShader = LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
@@ -113,6 +125,18 @@ void LoadAllResources() {
 
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomColor"), bloomColor, SHADER_UNIFORM_VEC3);
+
+    // bloomShader = LoadShader(0, "assets/shaders/bloom.fs");
+    // float bloomStrengthValue = 0.2f;
+    // //vignetteStrengthValue = 0.2f; //set globaly for black vignette strength
+    
+    // float bloomColor[3] = { 1.0f, 0.1f, 1.0f }; // Slight reddish-pink glow
+    // SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
+    // SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
+    // SetShaderValueTexture(bloomShader, sceneTextureLoc, sceneTexture.texture);
+
+    // SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
+    // SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomColor"), bloomColor, SHADER_UNIFORM_VEC3);
 
 
     //Sounds
@@ -236,6 +260,8 @@ void UnloadAllResources() {
     UnloadModel(barrelModel);
     UnloadModel(pillarModel);
     UnloadModel(swordModel);
+    UnloadModel(chestModel);
+    UnloadModel(lampModel);
     
 
 }

@@ -263,11 +263,16 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
     playerVisible = false;
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal = WorldToImageCoords(player.position);
-    bool canSee = LineOfSightRaycast(start, goal, dungeonImg, 100); //Vision test
+
+    bool canSee = (LineOfSightRaycast(start, goal, dungeonImg, 100) && HasWorldLineOfSight(position, player.position)); //Vision test
+    
 
     if (canSee) {
         playerVisible = true;
         timeSinceLastSeen = 0.0f;
+        lastKnownPlayerPos = player.position;
+        hasLastKnownPlayerPos = true;
+        
     } else {
         timeSinceLastSeen += deltaTime;
         if (timeSinceLastSeen > forgetTime) {
@@ -282,7 +287,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             Vector2 start = WorldToImageCoords(position);
 
             // Transition to chase if player detected
-            if (distance < 4000.0f && stateTimer > 1.0f && (playerVisible || heardPlayer)) {
+            if (distance < 4000.0f && stateTimer > 1.0f && (playerVisible)) {
                 AlertNearbySkeletons(position, 3000.0f);
                 state = CharacterState::Chase;
                 SetAnimation(1, 4, 0.2f);
@@ -291,7 +296,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 Vector2 goal = WorldToImageCoords(player.position);
                 std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
 
-                currentWorldPath.clear();
+                currentWorldPath.clear(); //construct the path the frame before chasing
                 for (const Vector2& tile : tilePath) {
                     Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
                     worldPos.y += 80.0f;
@@ -315,18 +320,36 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             stateTimer += deltaTime;
             pathCooldownTimer -= deltaTime;
 
-            if (distance < 800.0f) {
+            if (distance < 800.0f && canSee) { 
                 state = CharacterState::Attack;
                 SetAnimation(2, 4, 0.2f);
                 stateTimer = 0.0f;
                 attackCooldown = 0.0f;
 
-            } else if (distance > 4000.0f) {
-                state = CharacterState::Idle;
-                SetAnimation(0, 1, 1.0f);
-                stateTimer = 0.0f;
+            } 
 
-            } else {
+            else if (!canSee && hasLastKnownPlayerPos) {
+                // Plan path to last known position if needed
+                if (pathCooldownTimer <= 0.0f) {
+                    Vector2 start = WorldToImageCoords(position);
+                    Vector2 goal = WorldToImageCoords(lastKnownPlayerPos);
+                    std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
+
+                    currentWorldPath.clear();
+                    for (const Vector2& tile : tilePath) {
+                        Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
+                        worldPos.y += 80.0f;
+                        currentWorldPath.push_back(worldPos);
+                    }
+
+                    pathCooldownTimer = 0.4f;
+                }
+            }
+            else if (distance > 4000.0f) {
+                state = CharacterState::Idle;
+                hasLastKnownPlayerPos = false;
+            }
+            else {
                 Vector2 currentPlayerTile = WorldToImageCoords(player.position);
                 if (((int)currentPlayerTile.x != (int)lastPlayerTile.x || (int)currentPlayerTile.y != (int)lastPlayerTile.y)
                     && pathCooldownTimer <= 0.0f) {
@@ -360,7 +383,14 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
                     if (Vector3Distance(position, targetPos) < 100.0f) { 
                         currentWorldPath.erase(currentWorldPath.begin()); //erase point on arrival, your always chasing the first point on the list. 
+                        
                     }
+
+                    if (currentWorldPath.empty() && !canSee) {
+                        hasLastKnownPlayerPos = false;
+                        state = CharacterState::Idle;
+                        SetAnimation(0, 1, 1.0f);
+                    }                   
                 }
             }
             break;
@@ -420,9 +450,14 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 currentFrame = 0;
                 stateTimer = 0;
 
-                if (TrySetRandomPatrolPath(start, this, currentWorldPath)) { //shoot then move to a random tile and shoot again.
-                    state = CharacterState::Patrol;
+                if (TrySetRandomPatrolPath(start, this, currentWorldPath) && canSee) { //shoot then move to a random tile and shoot again.
+                    state = CharacterState::Patrol; 
                     SetAnimation(1, 4, 0.2f); // walk anim
+                }else{
+                    state = CharacterState::Attack;
+                    //SetAnimation(1, 4, 0.2f);
+                    stateTimer = 0;
+                    currentFrame = 0;
                 }
                 //state = CharacterState::Idle;
                
@@ -597,7 +632,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal = WorldToImageCoords(player.position);
 
-    bool canSee = LineOfSightRaycast(start, goal, dungeonImg, 100); //Vision test
+    bool canSee = (LineOfSightRaycast(start, goal, dungeonImg, 100) && HasWorldLineOfSight(position, player.position)); //Vision test
 
     if (canSee) {
         playerVisible = true;
@@ -1092,7 +1127,7 @@ void Character::Draw(Camera3D camera) {
 
     Color redTint = (hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
     rlDisableDepthMask();
-    if (isDead && type == CharacterType::Pirate) offsetPos.y -= 25; //dead pirates looked like they were floating in the air. Lower them a bit on death. 
+    //if (isDead && type == CharacterType::Pirate) offsetPos.y; 
     //DrawBoundingBox(GetBoundingBox(), RED); //debug visible bounding boxes
     DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, redTint);
 

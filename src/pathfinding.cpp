@@ -206,14 +206,28 @@ bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<V
 }
 
 
+bool HasWorldLineOfSight(Vector3 from, Vector3 to) {
+    Ray ray = { from, Vector3Normalize(Vector3Subtract(to, from)) };
+    float maxDistance = Vector3Distance(from, to);
+
+    for (const WallRun& wall : wallRunColliders) {
+        RayCollision hit = GetRayCollisionBox(ray, wall.bounds);
+        if (hit.hit && hit.distance < maxDistance) {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
+    
     const int numRays = 5;
     const float spread = 0.1f; // widen fan
 
     Vector2 dir = Vector2Normalize(Vector2Subtract(end, start));
     float distance = Vector2Length(Vector2Subtract(end, start));
-    if (distance == 0) return true;
+    if (distance == 0) return true; 
 
     Vector2 perp = { -dir.y, dir.x };
 

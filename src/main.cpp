@@ -19,6 +19,7 @@
 #include "collectable.h"
 #include "inventory.h"
 #include "collisions.h"
+#include "custom_rendertexture.h"
 
 
 
@@ -187,12 +188,13 @@ void DrawStaminaBar(){
 void ClearLevel() {
     isDungeon = false;
     ClearDungeon();
+  
     dungeonEntrances.clear();
     RemoveAllVegetation();
     removeAllCharacters();
     if (terrainMesh.vertexCount > 0) UnloadMesh(terrainMesh); //unload mesh when switching levels. 
     if (heightmap.data != nullptr) UnloadImage(heightmap);
-
+ 
 }
 
 
@@ -323,6 +325,7 @@ void InitLevel(const LevelData& level, Camera camera) {
     if (level.isDungeon){
         isDungeon = true;
         vignetteStrengthValue = 0.5f; //darker vignette in dungeons
+        swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean; //start with a clean sword
         LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);
         GenerateFloorTiles(floorHeight);//80
@@ -335,7 +338,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateLightSources(floorHeight);
         GenerateDoorways(floorHeight, levelIndex); //calls generate doors from archways
         GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
-        GeneratePiratesFromImage(dungeonEnemyHeight-25);
+        GeneratePiratesFromImage(dungeonEnemyHeight-100);
         if (levelIndex == 4){
             levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
         }
@@ -521,8 +524,8 @@ int main() {
     camera.projection = CAMERA_PERSPECTIVE;
     DisableCursor();
 
-    SetupFogShader(camera);
-    InitChests();
+    //SetupFogShader(camera);
+    //InitChests();
     Vector3 terrainPosition = { //center the terrain around 0, 0, 0
             -terrainScale.x / 2.0f,
             0.0f,
@@ -533,6 +536,8 @@ int main() {
     //main game loop
     while (!WindowShouldClose()) {
         ElapsedTime += GetFrameTime();
+
+        
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
             if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Playing;
@@ -574,6 +579,7 @@ int main() {
         UpdateDecals(deltaTime);
         UpdateBoat(player_boat, deltaTime);
         UpdateEnemies(deltaTime);
+        UpdateDungeonChests();
 
         // UpdateRaptors(deltaTime);
         // UpdateSkeletons(deltaTime);
@@ -584,6 +590,7 @@ int main() {
         DoorCollision();
         barrelCollision();
         ChestCollision();
+        
         pillarCollision();
         HandleMeleeHitboxCollision(camera);
         HandleDoorInteraction(camera);
@@ -613,30 +620,32 @@ int main() {
         // === RENDER TO TEXTURE ===
         BeginTextureMode(sceneTexture);
         ClearBackground(SKYBLUE);
+        float farClip = isDungeon ? 10000.0f : 50000.0f;
 
-        BeginCustom3D(camera, 50000.0f);//50k far clipping plane
+        BeginCustom3D(camera, farClip);//50k far clipping plane
         rlDisableBackfaceCulling(); rlDisableDepthMask(); rlDisableDepthTest();
         DrawModel(skyModel, camera.position, 10000.0f, WHITE); //draw skybox with no depthmask or test or backface culling, leave backfaceculling off. 
         rlEnableDepthMask(); rlEnableDepthTest();
-        rlSetBlendMode(BLEND_ALPHA);
-        rlEnableColorBlend();
+        rlSetBlendMode(BLEND_ALPHA); //required 
+        rlEnableColorBlend(); //not sure
 
         DrawDungeonFloor();
         DrawDungeonWalls(wall);
+        DrawDungeonCeiling(floorTile);
         DrawDungeonBarrels();
         DrawDungeonChests();
-        UpdateDungeonChests();
+        
         DrawDungeonDoorways(doorWay); 
-        DrawDungeonCeiling(floorTile);
-
-        DrawBullets(camera); //and decals //draw bullets before enemies
-        DrawAllEnemies(camera);
-        DrawPlayer(player, camera);
-       
+        
 
         //draw things with transparecy last.
+        DrawAllEnemies(camera);
+        DrawPlayer(player, camera);
+        DrawBullets(camera); //and decals //draw bullets and decals after enemies,
+
+        
         UpdateCollectables(camera, deltaTime); //Update and draw
-        DrawDungeonPillars(deltaTime, camera); //light sources
+        DrawDungeonPillars(deltaTime, camera); //light sources become invisible when being enemies, but it's better then enemies being invisible being behind light sources. 
        
         if (!isDungeon) { //not a dungeon, draw terrain. 
             DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
@@ -654,7 +663,7 @@ int main() {
         rlDisableDepthTest();
         EndTextureMode();//////end drawing to texture
 
-        // === POSTPROCESS TO postProcessTexture ===
+                // === POSTPROCESS TO postProcessTexture ===
         BeginTextureMode(postProcessTexture);
             BeginShaderMode(fogShader); // original post shader
                 DrawTextureRec(sceneTexture.texture, 
@@ -673,14 +682,13 @@ int main() {
                     (Vector2){0, 0}, WHITE);
             EndShaderMode();
 
-
         ///2D on top of render texture
         if (pendingLevelIndex != -1) { //fading out...draw loading text and nothing else. 
             DrawText("Loading...", GetScreenWidth() / 2 - MeasureText("Loading...", 20) / 2, GetScreenHeight() / 2, 20, WHITE);
         }else{
             DrawHealthBar();
             DrawStaminaBar();
-            DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD);
+            DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD); 
             if (debugInfo){//press ~ to hide debug info
                 DrawTimer(); 
                 DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
