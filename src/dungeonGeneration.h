@@ -55,9 +55,11 @@ struct ChestInstance {
     Vector3 position;
     Color tint;
     BoundingBox bounds;
+
     bool open = false;
     bool animPlaying = false;
     float animFrame = 0.0f;
+    bool canDrop = true;
 };
 
 
@@ -78,7 +80,7 @@ struct PillarInstance {
 
 struct LightSource {
     Vector3 position;
-    float intensity = 0.5;  // maybe 1.0 = full bright, 0.5 = dim, etc.
+    float intensity = 0.7;  // maybe 1.0 = full bright, 0.5 = dim, etc.
     float range = 1500;
     float lifeTime = 1.0f;
     float age;

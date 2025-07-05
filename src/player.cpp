@@ -248,8 +248,11 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
     }
 
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
-        meleeWeapon.StartBlock();
-        if (activeWeapon == WeaponType::Sword) player.blocking = true; //only block with the sword
+
+        if (activeWeapon == WeaponType::Sword){
+            player.blocking = true; //only block with the sword
+            meleeWeapon.StartBlock();
+        } 
     } else {
         meleeWeapon.EndBlock();
         player.blocking = false;

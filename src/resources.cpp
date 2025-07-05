@@ -5,12 +5,14 @@
 #include <iostream>
 #include "rlgl.h"
 #include "custom_rendertexture.h"
+#include "dungeonGeneration.h"
 
-RenderTexture2D sceneTexture, postProcessTexture;
+RenderTexture2D sceneTexture, postProcessTexture, depthEffectTexture;
+
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, 
 doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture;
 
-Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader;
+Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader, depthShader;
 
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2, floorTile3,chestModel,
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel;
@@ -27,9 +29,9 @@ Vector2 screenResolution; //global shader resolution
 
 void LoadAllResources() {
     screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
-    sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
-    //sceneTexture = LoadRenderTextureWithDepthTexture((int)screenResolution.x, (int)screenResolution.y);
-
+    sceneTexture = LoadRenderTextureWithDepthTexture((int)screenResolution.x, (int)screenResolution.y);
+    depthEffectTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
+    
     postProcessTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
     raptorTexture = LoadTexture("assets/sprites/raptorSheet.png");
     skeletonSheet = LoadTexture("assets/sprites/skeletonSheet.png");
@@ -79,8 +81,12 @@ void LoadAllResources() {
     //sceneDepthLoc = GetShaderLocation(fogShader, "sceneDepth");
     //SetShaderValueTexture(fogShader, sceneDepthLoc, sceneTexture.depth);
 
+    depthShader = LoadShader(0, "assets/shaders/depth_shader.fs");
 
-   
+
+
+
+
 
 
     // Sky
@@ -115,10 +121,10 @@ void LoadAllResources() {
     SetShaderValue(simpleFogShader, locVerticalFade, (float[]){ 0.0f }, SHADER_UNIFORM_FLOAT);
 
     bloomShader = LoadShader(0, "assets/shaders/bloom.fs");
-    float bloomStrengthValue = 0.2f;
+    float bloomStrengthValue = 0.3f;
     //vignetteStrengthValue = 0.2f; //set globaly for black vignette strength
     
-    float bloomColor[3] = { 1.0f, 0.1f, 0.7f }; // Slight reddish-pink glow
+    float bloomColor[3] = { 1.0f, 0.1f, 0.9f }; // Slight reddish-pink glow
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
 
@@ -126,17 +132,7 @@ void LoadAllResources() {
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomColor"), bloomColor, SHADER_UNIFORM_VEC3);
 
-    // bloomShader = LoadShader(0, "assets/shaders/bloom.fs");
-    // float bloomStrengthValue = 0.2f;
-    // //vignetteStrengthValue = 0.2f; //set globaly for black vignette strength
-    
-    // float bloomColor[3] = { 1.0f, 0.1f, 1.0f }; // Slight reddish-pink glow
-    // SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
-    // SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
-    // SetShaderValueTexture(bloomShader, sceneTextureLoc, sceneTexture.texture);
 
-    // SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
-    // SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomColor"), bloomColor, SHADER_UNIFORM_VEC3);
 
 
     //Sounds
@@ -203,8 +199,8 @@ void UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
     //dungeonDarkness
-    float dungeonDarkness = 0.05f;//darkened 5 percent. it darkens the gun model as well, so go easy. 
-    float dungeonContrast = 1.127f; //makes darks darker
+    float dungeonDarkness = 0.0f;//darkened 5 percent. it darkens the gun model as well, so go easy. negative number 
+    float dungeonContrast = 1.35f; //makes darks darker. 
 
     float aaStrengthValue = 0.5f; //maybe this does something? 
 
@@ -220,6 +216,35 @@ void UpdateShaders(Camera& camera){
 
     
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "aaStrength"), &aaStrengthValue, SHADER_UNIFORM_FLOAT);
+
+    int sceneTextureLoc = GetShaderLocation(depthShader, "sceneTexture");
+    int sceneDepthLoc   = GetShaderLocation(depthShader, "sceneDepth");
+
+    int cameraNearLoc = GetShaderLocation(depthShader, "cameraNear");
+    int cameraFarLoc  = GetShaderLocation(depthShader, "cameraFar");
+
+    int fogNearLoc = GetShaderLocation(depthShader, "fogNear");
+    int fogFarLoc  = GetShaderLocation(depthShader, "fogFar");
+    int fogAmountLoc = GetShaderLocation(depthShader, "fogAmount");
+
+    // Camera near/far match render pass
+    float cameraNearClip = 60.0f;
+    float cameraFarClip = 10000.0f;
+
+    float fogAmount = 1.0f; // 0.0 = no fog, 1.0 = full fog
+    SetShaderValue(depthShader, fogAmountLoc, &fogAmount, SHADER_UNIFORM_FLOAT);
+
+    SetShaderValue(depthShader, cameraNearLoc, &cameraNearClip, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(depthShader, cameraFarLoc, &cameraFarClip, SHADER_UNIFORM_FLOAT);
+
+    // Fog control
+    float fogNear = 60.0f;
+    float fogFar  = 61.0f;
+
+    SetShaderValue(depthShader, fogNearLoc, &fogNear, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(depthShader, fogFarLoc, &fogFar, SHADER_UNIFORM_FLOAT);
+
+ 
 
 
 }

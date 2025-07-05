@@ -88,17 +88,13 @@ void UpdateDungeonChests() {
         if (distToPlayer < 300 && IsKeyPressed(KEY_E) && !chest.open){
             chest.animPlaying = true;
             chest.animFrame = 0.0f;
-            Vector3 pos = {chest.position.x, chest.position.y + 100, chest.position.z};
-            Collectable key = Collectable(CollectableType::Key, pos);
-            collectables.push_back(key);
-            // Collectable coin = Collectable(CollectableType::Gold, pos);
-            // coin.value = GetRandomValue(1, 100);
-            // collectables.push_back(coin);
+
+
             SoundManager::GetInstance().Play("chestOpen");
         }
 
         if (chest.animPlaying) {
-            chest.animFrame += GetFrameTime() * 1000.0f;
+            chest.animFrame += GetFrameTime() * 24.0f;
 
             if (chest.animFrame > OPEN_END_FRAME) {
                 chest.animFrame = OPEN_END_FRAME;
@@ -110,10 +106,15 @@ void UpdateDungeonChests() {
 
             
         }
-        else if (chest.open) {
+        else if (chest.open && chest.canDrop) { //wait until the animation is finished before dropping the item. 
+            chest.canDrop = false;
             UpdateModelAnimation(chest.model, chest.animations[0], OPEN_END_FRAME);
-
+            Vector3 pos = {chest.position.x, chest.position.y + 100, chest.position.z};
+            Collectable key = Collectable(CollectableType::Key, pos); //gold chests always drop keys? Maybe gold chests should require keys
+            collectables.push_back(key);
+            
         }
+
     }
 
 }
@@ -752,6 +753,9 @@ void DrawDungeonBarrels() {
 void DrawDungeonChests() {
     for (const ChestInstance& chest : chestInstances) {
         Vector3 offsetPos = {chest.position.x, chest.position.y + 20, chest.position.z};
+        if (chest.animFrame > 0){
+            offsetPos.z -= 45;
+        }
         DrawModelEx(chest.model, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{60.0f, 60.0f, 60.0f}, chest.tint);
     }
 }
@@ -876,14 +880,16 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera) {
 
         // Draw animated fire as billboard
         Vector2 fireSize = {100, 100};
+        rlDisableDepthMask();
         DrawBillboardRec(camera, fireSheet, sourceRect, firePos, fireSize, WHITE);
+        rlEnableDepthMask();
     }
 }
 
 
 void UpdateDoorwayTints(Vector3 playerPos) {
     const float playerLightRange = 1000.0f;
-    const float minBrightness = 0.2f;
+    const float minBrightness = 0.5f;
 
     for (DoorwayInstance& door : doorways) {
         // Player light
@@ -913,8 +919,8 @@ void UpdateDoorwayTints(Vector3 playerPos) {
 }
 
 void UpdateWallTints(Vector3 playerPos) {
-    const float playerLightRange = 1000.0f;
-    const float minBrightness = 0.2f;
+    const float playerLightRange = 1500.0f;
+    const float minBrightness = 0.5f;
 
     for (WallInstance& wall : wallInstances) {
         // Player light

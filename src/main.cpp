@@ -23,11 +23,14 @@
 
 
 
+
+
+
 void BeginCustom3D(Camera3D camera, float farClip) {
     rlDrawRenderBatchActive();
     rlMatrixMode(RL_PROJECTION);
     rlLoadIdentity();
-    float nearClip = 60.0f; //20 wider than the capsule. to 50k 
+    float nearClip = 60.0f; //20 wider than the capsule. to 50k outside, 10k in dungeons
     Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), nearClip, farClip);
 
     rlMultMatrixf(MatrixToFloat(proj));
@@ -36,153 +39,6 @@ void BeginCustom3D(Camera3D camera, float farClip) {
     rlLoadIdentity();
     Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
     rlMultMatrixf(MatrixToFloat(view));
-}
-
-
-
-
-
-
-void SpawnRaptor(Vector3 pos) {
-    Character raptor(pos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
-    enemies.push_back(raptor);
-    enemyPtrs.push_back(&enemies.back());
-}
-
-
-Color ColorLerp(Color a, Color b, float t) {
-    
-    Color result;
-    result.r = (unsigned char)Lerp((float)a.r, (float)b.r, t);
-    result.g = (unsigned char)Lerp((float)a.g, (float)b.g, t);
-    result.b = (unsigned char)Lerp((float)a.b, (float)b.b, t);
-    result.a = (unsigned char)Lerp((float)a.a, (float)b.a, t);
-    return result;
-}
-
-
-
-void UpdateEnemies(float deltaTime) {
-    for (Character& e : enemies){
-        e.Update(deltaTime, player, heightmap, terrainScale);
-    }
-}
-
-
-// void UpdateRaptors(float deltaTime){
-//     for (Character& raptor : raptors) {
-//         raptor.Update(deltaTime, player,  heightmap, terrainScale);
-//     }
-// }
-
-// void UpdateSkeletons(float deltaTime){
-//     for (Character& skeleton : skeletons) {
-//         skeleton.Update(deltaTime, player, heightmap, terrainScale);
-//     }
-// }
-
-// void UpdatePirates(float deltaTime){
-//     for (Character& pirate : pirates){
-//         pirate.Update(deltaTime, player, heightmap, terrainScale);
-//     }
-// }
-
-void UpdateBullets(Camera& camera, float deltaTime) {
-    for (Bullet& b : activeBullets) {
-        b.Update(camera, deltaTime);
-    }
-
-    activeBullets.erase( //erase dead bullets. 
-        std::remove_if(activeBullets.begin(), activeBullets.end(),
-                    [](const Bullet& b) { return !b.IsAlive(); }),
-        activeBullets.end());
-
-}
-
-
-
-
-void DrawBullets(Camera& camera) {
-    for (const Bullet& b : activeBullets) {
-        if (b.IsAlive()) b.Draw();
-    }
-
-    for (auto& d : decals) {
-        
-        d.Draw(camera);
-
-    }
-
-}
-
-
-
-
-
-
-
-void DrawHealthBar(){
-
-    float healthPercent = (float)player.currentHealth / player.maxHealth;
-    healthPercent = Clamp(healthPercent, 0.0f, 1.0f); // safety first
-    int barWidth = 300;
-    int barHeight = 30;
-    int barX = GetScreenWidth()/3 - barWidth/2;
-    int barY = GetScreenHeight() -80;
-
-    Rectangle healthBarFull = { (float)barX, (float)barY, (float)barWidth, (float)barHeight };
-
-    Rectangle healthBarCurrent = { 
-        (float)barX, 
-        (float)barY, 
-        (float)(barWidth * healthPercent), 
-        (float)barHeight 
-    };
-
-    // Background frame 
-    DrawRectangleLines(barX - 1, barY - 1, barWidth + 2, barHeight + 2, WHITE);
-
-    // Tint white to red based on health
-    //Color barColor = GetHealthBarColor(healthPercent);
-
-    Color barColor = WHITE;
-    if (healthPercent < 0.25f) {
-        float pulse = sin(GetTime() * 10.0f) * 0.5f + 0.5f; // 0..1
-        barColor = ColorLerp(WHITE, RED, pulse);
-    }
-
-    // Current health fill
-    DrawRectangleRec(healthBarCurrent, barColor);
-
-}
-
-void DrawStaminaBar(){
-    float staminaPercent = player.stamina / player.maxStamina;
-    staminaPercent = Clamp(staminaPercent, 0.0f, 1.0f);
-
-    int staminaBarWidth = 300;
-    int staminaBarHeight = 10;
-    int staminaBarX = GetScreenWidth()/3 - staminaBarWidth/2;
-    int staminaBarY = GetScreenHeight() - 40;  
-
-    Rectangle staminaBarBack = { (float)staminaBarX, (float)staminaBarY, (float)staminaBarWidth, (float)staminaBarHeight };
-    Rectangle staminaBarCurrent = {
-        (float)staminaBarX,
-        (float)staminaBarY,
-        (float)(staminaBarWidth * staminaPercent),
-        (float)staminaBarHeight
-
-    
-    };
-
-    // Outline
-    DrawRectangleLines(staminaBarX - 1, staminaBarY - 1, staminaBarWidth + 2, staminaBarHeight + 2, DARKGRAY);
-
-    // Color based on stamina
-    Color barColor = ColorLerp((Color){50, 50, 150, 255}, BLUE, staminaPercent);  // subtle fade
-
-    DrawRectangleRec(staminaBarCurrent, barColor);
-
 }
 
 void ClearLevel() {
@@ -195,36 +51,6 @@ void ClearLevel() {
     if (terrainMesh.vertexCount > 0) UnloadMesh(terrainMesh); //unload mesh when switching levels. 
     if (heightmap.data != nullptr) UnloadImage(heightmap);
  
-}
-
-
-
-void DrawMenu() {
-    ClearBackground(BLACK);
-    
-    DrawTexturePro(
-        backDrop,
-        Rectangle{ 0, 0, (float)backDrop.width, (float)backDrop.height },
-        Rectangle{ 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() },
-        Vector2{ 0, 0 },
-        0.0f,
-        WHITE
-    );
-
-    //float middle = GetScreenWidth()/2 - 150;
-    const char* title = "MAROONED";
-    int fontSize = 60;
-    int titleX = GetScreenWidth() / 2 - MeasureText(title, fontSize) / 2;
-    DrawText(title, titleX, 180, fontSize, GREEN);
-
-    DrawText(selectedOption == 0 ? "> Start" : "  Start", titleX, 280, 30, WHITE);
-    
-    DrawText(
-        TextFormat("%s Level: %s", selectedOption == 1 ? ">" : " ", levels[levelIndex].name.c_str()),
-        titleX, 330, 30, YELLOW
-    );
-
-    DrawText(selectedOption == 2 ? "> Quit" : "  Quit", titleX, 380, 30, WHITE);
 }
 
 void GenerateEntrances(){
@@ -259,43 +85,6 @@ void GenerateEntrances(){
     }
 
 }
-
-void UpdateCollectables(Camera& camera, float deltaTime) {
-    for (int i = 0; i < collectables.size(); i++) {
-        collectables[i].Update(deltaTime);
-
-        // Draw correct icon
-        if (collectables[i].type == CollectableType::HealthPotion) {
-            collectables[i].Draw(healthPotTexture, camera, 40.0f);
-        }
-        else if (collectables[i].type == CollectableType::Key) {
-            collectables[i].Draw(keyTexture, camera, 80.0f);//double the scale for keys
-        }
-        else if (collectables[i].type == CollectableType::Gold) {
-            collectables[i].Draw(coinTexture, camera, 40);
-        }
-
-        // Pickup logic
-        if (collectables[i].CheckPickup(player.position, 180.0f)) {
-            if (collectables[i].type == CollectableType::HealthPotion) {
-                player.inventory.AddItem("HealthPotion");
-                SoundManager::GetInstance().Play("clink");
-            }
-            else if (collectables[i].type == CollectableType::Key) {
-                player.inventory.AddItem("GoldKey");
-                SoundManager::GetInstance().Play("key");
-            }
-            else if (collectables[i].type == CollectableType::Gold) {
-                player.gold += collectables[i].value;
-                SoundManager::GetInstance().Play("key");
-            }
-
-            collectables.erase(collectables.begin() + i);
-            i--;
-        }
-    }
-}
-
 
 
 void InitLevel(const LevelData& level, Camera camera) {
@@ -364,6 +153,204 @@ void InitLevel(const LevelData& level, Camera camera) {
   
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
 }
+
+
+
+
+
+
+
+void SpawnRaptor(Vector3 pos) {
+    Character raptor(pos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
+    enemies.push_back(raptor);
+    enemyPtrs.push_back(&enemies.back());
+}
+
+
+Color ColorLerp(Color a, Color b, float t) {
+    
+    Color result;
+    result.r = (unsigned char)Lerp((float)a.r, (float)b.r, t);
+    result.g = (unsigned char)Lerp((float)a.g, (float)b.g, t);
+    result.b = (unsigned char)Lerp((float)a.b, (float)b.b, t);
+    result.a = (unsigned char)Lerp((float)a.a, (float)b.a, t);
+    return result;
+}
+
+
+
+void UpdateEnemies(float deltaTime) {
+    for (Character& e : enemies){
+        e.Update(deltaTime, player, heightmap, terrainScale);
+    }
+}
+
+
+
+void UpdateBullets(Camera& camera, float deltaTime) {
+    for (Bullet& b : activeBullets) {
+        b.Update(camera, deltaTime);
+    }
+
+    activeBullets.erase( //erase dead bullets. 
+        std::remove_if(activeBullets.begin(), activeBullets.end(),
+                    [](const Bullet& b) { return !b.IsAlive(); }),
+        activeBullets.end());
+
+}
+
+
+
+
+void DrawBullets(Camera& camera) {
+    for (const Bullet& b : activeBullets) {
+        if (b.IsAlive()) b.Draw();
+    }
+
+    for (auto& d : decals) {
+        
+        d.Draw(camera);
+
+    }
+
+}
+
+
+void DrawHealthBar(){
+
+    float healthPercent = (float)player.currentHealth / player.maxHealth;
+    healthPercent = Clamp(healthPercent, 0.0f, 1.0f); // safety first
+    int barWidth = 300;
+    int barHeight = 30;
+    int barX = GetScreenWidth()/3 - barWidth/2;
+    int barY = GetScreenHeight() -80;
+
+    Rectangle healthBarFull = { (float)barX, (float)barY, (float)barWidth, (float)barHeight };
+
+    Rectangle healthBarCurrent = { 
+        (float)barX, 
+        (float)barY, 
+        (float)(barWidth * healthPercent), 
+        (float)barHeight 
+    };
+
+    // Background frame 
+    DrawRectangleLines(barX - 1, barY - 1, barWidth + 2, barHeight + 2, WHITE);
+
+    // Tint white to red based on health
+    //Color barColor = GetHealthBarColor(healthPercent);
+
+    Color barColor = WHITE;
+    if (healthPercent < 0.25f) {
+        float pulse = sin(GetTime() * 10.0f) * 0.5f + 0.5f; // 0..1
+        barColor = ColorLerp(WHITE, RED, pulse);
+    }
+
+    // Current health fill
+    DrawRectangleRec(healthBarCurrent, barColor);
+
+}
+
+void DrawStaminaBar(){
+    float staminaPercent = player.stamina / player.maxStamina;
+    staminaPercent = Clamp(staminaPercent, 0.0f, 1.0f);
+
+    int staminaBarWidth = 300;
+    int staminaBarHeight = 10;
+    int staminaBarX = GetScreenWidth()/3 - staminaBarWidth/2;
+    int staminaBarY = GetScreenHeight() - 40;  
+
+    Rectangle staminaBarBack = { (float)staminaBarX, (float)staminaBarY, (float)staminaBarWidth, (float)staminaBarHeight };
+    Rectangle staminaBarCurrent = {
+        (float)staminaBarX,
+        (float)staminaBarY,
+        (float)(staminaBarWidth * staminaPercent),
+        (float)staminaBarHeight
+
+    
+    };
+
+    // Outline
+    DrawRectangleLines(staminaBarX - 1, staminaBarY - 1, staminaBarWidth + 2, staminaBarHeight + 2, DARKGRAY);
+
+    // Color based on stamina
+    Color barColor = ColorLerp((Color){50, 50, 150, 255}, BLUE, staminaPercent);  // subtle fade
+
+    DrawRectangleRec(staminaBarCurrent, barColor);
+
+}
+
+
+
+
+
+void DrawMenu() {
+    ClearBackground(BLACK);
+    
+    DrawTexturePro(
+        backDrop,
+        Rectangle{ 0, 0, (float)backDrop.width, (float)backDrop.height },
+        Rectangle{ 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() },
+        Vector2{ 0, 0 },
+        0.0f,
+        WHITE
+    );
+
+    //float middle = GetScreenWidth()/2 - 150;
+    const char* title = "MAROONED";
+    int fontSize = 60;
+    int titleX = GetScreenWidth() / 2 - MeasureText(title, fontSize) / 2;
+    DrawText(title, titleX, 180, fontSize, GREEN);
+
+    DrawText(selectedOption == 0 ? "> Start" : "  Start", titleX, 280, 30, WHITE);
+    
+    DrawText(
+        TextFormat("%s Level: %s", selectedOption == 1 ? ">" : " ", levels[levelIndex].name.c_str()),
+        titleX, 330, 30, YELLOW
+    );
+
+    DrawText(selectedOption == 2 ? "> Quit" : "  Quit", titleX, 380, 30, WHITE);
+}
+
+
+
+void UpdateCollectables(Camera& camera, float deltaTime) {
+    for (int i = 0; i < collectables.size(); i++) {
+        collectables[i].Update(deltaTime);
+
+        // Draw correct icon
+        if (collectables[i].type == CollectableType::HealthPotion) {
+            collectables[i].Draw(healthPotTexture, camera, 40.0f);
+        }
+        else if (collectables[i].type == CollectableType::Key) {
+            collectables[i].Draw(keyTexture, camera, 80.0f);//double the scale for keys
+        }
+        else if (collectables[i].type == CollectableType::Gold) {
+            collectables[i].Draw(coinTexture, camera, 40);
+        }
+
+        // Pickup logic
+        if (collectables[i].CheckPickup(player.position, 180.0f)) {
+            if (collectables[i].type == CollectableType::HealthPotion) {
+                player.inventory.AddItem("HealthPotion");
+                SoundManager::GetInstance().Play("clink");
+            }
+            else if (collectables[i].type == CollectableType::Key) {
+                player.inventory.AddItem("GoldKey");
+                SoundManager::GetInstance().Play("key");
+            }
+            else if (collectables[i].type == CollectableType::Gold) {
+                player.gold += collectables[i].value;
+                SoundManager::GetInstance().Play("key");
+            }
+
+            collectables.erase(collectables.begin() + i);
+            i--;
+        }
+    }
+}
+
+
 
 
 
@@ -524,6 +511,8 @@ int main() {
     camera.projection = CAMERA_PERSPECTIVE;
     DisableCursor();
 
+
+
     //SetupFogShader(camera);
     //InitChests();
     Vector3 terrainPosition = { //center the terrain around 0, 0, 0
@@ -636,17 +625,16 @@ int main() {
         DrawDungeonChests();
         
         DrawDungeonDoorways(doorWay); 
-        
+        DrawPlayer(player, camera);
 
         //draw things with transparecy last.
+        rlDisableDepthMask();
         DrawAllEnemies(camera);
-        DrawPlayer(player, camera);
         DrawBullets(camera); //and decals //draw bullets and decals after enemies,
-
-        
         UpdateCollectables(camera, deltaTime); //Update and draw
-        DrawDungeonPillars(deltaTime, camera); //light sources become invisible when being enemies, but it's better then enemies being invisible being behind light sources. 
-       
+        DrawDungeonPillars(deltaTime, camera); //light sources become invisible when behind enemies, but it's better then enemies being invisible being behind light sources. 
+        rlEnableDepthMask();
+        
         if (!isDungeon) { //not a dungeon, draw terrain. 
             DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
             DrawModel(waterModel, waterPos, 1.0f, WHITE); 
@@ -663,10 +651,21 @@ int main() {
         rlDisableDepthTest();
         EndTextureMode();//////end drawing to texture
 
+        BeginTextureMode(depthEffectTexture);
+            BeginShaderMode(depthShader);
+                SetShaderValueTexture(depthShader, sceneTextureLoc, sceneTexture.texture);
+                SetShaderValueTexture(depthShader, sceneDepthLoc, sceneTexture.depth);
+
+                DrawTextureRec(sceneTexture.texture, 
+                    (Rectangle){0, 0, (float)GetScreenWidth(), -(float)GetScreenHeight()},
+                    (Vector2){0, 0}, WHITE);
+            EndShaderMode();
+        EndTextureMode();
+
                 // === POSTPROCESS TO postProcessTexture ===
         BeginTextureMode(postProcessTexture);
             BeginShaderMode(fogShader); // original post shader
-                DrawTextureRec(sceneTexture.texture, 
+                DrawTextureRec(depthEffectTexture.texture, 
                     (Rectangle){0, 0, (float)GetScreenWidth(), -(float)GetScreenHeight()},
                     (Vector2){0, 0}, WHITE);
             EndShaderMode();

@@ -11,6 +11,7 @@
 #include "pathfinding.h"
 
 
+
 Character::Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, float speed, float scl, int row, CharacterType t)
     : position(pos),
       texture(tex),
@@ -368,7 +369,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                     }
                 }
 
-                // 🧭 Move along current path
+                // Move along current path
                 if (!currentWorldPath.empty() && state != CharacterState::Stagger) {
                     Vector3 targetPos = currentWorldPath[0];
                     Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
@@ -784,6 +785,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
                 // Play attack sound
                 SoundManager::GetInstance().Play("swipe3");
+                
 
                 // Damage the player
                 if (CheckCollisionBoxes(GetBoundingBox(), player.blockHitbox) && player.blocking) {
@@ -1127,7 +1129,7 @@ void Character::Draw(Camera3D camera) {
 
     Color redTint = (hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
     rlDisableDepthMask();
-    //if (isDead && type == CharacterType::Pirate) offsetPos.y; 
+    if (isDead && type == CharacterType::Pirate) offsetPos.y -= 25; 
     //DrawBoundingBox(GetBoundingBox(), RED); //debug visible bounding boxes
     DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, redTint);
 
