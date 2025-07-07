@@ -4,6 +4,16 @@
 #include <string>
 #include <vector>
 
+struct BillboardDrawRequest {
+    Vector3 position;
+    Texture2D* texture;
+    Rectangle sourceRect;
+    float size;
+    Color tint;
+    float distanceToCamera;
+};
+
+
 enum class DoorType {
     Normal,
     ExitToPrevious,
@@ -72,6 +82,15 @@ struct BarrelInstance {
     bool containsGold = false;
 };
 
+struct SpiderWebInstance {
+    Vector3 position;
+    Color tint = WHITE;
+    BoundingBox bounds;
+    bool destroyed = false;
+    float rotationY;
+
+};
+
 struct PillarInstance {
     Vector3 position;
     float rotation;
@@ -123,8 +142,10 @@ extern std::vector<LightSource> bulletLights;
 extern std::vector<WallRun> wallRunColliders;
 extern std::vector<WallInstance> wallinstances;
 extern std::vector<BarrelInstance> barrelInstances;
+extern std::vector<SpiderWebInstance> spiderWebs;
 extern std::vector<ChestInstance> chestInstances;
 extern std::vector<DoorwayInstance> doorways;
+extern std::vector<BillboardDrawRequest> billboardRequests;
 extern std::vector<Door> doors;
 
 
@@ -142,6 +163,7 @@ void GenerateFloorTiles(float baseY);
 void GenerateWallTiles(float baseY);
 void GenerateCeilingTiles(float ceilingOffsetY);
 void GenerateBarrels(float baseY);
+void GenerateSpiderWebs(float baseY);
 void GenerateChests(float baseY); 
 void GenerateLightSources(float baseY);
 void GenerateDoorways( float baseY, int currentLevelIndex);
@@ -152,6 +174,7 @@ void DrawDungeonFloor();
 void DrawDungeonWalls(Model wallSegmentModel);
 void DrawDungeonFloor(Model floorModel);
 void DrawDungeonBarrels();
+void DrawSpiderWebs(Camera& camera);
 void DrawDungeonChests(); 
 void DrawDungeonPillars(float deltaTime, Camera3D camera);
 void DrawDungeonDoorways(Model archwayModel);
@@ -176,4 +199,5 @@ Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, flo
 void GenerateRaptorsFromImage(float baseY);
 void GenerateSkeletonsFromImage(float baseY);
 void GeneratePiratesFromImage(float baseY);
+void GenerateSpiderFromImage(float baseY);
 void ClearDungeon();

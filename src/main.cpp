@@ -121,6 +121,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateWallTiles(wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
         GenerateCeilingTiles(ceilingHeight);//400
         GenerateBarrels(floorHeight);
+        GenerateSpiderWebs(floorHeight);
         GenerateChests(floorHeight);
         GeneratePotions(floorHeight);
         GenerateKeys(floorHeight);
@@ -128,6 +129,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateDoorways(floorHeight, levelIndex); //calls generate doors from archways
         GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
         GeneratePiratesFromImage(dungeonEnemyHeight-100);
+        GenerateSpiderFromImage(dungeonEnemyHeight);
         if (levelIndex == 4){
             levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
         }
@@ -437,6 +439,34 @@ void HandleDungeon(float deltaTime) {
     UpdateDoorTints(player.position);
 }
 
+void DrawBillboards(Camera3D camera) {
+    // 1️⃣ Sort all transparent billboards back-to-front
+    std::sort(billboardRequests.begin(), billboardRequests.end(),
+        [&camera](const BillboardDrawRequest& a, const BillboardDrawRequest& b) {
+            return a.distanceToCamera > b.distanceToCamera;
+        });
+
+    // 2️⃣ Draw them in sorted order
+    for (const BillboardDrawRequest& req : billboardRequests) {
+        rlDisableDepthMask(); // Prevent depth buffer writes for transparency
+
+        DrawBillboardRec(
+            camera,
+            *(req.texture),
+            req.sourceRect,
+            req.position,
+            Vector2{req.size, req.size},
+            req.tint
+        );
+
+        rlEnableDepthMask();
+    }
+
+    // 3️⃣ Clear list for next frame
+    billboardRequests.clear();
+}
+
+
 
 
 void DrawAllEnemies(Camera& camera){
@@ -466,25 +496,86 @@ void DrawTimer(){
     DrawText(buffer, GetScreenWidth()-150, 30, 20, WHITE); 
 }
 
-void SetupFogShader(Camera& camera){
-    #define MAX_LIGHTS 8
-    Vector2 lightPositions[MAX_LIGHTS];
-    int numLights = std::min((int)dungeonLights.size(), MAX_LIGHTS);
+void GatherEnemies(Camera& camera) {
+    for (Character* enemy : enemyPtrs) {
+        if (enemy->isDead && enemy->deathTimer <= 0.0f) continue;
 
-    // Convert world positions to screen-space UVs
-    for (int i = 0; i < numLights; i++) {
-        Vector3 worldPos = dungeonLights[i].position;
-        Vector2 screen = GetWorldToScreen(worldPos, camera);
-        lightPositions[i] = {
-            screen.x / (float)GetScreenWidth(),
-            screen.y / (float)GetScreenHeight()
+        float dist = Vector3Distance(camera.position, enemy->position);
+
+        // Frame source rectangle
+        Rectangle sourceRect = {
+            (float)(enemy->currentFrame * enemy->frameWidth),
+            (float)(enemy->rowIndex * enemy->frameHeight),
+            (float)enemy->frameWidth,
+            (float)enemy->frameHeight
         };
-    }
 
-    // Pass to shader
-    SetShaderValueV(simpleFogShader, GetShaderLocation(simpleFogShader, "lightPositions"), lightPositions, SHADER_UNIFORM_VEC2, numLights);
-    SetShaderValue(simpleFogShader, GetShaderLocation(simpleFogShader, "numLights"), &numLights, SHADER_UNIFORM_INT);
+        // Slight camera-facing offset to avoid z-fighting
+        Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.position, enemy->position));
+        Vector3 offsetPos = Vector3Add(enemy->position, Vector3Scale(camDir, 10.0f));
+        //if (enemy->type == CharacterType::Skeleton) enemy->scale = 0.8f;
+       
+        // Correct billboard size: frame size * scale
+        float billboardSize = enemy->frameWidth * enemy->scale;
+
+        // Dynamic tint for damage
+        Color finalTint = (enemy->hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
+
+        billboardRequests.push_back({
+            offsetPos,
+            enemy->texture,
+            sourceRect,
+            billboardSize,
+            finalTint,
+            dist
+        });
+
+        if (enemy->texture == nullptr) {
+            printf("Enemy at %f,%f,%f has NULL texture!\n", enemy->position.x, enemy->position.y, enemy->position.z);
+        }
+    }
 }
+
+
+void GatherDungeonFires(Camera3D camera, float deltaTime) {
+    for (size_t i = 0; i < pillars.size(); ++i) {
+        PillarInstance& pillar = pillars[i];
+        Fire& fire = fires[i];
+
+        // Animate fire
+        fire.fireAnimTimer += deltaTime;
+        if (fire.fireAnimTimer >= fire.fireFrameDuration) {
+            fire.fireAnimTimer -= fire.fireFrameDuration;
+            fire.fireFrame = (fire.fireFrame + 1) % 60;
+        }
+
+        // Compute source rect
+        int frameX = fire.fireFrame % 10;
+        int frameY = fire.fireFrame / 10;
+        Rectangle sourceRect = {
+            (float)(frameX * 64),
+            (float)(frameY * 64),
+            64.0f,
+            64.0f
+        };
+
+        // Compute fire position
+        Vector3 firePos = pillar.position;
+        firePos.y += 130;
+
+        // Add to billboard requests
+        float dist = Vector3Distance(camera.position, firePos);
+        billboardRequests.push_back({
+            firePos,
+            &fireSheet,
+            sourceRect,
+            100.0f,
+            WHITE,
+            dist
+        });
+    }
+}
+
 
 
 int main() { 
@@ -577,12 +668,16 @@ int main() {
         CheckBulletHits(camera); //bullet collision
         TreeCollision(camera); //player and raptor vs tree
         DoorCollision();
+        SpiderWebCollision();
         barrelCollision();
         ChestCollision();
         
         pillarCollision();
         HandleMeleeHitboxCollision(camera);
         HandleDoorInteraction(camera);
+        billboardRequests.clear();
+        GatherEnemies(camera);
+        GatherDungeonFires(camera, deltaTime);
 
         if (!isDungeon) UpdateMusicStream(jungleAmbience);
         if (isDungeon){
@@ -609,9 +704,9 @@ int main() {
         // === RENDER TO TEXTURE ===
         BeginTextureMode(sceneTexture);
         ClearBackground(SKYBLUE);
-        float farClip = isDungeon ? 10000.0f : 50000.0f;
+        float farClip = isDungeon ? 10000.0f : 50000.0f;//10k in dungeons 50k outside
 
-        BeginCustom3D(camera, farClip);//50k far clipping plane
+        BeginCustom3D(camera, farClip);
         rlDisableBackfaceCulling(); rlDisableDepthMask(); rlDisableDepthTest();
         DrawModel(skyModel, camera.position, 10000.0f, WHITE); //draw skybox with no depthmask or test or backface culling, leave backfaceculling off. 
         rlEnableDepthMask(); rlEnableDepthTest();
@@ -622,6 +717,7 @@ int main() {
         DrawDungeonWalls(wall);
         DrawDungeonCeiling(floorTile);
         DrawDungeonBarrels();
+        DrawSpiderWebs(camera);
         DrawDungeonChests();
         
         DrawDungeonDoorways(doorWay); 
@@ -629,7 +725,8 @@ int main() {
 
         //draw things with transparecy last.
         rlDisableDepthMask();
-        DrawAllEnemies(camera);
+        //DrawAllEnemies(camera);
+        DrawBillboards(camera);
         DrawBullets(camera); //and decals //draw bullets and decals after enemies,
         UpdateCollectables(camera, deltaTime); //Update and draw
         DrawDungeonPillars(deltaTime, camera); //light sources become invisible when behind enemies, but it's better then enemies being invisible being behind light sources. 

@@ -222,7 +222,7 @@ void MeleeWeapon::EndBlock() {
 }
 
 void MeleeWeapon::StartSwing() {
-    if (timeSinceLastSwing >= cooldown) {
+    if (timeSinceLastSwing >= cooldown && !blocking) {
         PlaySwipe();
         swinging = true;
         swingTimer = 0.0f;

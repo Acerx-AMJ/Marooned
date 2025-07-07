@@ -14,10 +14,11 @@ std::vector<FloorTile> floorTiles;
 std::vector<WallInstance> wallInstances;
 std::vector<CeilingTile> ceilingTiles;
 std::vector<BarrelInstance> barrelInstances;
+std::vector<SpiderWebInstance> spiderWebs;
 std::vector<ChestInstance> chestInstances;
 std::vector<DoorwayInstance> doorways;
 std::vector<Door> doors;
-
+std::vector<BillboardDrawRequest> billboardRequests;
 std::vector<PillarInstance> pillars;
 std::vector<WallRun> wallRunColliders;
 std::vector<LightSource> dungeonLights; //static lights. 
@@ -69,6 +70,7 @@ const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
 
 //  Sky Blue = Chest (0, 128, 255)
 
+// ⚫ Dark Gray = Spider (64, 64, 64)
 
 void InitChests() {
     //chestModel = LoadModel("assets/models/chest.glb");
@@ -478,7 +480,105 @@ void GenerateCeilingTiles(float ceilingOffsetY) {
 }
 
 
+void GenerateSpiderWebs(float baseY)
+{
+    spiderWebs.clear();
 
+    for (int y = 1; y < dungeonHeight - 1; y++) {
+        for (int x = 1; x < dungeonWidth - 1; x++) {
+
+            Color current = dungeonPixels[y * dungeonWidth + x];
+            bool isWeb = (current.r == 128 && current.g == 128 && current.b == 128);  // light gray
+
+            if (!isWeb) continue;
+
+            // Check surrounding walls to determine orientation
+            Color left = dungeonPixels[y * dungeonWidth + (x - 1)];
+            Color right = dungeonPixels[y * dungeonWidth + (x + 1)];
+            Color up = dungeonPixels[(y - 1) * dungeonWidth + x];
+            Color down = dungeonPixels[(y + 1) * dungeonWidth + x];
+
+            bool wallLeft  = (left.r == 0 && left.g == 0 && left.b == 0);
+            bool wallRight = (right.r == 0 && right.g == 0 && right.b == 0);
+            bool wallUp    = (up.r == 0 && up.g == 0 && up.b == 0);
+            bool wallDown  = (down.r == 0 && down.g == 0 && down.b == 0);
+
+            float rotationY = 0.0f;
+            if (wallLeft && wallRight) {
+                rotationY = 0;
+            } 
+            else if (wallUp && wallDown) {
+                rotationY = 90.0f * DEG2RAD;
+            } 
+            else {
+                continue;  // not valid web position
+            }
+
+            // World position
+            Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
+            Vector3 offsetPos = {pos.x, pos.y + 150, pos.z};
+            pos = offsetPos;
+
+            // Define oriented bounding box (thin plane)
+            float width = 150.0f;
+            float thickness = 20.0f;
+            float height = 200.0f;
+
+            BoundingBox box;
+            if (rotationY == 0.0f) {
+                // Facing Z+ or Z-
+                box.min = { pos.x - width * 0.5f, pos.y, pos.z - thickness * 0.5f };
+                box.max = { pos.x + width * 0.5f, pos.y + height, pos.z + thickness * 0.5f };
+            }
+            else {
+                // Facing X+ or X-
+                box.min = { pos.x - thickness * 0.5f, pos.y, pos.z - width * 0.5f };
+                box.max = { pos.x + thickness * 0.5f, pos.y + height, pos.z + width * 0.5f };
+            }
+
+            // Add to spiderWebs
+            spiderWebs.push_back({
+                pos,
+                WHITE,
+                box,
+                false,
+                rotationY
+            });
+        }
+    }
+}
+
+
+// void GenerateSpiderWebs(float baseY) {
+//     spiderWebs.clear();
+
+//     for (int y = 0; y < dungeonHeight; y++) {
+//         for (int x = 0; x < dungeonWidth; x++) {
+//             Color current = dungeonPixels[y * dungeonWidth + x];
+
+//             if (current.r == 128 && current.g == 128 && current.b == 128) { // light grey = spiderweb
+//                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
+
+//                 // Define bounding box as 200x200x200 cube centered on pos
+//                 float halfSize = 100.0f;
+//                 BoundingBox box;
+//                 box.min = {
+//                     pos.x - halfSize,
+//                     pos.y,
+//                     pos.z - halfSize
+//                 };
+//                 box.max = {
+//                     pos.x + halfSize,
+//                     pos.y + 100.0f,
+//                     pos.z + halfSize
+//                 };
+                
+//                 spiderWebs.push_back({pos, WHITE, box, false});
+
+//             }
+//         }
+//     }
+// }
 
 
 void GenerateBarrels(float baseY) {
@@ -618,6 +718,36 @@ void GenerateRaptorsFromImage( float baseY) { //unused. no raptors allowed in du
 
 }
 
+void GenerateSpiderFromImage(float baseY) {
+    for (int y = 0; y < dungeonHeight; y++) {
+        for (int x = 0; x < dungeonWidth; x++) {
+            Color current = dungeonPixels[y * dungeonWidth + x];
+
+            // Look for pure red pixels (255, 0, 0) → Skeleton spawn
+            if (current.r == 64 && current.g == 64 && current.b == 64) {
+                Vector3 spawnPos = GetDungeonWorldPos(x, y, tileSize, baseY);
+
+                Character spider(
+                    spawnPos,
+                    &spiderSheet, 
+                    200, 200,         // frame width, height
+                    1,                // max frames
+                    0.5f, 0.5f,       // scale, speed
+                    0,                // initial animation frame
+                    CharacterType::Spider
+                );
+                spider.maxHealth = 100;
+                spider.currentHealth = 100; //at least 2 shots. 4 sword swings 
+                
+                enemies.push_back(spider);
+                enemyPtrs.push_back(&enemies.back()); 
+            }
+        }
+    }
+
+
+}
+
 void GenerateSkeletonsFromImage(float baseY) {
 
 
@@ -634,7 +764,7 @@ void GenerateSkeletonsFromImage(float baseY) {
                     &skeletonSheet, 
                     200, 200,         // frame width, height
                     1,                // max frames
-                    0.5f, 0.5f,       // scale, speed
+                    0.8f, 0.5f,       // scale, speed
                     0,                // initial animation frame
                     CharacterType::Skeleton
                 );
@@ -739,6 +869,52 @@ int GetDungeonImageY(float worldZ, float tileSize, int dungeonHeight) {
 //     Model modelToDraw = barrel.destroyed ? brokeBarrelModel : regularBarrelModel;
 //     DrawModel(modelToDraw, barrel.position, 1.0f, barrel.tint);
 // }
+
+
+
+void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height, float rotationY, Color tint)
+{
+    // Compute 4 corners of the quad in local space
+    Vector3 p1 = {-width/2, -height/2, 0};
+    Vector3 p2 = { width/2, -height/2, 0};
+    Vector3 p3 = { width/2,  height/2, 0};
+    Vector3 p4 = {-width/2,  height/2, 0};
+
+    // Apply Y-axis rotation
+    Matrix rot = MatrixRotateY(rotationY);
+    p1 = Vector3Transform(p1, rot);
+    p2 = Vector3Transform(p2, rot);
+    p3 = Vector3Transform(p3, rot);
+    p4 = Vector3Transform(p4, rot);
+
+    // Translate to world position
+    p1 = Vector3Add(p1, position);
+    p2 = Vector3Add(p2, position);
+    p3 = Vector3Add(p3, position);
+    p4 = Vector3Add(p4, position);
+
+    // Draw the textured quad
+    rlSetTexture(texture.id);
+
+    rlBegin(RL_QUADS);
+        rlColor4ub(tint.r, tint.g, tint.b, tint.a);
+
+        rlTexCoord2f(0, 0); rlVertex3f(p1.x, p1.y, p1.z);
+        rlTexCoord2f(1, 0); rlVertex3f(p2.x, p2.y, p2.z);
+        rlTexCoord2f(1, 1); rlVertex3f(p3.x, p3.y, p3.z);
+        rlTexCoord2f(0, 1); rlVertex3f(p4.x, p4.y, p4.z);
+
+    rlEnd();
+
+    rlSetTexture(0);
+}
+
+void DrawSpiderWebs(Camera& camera) {
+    for (const SpiderWebInstance& web : spiderWebs) {
+        Texture2D webTexture = web.destroyed ? brokeWebTexture : spiderWebTexture;
+        DrawFlatWeb(webTexture, web.position, 300.0f, 300.0f, web.rotationY, WHITE);
+    }
+}
 
 
 
@@ -857,32 +1033,32 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera) {
         // Draw the pedestal model
         DrawModelEx(lampModel, pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{1, 1, 1}, WHITE);
 
-        // Animate fire
-        fire.fireAnimTimer += deltaTime;
-        if (fire.fireAnimTimer >= fire.fireFrameDuration) {
-            fire.fireAnimTimer -= fire.fireFrameDuration;
-            fire.fireFrame = (fire.fireFrame + 1) % 60;
-        }
+        // // Animate fire
+        // fire.fireAnimTimer += deltaTime;
+        // if (fire.fireAnimTimer >= fire.fireFrameDuration) {
+        //     fire.fireAnimTimer -= fire.fireFrameDuration;
+        //     fire.fireFrame = (fire.fireFrame + 1) % 60;
+        // }
 
-        // Calculate frame position in sheet
-        int frameX = fire.fireFrame % 10;
-        int frameY = fire.fireFrame / 10;
-        Rectangle sourceRect = {
-            (float)(frameX * 64),
-            (float)(frameY * 64),
-            64.0f,
-            64.0f
-        };
+        // // Calculate frame position in sheet
+        // int frameX = fire.fireFrame % 10;
+        // int frameY = fire.fireFrame / 10;
+        // Rectangle sourceRect = {
+        //     (float)(frameX * 64),
+        //     (float)(frameY * 64),
+        //     64.0f,
+        //     64.0f
+        // };
 
-        // Position the fire above the bowl
-        Vector3 firePos = pillar.position;
-        firePos.y += 130; 
+        // // Position the fire above the bowl
+        // Vector3 firePos = pillar.position;
+        // firePos.y += 130; 
 
-        // Draw animated fire as billboard
-        Vector2 fireSize = {100, 100};
-        rlDisableDepthMask();
-        DrawBillboardRec(camera, fireSheet, sourceRect, firePos, fireSize, WHITE);
-        rlEnableDepthMask();
+        // // Draw animated fire as billboard
+        // Vector2 fireSize = {100, 100};
+        // rlDisableDepthMask();
+        // DrawBillboardRec(camera, fireSheet, sourceRect, firePos, fireSize, WHITE);
+        // rlEnableDepthMask();
     }
 }
 

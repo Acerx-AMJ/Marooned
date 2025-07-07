@@ -52,6 +52,7 @@
         "*.m": "cpp",
         "iostream": "cpp",
         "istream": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "ranges": "cpp"
     }
 }

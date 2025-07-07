@@ -8,6 +8,7 @@ enum class CharacterType {
     Raptor,
     Skeleton,
     Pirate,
+    Spider,
    
 };
 
@@ -83,6 +84,7 @@ public:
     void UpdateAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale); 
     void UpdateSkeletonAI(float deltaTime, Player& player);
     void UpdatePirateAI(float deltaTime, Player& player);
+    void UpdateSpiderAI(float deltaTime, Player& player);
     void AlertNearbySkeletons(Vector3 alertOrigin, float radius);
 
     void eraseCharacters();

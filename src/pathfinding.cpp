@@ -103,23 +103,6 @@ void ConvertImageToWalkableGrid(const Image& dungeonMap) {
 }
 
 
-// void ConvertImageToWalkableGrid(const Image& dungeonMap) {
-//     walkable.clear();
-//     walkable.resize(dungeonMap.width, std::vector<bool>(dungeonMap.height, false));
-
-//     for (int x = 0; x < dungeonMap.width; ++x) {
-//         for (int y = 0; y < dungeonMap.height; ++y) {
-//             Color c = GetImageColor(dungeonMap, x, y);
-
-//             // Define colors
-//             bool isWall = (c.r < 50 && c.g < 50 && c.b < 50); // black
-//             bool isBarrel = (c.b > 200 && c.r < 100 && c.g < 100); // blue barrel, skeletons will also navigate around barrels
-            
-
-//             walkable[x][y] = !(isWall || isBarrel);
-//         }
-//     }
-// }
 
 Vector2 WorldToImageCoords(Vector3 worldPos) {
     int x = (int)(worldPos.x / tileSize);

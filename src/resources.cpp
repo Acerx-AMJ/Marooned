@@ -10,7 +10,7 @@
 RenderTexture2D sceneTexture, postProcessTexture, depthEffectTexture;
 
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, 
-doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture;
+doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture, spiderSheet, spiderWebTexture, brokeWebTexture;
 
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader, depthShader;
 
@@ -48,6 +48,9 @@ void LoadAllResources() {
     fireSheet = LoadTexture("assets/sprites/fireSheet.png");
     pirateSheet = LoadTexture("assets/sprites/pirateSheet.png");
     coinTexture = LoadTexture("assets/sprites/coin.png");
+    spiderSheet = LoadTexture("assets/sprites/spiderSheet.png");
+    spiderWebTexture = LoadTexture("assets/sprites/spiderWeb.png");
+    brokeWebTexture = LoadTexture("assets/sprites/brokeWeb.png");
     
 
     // Models
@@ -81,13 +84,7 @@ void LoadAllResources() {
     //sceneDepthLoc = GetShaderLocation(fogShader, "sceneDepth");
     //SetShaderValueTexture(fogShader, sceneDepthLoc, sceneTexture.depth);
 
-    depthShader = LoadShader(0, "assets/shaders/depth_shader.fs");
-
-
-
-
-
-
+    depthShader = LoadShader(0, "assets/shaders/depth_shader.fs");//does nothing. 
 
     // Sky
     skyShader = LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
@@ -171,6 +168,9 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("barrelBreak", "assets/sounds/barrelBreak.ogg");
     SoundManager::GetInstance().LoadSound("musket", "assets/sounds/musket.ogg");
     SoundManager::GetInstance().LoadSound("chestOpen", "assets/sounds/chestOpen.ogg");
+    SoundManager::GetInstance().LoadSound("spiderBite1", "assets/sounds/spiderBite1.ogg");
+    SoundManager::GetInstance().LoadSound("spiderBite2", "assets/sounds/spiderBite2.ogg");
+    SoundManager::GetInstance().LoadSound("spiderDeath", "assets/sounds/spiderDeath.ogg");
 
 
 
@@ -239,7 +239,7 @@ void UpdateShaders(Camera& camera){
 
     // Fog control
     float fogNear = 60.0f;
-    float fogFar  = 61.0f;
+    float fogFar  = 60.1f;
 
     SetShaderValue(depthShader, fogNearLoc, &fogNear, SHADER_UNIFORM_FLOAT);
     SetShaderValue(depthShader, fogFarLoc, &fogFar, SHADER_UNIFORM_FLOAT);
@@ -264,6 +264,7 @@ void UnloadAllResources() {
     UnloadTexture(keyTexture);
     UnloadTexture(pirateSheet);
     UnloadTexture(coinTexture);
+    UnloadTexture(spiderSheet);
     //shaders
     UnloadShader(fogShader);
     UnloadShader(skyShader);

@@ -38,6 +38,14 @@ void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float 
     }
 }
 
+void SpiderWebCollision(){
+    for (SpiderWebInstance& web : spiderWebs){
+        if (!web.destroyed && CheckCollisionBoxSphere(web.bounds, player.position, player.radius)){
+            ResolveBoxSphereCollision(web.bounds, player.position, player.radius);
+        }
+    }
+}
+
 
 void DoorCollision(){
     for (Door& door : doors){//player collision
@@ -173,6 +181,12 @@ void HandleMeleeHitboxCollision(Camera& camera) {
         }
     }
 
+    for (SpiderWebInstance& web : spiderWebs){
+        if (!web.destroyed && CheckCollisionBoxes(web.bounds, player.meleeHitbox)){
+            web.destroyed = true;
+        }
+    }
+
 
 }
 
@@ -266,6 +280,14 @@ void CheckBulletHits(Camera& camera) {
         // 🔹 6. Hit pillars
         for (PillarInstance& pillar : pillars) {
             if (CheckCollisionPointBox(pos, pillar.bounds)) {
+                b.kill(camera);
+                break;
+            }
+        }
+
+        for (SpiderWebInstance& web : spiderWebs){
+            if (!web.destroyed && CheckCollisionBoxSphere(web.bounds, b.GetPosition(), 2)){
+                web.destroyed = true;
                 b.kill(camera);
                 break;
             }

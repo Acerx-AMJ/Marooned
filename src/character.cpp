@@ -38,8 +38,14 @@ void Character::UpdateAI(float deltaTime, Player& player,const Image& heightmap,
         case CharacterType::Pirate:
             UpdatePirateAI(deltaTime, player);
             break;
+
+        case CharacterType::Spider:
+            UpdateSkeletonAI(deltaTime, player); //spider uses same code as skeleton?
+            break;
     }
 }
+
+
 
 void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale) {
     
@@ -655,7 +661,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
     switch (state){
         case CharacterState::Idle: {
             stateTimer += deltaTime;
-
+ 
             Vector2 start = WorldToImageCoords(position);
 
             // Transition to chase if player detected
@@ -784,7 +790,15 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 attackCooldown = 1.0f; // 1 second cooldown for 1 second of animation. 
 
                 // Play attack sound
-                SoundManager::GetInstance().Play("swipe3");
+                if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play("swipe3");
+                if (type == CharacterType::Spider){
+                    if (rand() % 2 == 0){
+                        SoundManager::GetInstance().Play("spiderBite1");
+                    }else{
+                        SoundManager::GetInstance().Play("spiderBite2");
+                    }
+                    
+                } 
                 
 
                 // Damage the player
@@ -975,9 +989,11 @@ void Character::TakeDamage(int amount) {
         if (type == CharacterType::Raptor) SetAnimation(4, 5, 0.12f, false);
         if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f, false); //less frames for skele death.
         if (type == CharacterType::Pirate) SetAnimation(4, 2, 1, false);
+        if (type == CharacterType::Spider) SetAnimation(4, 3, 0.5f, false);
         deathTimer = 0.0f;
-        SoundManager::GetInstance().Play("dinoDeath");
+        if (type != CharacterType::Spider)  SoundManager::GetInstance().Play("dinoDeath");
         if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play("bones");
+        if (type == CharacterType::Spider) SoundManager::GetInstance().Play("spiderDeath");
      
     } else {
         hitTimer = 0.5f; //tint red
@@ -990,7 +1006,8 @@ void Character::TakeDamage(int amount) {
         if (type == CharacterType::Pirate){
             SoundManager::GetInstance().Play("phit1");
         }else{
-            SoundManager::GetInstance().Play("dinoHit");
+            if (type != CharacterType::Spider) SoundManager::GetInstance().Play("dinoHit");
+            if (type == CharacterType::Spider) SoundManager::GetInstance().Play("spiderDeath");
         }
         
        
@@ -1130,6 +1147,7 @@ void Character::Draw(Camera3D camera) {
     Color redTint = (hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
     rlDisableDepthMask();
     if (isDead && type == CharacterType::Pirate) offsetPos.y -= 25; 
+    if (isDead && type == CharacterType::Spider) offsetPos.y -= 25; 
     //DrawBoundingBox(GetBoundingBox(), RED); //debug visible bounding boxes
     DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, redTint);
 
