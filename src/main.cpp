@@ -446,21 +446,32 @@ void DrawBillboards(Camera3D camera) {
             return a.distanceToCamera > b.distanceToCamera;
         });
 
-    // 2️⃣ Draw them in sorted order
     for (const BillboardDrawRequest& req : billboardRequests) {
-        rlDisableDepthMask(); // Prevent depth buffer writes for transparency
+        rlDisableDepthMask();
 
-        DrawBillboardRec(
-            camera,
-            *(req.texture),
-            req.sourceRect,
-            req.position,
-            Vector2{req.size, req.size},
-            req.tint
-        );
+            if (req.type == Billboard_FacingCamera) {
+                DrawBillboardRec(
+                    camera,
+                    *(req.texture),
+                    req.sourceRect,
+                    req.position,
+                    Vector2{req.size, req.size},
+                    req.tint
+                );
+            } else if (req.type == Billboard_FixedFlat) {
+                DrawFlatWeb(
+                    *(req.texture),
+                    req.position,
+                    req.size,
+                    req.size,
+                    req.rotationY,
+                    req.tint
+                );
+            }
 
-        rlEnableDepthMask();
+            rlEnableDepthMask();
     }
+
 
     // 3️⃣ Clear list for next frame
     billboardRequests.clear();
@@ -522,17 +533,17 @@ void GatherEnemies(Camera& camera) {
         Color finalTint = (enemy->hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
 
         billboardRequests.push_back({
+            Billboard_FacingCamera,
             offsetPos,
             enemy->texture,
             sourceRect,
             billboardSize,
             finalTint,
-            dist
+            dist,
+            0.0f
         });
 
-        if (enemy->texture == nullptr) {
-            printf("Enemy at %f,%f,%f has NULL texture!\n", enemy->position.x, enemy->position.y, enemy->position.z);
-        }
+
     }
 }
 
@@ -566,15 +577,37 @@ void GatherDungeonFires(Camera3D camera, float deltaTime) {
         // Add to billboard requests
         float dist = Vector3Distance(camera.position, firePos);
         billboardRequests.push_back({
+            Billboard_FacingCamera,
             firePos,
             &fireSheet,
             sourceRect,
             100.0f,
             WHITE,
-            dist
+            dist,
+            0.0f
         });
     }
 }
+
+void GatherWebs(Camera& camera) {
+    for (const SpiderWebInstance& web : spiderWebs) {
+        //if (web.destroyed && !web.showBrokeWebTexture) continue;
+
+        Texture2D* tex = web.destroyed ? &brokeWebTexture : &spiderWebTexture;
+
+        billboardRequests.push_back({
+            Billboard_FixedFlat,
+            web.position,
+            tex,
+            Rectangle{0, 0, (float)spiderWebTexture.width, (float)spiderWebTexture.height},
+            300.0f,
+            WHITE,
+            Vector3Distance(camera.position, web.position),
+            web.rotationY
+        });
+    }
+}
+
 
 
 
@@ -678,6 +711,7 @@ int main() {
         billboardRequests.clear();
         GatherEnemies(camera);
         GatherDungeonFires(camera, deltaTime);
+        GatherWebs(camera);
 
         if (!isDungeon) UpdateMusicStream(jungleAmbience);
         if (isDungeon){
@@ -717,7 +751,7 @@ int main() {
         DrawDungeonWalls(wall);
         DrawDungeonCeiling(floorTile);
         DrawDungeonBarrels();
-        DrawSpiderWebs(camera);
+        //DrawSpiderWebs(camera);
         DrawDungeonChests();
         
         DrawDungeonDoorways(doorWay); 

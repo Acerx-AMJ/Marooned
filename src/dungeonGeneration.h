@@ -4,15 +4,21 @@
 #include <string>
 #include <vector>
 
+enum BillboardType {
+    Billboard_FacingCamera,
+    Billboard_FixedFlat
+};
+
 struct BillboardDrawRequest {
+    BillboardType type;
     Vector3 position;
     Texture2D* texture;
     Rectangle sourceRect;
     float size;
     Color tint;
     float distanceToCamera;
+    float rotationY;
 };
-
 
 enum class DoorType {
     Normal,
@@ -88,6 +94,7 @@ struct SpiderWebInstance {
     BoundingBox bounds;
     bool destroyed = false;
     float rotationY;
+
 
 };
 
@@ -179,6 +186,7 @@ void DrawDungeonChests();
 void DrawDungeonPillars(float deltaTime, Camera3D camera);
 void DrawDungeonDoorways(Model archwayModel);
 void DrawFlatDoor(const Door& door);
+void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height, float rotationY, Color tint);
 //void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY);
 void DrawDungeonCeiling(Model ceilingTileModel);
 
