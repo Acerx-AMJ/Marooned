@@ -3,22 +3,8 @@
 #include "raylib.h"
 #include <string>
 #include <vector>
+#include "transparentDraw.h"
 
-enum BillboardType {
-    Billboard_FacingCamera,
-    Billboard_FixedFlat
-};
-
-struct BillboardDrawRequest {
-    BillboardType type;
-    Vector3 position;
-    Texture2D* texture;
-    Rectangle sourceRect;
-    float size;
-    Color tint;
-    float distanceToCamera;
-    float rotationY;
-};
 
 enum class DoorType {
     Normal,

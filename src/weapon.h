@@ -64,7 +64,8 @@ struct MeleeWeapon {
 struct Weapon {
     Model model;
     Vector3 scale = { 1.0f, 1.0f, 1.0f };
-
+    Vector3 muzzlePos;
+    float flashSize = 120.0f;
     float forwardOffset = 80.0f;
     float sideOffset = 30.0f;
     float verticalOffset = -30.0f;

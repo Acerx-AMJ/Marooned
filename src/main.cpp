@@ -20,6 +20,7 @@
 #include "inventory.h"
 #include "collisions.h"
 #include "custom_rendertexture.h"
+#include "transparentDraw.h"
 
 
 
@@ -156,12 +157,6 @@ void InitLevel(const LevelData& level, Camera camera) {
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
 }
 
-
-
-
-
-
-
 void SpawnRaptor(Vector3 pos) {
     Character raptor(pos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
     enemies.push_back(raptor);
@@ -207,12 +202,6 @@ void UpdateBullets(Camera& camera, float deltaTime) {
 void DrawBullets(Camera& camera) {
     for (const Bullet& b : activeBullets) {
         if (b.IsAlive()) b.Draw();
-    }
-
-    for (auto& d : decals) {
-        
-        d.Draw(camera);
-
     }
 
 }
@@ -316,7 +305,7 @@ void DrawMenu() {
 
 
 
-void UpdateCollectables(Camera& camera, float deltaTime) {
+void UpdateCollectables(Camera& camera, float deltaTime) { //update and DRAW
     for (int i = 0; i < collectables.size(); i++) {
         collectables[i].Update(deltaTime);
 
@@ -449,7 +438,9 @@ void DrawBillboards(Camera3D camera) {
     for (const BillboardDrawRequest& req : billboardRequests) {
         rlDisableDepthMask();
 
-            if (req.type == Billboard_FacingCamera) {
+        switch (req.type) {
+            case Billboard_FacingCamera:
+            case Billboard_Decal:
                 DrawBillboardRec(
                     camera,
                     *(req.texture),
@@ -458,7 +449,8 @@ void DrawBillboards(Camera3D camera) {
                     Vector2{req.size, req.size},
                     req.tint
                 );
-            } else if (req.type == Billboard_FixedFlat) {
+                break;
+            case Billboard_FixedFlat:
                 DrawFlatWeb(
                     *(req.texture),
                     req.position,
@@ -467,10 +459,12 @@ void DrawBillboards(Camera3D camera) {
                     req.rotationY,
                     req.tint
                 );
-            }
+                break;
+        }
 
-            rlEnableDepthMask();
+        rlEnableDepthMask();
     }
+
 
 
     // 3️⃣ Clear list for next frame
@@ -480,21 +474,21 @@ void DrawBillboards(Camera3D camera) {
 
 
 
-void DrawAllEnemies(Camera& camera){
-    //Sort all enemies in enemyPtrs before drawing. 
-    Vector3 camPos = camera.position;
-    std::sort(enemyPtrs.begin(), enemyPtrs.end(),
-        [camPos](Character* a, Character* b) {
-            float distA = Vector3DistanceSqr(a->position, camPos);
-            float distB = Vector3DistanceSqr(b->position, camPos);
-            return distA > distB; // draw furthest first
-        });
+// void DrawAllEnemies(Camera& camera){
+//     //Sort all enemies in enemyPtrs before drawing. 
+//     Vector3 camPos = camera.position;
+//     std::sort(enemyPtrs.begin(), enemyPtrs.end(),
+//         [camPos](Character* a, Character* b) {
+//             float distA = Vector3DistanceSqr(a->position, camPos);
+//             float distB = Vector3DistanceSqr(b->position, camPos);
+//             return distA > distB; // draw furthest first
+//         });
 
-    for (Character* enemy : enemyPtrs) {        
-        enemy->Draw(camera);
+//     for (Character* enemy : enemyPtrs) {        
+//         enemy->Draw(camera);
         
-    }
-}
+//     }
+// }
 
 
 void DrawTimer(){
@@ -507,106 +501,7 @@ void DrawTimer(){
     DrawText(buffer, GetScreenWidth()-150, 30, 20, WHITE); 
 }
 
-void GatherEnemies(Camera& camera) {
-    for (Character* enemy : enemyPtrs) {
-        if (enemy->isDead && enemy->deathTimer <= 0.0f) continue;
 
-        float dist = Vector3Distance(camera.position, enemy->position);
-
-        // Frame source rectangle
-        Rectangle sourceRect = {
-            (float)(enemy->currentFrame * enemy->frameWidth),
-            (float)(enemy->rowIndex * enemy->frameHeight),
-            (float)enemy->frameWidth,
-            (float)enemy->frameHeight
-        };
-
-        // Slight camera-facing offset to avoid z-fighting
-        Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.position, enemy->position));
-        Vector3 offsetPos = Vector3Add(enemy->position, Vector3Scale(camDir, 10.0f));
-        //if (enemy->type == CharacterType::Skeleton) enemy->scale = 0.8f;
-       
-        // Correct billboard size: frame size * scale
-        float billboardSize = enemy->frameWidth * enemy->scale;
-
-        // Dynamic tint for damage
-        Color finalTint = (enemy->hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
-
-        billboardRequests.push_back({
-            Billboard_FacingCamera,
-            offsetPos,
-            enemy->texture,
-            sourceRect,
-            billboardSize,
-            finalTint,
-            dist,
-            0.0f
-        });
-
-
-    }
-}
-
-
-void GatherDungeonFires(Camera3D camera, float deltaTime) {
-    for (size_t i = 0; i < pillars.size(); ++i) {
-        PillarInstance& pillar = pillars[i];
-        Fire& fire = fires[i];
-
-        // Animate fire
-        fire.fireAnimTimer += deltaTime;
-        if (fire.fireAnimTimer >= fire.fireFrameDuration) {
-            fire.fireAnimTimer -= fire.fireFrameDuration;
-            fire.fireFrame = (fire.fireFrame + 1) % 60;
-        }
-
-        // Compute source rect
-        int frameX = fire.fireFrame % 10;
-        int frameY = fire.fireFrame / 10;
-        Rectangle sourceRect = {
-            (float)(frameX * 64),
-            (float)(frameY * 64),
-            64.0f,
-            64.0f
-        };
-
-        // Compute fire position
-        Vector3 firePos = pillar.position;
-        firePos.y += 130;
-
-        // Add to billboard requests
-        float dist = Vector3Distance(camera.position, firePos);
-        billboardRequests.push_back({
-            Billboard_FacingCamera,
-            firePos,
-            &fireSheet,
-            sourceRect,
-            100.0f,
-            WHITE,
-            dist,
-            0.0f
-        });
-    }
-}
-
-void GatherWebs(Camera& camera) {
-    for (const SpiderWebInstance& web : spiderWebs) {
-        //if (web.destroyed && !web.showBrokeWebTexture) continue;
-
-        Texture2D* tex = web.destroyed ? &brokeWebTexture : &spiderWebTexture;
-
-        billboardRequests.push_back({
-            Billboard_FixedFlat,
-            web.position,
-            tex,
-            Rectangle{0, 0, (float)spiderWebTexture.width, (float)spiderWebTexture.height},
-            300.0f,
-            WHITE,
-            Vector3Distance(camera.position, web.position),
-            web.rotationY
-        });
-    }
-}
 
 
 
@@ -708,10 +603,14 @@ int main() {
         pillarCollision();
         HandleMeleeHitboxCollision(camera);
         HandleDoorInteraction(camera);
-        billboardRequests.clear();
-        GatherEnemies(camera);
-        GatherDungeonFires(camera, deltaTime);
-        GatherWebs(camera);
+        //billboardRequests.clear();
+        // GatherEnemies(camera);
+        // GatherDungeonFires(camera, deltaTime);
+        // GatherWebs(camera);
+        // GatherDecals(camera, decals);
+
+        GatherTransparentDrawRequests(camera, player.weapon, deltaTime);
+        DrawTransparentDrawRequests(camera);
 
         if (!isDungeon) UpdateMusicStream(jungleAmbience);
         if (isDungeon){

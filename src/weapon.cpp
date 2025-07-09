@@ -107,6 +107,9 @@ void MeleeWeapon::Update(float deltaTime) {
 
 
 void Weapon::Update(float deltaTime) {
+
+
+
     if (recoil > 0.0f) {
         recoil -= recoilRecoverySpeed * deltaTime;
         if (recoil < 0.0f) recoil = 0.0f;
@@ -161,12 +164,11 @@ void Weapon::Draw(const Camera& camera) {
 
     if (flashTimer > 0.0f) {//Muzzle Flash
         Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
-        Vector3 muzzlePos = Vector3Add(gunPos, Vector3Scale(camForward, 40.0f));
+        muzzlePos = Vector3Add(gunPos, Vector3Scale(camForward, 40.0f));
         
-        float flashSize = 120.0f; //could be bigger. 
-        rlDisableDepthMask();
-        DrawBillboard(camera, muzzleFlashTexture, muzzlePos, flashSize, WHITE);
-        rlEnableDepthMask();
+        // rlDisableDepthMask();
+        // DrawBillboard(camera, muzzleFlashTexture, muzzlePos, flashSize, WHITE);
+        // rlEnableDepthMask();
 
     }
 

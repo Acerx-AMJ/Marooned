@@ -7,6 +7,7 @@
 #include "world.h"
 #include "rlgl.h"
 #include "sound_manager.h"
+#include "transparentDraw.h"
 
 
 
@@ -18,7 +19,7 @@ std::vector<SpiderWebInstance> spiderWebs;
 std::vector<ChestInstance> chestInstances;
 std::vector<DoorwayInstance> doorways;
 std::vector<Door> doors;
-std::vector<BillboardDrawRequest> billboardRequests;
+
 std::vector<PillarInstance> pillars;
 std::vector<WallRun> wallRunColliders;
 std::vector<LightSource> dungeonLights; //static lights. 
