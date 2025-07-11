@@ -24,11 +24,9 @@ struct BillboardDrawRequest {
 
 extern std::vector<BillboardDrawRequest> billboardRequests;
 
-// Expose a public function to gather everything
 void GatherTransparentDrawRequests(Camera& camera, Weapon& weapon, float deltaTime);
-
-// Expose a public function to draw them all
 void DrawTransparentDrawRequests(Camera& camera);
+
 void GatherEnemies(Camera& camera);
 void GatherDungeonFires(Camera& camera, float deltaTime);
 void GatherWebs(Camera& camera);

@@ -8,3 +8,4 @@ OUT = Marooned.exe
 
 all:
 	$(CC) $(CFLAGS) $(INCLUDE) $(SRC) -o $(OUT) $(LIBS)
+

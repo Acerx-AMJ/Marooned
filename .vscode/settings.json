@@ -53,6 +53,8 @@
         "iostream": "cpp",
         "istream": "cpp",
         "map": "cpp",
-        "ranges": "cpp"
+        "ranges": "cpp",
+        "stacktrace": "cpp",
+        "thread": "cpp"
     }
 }

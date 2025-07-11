@@ -142,14 +142,14 @@ void HandleMeleeHitboxCollision(Camera& camera) {
             SoundManager::GetInstance().Play("barrelBreak");
             if (barrel.containsPotion) {
                 Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
-                collectables.push_back(Collectable(CollectableType::HealthPotion, pos));
+                collectables.push_back(Collectable(CollectableType::HealthPotion, pos, &healthPotTexture, 40));
 
             }
 
             if (barrel.containsGold) {
                 Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
                 int gvalue = GetRandomValue(1, 100);
-                Collectable gold = Collectable(CollectableType::Gold, pos);
+                Collectable gold = Collectable(CollectableType::Gold, pos, &coinTexture, 40);
                 gold.value = gvalue;
                 collectables.push_back(gold);
 
@@ -262,13 +262,13 @@ void CheckBulletHits(Camera& camera) {
 
                 if (barrel.containsPotion) {
                     Vector3 dropPos = { barrel.position.x, barrel.position.y + 100, barrel.position.z };
-                    collectables.push_back(Collectable(CollectableType::HealthPotion, dropPos));
+                    collectables.push_back(Collectable(CollectableType::HealthPotion, dropPos, &healthPotTexture, 40));
                 }
 
                 if (barrel.containsGold) {
                     Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
                     int gvalue = GetRandomValue(1, 100);
-                    Collectable gold = Collectable(CollectableType::Gold, pos);
+                    Collectable gold(CollectableType::Gold, pos, &coinTexture, 40);
                     gold.value = gvalue;
                     collectables.push_back(gold);
 

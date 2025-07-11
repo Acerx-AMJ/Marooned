@@ -113,7 +113,8 @@ void UpdateDungeonChests() {
             chest.canDrop = false;
             UpdateModelAnimation(chest.model, chest.animations[0], OPEN_END_FRAME);
             Vector3 pos = {chest.position.x, chest.position.y + 100, chest.position.z};
-            Collectable key = Collectable(CollectableType::Key, pos); //gold chests always drop keys? Maybe gold chests should require keys
+            Collectable key(CollectableType::Key, pos, &keyTexture, 100);
+            
             collectables.push_back(key);
             
         }
@@ -678,7 +679,8 @@ void GeneratePotions(float baseY) {
 
             if (current.r == 255 && current.g == 105 && current.b == 180) { // pink for potions
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 50); // raised slightly off floor
-                collectables.push_back(Collectable(CollectableType::HealthPotion, pos));
+                Collectable p = {CollectableType::HealthPotion, pos, &healthPotTexture, 40};
+                collectables.push_back(p);
             }
         }
     }
@@ -691,7 +693,8 @@ void GenerateKeys(float baseY) {
 
             if (current.r == 255 && current.g == 200 && current.b == 0) { // Gold for keys
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 50); // raised slightly off floor
-                collectables.push_back(Collectable(CollectableType::Key, pos));
+                Collectable key = {CollectableType::Key, pos, &keyTexture, 100.0f};
+                collectables.push_back(key);
             }
         }
     }
@@ -924,6 +927,7 @@ void DrawDungeonBarrels() {
         Vector3 offsetPos = {barrel.position.x, barrel.position.y + 20, barrel.position.z}; //move the barrel up a bit
         Model modelToDraw = barrel.destroyed ? brokeBarrel : barrelModel;
         DrawModelEx(modelToDraw, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{0.5f, 0.5f, 0.5f}, barrel.tint); //scaled half size
+        
     }
 }
 
@@ -947,17 +951,12 @@ void DrawDungeonFloor() {
 }
 
 
-void DrawDungeonWalls(Model wallModel) {
-    const float wallHeight = 445.0f; // Match your actual wall height
+void DrawDungeonWalls() {
 
-    for (const WallInstance& wall : wallInstances) {
+    for (const WallInstance& _wall : wallInstances) {
         // Draw base wall
-        DrawModelEx(wallModel, wall.position, Vector3{0, 1, 0}, wall.rotationY, Vector3{1, 1, 1}, wall.tint);
+        DrawModelEx(wall, _wall.position, Vector3{0, 1, 0}, _wall.rotationY, Vector3{1, 1, 1}, _wall.tint);
 
-        // Draw second stacked wall
-        // Vector3 topPos = wall.position;
-        // topPos.y += wallHeight;
-        // DrawModelEx(wallModel, topPos, Vector3{0, 1, 0}, wall.rotationY, Vector3{1, 1, 1}, wall.tint);
     }
 }
 

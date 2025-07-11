@@ -54,6 +54,24 @@ void GatherEnemies(Camera& camera) {
     }
 }
 
+void GatherCollectables(Camera& camera, const std::vector<Collectable>& collectables) {
+    for (const Collectable& c : collectables) {
+        float dist = Vector3Distance(camera.position, c.position);
+
+        billboardRequests.push_back({
+            Billboard_FacingCamera,
+            c.position,
+            c.icon,
+            Rectangle{0, 0, (float)c.icon->width, (float)c.icon->height},
+            c.scale,
+            WHITE,
+            dist,
+            0.0f
+        });
+    }
+}
+
+
 
 void GatherDungeonFires(Camera& camera, float deltaTime) {
     for (size_t i = 0; i < pillars.size(); ++i) {
@@ -168,6 +186,7 @@ void GatherTransparentDrawRequests(Camera& camera, Weapon& weapon, float deltaTi
     GatherWebs(camera);
     GatherDecals(camera, decals);
     GatherMuzzleFlashes(camera, weapon);
+    GatherCollectables(camera, collectables);
 }
 
 void DrawTransparentDrawRequests(Camera& camera) {
@@ -178,7 +197,7 @@ void DrawTransparentDrawRequests(Camera& camera) {
 
     for (const BillboardDrawRequest& req : billboardRequests) {
         rlDisableDepthMask();
-
+        
         switch (req.type) {
             case Billboard_FacingCamera:
             case Billboard_Decal:

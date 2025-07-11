@@ -21,6 +21,7 @@
 #include "collisions.h"
 #include "custom_rendertexture.h"
 #include "transparentDraw.h"
+#include <direct.h>
 
 
 
@@ -310,15 +311,15 @@ void UpdateCollectables(Camera& camera, float deltaTime) { //update and DRAW
         collectables[i].Update(deltaTime);
 
         // Draw correct icon
-        if (collectables[i].type == CollectableType::HealthPotion) {
-            collectables[i].Draw(healthPotTexture, camera, 40.0f);
-        }
-        else if (collectables[i].type == CollectableType::Key) {
-            collectables[i].Draw(keyTexture, camera, 80.0f);//double the scale for keys
-        }
-        else if (collectables[i].type == CollectableType::Gold) {
-            collectables[i].Draw(coinTexture, camera, 40);
-        }
+        // if (collectables[i].type == CollectableType::HealthPotion) {
+        //     collectables[i].Draw(healthPotTexture, camera, 40.0f);
+        // }
+        // else if (collectables[i].type == CollectableType::Key) {
+        //     collectables[i].Draw(keyTexture, camera, 80.0f);//double the scale for keys
+        // }
+        // else if (collectables[i].type == CollectableType::Gold) {
+        //     collectables[i].Draw(coinTexture, camera, 40);
+        // }
 
         // Pickup logic
         if (collectables[i].CheckPickup(player.position, 180.0f)) {
@@ -507,6 +508,12 @@ void DrawTimer(){
 
 
 int main() { 
+
+
+    char cwd[1024];
+    _getcwd(cwd, sizeof(cwd));
+    printf("Working Directory: %s\n", cwd);
+
     InitWindow(1600, 900, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
@@ -644,10 +651,13 @@ int main() {
         DrawModel(skyModel, camera.position, 10000.0f, WHITE); //draw skybox with no depthmask or test or backface culling, leave backfaceculling off. 
         rlEnableDepthMask(); rlEnableDepthTest();
         rlSetBlendMode(BLEND_ALPHA); //required 
-        rlEnableColorBlend(); //not sure
+        //rlEnableColorBlend(); //not sure
 
+
+        //DrawModelEx(wall, (Vector3){0, 0, 0}, (Vector3){0, 1, 0}, 0.0f, (Vector3){1, 1, 1}, WHITE);
+        //DrawModelEx(wall, (Vector3){0, 200, 0}, (Vector3){0, 1, 0}, 0, (Vector3){100, 100, 100}, WHITE);
         DrawDungeonFloor();
-        DrawDungeonWalls(wall);
+        DrawDungeonWalls();
         DrawDungeonCeiling(floorTile);
         DrawDungeonBarrels();
         //DrawSpiderWebs(camera);
@@ -703,7 +713,7 @@ int main() {
 
         // === Final draw to screen ===
         BeginDrawing();
-            ClearBackground(BLACK);
+            ClearBackground(WHITE);
 
             BeginShaderMode(bloomShader); // second pass
                 DrawTextureRec(postProcessTexture.texture,

@@ -6,13 +6,15 @@
 #include "rlgl.h"
 #include "custom_rendertexture.h"
 #include "dungeonGeneration.h"
+#include "rlgl.h"
+
 
 RenderTexture2D sceneTexture, postProcessTexture, depthEffectTexture;
 
-Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, 
+Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, wallFallback, 
 doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture, spiderSheet, spiderWebTexture, brokeWebTexture;
 
-Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader, depthShader;
+Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader, depthShader, pbrShader;
 
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2, floorTile3,chestModel,
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel;
@@ -25,7 +27,7 @@ int sceneDepthLoc;
 Vector3 terrainScale = {16000.0f, 200.0f, 16000.0f}; //very large x and z, after testing, 16k is what felt natural. and it's till solid 60 fps
 
 Vector2 screenResolution; //global shader resolution
-
+#define MAX_MATERIAL_MAPS 12
 
 void LoadAllResources() {
     screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
@@ -51,6 +53,8 @@ void LoadAllResources() {
     spiderSheet = LoadTexture("assets/sprites/spiderSheet.png");
     spiderWebTexture = LoadTexture("assets/sprites/spiderWeb.png");
     brokeWebTexture = LoadTexture("assets/sprites/brokeWeb.png");
+    wallFallback = LoadTexture("assets/textures/wallBaseColor.png");
+
     
 
     // Models
@@ -62,7 +66,7 @@ void LoadAllResources() {
     bushTex = LoadTexture("assets/bush.png");
     floorTile = LoadModel("assets/models/floorTile.glb");
     doorWay = LoadModel("assets/models/doorWay.glb");
-    wall = LoadModel("assets/models/wall1.glb");
+    wall = LoadModel("assets/models/wall.glb");
     barrelModel = LoadModel("assets/models/barrel.glb");
     pillarModel = LoadModel("assets/models/pillar.glb");
     swordModel = LoadModel("assets/models/sword.glb");
@@ -71,6 +75,27 @@ void LoadAllResources() {
     floorTile2 = LoadModel("assets/models/floorTile2.glb");
     floorTile3 = LoadModel("assets/models/floorTile3.glb");
     chestModel = LoadModel("assets/models/chest.glb");
+
+
+
+
+
+
+    // Shader defaultShader = LoadShader(0, 0); // Built-in lighting shader
+    // for (int i = 0; i < wall.materialCount; i++) {
+    //     wall.materials[i].shader = defaultShader;
+    // }
+
+
+    
+    // for (int i = 0; i < wall.materialCount; i++) {
+    //     Color col = wall.materials[i].maps[MATERIAL_MAP_DIFFUSE].color;
+    //     printf("Material %d diffuse RGBA = %d %d %d %d\n", i, col.r, col.g, col.b, col.a);
+    //     if (wall.materials[i].maps[MATERIAL_MAP_DIFFUSE].texture.id != 0) {
+    //         printf("Material %d diffuse texture id = %d\n", i, wall.materials[i].maps[MATERIAL_MAP_DIFFUSE].texture.id);
+    //     }
+    // }
+
 
 
     terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
@@ -121,7 +146,7 @@ void LoadAllResources() {
     float bloomStrengthValue = 0.3f;
     //vignetteStrengthValue = 0.2f; //set globaly for black vignette strength
     
-    float bloomColor[3] = { 1.0f, 0.1f, 0.9f }; // Slight reddish-pink glow
+    float bloomColor[3] = { 1.0f, 0.0f, 1.0f }; // Slight purple tint
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
 
@@ -172,7 +197,7 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("spiderBite2", "assets/sounds/spiderBite2.ogg");
     SoundManager::GetInstance().LoadSound("spiderDeath", "assets/sounds/spiderDeath.ogg");
 
-
+    
 
 
 }
@@ -217,34 +242,34 @@ void UpdateShaders(Camera& camera){
     
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "aaStrength"), &aaStrengthValue, SHADER_UNIFORM_FLOAT);
 
-    int sceneTextureLoc = GetShaderLocation(depthShader, "sceneTexture");
-    int sceneDepthLoc   = GetShaderLocation(depthShader, "sceneDepth");
+    // int sceneTextureLoc = GetShaderLocation(depthShader, "sceneTexture");
+    // int sceneDepthLoc   = GetShaderLocation(depthShader, "sceneDepth");
 
-    int cameraNearLoc = GetShaderLocation(depthShader, "cameraNear");
-    int cameraFarLoc  = GetShaderLocation(depthShader, "cameraFar");
+    // int cameraNearLoc = GetShaderLocation(depthShader, "cameraNear");
+    // int cameraFarLoc  = GetShaderLocation(depthShader, "cameraFar");
 
-    int fogNearLoc = GetShaderLocation(depthShader, "fogNear");
-    int fogFarLoc  = GetShaderLocation(depthShader, "fogFar");
-    int fogAmountLoc = GetShaderLocation(depthShader, "fogAmount");
+    // int fogNearLoc = GetShaderLocation(depthShader, "fogNear");
+    // int fogFarLoc  = GetShaderLocation(depthShader, "fogFar");
+    // int fogAmountLoc = GetShaderLocation(depthShader, "fogAmount");
 
-    // Camera near/far match render pass
-    float cameraNearClip = 60.0f;
-    float cameraFarClip = 10000.0f;
+    // // Camera near/far match render pass
+    // float cameraNearClip = 60.0f;
+    // float cameraFarClip = 10000.0f;
 
-    float fogAmount = 1.0f; // 0.0 = no fog, 1.0 = full fog
-    SetShaderValue(depthShader, fogAmountLoc, &fogAmount, SHADER_UNIFORM_FLOAT);
+    // float fogAmount = 1.0f; // 0.0 = no fog, 1.0 = full fog
+    // SetShaderValue(depthShader, fogAmountLoc, &fogAmount, SHADER_UNIFORM_FLOAT);
 
-    SetShaderValue(depthShader, cameraNearLoc, &cameraNearClip, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(depthShader, cameraFarLoc, &cameraFarClip, SHADER_UNIFORM_FLOAT);
+    // SetShaderValue(depthShader, cameraNearLoc, &cameraNearClip, SHADER_UNIFORM_FLOAT);
+    // SetShaderValue(depthShader, cameraFarLoc, &cameraFarClip, SHADER_UNIFORM_FLOAT);
 
-    // Fog control
-    float fogNear = 60.0f;
-    float fogFar  = 60.1f;
+    // // Fog control
+    // float fogNear = 60.0f;
+    // float fogFar  = 60.1f;
 
-    SetShaderValue(depthShader, fogNearLoc, &fogNear, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(depthShader, fogFarLoc, &fogFar, SHADER_UNIFORM_FLOAT);
+    // SetShaderValue(depthShader, fogNearLoc, &fogNear, SHADER_UNIFORM_FLOAT);
+    // SetShaderValue(depthShader, fogFarLoc, &fogFar, SHADER_UNIFORM_FLOAT);
 
- 
+
 
 
 }
