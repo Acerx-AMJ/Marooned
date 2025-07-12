@@ -55,6 +55,12 @@
         "map": "cpp",
         "ranges": "cpp",
         "stacktrace": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "unordered_set": "cpp",
+        "any": "cpp",
+        "flat_map": "cpp",
+        "flat_set": "cpp"
     }
 }

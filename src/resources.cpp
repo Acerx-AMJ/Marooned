@@ -4,7 +4,7 @@
 #include "raymath.h"
 #include <iostream>
 #include "rlgl.h"
-#include "custom_rendertexture.h"
+//#include "custom_rendertexture.h"
 #include "dungeonGeneration.h"
 #include "rlgl.h"
 
@@ -31,7 +31,7 @@ Vector2 screenResolution; //global shader resolution
 
 void LoadAllResources() {
     screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
-    sceneTexture = LoadRenderTextureWithDepthTexture((int)screenResolution.x, (int)screenResolution.y);
+    sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
     depthEffectTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
     
     postProcessTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
@@ -75,26 +75,6 @@ void LoadAllResources() {
     floorTile2 = LoadModel("assets/models/floorTile2.glb");
     floorTile3 = LoadModel("assets/models/floorTile3.glb");
     chestModel = LoadModel("assets/models/chest.glb");
-
-
-
-
-
-
-    // Shader defaultShader = LoadShader(0, 0); // Built-in lighting shader
-    // for (int i = 0; i < wall.materialCount; i++) {
-    //     wall.materials[i].shader = defaultShader;
-    // }
-
-
-    
-    // for (int i = 0; i < wall.materialCount; i++) {
-    //     Color col = wall.materials[i].maps[MATERIAL_MAP_DIFFUSE].color;
-    //     printf("Material %d diffuse RGBA = %d %d %d %d\n", i, col.r, col.g, col.b, col.a);
-    //     if (wall.materials[i].maps[MATERIAL_MAP_DIFFUSE].texture.id != 0) {
-    //         printf("Material %d diffuse texture id = %d\n", i, wall.materials[i].maps[MATERIAL_MAP_DIFFUSE].texture.id);
-    //     }
-    // }
 
 
 

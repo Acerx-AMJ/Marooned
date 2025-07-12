@@ -204,10 +204,12 @@ void MeleeWeapon::Draw(const Camera& camera) {
     blendedVertical += verticalSwingOffset;
 
     // === Final sword position ===
-    Vector3 swordPos = camera.position;
+    //Vector3 swordPos = camera.position;
+    Vector3 swordPos = {camera.position.x, camera.position.y -10, camera.position.z};
     swordPos = Vector3Add(swordPos, Vector3Scale(camForward, blendedForward));
     swordPos = Vector3Add(swordPos, Vector3Scale(camRight, blendedSide));
     swordPos = Vector3Add(swordPos, Vector3Scale(camUp, blendedVertical));
+
 
     DrawModelEx(model, swordPos, axis, angleDeg, scale, WHITE);
 }

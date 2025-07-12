@@ -121,6 +121,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         ConvertImageToWalkableGrid(dungeonImg);
         GenerateFloorTiles(floorHeight);//80
         GenerateWallTiles(wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
+        
         GenerateCeilingTiles(ceilingHeight);//400
         GenerateBarrels(floorHeight);
         GenerateSpiderWebs(floorHeight);
@@ -165,15 +166,15 @@ void SpawnRaptor(Vector3 pos) {
 }
 
 
-Color ColorLerp(Color a, Color b, float t) {
+// Color ColorLerp(Color a, Color b, float t) {
     
-    Color result;
-    result.r = (unsigned char)Lerp((float)a.r, (float)b.r, t);
-    result.g = (unsigned char)Lerp((float)a.g, (float)b.g, t);
-    result.b = (unsigned char)Lerp((float)a.b, (float)b.b, t);
-    result.a = (unsigned char)Lerp((float)a.a, (float)b.a, t);
-    return result;
-}
+//     Color result;
+//     result.r = (unsigned char)Lerp((float)a.r, (float)b.r, t);
+//     result.g = (unsigned char)Lerp((float)a.g, (float)b.g, t);
+//     result.b = (unsigned char)Lerp((float)a.b, (float)b.b, t);
+//     result.a = (unsigned char)Lerp((float)a.a, (float)b.a, t);
+//     return result;
+// }
 
 
 
@@ -474,24 +475,6 @@ void DrawBillboards(Camera3D camera) {
 
 
 
-
-// void DrawAllEnemies(Camera& camera){
-//     //Sort all enemies in enemyPtrs before drawing. 
-//     Vector3 camPos = camera.position;
-//     std::sort(enemyPtrs.begin(), enemyPtrs.end(),
-//         [camPos](Character* a, Character* b) {
-//             float distA = Vector3DistanceSqr(a->position, camPos);
-//             float distB = Vector3DistanceSqr(b->position, camPos);
-//             return distA > distB; // draw furthest first
-//         });
-
-//     for (Character* enemy : enemyPtrs) {        
-//         enemy->Draw(camera);
-        
-//     }
-// }
-
-
 void DrawTimer(){
     int minutes = (int)(ElapsedTime / 60.0f);
     int seconds = (int)ElapsedTime % 60;
@@ -655,7 +638,7 @@ int main() {
 
 
         //DrawModelEx(wall, (Vector3){0, 0, 0}, (Vector3){0, 1, 0}, 0.0f, (Vector3){1, 1, 1}, WHITE);
-        //DrawModelEx(wall, (Vector3){0, 200, 0}, (Vector3){0, 1, 0}, 0, (Vector3){100, 100, 100}, WHITE);
+        DrawModelEx(wall, (Vector3){0, 200, 0}, (Vector3){0, 1, 0}, 0, (Vector3){200, 200, 100}, WHITE);
         DrawDungeonFloor();
         DrawDungeonWalls();
         DrawDungeonCeiling(floorTile);

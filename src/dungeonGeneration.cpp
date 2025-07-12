@@ -301,6 +301,8 @@ void GenerateWallTiles(float baseY) {
             }
         }
     }
+    std::cout << "walls.size() = " << wallInstances.size() << "\n";
+    for (auto& w : wallInstances) printf("Wall at %f,%f,%f\n", w.position.x, w.position.y, w.position.z);
 }
 
 void GenerateSideColliders(Vector3 pos, float rotationY, DoorwayInstance& archway){
@@ -926,7 +928,7 @@ void DrawDungeonBarrels() {
     for (const BarrelInstance& barrel : barrelInstances) {
         Vector3 offsetPos = {barrel.position.x, barrel.position.y + 20, barrel.position.z}; //move the barrel up a bit
         Model modelToDraw = barrel.destroyed ? brokeBarrel : barrelModel;
-        DrawModelEx(modelToDraw, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{0.5f, 0.5f, 0.5f}, barrel.tint); //scaled half size
+        DrawModelEx(modelToDraw, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{350.0f, 350.0f, 350.0f}, barrel.tint); //scaled half size
         
     }
 }
@@ -946,7 +948,7 @@ void DrawDungeonChests() {
 
 void DrawDungeonFloor() {
     for (const FloorTile& tile : floorTiles) {
-        DrawModelEx(tile.floorTile, tile.position, Vector3{0,1,0}, 0.0f, Vector3{1,1,1}, tile.tint);
+        DrawModelEx(tile.floorTile, tile.position, Vector3{0,1,0}, 0.0f, Vector3{700,700,700}, tile.tint);
     }
 }
 
@@ -954,8 +956,8 @@ void DrawDungeonFloor() {
 void DrawDungeonWalls() {
 
     for (const WallInstance& _wall : wallInstances) {
-        // Draw base wall
-        DrawModelEx(wall, _wall.position, Vector3{0, 1, 0}, _wall.rotationY, Vector3{1, 1, 1}, _wall.tint);
+        
+        DrawModelEx(wall, _wall.position, Vector3{0, 1, 0}, _wall.rotationY, Vector3{700, 700, 700}, _wall.tint);
 
     }
 }
@@ -963,7 +965,8 @@ void DrawDungeonWalls() {
 void DrawDungeonDoorways(Model archwayModel){
 
     for (const DoorwayInstance& d : doorways) {
-        DrawModelEx(archwayModel, d.position, {0, 1, 0}, d.rotationY * RAD2DEG, {0.7f, 0.85f, 0.68f}, d.tint);
+        Vector3 dPos = {d.position.x, d.position.y + 100, d.position.z};
+        DrawModelEx(archwayModel, dPos, {0, 1, 0}, d.rotationY * RAD2DEG, {490, 595, 476}, d.tint);
     }
 
     for (const Door& door : doors){
@@ -1016,7 +1019,7 @@ void DrawDungeonCeiling(Model ceilingTileModel) {
             ceiling.position,
             Vector3{1, 0, 0}, // Flip to face downward
             180.0f,
-            Vector3{1, 1, 1},
+            Vector3{700, 700, 700},
             ceiling.tint
         );
     }
@@ -1031,7 +1034,7 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera) {
         Fire& fire = fires[i];
 
         // Draw the pedestal model
-        DrawModelEx(lampModel, pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{1, 1, 1}, WHITE);
+        DrawModelEx(lampModel, pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{350, 350, 350}, WHITE);
 
         // // Animate fire
         // fire.fireAnimTimer += deltaTime;
