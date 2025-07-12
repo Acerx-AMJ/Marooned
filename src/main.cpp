@@ -311,19 +311,8 @@ void UpdateCollectables(Camera& camera, float deltaTime) { //update and DRAW
     for (int i = 0; i < collectables.size(); i++) {
         collectables[i].Update(deltaTime);
 
-        // Draw correct icon
-        // if (collectables[i].type == CollectableType::HealthPotion) {
-        //     collectables[i].Draw(healthPotTexture, camera, 40.0f);
-        // }
-        // else if (collectables[i].type == CollectableType::Key) {
-        //     collectables[i].Draw(keyTexture, camera, 80.0f);//double the scale for keys
-        // }
-        // else if (collectables[i].type == CollectableType::Gold) {
-        //     collectables[i].Draw(coinTexture, camera, 40);
-        // }
-
         // Pickup logic
-        if (collectables[i].CheckPickup(player.position, 180.0f)) {
+        if (collectables[i].CheckPickup(player.position, 180.0f)) { //180 radius
             if (collectables[i].type == CollectableType::HealthPotion) {
                 player.inventory.AddItem("HealthPotion");
                 SoundManager::GetInstance().Play("clink");
@@ -342,7 +331,6 @@ void UpdateCollectables(Camera& camera, float deltaTime) { //update and DRAW
         }
     }
 }
-
 
 
 
@@ -589,16 +577,14 @@ int main() {
         SpiderWebCollision();
         barrelCollision();
         ChestCollision();
+        HandleEnemyPlayerCollision();
         
         pillarCollision();
         HandleMeleeHitboxCollision(camera);
         HandleDoorInteraction(camera);
-        //billboardRequests.clear();
-        // GatherEnemies(camera);
-        // GatherDungeonFires(camera, deltaTime);
-        // GatherWebs(camera);
-        // GatherDecals(camera, decals);
 
+        //gather up everything 2d and put it into a vector of struct drawRequests, then sort and draw every billboard/quad in the game.
+        //Draw in order of furthest fisrt, closest last.  
         GatherTransparentDrawRequests(camera, player.weapon, deltaTime);
         DrawTransparentDrawRequests(camera);
 
@@ -613,12 +599,10 @@ int main() {
             UpdateCameraWithGamepad(camera);
         }
 
-
-
         HandleCameraPlayerToggle(camera, player, controlPlayer);
         UpdateCameraAndPlayer(camera, player, controlPlayer, deltaTime);
-        // During render loop:
 
+        //water
         float wave = sin(GetTime() * 0.9f) * 0.9f;  // slow, subtle vertical motion
         float animatedWaterLevel = waterHeightY + wave;
         Vector3 waterPos = {0, animatedWaterLevel, 0};
@@ -654,7 +638,7 @@ int main() {
         //DrawAllEnemies(camera);
         DrawBillboards(camera);
         DrawBullets(camera); //and decals //draw bullets and decals after enemies,
-        UpdateCollectables(camera, deltaTime); //Update and draw
+        UpdateCollectables(camera, deltaTime); 
         DrawDungeonPillars(deltaTime, camera); //light sources become invisible when behind enemies, but it's better then enemies being invisible being behind light sources. 
         rlEnableDepthMask();
         

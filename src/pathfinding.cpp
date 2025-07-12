@@ -71,7 +71,7 @@ std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
         return {}; // goal unreachable
     }
 
-    // Trim final step so skeleton stops adjacent to player
+    // Trim final step so skeleton stops adjacent to player //they stop too far away
     // if (path.size() > 1) {
     //     path.pop_back();
     // }

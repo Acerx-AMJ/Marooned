@@ -199,7 +199,7 @@ void DrawTransparentDrawRequests(Camera& camera) {
         rlDisableDepthMask();
         
         switch (req.type) {
-            case Billboard_FacingCamera:
+            case Billboard_FacingCamera: //use draw billboard for both decals, and enemies. 
             case Billboard_Decal:
                 DrawBillboardRec(
                     camera,
@@ -210,7 +210,7 @@ void DrawTransparentDrawRequests(Camera& camera) {
                     req.tint
                 );
                 break;
-            case Billboard_FixedFlat:
+            case Billboard_FixedFlat: //special case for webs
                 DrawFlatWeb(
                     *(req.texture),
                     req.position,

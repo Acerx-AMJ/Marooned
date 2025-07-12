@@ -4,6 +4,7 @@
 #include <vector>
 
 
+
 class Bullet {
 public:
     Bullet(Vector3 position, Vector3 velocity, float lifetime, bool enemy);
@@ -15,6 +16,7 @@ public:
     bool IsEnemy() const;
     void Blood(Camera camera);
     Vector3 GetPosition() const;
+
     
 
 private:
@@ -26,6 +28,7 @@ private:
     float maxLifetime;
     float timer;
     float gravity = 300;
+
     
 };
 

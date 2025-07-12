@@ -132,6 +132,15 @@ void ChestCollision(){
     }
 }
 
+void HandleEnemyPlayerCollision() {
+    for (Character* enemy : enemyPtrs){
+        if (enemy->isDead) continue;
+        if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), player.position, player.radius)){
+            ResolveBoxSphereCollision(enemy->GetBoundingBox(), player.position, player.radius);
+        }
+    }
+}
+
 
 void HandleMeleeHitboxCollision(Camera& camera) {
 

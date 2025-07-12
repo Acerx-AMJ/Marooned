@@ -981,7 +981,7 @@ void Character::TakeDamage(int amount) {
 
     if (currentHealth <= 0) { //die
 
-
+        
         hitTimer = 0.5;
         currentHealth = 0;
         isDead = true;

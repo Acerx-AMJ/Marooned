@@ -25,7 +25,7 @@ $(OUT): $(OBJ)
 	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
 
 clean:
-	del /Q src\*.o $(OUT)
+	rm -f src/*.o $(OUT)
 
 
 

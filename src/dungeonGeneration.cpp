@@ -8,6 +8,7 @@
 #include "rlgl.h"
 #include "sound_manager.h"
 #include "transparentDraw.h"
+#include "pathfinding.h"
 
 
 
@@ -694,7 +695,7 @@ void GenerateKeys(float baseY) {
             Color current = dungeonPixels[y * dungeonWidth + x];
 
             if (current.r == 255 && current.g == 200 && current.b == 0) { // Gold for keys
-                Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 50); // raised slightly off floor
+                Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 60); // raised slightly off floor
                 Collectable key = {CollectableType::Key, pos, &keyTexture, 100.0f};
                 collectables.push_back(key);
             }
@@ -743,14 +744,13 @@ void GenerateSpiderFromImage(float baseY) {
                     CharacterType::Spider
                 );
                 spider.maxHealth = 100;
-                spider.currentHealth = 100; //at least 2 shots. 4 sword swings 
+                spider.currentHealth = 100; //2 sword attacks
                 
                 enemies.push_back(spider);
                 enemyPtrs.push_back(&enemies.back()); 
             }
         }
     }
-
 
 }
 
@@ -1036,32 +1036,6 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera) {
         // Draw the pedestal model
         DrawModelEx(lampModel, pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{350, 350, 350}, WHITE);
 
-        // // Animate fire
-        // fire.fireAnimTimer += deltaTime;
-        // if (fire.fireAnimTimer >= fire.fireFrameDuration) {
-        //     fire.fireAnimTimer -= fire.fireFrameDuration;
-        //     fire.fireFrame = (fire.fireFrame + 1) % 60;
-        // }
-
-        // // Calculate frame position in sheet
-        // int frameX = fire.fireFrame % 10;
-        // int frameY = fire.fireFrame / 10;
-        // Rectangle sourceRect = {
-        //     (float)(frameX * 64),
-        //     (float)(frameY * 64),
-        //     64.0f,
-        //     64.0f
-        // };
-
-        // // Position the fire above the bowl
-        // Vector3 firePos = pillar.position;
-        // firePos.y += 130; 
-
-        // // Draw animated fire as billboard
-        // Vector2 fireSize = {100, 100};
-        // rlDisableDepthMask();
-        // DrawBillboardRec(camera, fireSheet, sourceRect, firePos, fireSize, WHITE);
-        // rlEnableDepthMask();
     }
 }
 
@@ -1085,7 +1059,17 @@ void UpdateDoorwayTints(Vector3 playerPos) {
         //static lights
         for (const LightSource& light : dungeonLights) {
             float distToLight = Vector3Distance(light.position, door.position);
-            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);  // Uses light.range!
+            if (distToLight > light.range) continue;
+
+            // Project to 2D grid space (if your map is 2D)
+            Vector2 lightPos2D = { GetDungeonImageX(light.position.x, tileSize, dungeonWidth), GetDungeonImageY(light.position.z, tileSize, dungeonHeight)};
+            Vector2 doorPos2D  = { GetDungeonImageX(door.position.x, tileSize, dungeonWidth), GetDungeonImageY(door.position.z, tileSize, dungeonHeight) };
+
+            if (!LineOfSightRaycast(lightPos2D, doorPos2D, dungeonImg, 100)) {
+                continue; // Blocked by a wall!
+            }
+
+            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);
             brightness += lightContribution * light.intensity;
         }
 
@@ -1116,9 +1100,24 @@ void UpdateWallTints(Vector3 playerPos) {
         //static lights
         for (const LightSource& light : dungeonLights) {
             float distToLight = Vector3Distance(light.position, wall.position);
-            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);  // Uses light.range!
+            if (distToLight > light.range) continue;
+
+            // Project to 2D grid space (if your map is 2D)
+            Vector2 lightPos2D = { GetDungeonImageX(light.position.x, tileSize, dungeonWidth), GetDungeonImageY(light.position.z, tileSize, dungeonHeight)};
+            Vector2 wallPos2D  = { GetDungeonImageX(wall.position.x, tileSize, dungeonWidth), GetDungeonImageY(wall.position.z, tileSize, dungeonHeight) };
+
+            if (!LineOfSightRaycast(lightPos2D, wallPos2D, dungeonImg, 100)) {
+                continue; // Blocked by a wall!
+            }
+
+            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);
             brightness += lightContribution * light.intensity;
         }
+        // for (const LightSource& light : dungeonLights) {
+        //     float distToLight = Vector3Distance(light.position, wall.position);
+        //     float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);  // Uses light.range!
+        //     brightness += lightContribution * light.intensity;
+        // }
 
         brightness = Clamp(brightness, minBrightness, 1.0f);
 
@@ -1150,7 +1149,17 @@ void UpdateFloorTints(Vector3 playerPos) {
         // Other lights
         for (const LightSource& light : dungeonLights) {
             float distToLight = Vector3Distance(light.position, tile.position);
-            float lightContribution = Clamp(1.0f - (distToLight / maxLightDistance), 0.0f, 1.0f);
+            if (distToLight > light.range) continue;
+
+            // Project to 2D grid space (if your map is 2D)
+            Vector2 lightPos2D = { GetDungeonImageX(light.position.x, tileSize, dungeonWidth), GetDungeonImageY(light.position.z, tileSize, dungeonHeight)};
+            Vector2 tilePos2D  = { GetDungeonImageX(tile.position.x, tileSize, dungeonWidth), GetDungeonImageY(tile.position.z, tileSize, dungeonHeight) };
+
+            if (!LineOfSightRaycast(lightPos2D, tilePos2D, dungeonImg, 100)) {
+                continue; // Blocked by a wall!
+            }
+
+            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);
             brightness += lightContribution * light.intensity;
         }
 
@@ -1167,7 +1176,7 @@ void UpdateFloorTints(Vector3 playerPos) {
 
 
 void UpdateCeilingTints(Vector3 playerPos) {
-    const float playerLightRange = 1500.0f;
+    const float playerLightRange = 1000.0f;
     const float minBrightness = 0.2f;
 
     Vector3 warmCeilingColor = {0.7f, 0.6f, 0.5f}; // slightly muted warm tone
@@ -1188,6 +1197,16 @@ void UpdateCeilingTints(Vector3 playerPos) {
         // Other light sources
         for (const LightSource& light : dungeonLights) {
             float distToLight = Vector3Distance(light.position, ceiling.position);
+            if (distToLight > light.range) continue;
+
+            // Project to 2D grid space (if your map is 2D)
+            Vector2 lightPos2D = { GetDungeonImageX(light.position.x, tileSize, dungeonWidth), GetDungeonImageY(light.position.z, tileSize, dungeonHeight)};
+            Vector2 ceilingPos2D  = { GetDungeonImageX(ceiling.position.x, tileSize, dungeonWidth), GetDungeonImageY(ceiling.position.z, tileSize, dungeonHeight) };
+
+            if (!LineOfSightRaycast(lightPos2D, ceilingPos2D, dungeonImg, 100)) {
+                continue; // Blocked by a wall!
+            }
+
             float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);
             brightness += lightContribution * light.intensity;
         }

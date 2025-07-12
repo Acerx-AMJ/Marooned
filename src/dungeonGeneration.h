@@ -93,7 +93,7 @@ struct PillarInstance {
 struct LightSource {
     Vector3 position;
     float intensity = 0.7;  // maybe 1.0 = full bright, 0.5 = dim, etc.
-    float range = 1500;
+    float range = 1000;
     float lifeTime = 1.0f;
     float age;
 
