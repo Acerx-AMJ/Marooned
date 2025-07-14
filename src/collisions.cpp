@@ -38,6 +38,48 @@ void ResolveBoxSphereCollision(const BoundingBox& box, Vector3& position, float 
     }
 }
 
+Vector3 ComputeOverlapVector(BoundingBox a, BoundingBox b) {
+    float xOverlap = fmin(a.max.x, b.max.x) - fmax(a.min.x, b.min.x);
+    float yOverlap = fmin(a.max.y, b.max.y) - fmax(a.min.y, b.min.y);
+    float zOverlap = fmin(a.max.z, b.max.z) - fmax(a.min.z, b.min.z);
+
+    if (xOverlap <= 0 || yOverlap <= 0 || zOverlap <= 0) {
+        return {0, 0, 0}; // No collision
+    }
+
+    float minOverlap = xOverlap;
+    Vector3 axis = {1, 0, 0};
+    if (yOverlap < minOverlap) {
+        minOverlap = yOverlap;
+        axis = {0, 1, 0};
+    }
+    if (zOverlap < minOverlap) {
+        minOverlap = zOverlap;
+        axis = {0, 0, 1};
+    }
+
+    // Get direction from a to b to know which way to push
+    Vector3 direction = Vector3Normalize(Vector3Subtract(b.min, a.min));
+    float sign = (Vector3DotProduct(axis, direction) >= 0) ? 1.0f : -1.0f;
+
+    return Vector3Scale(axis, minOverlap * sign);
+}
+
+
+void ResolvePlayerEnemyMutualCollision(Character* enemy, Player* player) {
+    BoundingBox enemyBox = enemy->GetBoundingBox();
+    BoundingBox playerBox = player->GetBoundingBox();
+
+    Vector3 overlap = ComputeOverlapVector(enemyBox, playerBox);
+    if (Vector3Length(overlap) > 0) {
+        Vector3 correction = Vector3Scale(overlap, 0.5f);
+        enemy->position = Vector3Subtract(enemy->position, correction);
+        player->position = Vector3Add(player->position, correction);
+    }
+}
+
+
+
 void SpiderWebCollision(){
     for (SpiderWebInstance& web : spiderWebs){
         if (!web.destroyed && CheckCollisionBoxSphere(web.bounds, player.position, player.radius)){
@@ -132,14 +174,18 @@ void ChestCollision(){
     }
 }
 
-void HandleEnemyPlayerCollision() {
-    for (Character* enemy : enemyPtrs){
+void HandleEnemyPlayerCollision(Player* player) {
+    for (Character* enemy : enemyPtrs) {
         if (enemy->isDead) continue;
-        if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), player.position, player.radius)){
-            ResolveBoxSphereCollision(enemy->GetBoundingBox(), player.position, player.radius);
+        if (CheckCollisionBoxes(enemy->GetBoundingBox(), player->GetBoundingBox())) {
+            ResolvePlayerEnemyMutualCollision(enemy, player);
         }
     }
 }
+
+
+
+
 
 
 void HandleMeleeHitboxCollision(Camera& camera) {

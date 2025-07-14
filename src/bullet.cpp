@@ -10,13 +10,14 @@
 //     : position(startPos), direction(Vector3Normalize(dir)), speed(spd), alive(true), age(0.0f), maxLifetime(lifetime) {}
 
 // New constructor matching velocity-based logic
-Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en)
+Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, bool fb)
     : position(startPos),
       velocity(vel),
       alive(true),
       age(0.0f),
       maxLifetime(lifetime),
-      enemy(en)
+      enemy(en),
+      fireball(fb)
 {}
 
 
@@ -24,8 +25,8 @@ void Bullet::Update(Camera& camera, float deltaTime) {
     if (!alive) return;
 
     // Apply gravity
-    if (!IsEnemy()) velocity.y -= gravity * deltaTime; //enemy bullets don't have gravity
-
+    if (!IsEnemy() && !isFireball()) velocity.y -= gravity * deltaTime; //enemy bullets don't have gravity
+    
     // Move
     position = Vector3Add(position, Vector3Scale(velocity, deltaTime));
 
@@ -46,8 +47,14 @@ void Bullet::Update(Camera& camera, float deltaTime) {
 
 void Bullet::Draw() const {
     if (!alive) return;
+    if (fireball){
+        DrawSphere(position, 20, YELLOW);
 
-    DrawSphere(position, 1.5f, WHITE); // simple debug visualization
+    }else{
+        DrawSphere(position, 1.5f, WHITE); // simple debug visualization
+    }
+    
+
 }
 
 bool Bullet::IsAlive() const {
@@ -56,6 +63,10 @@ bool Bullet::IsAlive() const {
 
 bool Bullet::IsEnemy() const {
     return enemy;
+}
+
+bool Bullet::isFireball() const {
+    return fireball;
 }
 
 void Bullet::kill(Camera& camera){
@@ -115,4 +126,13 @@ void FireBullet(Vector3 origin, Vector3 target, float speed, float lifetime, boo
     Vector3 velocity = Vector3Scale(direction, speed);
 
     activeBullets.emplace_back(origin, velocity, lifetime, enemy);
+}
+
+void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy, bool fireball){
+    Vector3 direction = Vector3Subtract(target, origin);
+    direction = Vector3Normalize(direction);
+    Vector3 velocity = Vector3Scale(direction, speed);
+
+    activeBullets.emplace_back(origin, velocity, lifetime, enemy, fireball);
+
 }

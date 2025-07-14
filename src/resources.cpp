@@ -24,7 +24,7 @@ Mesh terrainMesh;
 
 int sceneTextureLoc;
 int sceneDepthLoc; 
-Vector3 terrainScale = {16000.0f, 200.0f, 16000.0f}; //very large x and z, after testing, 16k is what felt natural. and it's till solid 60 fps
+Vector3 terrainScale = {16000.0f, 200.0f, 16000.0f}; //very large x and z, 
 
 Vector2 screenResolution; //global shader resolution
 #define MAX_MATERIAL_MAPS 12
@@ -39,7 +39,7 @@ void LoadAllResources() {
     skeletonSheet = LoadTexture("assets/sprites/skeletonSheet.png");
     gunTexture = LoadTexture("assets/sprites/flintlock.png");
     muzzleFlash = LoadTexture("assets/sprites/muzzleFlash.png");
-    backDrop = LoadTexture("assets/Screenshot4.png");
+    backDrop = LoadTexture("assets/screenshots/dungeon1.png");
     smokeSheet = LoadTexture("assets/sprites/smokeSheet.png");
     bloodSheet = LoadTexture("assets/sprites/bloodSheet.png");
     doorTexture = LoadTexture("assets/sprites/door.png");
@@ -111,16 +111,16 @@ void LoadAllResources() {
     waterModel.materials[0].shader = waterShader;
     bottomPlane.materials[0].shader = waterShader;
 
-    //simple fog //post process second pass 
-    simpleFogShader = LoadShader(0, "assets/shaders/simple_fog.fs");
+    // //simple fog //post process second pass 
+    // simpleFogShader = LoadShader(0, "assets/shaders/simple_fog.fs");
 
-    int locFogColor = GetShaderLocation(simpleFogShader, "fogColor");
-    int locFogStrength = GetShaderLocation(simpleFogShader, "fogStrength");
-    int locVerticalFade = GetShaderLocation(simpleFogShader, "verticalFade");
+    // int locFogColor = GetShaderLocation(simpleFogShader, "fogColor");
+    // int locFogStrength = GetShaderLocation(simpleFogShader, "fogStrength");
+    // int locVerticalFade = GetShaderLocation(simpleFogShader, "verticalFade");
 
-    SetShaderValue(simpleFogShader, locFogColor, (float[3]){ 0.1f, 0.1f, 0.1f }, SHADER_UNIFORM_VEC3);
-    SetShaderValue(simpleFogShader, locFogStrength, (float[]){0.01f }, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(simpleFogShader, locVerticalFade, (float[]){ 0.0f }, SHADER_UNIFORM_FLOAT);
+    // SetShaderValue(simpleFogShader, locFogColor, (float[3]){ 0.1f, 0.1f, 0.1f }, SHADER_UNIFORM_VEC3);
+    // SetShaderValue(simpleFogShader, locFogStrength, (float[]){0.01f }, SHADER_UNIFORM_FLOAT);
+    // SetShaderValue(simpleFogShader, locVerticalFade, (float[]){ 0.0f }, SHADER_UNIFORM_FLOAT);
 
     bloomShader = LoadShader(0, "assets/shaders/bloom.fs");
     float bloomStrengthValue = 0.3f;
@@ -205,7 +205,7 @@ void UpdateShaders(Camera& camera){
 
     //dungeonDarkness
     float dungeonDarkness = 0.0f;//darkened 5 percent. it darkens the gun model as well, so go easy. negative number 
-    float dungeonContrast = 1.35f; //makes darks darker. 
+    float dungeonContrast = 1.25f; //makes darks darker. 
 
     float aaStrengthValue = 0.5f; //maybe this does something? 
 

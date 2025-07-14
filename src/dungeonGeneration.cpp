@@ -80,6 +80,19 @@ void InitChests() {
 
 }
 
+Vector3 ColorToNormalized(Color color) {
+    return (Vector3){
+        color.r / 255.0f,
+        color.g / 255.0f,
+        color.b / 255.0f
+    };
+}
+
+float ColorAverage(Color c) {
+    return ((c.r + c.g + c.b) / 3.0f) / 255.0f;
+}
+
+
 
 
 void UpdateDungeonChests() {
@@ -1039,136 +1052,213 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera) {
     }
 }
 
+void BakeStaticLighting() {
+    const float ambientBrightness = 0.35f;
+    const float ambientFloorBrightness = 0.25;
+    for (WallInstance& wall : wallInstances) {
+        wall.bakedBrightness = ambientBrightness;
+    }
+
+    for (DoorwayInstance& door : doorways){
+        door.bakedBrightness = ambientBrightness;
+    }
+
+    for (FloorTile& floor : floorTiles){
+        floor.bakedBrightness = ambientFloorBrightness;
+    }
+
+    for (CeilingTile& ceiling : ceilingTiles){
+        ceiling.bakedBrightness = ambientFloorBrightness;
+    }
+
+    for (const LightSource& light : dungeonLights) {
+        for (WallInstance& wall : wallInstances) {
+            float dist = Vector3Distance(light.position, wall.position);
+            if (dist > light.range) continue;
+            if (!HasWorldLineOfSight(light.position, wall.position)) continue;
+            
+            float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
+            wall.bakedBrightness += contribution * light.intensity;
+        }
+
+        for (FloorTile& floor : floorTiles){
+            float dist = Vector3Distance(light.position, floor.position);
+            if (dist > light.range) continue;
+            if (!HasWorldLineOfSight(light.position, floor.position)) continue;
+
+            float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
+            floor.bakedBrightness += contribution * light.intensity;
+        }
+
+        for (DoorwayInstance& door : doorways){
+            float dist = Vector3Distance(light.position, door.position);
+            if (dist > light.range) continue;
+            if (!HasWorldLineOfSight(light.position, door.position)) continue;
+
+            float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
+            door.bakedBrightness += contribution * light.intensity;
+        }
+    }
+
+    Vector3 warmTint = { 1.0f, 0.85f, 0.7f };
+    for (WallInstance& wall : wallInstances) {
+        wall.bakedBrightness = Clamp(wall.bakedBrightness, 0.0f, 1.0f);
+        Vector3 tinted = Vector3Scale(warmTint, wall.bakedBrightness);
+        wall.bakedTint = ColorFromNormalized({ tinted.x, tinted.y, tinted.z, 1.0f });
+    }
+
+    for (DoorwayInstance& door : doorways) {
+        door.bakedBrightness = Clamp(door.bakedBrightness, 0.0f, 1.0f);
+        Vector3 tinted = Vector3Scale(warmTint, door.bakedBrightness);
+        door.bakedTint = ColorFromNormalized({ tinted.x, tinted.y, tinted.z, 1.0f });
+    }
+
+    for (FloorTile& floor : floorTiles) {
+        floor.bakedBrightness = Clamp(floor.bakedBrightness, 0.0f, 1.0f);
+        Vector3 tinted = Vector3Scale(warmTint, floor.bakedBrightness);
+        floor.bakedTint = ColorFromNormalized({ tinted.x, tinted.y, tinted.z, 1.0f });
+    }
+
+    //copy floor baked light to ceiling. No need to recalculate cause it's the same. 
+    for (int i = 0; i < floorTiles.size() && i < ceilingTiles.size(); ++i) {
+        ceilingTiles[i].bakedTint = floorTiles[i].bakedTint;
+        }
+}
+
+
+void ApplyBakedLighting() {
+    for (WallInstance& wall : wallInstances) {
+        wall.tint = wall.bakedTint;
+    }
+
+    for (FloorTile& floor : floorTiles){
+        floor.tint = floor.bakedTint;
+
+    }
+
+    for (CeilingTile& ceiling : ceilingTiles){
+        ceiling.tint = ceiling.bakedTint;
+    }
+
+    for (DoorwayInstance& door : doorways){
+        door.tint = door.bakedTint;
+    }
+}
+
+
+
 
 void UpdateDoorwayTints(Vector3 playerPos) {
     const float playerLightRange = 1000.0f;
-    const float minBrightness = 0.5f;
+    const float fireballRange = 400.0f;
+    Vector3 warmTint = { 1.0f, 0.85f, 0.7f };
 
     for (DoorwayInstance& door : doorways) {
-        // Player light
+        // --- 1. Start with baked static lighting as brightness ---
+        float brightness = ColorAverage(door.bakedTint);
+
+        // --- 2. Player light contribution ---
         float distToPlayer = Vector3Distance(playerPos, door.position);
-        float brightness = Clamp(1.0f - (distToPlayer / playerLightRange), minBrightness, 1.0f);
+        float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+        brightness += playerContribution * 1.0f; // Assuming intensity = 1
 
-        // Dynamic lights
-        for (const LightSource& light : bulletLights){
-            float distToLight = Vector3Distance(light.position, door.position);
-            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);  
-            brightness += lightContribution * light.intensity;
-        }
-
-        //static lights
-        for (const LightSource& light : dungeonLights) {
+        // --- 3. Dynamic fireball lights ---
+        for (const LightSource& light : bulletLights) {
             float distToLight = Vector3Distance(light.position, door.position);
             if (distToLight > light.range) continue;
 
-            // Project to 2D grid space (if your map is 2D)
-            Vector2 lightPos2D = { GetDungeonImageX(light.position.x, tileSize, dungeonWidth), GetDungeonImageY(light.position.z, tileSize, dungeonHeight)};
-            Vector2 doorPos2D  = { GetDungeonImageX(door.position.x, tileSize, dungeonWidth), GetDungeonImageY(door.position.z, tileSize, dungeonHeight) };
-
-            if (!LineOfSightRaycast(lightPos2D, doorPos2D, dungeonImg, 100)) {
-                continue; // Blocked by a wall!
-            }
-
-            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);
+            float lightContribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
             brightness += lightContribution * light.intensity;
         }
 
-        brightness = Clamp(brightness, minBrightness, 1.0f);
+        // --- 4. Clamp total brightness ---
+        brightness = Clamp(brightness, 0.0f, 1.0f);
 
-        Vector3 warmTint = Vector3{1.0f, 0.85f, 0.7f};
+        // --- 5. Apply consistent warm tint once ---
         Vector3 tinted = Vector3Scale(warmTint, brightness);
         door.tint = ColorFromNormalized({ tinted.x, tinted.y, tinted.z, 1.0f });
     }
 }
 
+
 void UpdateWallTints(Vector3 playerPos) {
-    const float playerLightRange = 1500.0f;
-    const float minBrightness = 0.5f;
+    const float playerLightRange = 400.0f;
+    const float ambientBrightness = 0.0f; // Dynamic lights don't add ambient themselves
+    const float fireballRange = 400.0f;
 
     for (WallInstance& wall : wallInstances) {
-        // Player light
-        float distToPlayer = Vector3Distance(playerPos, wall.position);
-        float brightness = Clamp(1.0f - (distToPlayer / playerLightRange), minBrightness, 1.0f);
 
-        // Dynamic lights
-        for (const LightSource& light : bulletLights){
-            float distToLight = Vector3Distance(light.position, wall.position);
-            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);  
-            brightness += lightContribution * light.intensity;
+        // Start with precomputed static lighting
+        Vector3 finalColor = ColorToNormalized(wall.bakedTint);
+
+        // --- Add player light ---
+        float distToPlayer = Vector3Distance(playerPos, wall.position);
+        if (distToPlayer < playerLightRange) {
+            float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+
+            // Example warm player light tint
+            Vector3 playerTint = {1.0f, 0.85f, 0.7f};
+            Vector3 playerLight = Vector3Scale(playerTint, playerContribution);
+
+            finalColor = Vector3Add(finalColor, playerLight);
         }
 
-        //static lights
-        for (const LightSource& light : dungeonLights) {
+        // --- Add dynamic fireball lights ---
+        for (const LightSource& light : bulletLights) {
             float distToLight = Vector3Distance(light.position, wall.position);
             if (distToLight > light.range) continue;
 
-            // Project to 2D grid space (if your map is 2D)
-            Vector2 lightPos2D = { GetDungeonImageX(light.position.x, tileSize, dungeonWidth), GetDungeonImageY(light.position.z, tileSize, dungeonHeight)};
-            Vector2 wallPos2D  = { GetDungeonImageX(wall.position.x, tileSize, dungeonWidth), GetDungeonImageY(wall.position.z, tileSize, dungeonHeight) };
+            float contribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
+            Vector3 fireballTint = {1.0f, 0.85f, 0.7f}; // Or any light color
+            Vector3 dynamicLight = Vector3Scale(fireballTint, contribution * light.intensity);
 
-            if (!LineOfSightRaycast(lightPos2D, wallPos2D, dungeonImg, 100)) {
-                continue; // Blocked by a wall!
-            }
-
-            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);
-            brightness += lightContribution * light.intensity;
+            finalColor = Vector3Add(finalColor, dynamicLight);
         }
-        // for (const LightSource& light : dungeonLights) {
-        //     float distToLight = Vector3Distance(light.position, wall.position);
-        //     float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);  // Uses light.range!
-        //     brightness += lightContribution * light.intensity;
-        // }
 
-        brightness = Clamp(brightness, minBrightness, 1.0f);
+        // Clamp final color
+        finalColor.x = Clamp(finalColor.x, 0.0f, 1.0f);
+        finalColor.y = Clamp(finalColor.y, 0.0f, 1.0f);
+        finalColor.z = Clamp(finalColor.z, 0.0f, 1.0f);
 
-        Vector3 warmTint = Vector3{1.0f, 0.85f, 0.7f};
-        Vector3 tinted = Vector3Scale(warmTint, brightness);
-        wall.tint = ColorFromNormalized({ tinted.x, tinted.y, tinted.z, 1.0f });
+        wall.tint = ColorFromNormalized({ finalColor.x, finalColor.y, finalColor.z, 1.0f });
     }
 }
 
 
-
 void UpdateFloorTints(Vector3 playerPos) {
-    const float maxLightDistance = 1000.0f;
-    const float minBrightness = 0.2f;
+    const float fireballRange = 400.0f;
+    const float playerLightRange = 1000.0f;
+
+    // This is your *consistent* light color tint
+    Vector3 warmTint = { 1.0f, 0.85f, 0.7f };
 
     for (FloorTile& tile : floorTiles) {
-        // Player light
+
+        // --- 1. Start with baked static brightness ---
+        float brightness = ColorAverage(tile.bakedTint);
+
+        // --- 2. Player light contribution ---
         float distToPlayer = Vector3Distance(playerPos, tile.position);
-        float brightness = Clamp(1.0f - (distToPlayer / 1000), minBrightness, 1.0f);
+        float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+        brightness += playerContribution * 1.0f; // Assuming intensity = 1
 
-            // Dynamic lights
-        for (const LightSource& light : bulletLights){
-            float distToLight = Vector3Distance(light.position, tile.position);
-            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);  
-            brightness += lightContribution * light.intensity;
-        }
-
-
-        // Other lights
-        for (const LightSource& light : dungeonLights) {
+        // --- 3. Dynamic fireball lights ---
+        for (const LightSource& light : bulletLights) {
             float distToLight = Vector3Distance(light.position, tile.position);
             if (distToLight > light.range) continue;
 
-            // Project to 2D grid space (if your map is 2D)
-            Vector2 lightPos2D = { GetDungeonImageX(light.position.x, tileSize, dungeonWidth), GetDungeonImageY(light.position.z, tileSize, dungeonHeight)};
-            Vector2 tilePos2D  = { GetDungeonImageX(tile.position.x, tileSize, dungeonWidth), GetDungeonImageY(tile.position.z, tileSize, dungeonHeight) };
-
-            if (!LineOfSightRaycast(lightPos2D, tilePos2D, dungeonImg, 100)) {
-                continue; // Blocked by a wall!
-            }
-
-            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);
+            float lightContribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
             brightness += lightContribution * light.intensity;
         }
 
-        brightness = Clamp(brightness, minBrightness, 1.0f);  // Clamp final brightness
+        // --- 4. Clamp brightness to [0,1] ---
+        brightness = Clamp(brightness, 0.0f, 1.0f);
 
-        // Warm tint (same as walls)
-        Vector3 warmTint = Vector3{1.0f, 0.85f, 0.7f};
-        Vector3 tinted = Vector3Scale(warmTint, brightness);
-        tile.tint = ColorFromNormalized({ tinted.x, tinted.y, tinted.z, 1.0f });
+        // --- 5. Apply warm tint once ---
+        Vector3 finalColor = Vector3Scale(warmTint, brightness);
+
+        // --- 6. Store in tile.tint ---
+        tile.tint = ColorFromNormalized({ finalColor.x, finalColor.y, finalColor.z, 1.0f });
     }
 }
 
@@ -1177,41 +1267,31 @@ void UpdateFloorTints(Vector3 playerPos) {
 
 void UpdateCeilingTints(Vector3 playerPos) {
     const float playerLightRange = 1000.0f;
-    const float minBrightness = 0.2f;
-
+    const float fireballRange = 400.0f;
     Vector3 warmCeilingColor = {0.7f, 0.6f, 0.5f}; // slightly muted warm tone
 
     for (CeilingTile& ceiling : ceilingTiles) {
-        // Player light
+        // --- 1. Start with baked static lighting as brightness ---
+        float brightness = ColorAverage(ceiling.bakedTint);
+
+        // --- 2. Player light contribution ---
         float distToPlayer = Vector3Distance(playerPos, ceiling.position);
-        float brightness = Clamp(1.0f - (distToPlayer / playerLightRange), minBrightness, 1.0f);
+        float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+        brightness += playerContribution * 1.0f; // Assuming intensity = 1
 
-                // Dynamic lights
-        for (const LightSource& light : bulletLights){
-            float distToLight = Vector3Distance(light.position, ceiling.position);
-            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);  
-            brightness += lightContribution * light.intensity;
-        }
-
-
-        // Other light sources
-        for (const LightSource& light : dungeonLights) {
+        // --- 3. Dynamic fireball lights ---
+        for (const LightSource& light : bulletLights) {
             float distToLight = Vector3Distance(light.position, ceiling.position);
             if (distToLight > light.range) continue;
 
-            // Project to 2D grid space (if your map is 2D)
-            Vector2 lightPos2D = { GetDungeonImageX(light.position.x, tileSize, dungeonWidth), GetDungeonImageY(light.position.z, tileSize, dungeonHeight)};
-            Vector2 ceilingPos2D  = { GetDungeonImageX(ceiling.position.x, tileSize, dungeonWidth), GetDungeonImageY(ceiling.position.z, tileSize, dungeonHeight) };
-
-            if (!LineOfSightRaycast(lightPos2D, ceilingPos2D, dungeonImg, 100)) {
-                continue; // Blocked by a wall!
-            }
-
-            float lightContribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);
+            float lightContribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
             brightness += lightContribution * light.intensity;
         }
 
-        brightness = Clamp(brightness, minBrightness, 1.0f);
+        // --- 4. Clamp total brightness ---
+        brightness = Clamp(brightness, 0.0f, 1.0f);
+
+        // --- 5. Apply consistent ceiling tint once ---
         Vector3 tinted = Vector3Scale(warmCeilingColor, brightness);
         ceiling.tint = ColorFromNormalized((Vector4){ tinted.x, tinted.y, tinted.z, 1.0f });
     }

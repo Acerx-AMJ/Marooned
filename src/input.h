@@ -10,7 +10,7 @@ extern InputMode currentInputMode;
 
 
 void UpdateInputMode();
-void debugControls();
+void debugControls(Camera& camera);
 void UpdateCameraWithGamepad(Camera3D& camera);
 void HandleGamepadInput(float deltaTime);
 void HandleKeyboardInput(float deltaTime);

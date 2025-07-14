@@ -7,13 +7,14 @@
 
 class Bullet {
 public:
-    Bullet(Vector3 position, Vector3 velocity, float lifetime, bool enemy);
+    Bullet(Vector3 position, Vector3 velocity, float lifetime, bool enemy, bool fireball = false);
 
     void Update(Camera& camera, float deltaTime);
     void Draw() const;
     void kill(Camera& camera);
     bool IsAlive() const;
     bool IsEnemy() const;
+    bool isFireball() const;
     void Blood(Camera camera);
     Vector3 GetPosition() const;
 
@@ -24,6 +25,7 @@ private:
     Vector3 velocity;   // replaces direction and speed
     bool alive;
     bool enemy;
+    bool fireball;
     float age;
     float maxLifetime;
     float timer;
@@ -35,3 +37,4 @@ private:
 
 void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int pelletCount, float speed, float lifetime, bool enemy);
 void FireBullet(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy);
+void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy, bool firball);

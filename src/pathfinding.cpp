@@ -161,7 +161,7 @@ Vector2 GetRandomReachableTile(const Vector2& start, const Character* self, int 
         if (IsTileOccupied(rx, ry, enemyPtrs, self)) continue;
 
         Vector2 target = {(float)rx, (float)ry};
-        if (!LineOfSightRaycast(start, target, dungeonImg, 100)) continue;
+        if (!LineOfSightRaycast(start, target, dungeonImg, 100, 0.0f)) continue;
 
         return target;
     }
@@ -193,9 +193,11 @@ bool HasWorldLineOfSight(Vector3 from, Vector3 to) {
     Ray ray = { from, Vector3Normalize(Vector3Subtract(to, from)) };
     float maxDistance = Vector3Distance(from, to);
 
+    const float epsilon = 0.25f * maxDistance;
+
     for (const WallRun& wall : wallRunColliders) {
         RayCollision hit = GetRayCollisionBox(ray, wall.bounds);
-        if (hit.hit && hit.distance < maxDistance) {
+        if (hit.hit && hit.distance + epsilon < maxDistance) {
             return false;
         }
     }
@@ -203,7 +205,8 @@ bool HasWorldLineOfSight(Vector3 from, Vector3 to) {
 }
 
 
-bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
+
+bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon) {
     
     const int numRays = 5;
     const float spread = 0.1f; // widen fan
@@ -223,7 +226,7 @@ bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int
         Vector2 offsetStart = Vector2Add(start, Vector2Scale(perp, offset));
 
         
-        if (SingleRayBlocked(offsetStart, end, dungeonMap, maxSteps)) {
+        if (SingleRayBlocked(offsetStart, end, dungeonMap, maxSteps, epsilon)) {
             blockedCount++;
             if (blockedCount > maxBlocked) return false;
         }
@@ -233,7 +236,7 @@ bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int
 }
 
 
-bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps) {
+bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon) {
     float dx = end.x - start.x;
     float dy = end.y - start.y;
     float distance = sqrtf(dx*dx + dy*dy);
@@ -245,7 +248,8 @@ bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int m
     float x = start.x;
     float y = start.y;
 
-    for (int i = 0; i < distance && i < maxSteps; ++i) {
+    //const float epsilon = 2.0f; // 2 tile extra
+    for (int i = 0; i < distance - epsilon && i < maxSteps; ++i) {
         int tileX = (int)x;
         int tileY = (int)y;
 
@@ -282,7 +286,7 @@ std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& d
         bool found = false;
 
         for (; j > i + 1; --j) {
-            if (LineOfSightRaycast(path[i], path[j], dungeonMap, 100)) {
+            if (LineOfSightRaycast(path[i], path[j], dungeonMap, 100, 0.0f)) {
                 found = true;
                 break;
             }

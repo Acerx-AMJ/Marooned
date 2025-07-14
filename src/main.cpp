@@ -24,10 +24,6 @@
 #include <direct.h>
 
 
-
-
-
-
 void BeginCustom3D(Camera3D camera, float farClip) {
     rlDrawRenderBatchActive();
     rlMatrixMode(RL_PROJECTION);
@@ -133,6 +129,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
         GeneratePiratesFromImage(dungeonEnemyHeight-100);
         GenerateSpiderFromImage(dungeonEnemyHeight);
+        BakeStaticLighting();
         if (levelIndex == 4){
             levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
         }
@@ -164,17 +161,6 @@ void SpawnRaptor(Vector3 pos) {
     enemies.push_back(raptor);
     enemyPtrs.push_back(&enemies.back());
 }
-
-
-// Color ColorLerp(Color a, Color b, float t) {
-    
-//     Color result;
-//     result.r = (unsigned char)Lerp((float)a.r, (float)b.r, t);
-//     result.g = (unsigned char)Lerp((float)a.g, (float)b.g, t);
-//     result.b = (unsigned char)Lerp((float)a.b, (float)b.b, t);
-//     result.a = (unsigned char)Lerp((float)a.a, (float)b.a, t);
-//     return result;
-// }
 
 
 
@@ -357,6 +343,7 @@ void lightBullets(float deltaTime){
    // === Collect new lights to add after cleanup ===
     std::vector<LightSource> newBulletLights;
     for (const Bullet& bullet : activeBullets) {
+        if (!bullet.isFireball()) continue;
         LightSource bulletLight;
         bulletLight.position = bullet.GetPosition();
         bulletLight.range = 300.0f;
@@ -408,7 +395,7 @@ void HandleDungeon(float deltaTime) {
 
      //Vertex Color Lighting
     // === Update tints with updated light list ===
-   
+
     UpdateWallTints(player.position);
     UpdateCeilingTints(player.position);
     UpdateFloorTints(player.position);
@@ -474,17 +461,7 @@ void DrawTimer(){
 }
 
 
-
-
-
-
 int main() { 
-
-
-    char cwd[1024];
-    _getcwd(cwd, sizeof(cwd));
-    printf("Working Directory: %s\n", cwd);
-
     InitWindow(1600, 900, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
@@ -556,7 +533,7 @@ int main() {
         }
         float deltaTime = GetFrameTime();
         UpdateInputMode(); //handle both gamepad and keyboard/mouse
-        debugControls(); //press P to remove all vegetation, Press O to regenerate raptors, Press L to print player position
+        debugControls(camera); 
         UpdateShaders(camera);
         sortTrees(camera); //sort trees by distance to player, draw closest trees last.
         
@@ -567,22 +544,19 @@ int main() {
         UpdateEnemies(deltaTime);
         UpdateDungeonChests();
 
-        // UpdateRaptors(deltaTime);
-        // UpdateSkeletons(deltaTime);
-        // UpdatePirates(deltaTime);
-
+        lightBullets(deltaTime);
         CheckBulletHits(camera); //bullet collision
         TreeCollision(camera); //player and raptor vs tree
         DoorCollision();
         SpiderWebCollision();
         barrelCollision();
         ChestCollision();
-        HandleEnemyPlayerCollision();
-        
+        HandleEnemyPlayerCollision(&player);
+        //HandleEnemyEnemyCollision(); //enemies don't collide with each other
         pillarCollision();
         HandleMeleeHitboxCollision(camera);
         HandleDoorInteraction(camera);
-
+        ApplyBakedLighting();
         //gather up everything 2d and put it into a vector of struct drawRequests, then sort and draw every billboard/quad in the game.
         //Draw in order of furthest fisrt, closest last.  
         GatherTransparentDrawRequests(camera, player.weapon, deltaTime);
@@ -636,8 +610,9 @@ int main() {
         //draw things with transparecy last.
         rlDisableDepthMask();
         //DrawAllEnemies(camera);
-        DrawBillboards(camera);
         DrawBullets(camera); //and decals //draw bullets and decals after enemies,
+        DrawBillboards(camera);
+        
         UpdateCollectables(camera, deltaTime); 
         DrawDungeonPillars(deltaTime, camera); //light sources become invisible when behind enemies, but it's better then enemies being invisible being behind light sources. 
         rlEnableDepthMask();

@@ -25,6 +25,8 @@ struct DoorwayInstance {
     bool isOpen = false;
     bool isLocked = false;
     Color tint = WHITE;
+    Color bakedTint;
+    float bakedBrightness;
     int tileX;
     int tileY;
     int linkedLevelIndex = -1;
@@ -42,9 +44,11 @@ struct Door {
     Texture2D* doorTexture;
     Vector3 scale = {100.0f, 200.0f, 1.0f}; // width, height, unused
     Color tint = WHITE;
+
     int tileX;
     int tileY;
     DoorType doorType = DoorType::Normal;
+
 
     int linkedLevelIndex = -1; // -1 means no linked level
 };
@@ -92,7 +96,7 @@ struct PillarInstance {
 
 struct LightSource {
     Vector3 position;
-    float intensity = 0.7;  // maybe 1.0 = full bright, 0.5 = dim, etc.
+    float intensity = 1.0;  // maybe 1.0 = full bright, 0.5 = dim, etc.
     float range = 1000;
     float lifeTime = 1.0f;
     float age;
@@ -106,6 +110,8 @@ struct WallInstance {
     float rotationY;
     BoundingBox bounds;
     Color tint = WHITE;  // Default to no tinting
+    Color bakedTint;    // Precomputed static lighting
+    float bakedBrightness; // NEW! Used only during baking
 };
 
 struct WallRun {
@@ -119,12 +125,16 @@ struct FloorTile {
     Vector3 position;
     Color tint;
     Model floorTile;
+    Color bakedTint;
+    float bakedBrightness;
 
 };
 
 struct CeilingTile {
     Vector3 position;
     Color tint;
+    Color bakedTint;
+    float bakedBrightness;
 };
 
 
@@ -176,6 +186,8 @@ void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height,
 //void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY);
 void DrawDungeonCeiling(Model ceilingTileModel);
 
+void BakeStaticLighting(); 
+void ApplyBakedLighting();
 void UpdateWallTints(Vector3 playerPos);
 void UpdateFloorTints(Vector3 playerPos);
 void UpdateCeilingTints(Vector3 playerPos);
@@ -194,4 +206,8 @@ void GenerateRaptorsFromImage(float baseY);
 void GenerateSkeletonsFromImage(float baseY);
 void GeneratePiratesFromImage(float baseY);
 void GenerateSpiderFromImage(float baseY);
+
+Vector3 ColorToNormalized(Color color);
+float ColorAverage(Color c);
+
 void ClearDungeon();

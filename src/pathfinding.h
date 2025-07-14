@@ -11,8 +11,8 @@ bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, cons
 Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeletons, const Character* self);
 
 bool HasWorldLineOfSight(Vector3 from, Vector3 to);
-bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps);
-bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps);
+bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon);
+bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon);
 Vector2 GetRandomReachableTile(const Vector2& start, const Character* self, int maxAttempts = 100);
 bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<Vector3>& outPath);
 std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& dungeonMap);

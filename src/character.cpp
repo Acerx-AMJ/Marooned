@@ -271,7 +271,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal = WorldToImageCoords(player.position);
 
-    bool canSee = (LineOfSightRaycast(start, goal, dungeonImg, 100) && HasWorldLineOfSight(position, player.position)); //Vision test
+    bool canSee = (LineOfSightRaycast(start, goal, dungeonImg, 100, 0.0f) && HasWorldLineOfSight(position, player.position)); //Vision test
     
 
     if (canSee) {
@@ -639,7 +639,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal = WorldToImageCoords(player.position);
 
-    bool canSee = (LineOfSightRaycast(start, goal, dungeonImg, 100) && HasWorldLineOfSight(position, player.position)); //Vision test
+    bool canSee = (LineOfSightRaycast(start, goal, dungeonImg, 100, 0.0f) && HasWorldLineOfSight(position, player.position)); //Vision test
 
     if (canSee) {
         playerVisible = true;
@@ -985,12 +985,13 @@ void Character::TakeDamage(int amount) {
         hitTimer = 0.5;
         currentHealth = 0;
         isDead = true;
+        deathTimer = 0.0f;
         state = CharacterState::Death;
         if (type == CharacterType::Raptor) SetAnimation(4, 5, 0.12f, false);
         if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f, false); //less frames for skele death.
         if (type == CharacterType::Pirate) SetAnimation(4, 2, 1, false);
         if (type == CharacterType::Spider) SetAnimation(4, 3, 0.5f, false);
-        deathTimer = 0.0f;
+        
         if (type != CharacterType::Spider)  SoundManager::GetInstance().Play("dinoDeath");
         if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play("bones");
         if (type == CharacterType::Spider) SoundManager::GetInstance().Play("spiderDeath");
@@ -999,19 +1000,19 @@ void Character::TakeDamage(int amount) {
         hitTimer = 0.5f; //tint red
         state = CharacterState::Stagger;
 
-        SetAnimation(4, 1, 1.0f); // Use first frame of death anim for 1 second. 
+        SetAnimation(4, 1, 1.0f); // Use first frame of death anim for 1 second. for all enemies
         currentFrame = 0;         // Always start at first frame
         stateTimer = 0.0f;
         AlertNearbySkeletons(position, 3000.0f);
+
         if (type == CharacterType::Pirate){
             SoundManager::GetInstance().Play("phit1");
+        }else if (type == CharacterType::Spider){
+            SoundManager::GetInstance().Play("spiderDeath");
         }else{
-            if (type != CharacterType::Spider) SoundManager::GetInstance().Play("dinoHit");
-            if (type == CharacterType::Spider) SoundManager::GetInstance().Play("spiderDeath");
+            SoundManager::GetInstance().Play("dinoHit"); //raptor and skeletons
         }
         
-       
-
     }
 }
 
@@ -1026,7 +1027,7 @@ void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
         if (distSqr > radius * radius) continue;
 
         Vector2 targetTile = WorldToImageCoords(other.position);
-        if (!LineOfSightRaycast(originTile, targetTile, dungeonImg, 60)) continue;
+        if (!LineOfSightRaycast(originTile, targetTile, dungeonImg, 60, 0.0f)) continue;
 
         // Passed all checks → alert the skeleton
         other.state = CharacterState::Chase;
@@ -1089,7 +1090,7 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
     }
     // Gravity
     float gravity = 980.0f; //we need gravity for outside maps so characters stick to heightmap.
-    if (isDungeon) gravity = 0.0f; //no gravity in dungeons. floor is fixed. 
+    if (isDungeon) gravity = 0.0f; //no gravity in dungeons. floor is fixed height. 
     static float verticalVelocity = 0.0f;
 
     float spriteHeight = frameHeight * scale;
@@ -1131,6 +1132,7 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
 
 
 void Character::Draw(Camera3D camera) {
+    //never called. we draw billboards in transparentDraw
     Rectangle sourceRec = {
         (float)(currentFrame * frameWidth),
         (float)(rowIndex * frameHeight),
@@ -1140,7 +1142,7 @@ void Character::Draw(Camera3D camera) {
 
     // Calculate a slight camera-facing offset to reduce z-fighting
     Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.position, position));
-    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 10.0f)); // Adjust 0.1f if needed
+    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 10.0f));
     if (type == CharacterType::Skeleton) scale = 0.8; //resize skele before drawing
     Vector2 size = { frameWidth * scale, frameHeight * scale };
 

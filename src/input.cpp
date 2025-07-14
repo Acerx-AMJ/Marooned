@@ -46,7 +46,7 @@ void UpdateCameraWithGamepad(Camera3D& camera) {
     camera.target = Vector3Add(camera.position, forward);
 }
 
-void debugControls(){
+void debugControls(Camera& camera){
 
     if (IsKeyPressed(KEY_GRAVE)){
         debugInfo = !debugInfo;
@@ -82,6 +82,12 @@ void debugControls(){
             door.isOpen = false;
         }
         
+    }
+    //debug fireball
+    if (IsKeyPressed(KEY_F)) {
+        Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+        Vector3 targetPoint = Vector3Add(camera.position, Vector3Scale(camForward, 1000.0f));
+        FireFireball(player.position, targetPoint, 1000, 10, false, true);
     }
 
 
