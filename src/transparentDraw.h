@@ -31,3 +31,4 @@ void GatherEnemies(Camera& camera);
 void GatherDungeonFires(Camera& camera, float deltaTime);
 void GatherWebs(Camera& camera);
 void GatherDecals(Camera& camera, const std::vector<Decal>& decals);
+float GetAdjustedBillboardSize(float baseSize, float distance);

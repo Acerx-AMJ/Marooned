@@ -17,7 +17,7 @@ doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, p
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader, depthShader, pbrShader;
 
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2, floorTile3,chestModel,
-bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel;
+bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel, staffModel;
 
 Image heightmap;
 Mesh terrainMesh;
@@ -75,8 +75,7 @@ void LoadAllResources() {
     floorTile2 = LoadModel("assets/models/floorTile2.glb");
     floorTile3 = LoadModel("assets/models/floorTile3.glb");
     chestModel = LoadModel("assets/models/chest.glb");
-
-
+    staffModel = LoadModel("assets/models/staff.glb");
 
     terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
 
@@ -111,16 +110,12 @@ void LoadAllResources() {
     waterModel.materials[0].shader = waterShader;
     bottomPlane.materials[0].shader = waterShader;
 
-    // //simple fog //post process second pass 
-    // simpleFogShader = LoadShader(0, "assets/shaders/simple_fog.fs");
+    TraceLog(LOG_INFO, "Material count: %d", staffModel.materialCount);
+    TraceLog(LOG_INFO, "Texture ID: %d", staffModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture.id);
 
-    // int locFogColor = GetShaderLocation(simpleFogShader, "fogColor");
-    // int locFogStrength = GetShaderLocation(simpleFogShader, "fogStrength");
-    // int locVerticalFade = GetShaderLocation(simpleFogShader, "verticalFade");
+    staffModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = 
+    staffModel.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture;
 
-    // SetShaderValue(simpleFogShader, locFogColor, (float[3]){ 0.1f, 0.1f, 0.1f }, SHADER_UNIFORM_VEC3);
-    // SetShaderValue(simpleFogShader, locFogStrength, (float[]){0.01f }, SHADER_UNIFORM_FLOAT);
-    // SetShaderValue(simpleFogShader, locVerticalFade, (float[]){ 0.0f }, SHADER_UNIFORM_FLOAT);
 
     bloomShader = LoadShader(0, "assets/shaders/bloom.fs");
     float bloomStrengthValue = 0.3f;
@@ -133,6 +128,7 @@ void LoadAllResources() {
 
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomColor"), bloomColor, SHADER_UNIFORM_VEC3);
+
 
 
 
@@ -293,6 +289,7 @@ void UnloadAllResources() {
     UnloadModel(swordModel);
     UnloadModel(chestModel);
     UnloadModel(lampModel);
+    UnloadModel(staffModel);
     
 
 }

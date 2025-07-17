@@ -12,6 +12,15 @@
 
 std::vector<BillboardDrawRequest> billboardRequests;
 
+float GetAdjustedBillboardSize(float baseSize, float distance) {
+    //billboard scalling is way to extreme because of the size of the world. compensate by enlarging it a tiny bit depending on distance. 
+    const float compensationFactor = 0.0001f;
+
+    // Boost size as distance grows
+    return baseSize * (1.0f + distance * compensationFactor);
+}
+
+
 void GatherEnemies(Camera& camera) {
     //all billboards in the game including decals and spider webs are drawn in a single draw pass. first we need to gather all the billboards
     //and decals and flat quads. Then we sort them by distance to camera and draw them in that order. This prevents textures occluding eachother. 
@@ -31,11 +40,10 @@ void GatherEnemies(Camera& camera) {
         // Slight camera-facing offset to avoid z-fighting
         Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.position, enemy->position));
         Vector3 offsetPos = Vector3Add(enemy->position, Vector3Scale(camDir, 10.0f));
-        //if (enemy->type == CharacterType::Skeleton) enemy->scale = 0.8f;
        
-        // Correct billboard size: frame size * scale
-        float billboardSize = enemy->frameWidth * enemy->scale;
-
+       
+        //compensate for extreme billboard scaling, things shrink at a distance but not by much. 
+        float billboardSize = GetAdjustedBillboardSize(enemy->frameWidth * enemy->scale, dist);
         // Dynamic tint for damage
         Color finalTint = (enemy->hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
 
@@ -176,6 +184,23 @@ void GatherMuzzleFlashes(Camera3D camera, Weapon& weapon) {
     });
 }
 
+// void GatherRevolverMuzzleFlashes(Camera3D camera, Revolver& revolver) {
+//     if (revolver.flashTimer <= 0.0f) return;
+
+//     float dist = Vector3Distance(camera.position, revolver.muzzlePos);
+
+//     billboardRequests.push_back({
+//         Billboard_MuzzleFlash,
+//         revolver.muzzlePos,
+//         &revolver.muzzleFlashTexture,
+//         Rectangle{0, 0, (float)revolver.muzzleFlashTexture.width, (float)revolver.muzzleFlashTexture.height},
+//         revolver.flashSize,         // or weapon.flashSize if dynamic
+//         WHITE,
+//         dist,
+//         0.0f
+//     });
+// }
+
 
 
 void GatherTransparentDrawRequests(Camera& camera, Weapon& weapon, float deltaTime) {
@@ -186,6 +211,7 @@ void GatherTransparentDrawRequests(Camera& camera, Weapon& weapon, float deltaTi
     GatherWebs(camera);
     GatherDecals(camera, decals);
     GatherMuzzleFlashes(camera, weapon);
+
     GatherCollectables(camera, collectables);
 }
 

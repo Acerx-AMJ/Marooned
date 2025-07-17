@@ -40,15 +40,21 @@ void BeginCustom3D(Camera3D camera, float farClip) {
 }
 
 void ClearLevel() {
-    isDungeon = false;
+    billboardRequests.clear();
+    std::cout << "billboards clear\n";
+    removeAllCharacters();
+    std::cout << "chracters clear\n";
+    activeBullets.clear();
     ClearDungeon();
-  
+    std::cout << "dungeon clear\n";
+    bulletLights.clear();
     dungeonEntrances.clear();
     RemoveAllVegetation();
-    removeAllCharacters();
+
     if (terrainMesh.vertexCount > 0) UnloadMesh(terrainMesh); //unload mesh when switching levels. 
     if (heightmap.data != nullptr) UnloadImage(heightmap);
- 
+    std::cout << "Clearing level\n";
+    isDungeon = false;
 }
 
 void GenerateEntrances(){
@@ -86,6 +92,7 @@ void GenerateEntrances(){
 
 
 void InitLevel(const LevelData& level, Camera camera) {
+    isLoadingLevel = true;
     //Called when starting game and changing level. init the level you pass. 
     ClearLevel();//clears everything. 
     camera.position = player.position;
@@ -117,7 +124,6 @@ void InitLevel(const LevelData& level, Camera camera) {
         ConvertImageToWalkableGrid(dungeonImg);
         GenerateFloorTiles(floorHeight);//80
         GenerateWallTiles(wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
-        
         GenerateCeilingTiles(ceilingHeight);//400
         GenerateBarrels(floorHeight);
         GenerateSpiderWebs(floorHeight);
@@ -129,14 +135,14 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
         GeneratePiratesFromImage(dungeonEnemyHeight-100);
         GenerateSpiderFromImage(dungeonEnemyHeight);
-        BakeStaticLighting();
+        
         if (levelIndex == 4){
             levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
         }
 
       
     }
-
+    
     Vector3 resolvedSpawn = level.startPosition; // default fallback
     if (first){
         resolvedSpawn = {5475.0f, 300.0f, -5665.0f}; //overriding start position with first level spwan point
@@ -152,8 +158,11 @@ void InitLevel(const LevelData& level, Camera camera) {
         } 
 
     }
-  
+    isLoadingLevel = false;
+    ResetAllBakedTints();
+    BakeStaticLighting();
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
+
 }
 
 void SpawnRaptor(Vector3 pos) {
@@ -165,6 +174,7 @@ void SpawnRaptor(Vector3 pos) {
 
 
 void UpdateEnemies(float deltaTime) {
+    if (isLoadingLevel) return;
     for (Character& e : enemies){
         e.Update(deltaTime, player, heightmap, terrainScale);
     }
@@ -391,6 +401,7 @@ void UpdateFade(float deltaTime, Camera& camera){
 
 
 void HandleDungeon(float deltaTime) {
+    if (isLoadingLevel) return;
     WallCollision();
 
      //Vertex Color Lighting
@@ -538,10 +549,11 @@ int main() {
         sortTrees(camera); //sort trees by distance to player, draw closest trees last.
         
         UpdateFade(deltaTime, camera); //triggers init level
+        UpdateEnemies(deltaTime);
         UpdateBullets(camera, deltaTime);
         UpdateDecals(deltaTime);
         UpdateBoat(player_boat, deltaTime);
-        UpdateEnemies(deltaTime);
+      
         UpdateDungeonChests();
 
         lightBullets(deltaTime);
@@ -594,17 +606,13 @@ int main() {
         rlSetBlendMode(BLEND_ALPHA); //required 
         //rlEnableColorBlend(); //not sure
 
-
-        //DrawModelEx(wall, (Vector3){0, 0, 0}, (Vector3){0, 1, 0}, 0.0f, (Vector3){1, 1, 1}, WHITE);
-        DrawModelEx(wall, (Vector3){0, 200, 0}, (Vector3){0, 1, 0}, 0, (Vector3){200, 200, 100}, WHITE);
         DrawDungeonFloor();
         DrawDungeonWalls();
         DrawDungeonCeiling(floorTile);
         DrawDungeonBarrels();
-        //DrawSpiderWebs(camera);
         DrawDungeonChests();
         
-        DrawDungeonDoorways(doorWay); 
+        DrawDungeonDoorways(); 
         DrawPlayer(player, camera);
 
         //draw things with transparecy last.

@@ -4,7 +4,9 @@
 
 enum class WeaponType { 
     Blunderbuss, 
-    Sword 
+    Sword,
+    MagicStaff
+
 };
 
 
@@ -93,4 +95,63 @@ struct Weapon {
     void Update(float deltaTime);
     void Draw(const Camera& camera);
 };
+
+
+struct MagicStaff {
+    Model model;
+    Vector3 scale = { 1.0f, 1.0f, 1.0f };
+
+    // === Melee / Swinging ===
+    float swingTimer = 0.0f;
+    float swingDuration = 1.0f;
+    bool swinging = false;
+
+    bool hitboxActive = false;
+    float hitboxTimer = 0.0f;
+    float hitboxDuration = 0.25f;
+
+    float hitWindowStart = 0.1f;
+    float hitWindowEnd = 0.25f;
+    bool hitboxTriggered = false;
+
+    float cooldown = 1.0f;
+    float timeSinceLastSwing = 999.0f;
+
+    // Offsets for first-person placement
+    float forwardOffset = 75.0f;
+    float sideOffset = 28.0f;
+    float verticalOffset = -25.0f;
+
+    float swingAmount = -50.0f; 
+    float swingOffset = 0.0f;
+
+    float verticalSwingOffset = -25.0f;
+    float verticalSwingAmount = 35.0f;
+
+    float horizontalSwingOffset = 0.0f;
+    float horizontalSwingAmount = 30.0f;
+
+    // === Shooting / Magic Projectile ===
+    Vector3 muzzlePos;
+    float fireCooldown = 0.5f;
+    float lastFired = -999.0f;
+
+    float recoil = 0.0f;
+    float recoilAmount = 6.0f;
+    float recoilRecoverySpeed = 20.0f;
+
+    Texture2D muzzleFlashTexture;
+    float flashDuration = 0.08f;
+    float flashTimer = 0.0f;
+
+    float reloadDip = 0.0f;
+
+    // === Methods ===
+    void StartSwing();
+    void Update(float deltaTime);
+    void Fire(const Camera& camera);
+    void Draw(const Camera& camera);
+    void PlaySwipe();
+};
+
 

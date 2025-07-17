@@ -129,7 +129,7 @@ void UpdateInputMode() {
 
 void HandleMouseLook(float deltaTime){
     Vector2 mouseDelta = GetMouseDelta();
-    float mouseSensitivity = 0.03f;
+    float mouseSensitivity = 0.05f;
     player.rotation.y -= mouseDelta.x * mouseSensitivity;
     player.rotation.x -= mouseDelta.y * mouseSensitivity;
     player.rotation.x = Clamp(player.rotation.x, -89.0f, 89.0f);

@@ -124,7 +124,7 @@ struct WallRun {
 struct FloorTile {
     Vector3 position;
     Color tint;
-    Model floorTile;
+    //Model* floorTile;
     Color bakedTint;
     float bakedBrightness;
 
@@ -180,12 +180,12 @@ void DrawDungeonBarrels();
 void DrawSpiderWebs(Camera& camera);
 void DrawDungeonChests(); 
 void DrawDungeonPillars(float deltaTime, Camera3D camera);
-void DrawDungeonDoorways(Model archwayModel);
+void DrawDungeonDoorways();
 void DrawFlatDoor(const Door& door);
 void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height, float rotationY, Color tint);
 //void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY);
 void DrawDungeonCeiling(Model ceilingTileModel);
-
+void ResetAllBakedTints();
 void BakeStaticLighting(); 
 void ApplyBakedLighting();
 void UpdateWallTints(Vector3 playerPos);

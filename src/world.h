@@ -51,6 +51,7 @@ extern bool first;
 extern float dungeonEnemyHeight;
 extern float ElapsedTime;
 extern bool debugInfo;
+extern bool isLoadingLevel;
 
 extern GameState currentGameState;
 // extern std::vector<Character> raptors;

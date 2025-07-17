@@ -209,7 +209,7 @@ void GenerateFloorTiles(float baseY) {
             //     case 2:tile.floorTile = floorTile2; break;
             //     ///case 3:tile.floorTile = floorTile3; break; I broke the other tile models in blender. 
             // }
-            tile.floorTile = floorTile;
+            //tile.floorTile = &floorTile;
 
 
             floorTiles.push_back(tile);
@@ -315,8 +315,7 @@ void GenerateWallTiles(float baseY) {
             }
         }
     }
-    std::cout << "walls.size() = " << wallInstances.size() << "\n";
-    for (auto& w : wallInstances) printf("Wall at %f,%f,%f\n", w.position.x, w.position.y, w.position.z);
+
 }
 
 void GenerateSideColliders(Vector3 pos, float rotationY, DoorwayInstance& archway){
@@ -961,7 +960,7 @@ void DrawDungeonChests() {
 
 void DrawDungeonFloor() {
     for (const FloorTile& tile : floorTiles) {
-        DrawModelEx(tile.floorTile, tile.position, Vector3{0,1,0}, 0.0f, Vector3{700,700,700}, tile.tint);
+        DrawModelEx(floorTile, tile.position, Vector3{0,1,0}, 0.0f, Vector3{700,700,700}, tile.tint);
     }
 }
 
@@ -975,11 +974,11 @@ void DrawDungeonWalls() {
     }
 }
 
-void DrawDungeonDoorways(Model archwayModel){
+void DrawDungeonDoorways(){
 
     for (const DoorwayInstance& d : doorways) {
         Vector3 dPos = {d.position.x, d.position.y + 100, d.position.z};
-        DrawModelEx(archwayModel, dPos, {0, 1, 0}, d.rotationY * RAD2DEG, {490, 595, 476}, d.tint);
+        DrawModelEx(doorWay, dPos, {0, 1, 0}, d.rotationY * RAD2DEG, {490, 595, 476}, d.tint);
     }
 
     for (const Door& door : doors){
@@ -1022,9 +1021,6 @@ void DrawFlatDoor(const Door& door) {
 }
 
 
-
-
-
 void DrawDungeonCeiling(Model ceilingTileModel) {
     for (const CeilingTile& ceiling : ceilingTiles) {
         DrawModelEx(
@@ -1052,9 +1048,28 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera) {
     }
 }
 
+void ResetAllBakedTints() {
+    for (auto& wall : wallInstances)
+        wall.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
+
+    for (auto& floor : floorTiles)
+        floor.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
+
+    for (auto& ceiling : ceilingTiles)
+        ceiling.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
+
+    for (auto& door : doorways)
+        door.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
+}
+
+
 void BakeStaticLighting() {
-    const float ambientBrightness = 0.35f;
-    const float ambientFloorBrightness = 0.25;
+
+    float ambientBrightness = 0.4f;
+    const float ambientFloorBrightness = 0.30;
+    float epsilon = 0.25f;
+    if (!isDungeon) ambientBrightness = 1.0f;
+
     for (WallInstance& wall : wallInstances) {
         wall.bakedBrightness = ambientBrightness;
     }
@@ -1075,7 +1090,7 @@ void BakeStaticLighting() {
         for (WallInstance& wall : wallInstances) {
             float dist = Vector3Distance(light.position, wall.position);
             if (dist > light.range) continue;
-            if (!HasWorldLineOfSight(light.position, wall.position)) continue;
+            if (!HasWorldLineOfSight(light.position, wall.position, epsilon)) continue;
             
             float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
             wall.bakedBrightness += contribution * light.intensity;
@@ -1084,7 +1099,7 @@ void BakeStaticLighting() {
         for (FloorTile& floor : floorTiles){
             float dist = Vector3Distance(light.position, floor.position);
             if (dist > light.range) continue;
-            if (!HasWorldLineOfSight(light.position, floor.position)) continue;
+            if (!HasWorldLineOfSight(light.position, floor.position, epsilon)) continue;
 
             float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
             floor.bakedBrightness += contribution * light.intensity;
@@ -1093,7 +1108,7 @@ void BakeStaticLighting() {
         for (DoorwayInstance& door : doorways){
             float dist = Vector3Distance(light.position, door.position);
             if (dist > light.range) continue;
-            if (!HasWorldLineOfSight(light.position, door.position)) continue;
+            if (!HasWorldLineOfSight(light.position, door.position, epsilon)) continue;
 
             float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
             door.bakedBrightness += contribution * light.intensity;
@@ -1120,9 +1135,14 @@ void BakeStaticLighting() {
     }
 
     //copy floor baked light to ceiling. No need to recalculate cause it's the same. 
-    for (int i = 0; i < floorTiles.size() && i < ceilingTiles.size(); ++i) {
-        ceilingTiles[i].bakedTint = floorTiles[i].bakedTint;
+    if (floorTiles.size() != ceilingTiles.size()) {
+        TraceLog(LOG_WARNING, "BakeStaticLighting: floorTiles and ceilingTiles size mismatch! Skipping ceiling bake.");
+    } else {
+        for (int i = 0; i < floorTiles.size(); ++i) {
+            ceilingTiles[i].bakedTint = floorTiles[i].bakedTint;
         }
+    }
+
 }
 
 
@@ -1149,7 +1169,7 @@ void ApplyBakedLighting() {
 
 
 void UpdateDoorwayTints(Vector3 playerPos) {
-    const float playerLightRange = 1000.0f;
+    const float playerLightRange = 800.0f;
     const float fireballRange = 400.0f;
     Vector3 warmTint = { 1.0f, 0.85f, 0.7f };
 
@@ -1182,52 +1202,46 @@ void UpdateDoorwayTints(Vector3 playerPos) {
 
 
 void UpdateWallTints(Vector3 playerPos) {
-    const float playerLightRange = 400.0f;
-    const float ambientBrightness = 0.0f; // Dynamic lights don't add ambient themselves
+    const float playerLightRange = 800.0f;
     const float fireballRange = 400.0f;
 
+    // Consistent wall light tint (your warm color)
+    Vector3 warmTint = {1.0f, 0.85f, 0.7f};
+
     for (WallInstance& wall : wallInstances) {
+        // 1️⃣ Start with baked brightness
+        float brightness = ColorAverage(wall.bakedTint);
 
-        // Start with precomputed static lighting
-        Vector3 finalColor = ColorToNormalized(wall.bakedTint);
-
-        // --- Add player light ---
+        // 2️⃣ Add player light
         float distToPlayer = Vector3Distance(playerPos, wall.position);
-        if (distToPlayer < playerLightRange) {
-            float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+        float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+        brightness += playerContribution * 1.0f; // Assuming intensity = 1
 
-            // Example warm player light tint
-            Vector3 playerTint = {1.0f, 0.85f, 0.7f};
-            Vector3 playerLight = Vector3Scale(playerTint, playerContribution);
-
-            finalColor = Vector3Add(finalColor, playerLight);
-        }
-
-        // --- Add dynamic fireball lights ---
+        // 3️⃣ Add dynamic fireball lights
         for (const LightSource& light : bulletLights) {
             float distToLight = Vector3Distance(light.position, wall.position);
             if (distToLight > light.range) continue;
 
             float contribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
-            Vector3 fireballTint = {1.0f, 0.85f, 0.7f}; // Or any light color
-            Vector3 dynamicLight = Vector3Scale(fireballTint, contribution * light.intensity);
-
-            finalColor = Vector3Add(finalColor, dynamicLight);
+            brightness += contribution * light.intensity;
         }
 
-        // Clamp final color
-        finalColor.x = Clamp(finalColor.x, 0.0f, 1.0f);
-        finalColor.y = Clamp(finalColor.y, 0.0f, 1.0f);
-        finalColor.z = Clamp(finalColor.z, 0.0f, 1.0f);
+        // 4️⃣ Clamp total brightness
+        brightness = Clamp(brightness, 0.0f, 1.0f);
 
-        wall.tint = ColorFromNormalized({ finalColor.x, finalColor.y, finalColor.z, 1.0f });
+        // 5️⃣ Apply warm tint once
+        Vector3 finalColor = Vector3Scale(warmTint, brightness);
+
+        // 6️⃣ Store back to wall.tint
+        wall.tint = ColorFromNormalized((Vector4){ finalColor.x, finalColor.y, finalColor.z, 1.0f });
     }
 }
 
 
+
 void UpdateFloorTints(Vector3 playerPos) {
     const float fireballRange = 400.0f;
-    const float playerLightRange = 1000.0f;
+    const float playerLightRange = 800.0f;
 
     // This is your *consistent* light color tint
     Vector3 warmTint = { 1.0f, 0.85f, 0.7f };
@@ -1266,7 +1280,7 @@ void UpdateFloorTints(Vector3 playerPos) {
 
 
 void UpdateCeilingTints(Vector3 playerPos) {
-    const float playerLightRange = 1000.0f;
+    const float playerLightRange = 800.0f;
     const float fireballRange = 400.0f;
     Vector3 warmCeilingColor = {0.7f, 0.6f, 0.5f}; // slightly muted warm tone
 
@@ -1387,16 +1401,16 @@ void ClearDungeon() {
     pillars.clear();
     barrelInstances.clear();
     dungeonLights.clear();
-    enemies.clear();
-    enemyPtrs.clear();
     doors.clear();
     doorways.clear();
     collectables.clear();
+    decals.clear();
+   
     for (ChestInstance& chest : chestInstances) {
         UnloadModel(chest.model);
         UnloadModelAnimations(chest.animations, chest.animCount);
     }
     chestInstances.clear();
-
+   
 }
 

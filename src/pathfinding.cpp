@@ -171,6 +171,7 @@ Vector2 GetRandomReachableTile(const Vector2& start, const Character* self, int 
 }
 
 bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<Vector3>& outPath) {
+    if (isLoadingLevel) return false;
     Vector2 randomTile = GetRandomReachableTile(start, self);
 
     if (randomTile.x == -1) return false;
@@ -189,11 +190,11 @@ bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<V
 }
 
 
-bool HasWorldLineOfSight(Vector3 from, Vector3 to) {
+bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction) {
+    if (isLoadingLevel) return false;
     Ray ray = { from, Vector3Normalize(Vector3Subtract(to, from)) };
     float maxDistance = Vector3Distance(from, to);
-
-    const float epsilon = 0.25f * maxDistance;
+    float epsilon = epsilonFraction * maxDistance;
 
     for (const WallRun& wall : wallRunColliders) {
         RayCollision hit = GetRayCollisionBox(ray, wall.bounds);
@@ -201,13 +202,26 @@ bool HasWorldLineOfSight(Vector3 from, Vector3 to) {
             return false;
         }
     }
+
+    for (const Door& door: doors) {
+        if (!door.isOpen){
+            RayCollision hit = GetRayCollisionBox(ray, door.collider);
+            
+            if (hit.hit && hit.distance + epsilon < maxDistance) {
+                return false;
+            }
+        }
+
+    }
+
+
     return true;
 }
 
 
 
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon) {
-    
+    if (isLoadingLevel) return false;
     const int numRays = 5;
     const float spread = 0.1f; // widen fan
 
@@ -235,7 +249,6 @@ bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int
     return true;
 }
 
-
 bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon) {
     float dx = end.x - start.x;
     float dy = end.y - start.y;
@@ -248,20 +261,23 @@ bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int m
     float x = start.x;
     float y = start.y;
 
-    //const float epsilon = 2.0f; // 2 tile extra
-    for (int i = 0; i < distance - epsilon && i < maxSteps; ++i) {
+    for (int i = 0; i < distance && i < maxSteps; ++i) {
         int tileX = (int)x;
         int tileY = (int)y;
 
         if (tileX < 0 || tileX >= dungeonMap.width || tileY < 0 || tileY >= dungeonMap.height)
             return true;
 
+        // Early out: if close enough to the end
+        if (Vector2Distance((Vector2){x, y}, end) < epsilon) {
+            return false;
+        }
+
         Color c = GetImageColor(dungeonMap, tileX, tileY);
 
         if (c.r < 50 && c.g < 50 && c.b < 50) return true; // wall
-        if (c.r == 128 && c.g == 0 && c.b == 128 && !IsDoorOpenAt(tileX, tileY)) return true; // closed door
-        if (c.r == 0 && c.g == 255 && c.b == 255 && !IsDoorOpenAt(tileX, tileY)) return true; //locked door, 
-        //skeletons can see through exit and entrance doors but it don't matter because how they are placed. 
+        if (c.r == 128 && c.g == 0 && c.b == 128 && !IsDoorOpenAt(tileX, tileY)) return true;
+        if (c.r == 0 && c.g == 255 && c.b == 255 && !IsDoorOpenAt(tileX, tileY)) return true;
 
         x += stepX;
         y += stepY;
@@ -269,6 +285,42 @@ bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int m
 
     return false;
 }
+
+
+
+// bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon) {
+//     float dx = end.x - start.x;
+//     float dy = end.y - start.y;
+//     float distance = sqrtf(dx*dx + dy*dy);
+//     if (distance == 0) return false;
+
+//     float stepX = dx / distance;
+//     float stepY = dy / distance;
+
+//     float x = start.x;
+//     float y = start.y;
+
+//     //const float epsilon = 2.0f; // 2 tile extra
+//     for (int i = 0; i < distance - epsilon && i < maxSteps; ++i) {
+//         int tileX = (int)x;
+//         int tileY = (int)y;
+
+//         if (tileX < 0 || tileX >= dungeonMap.width || tileY < 0 || tileY >= dungeonMap.height)
+//             return true;
+
+//         Color c = GetImageColor(dungeonMap, tileX, tileY);
+
+//         if (c.r < 50 && c.g < 50 && c.b < 50) return true; // wall
+//         if (c.r == 128 && c.g == 0 && c.b == 128 && !IsDoorOpenAt(tileX, tileY)) return true; // closed door
+//         if (c.r == 0 && c.g == 255 && c.b == 255 && !IsDoorOpenAt(tileX, tileY)) return true; //locked door, 
+//         //skeletons can see through exit and entrance doors but it don't matter because how they are placed. 
+
+//         x += stepX;
+//         y += stepY;
+//     }
+
+//     return false;
+// }
 
 
 std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& dungeonMap) {

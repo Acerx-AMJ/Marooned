@@ -43,6 +43,7 @@ float wallHeight = 270;
 float dungeonEnemyHeight = 165;
 float ElapsedTime = 0.0f;
 bool debugInfo = true;
+bool isLoadingLevel = false;
 
 // std::vector<Character> raptors;
 // std::vector<Character*> raptorPtrs;

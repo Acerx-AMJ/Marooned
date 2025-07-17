@@ -179,6 +179,7 @@ void Weapon::Draw(const Camera& camera) {
 
 
 
+
 void MeleeWeapon::Draw(const Camera& camera) {
     Matrix lookAt = MatrixLookAt(camera.position, camera.target, { 0, 1, 0 });
     Matrix swordRotation = MatrixInvert(lookAt);
@@ -254,3 +255,121 @@ void MeleeWeapon::PlaySwipe(){
     SoundManager::GetInstance().Play(stepKey);
 
 }
+
+void MagicStaff::Fire(const Camera& camera) {
+    if (GetTime() - lastFired < fireCooldown) return;
+
+    lastFired = GetTime();
+    recoil += recoilAmount;
+    flashTimer = flashDuration;
+
+    Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+    Vector3 targetPoint = Vector3Add(camera.position, Vector3Scale(camForward, 1000.0f));
+    FireFireball(muzzlePos, targetPoint, 1000, 10, false, true);
+
+    // Your magic projectile spawn logic here
+    // e.g. spawn fireball from muzzlePos
+}
+
+void MagicStaff::PlaySwipe(){
+
+    static std::vector<std::string> swipes = {"swipe1", "swipe2", "swipe3"};
+    static int lastIndex = -1;
+
+    int index;
+    do {
+        index = GetRandomValue(0, swipes.size() - 1);
+    } while (index == lastIndex && swipes.size() > 1);  // avoid repeat if more than 1
+
+    lastIndex = index;
+    std::string stepKey = swipes[index];
+
+    SoundManager::GetInstance().Play(stepKey);
+
+}
+
+void MagicStaff::StartSwing() {
+    if (swinging || timeSinceLastSwing < cooldown) return;
+    PlaySwipe();
+    swinging = true;
+    swingTimer = 0.0f;
+    hitboxActive = false;
+    hitboxTriggered = false;
+    timeSinceLastSwing = 0.0f;
+
+    // Apply initial swing offsets
+    swingOffset = -swingAmount;
+    verticalSwingOffset = -verticalSwingAmount;
+    horizontalSwingOffset = -horizontalSwingAmount;
+}
+
+
+void MagicStaff::Update(float deltaTime) {
+    // Melee swing timer
+    if (swinging) {
+        swingTimer += deltaTime;
+        if (swingTimer >= swingDuration) {
+            swinging = false;
+            hitboxActive = false;
+            hitboxTriggered = false;
+        } else if (swingTimer >= hitWindowStart && swingTimer <= hitWindowEnd) {
+            hitboxActive = true;
+        } else {
+            hitboxActive = false;
+        }
+    }
+
+    timeSinceLastSwing += deltaTime;
+
+    // Recoil recovery
+    recoil -= recoilRecoverySpeed * deltaTime;
+    if (recoil < 0.0f) recoil = 0.0f;
+
+    // Muzzle flash
+    flashTimer -= deltaTime;
+    if (flashTimer < 0.0f) flashTimer = 0.0f;
+
+    swingOffset = Lerp(swingOffset, 0.0f, deltaTime * 10.0f);
+    verticalSwingOffset = Lerp(verticalSwingOffset, 0.0f, deltaTime * 10.0f);
+    horizontalSwingOffset = Lerp(horizontalSwingOffset, 0.0f, deltaTime * 10.0f);
+}
+
+void MagicStaff::Draw(const Camera& camera) {
+    // Camera orientation basis
+    Matrix lookAt = MatrixLookAt(camera.position, camera.target, { 0, 1, 0 });
+    Matrix staffRotation = MatrixInvert(lookAt);
+    Quaternion q = QuaternionFromMatrix(staffRotation);
+
+    float angle = 2.0f * acosf(q.w);
+    float angleDeg = angle * RAD2DEG;
+    float sinTheta = sqrtf(1.0f - q.w * q.w);
+    Vector3 axis = (sinTheta < 0.001f) ? Vector3{1, 0, 0} : Vector3{ q.x / sinTheta, q.y / sinTheta, q.z / sinTheta };
+
+    Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+    Vector3 camRight = Vector3Normalize(Vector3CrossProduct(camForward, { 0, 1, 0 }));
+    Vector3 camUp = { 0, 1, 0 };
+
+    // === Apply swing arc offsets ===
+    float finalForward = forwardOffset + swingOffset - recoil;
+    float finalSide = sideOffset + horizontalSwingOffset;
+    float finalVertical = verticalOffset + verticalSwingOffset - reloadDip;
+
+    // === Final staff position ===
+    Vector3 staffPos = camera.position;
+    staffPos = Vector3Add(staffPos, Vector3Scale(camForward, finalForward));
+    staffPos = Vector3Add(staffPos, Vector3Scale(camRight, finalSide));
+    staffPos = Vector3Add(staffPos, Vector3Scale(camUp, finalVertical));
+
+    DrawModelEx(model, staffPos, axis, angleDeg, scale, WHITE);
+    muzzlePos = Vector3Add(staffPos, Vector3Scale(camForward, 40.0f));
+    // === Optional: Draw muzzle flash ===
+    if (flashTimer > 0.0f) {
+        //muzzlePos = Vector3Add(staffPos, Vector3Scale(camForward, 40.0f));
+        // Uncomment to draw magical flash:
+        // rlDisableDepthMask();
+        // DrawBillboard(camera, muzzleFlashTexture, muzzlePos, flashSize, WHITE);
+        // rlEnableDepthMask();
+    }
+}
+
+

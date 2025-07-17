@@ -13,6 +13,7 @@ struct Player {
     Vector3 startPosition;
     Weapon weapon;
     MeleeWeapon meleeWeapon;
+    MagicStaff magicStaff;
     BoundingBox meleeHitbox;
     BoundingBox blockHitbox;
 
@@ -51,8 +52,7 @@ struct Player {
     bool canRun = true;
     bool canMove = true;
 
-    //WeaponType pendingWeapon; // store the one we're switching to
-    //WeaponSwitchState switchState = WeaponSwitchState::Idle;
+
     WeaponType activeWeapon = WeaponType::Blunderbuss;
 
     float switchTimer = 0.0f;
@@ -74,3 +74,4 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
 
 void DrawPlayer(const Player& player, Camera& camera);
 
+void InitMagicStaff(MagicStaff& magicStaff);

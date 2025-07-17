@@ -48,7 +48,7 @@ void Character::UpdateAI(float deltaTime, Player& player,const Image& heightmap,
 
 
 void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale) {
-    
+    if (isLoadingLevel) return;
     float distance = Vector3Distance(position, player.position);
     playerVisible = false;
 
@@ -265,13 +265,13 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
 
 
 void Character::UpdatePirateAI(float deltaTime, Player& player) {
-
+    if (isLoadingLevel) return;
     float distance = Vector3Distance(position, player.position);
     playerVisible = false;
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal = WorldToImageCoords(player.position);
 
-    bool canSee = (LineOfSightRaycast(start, goal, dungeonImg, 100, 0.0f) && HasWorldLineOfSight(position, player.position)); //Vision test
+    bool canSee = HasWorldLineOfSight(position, player.position, 0.0f); //Vision test //(LineOfSightRaycast(start, goal, dungeonImg, 100, 0.0f) && 
     
 
     if (canSee) {
@@ -633,13 +633,13 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
 void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
-
+    
     float distance = Vector3Distance(position, player.position);
     playerVisible = false;
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal = WorldToImageCoords(player.position);
 
-    bool canSee = (LineOfSightRaycast(start, goal, dungeonImg, 100, 0.0f) && HasWorldLineOfSight(position, player.position)); //Vision test
+    bool canSee = (LineOfSightRaycast(start, goal, dungeonImg, 100, 0.0f) && HasWorldLineOfSight(position, player.position, 0.0f)); //Vision test
 
     if (canSee) {
         playerVisible = true;
@@ -1077,6 +1077,7 @@ void Character::eraseCharacters() {
 
 
 void Character::Update(float deltaTime, Player& player,const  Image& heightmap, Vector3 terrainScale ) {
+    if (isLoadingLevel) return;
     animationTimer += deltaTime;
     stateTimer += deltaTime;
     previousPosition = position;

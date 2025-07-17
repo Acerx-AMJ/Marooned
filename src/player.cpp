@@ -11,14 +11,16 @@
 #include "input.h"
 
 
-
+WeaponType activeWeapon = WeaponType::Blunderbuss;
 Weapon weapon;
 MeleeWeapon meleeWeapon;
-WeaponType activeWeapon = WeaponType::Blunderbuss;
+MagicStaff magicStaff;
 
+//MagicStaff magicStaff;
 
 //
 void InitPlayer(Player& player, Vector3 startPosition) {
+
     player.position = startPosition;
     player.startPosition = startPosition;
     
@@ -26,12 +28,15 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     player.velocity = {0, 0, 0};
     player.grounded = false;
     player.groundY = 0.0;
+
     weapon.model = blunderbuss;
     weapon.scale = { 2.0f, 2.0f, 2.0f };
     weapon.muzzleFlashTexture = muzzleFlash;
-
-    
     weapon.fireCooldown = 2.0f;
+
+    InitMagicStaff(magicStaff);
+
+
 
     meleeWeapon.model = swordModel;
     meleeWeapon.scale = {2, 2, 2};
@@ -40,10 +45,6 @@ void InitPlayer(Player& player, Vector3 startPosition) {
 
     swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordBloody;
 
-    for (int i = 0; i < swordModel.materialCount; i++) {
-        Texture2D tex = swordModel.materials[i].maps[MATERIAL_MAP_DIFFUSE].texture;
-        TraceLog(LOG_INFO, "Material %d Texture ID: %d", i, tex.id);
-    }
 
     if (first){
         first = false; // player first starting position uses first as well, it's set to false here
@@ -97,10 +98,14 @@ void HandleKeyboardInput(float deltaTime) {
 
         swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean; //wipe the blood off the blade. 
         
-        if (activeWeapon == WeaponType::Blunderbuss)
-            activeWeapon = WeaponType::Sword;
-        else
-            activeWeapon = WeaponType::Blunderbuss;
+        // if (activeWeapon == WeaponType::Blunderbuss){
+        //     activeWeapon = WeaponType::Sword;
+        // }else{
+        //     activeWeapon = WeaponType::Blunderbuss;
+        // }
+
+        // cycle to next weapon
+        activeWeapon = static_cast<WeaponType>((static_cast<int>(activeWeapon) + 1) % 3);
     }
 
     if (IsKeyPressed(KEY_ONE)){
@@ -190,7 +195,7 @@ void UpdateFootsteps(float deltaTime){
 }
 
 void UpdateMeleeHitbox(Camera& camera){
-    if (meleeWeapon.hitboxActive) {
+    if (meleeWeapon.hitboxActive || magicStaff.hitboxActive) {
         Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
         Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, { 0, 1, 0 }));
 
@@ -217,11 +222,29 @@ void UpdateMeleeHitbox(Camera& camera){
     }
 }
 
+void InitMagicStaff(MagicStaff& magicStaff) {
+
+
+    magicStaff.model = staffModel;
+    magicStaff.scale = {1.0f, 1.0f, 1.0f};
+    magicStaff.muzzleFlashTexture = muzzleFlash;
+    magicStaff.fireCooldown = 1.0f;
+
+    magicStaff.forwardOffset = 75.0f;
+    magicStaff.sideOffset = 28.0f;
+    magicStaff.verticalOffset = -25.0f;
+
+    // Set any other tuning params here
+}
+
+
 
 void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& camera) {
     //player should have been a class. but maybe it's too late...
     weapon.Update(deltaTime);
+
     meleeWeapon.Update(deltaTime);
+    magicStaff.Update(deltaTime);
     UpdateMeleeHitbox(camera);
     UpdateFootsteps(deltaTime);
     UpdateBlockHitbox(player, 250, 300, 100);
@@ -252,7 +275,9 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
         if (activeWeapon == WeaponType::Sword){
             player.blocking = true; //only block with the sword
             meleeWeapon.StartBlock();
-        } 
+        }else if (activeWeapon == WeaponType::MagicStaff){
+            magicStaff.Fire(camera);
+        }
     } else {
         meleeWeapon.EndBlock();
         player.blocking = false;
@@ -262,10 +287,15 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         if (!player.isSwimming){
-           if (activeWeapon == WeaponType::Blunderbuss) weapon.Fire(camera);   
-           if (activeWeapon == WeaponType::Sword){
+           if (activeWeapon == WeaponType::Blunderbuss){
+                weapon.Fire(camera); 
+           } else if (activeWeapon == WeaponType::Sword){
                 meleeWeapon.StartSwing();
-           }     
+           } else if (activeWeapon == WeaponType::MagicStaff){
+                magicStaff.StartSwing();
+           }
+           
+           
         }else{
             if (activeWeapon == WeaponType::Blunderbuss) SoundManager::GetInstance().Play("reload"); //play "click" if in water with gun
         }
@@ -398,14 +428,6 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
 }
 
 void Player::TakeDamage(int amount){
-    // if (player.blocking){
-    //     if (rand()%2 == 0){
-    //         SoundManager::GetInstance().Play("swordBlock");
-    //     } else{
-    //         SoundManager::GetInstance().Play("swordBlock2");
-    //     }
-    //     return; //dont activate vignette
-    // } 
 
     if (!player.dying && !player.dead) {
         player.currentHealth -= amount;
@@ -446,6 +468,8 @@ void DrawPlayer(const Player& player, Camera& camera) {
             if (player.blocking){
                 //DrawBoundingBox(player.blockHitbox, RED);
             }
+        }else if (activeWeapon == WeaponType::MagicStaff){
+            magicStaff.Draw(camera);
         }
         
     }

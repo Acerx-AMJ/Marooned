@@ -10,7 +10,7 @@ bool IsWalkable(int x, int y);
 bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, const Character* self);
 Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeletons, const Character* self);
 
-bool HasWorldLineOfSight(Vector3 from, Vector3 to);
+bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction = 0.0f);
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon);
 bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon);
 Vector2 GetRandomReachableTile(const Vector2& start, const Character* self, int maxAttempts = 100);

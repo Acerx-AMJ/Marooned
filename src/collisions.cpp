@@ -456,6 +456,7 @@ void HandleDoorInteraction(Camera& camera) {
                     fadeIn = true;
                     isFading = true;
                     pendingLevelIndex = doors[i].linkedLevelIndex;
+                    isLoadingLevel = true; //stops updating characters, prevents crash on level switch. 
                 }
 
                 break; // done with this door
