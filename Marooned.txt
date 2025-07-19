@@ -63,3 +63,53 @@ Mana potions? Maybe player can throw fireballs.
 stealth? We have working vision cones. sort of. We could make them cones. then draw the cones to show the player the enemies sight. Lean into the grid based nature of the game maybe. If we could highlight floor tiles with a shader we could highlight vision that way. I just want the ability to turn a specific floor tile red. But since it's .glb with baked in texture I can't easily do that. and I never figured out how to apply a texture to some mesh. Everything is just solid colors with shaders or baked in texture of the dungeon. Maybe just make a cube and try to apply a texture to it. a box, a breakable box?
 
 We have multiple models of the barrel. One of which is the barrel smashed. We could give the barrels health and when you hit them with a sword we swap in the broken model. barrels should be like 30 percent bigger. they don't line up with the walls. I want barrels in the corners of the dungeon but since the wall is in the middle of the tile there a gap. could push walls in somehow. 
+
+Doors have a member variable isLocked...implemented locked doors. Locked doors are Aqua colored pixels. The doorway gets set to locked, then the door sets isLocked to dw.isLocked. 
+
+Implemented keys and updated inventory. Keys are consumables. They open locked doors. You can carry keys between levels. We can do some puzzle type stuff with this later. Keys are billboard just like health pot. need to increase the size, just for keys. 
+if (key.type == CollectableType::Key) scale = 100
+
+teleporters, fast travel, Ride a big boat to a new over world map. 
+
+Maybe you need to find things to repair your damaged boat. Wood planks, cloth for a sail, rudder, supplies
+There is a model of a ship wreck right off the coast of the starting island. swim out to it and collect stuff to build a raft. The goal is to get off the island. We could show the outline of a raft model that slowly gets filled in, as you find more things. 
+
+dungeon 1-1 would be middle islands first dungeon, middle island could have 2 more dungeons. dungeon 1-2, and 1-3, after 1-3 you have collected all the supplies for the raft and sail to the next overworld where you enter dungeon 2-1. islands could have different flora and fauna. 
+
+Take a stab at UI art. Pirate themed, wood with gold trim. Steam punk health bar? Health and stam should be on the bottom, as to not blend in with sky. Could make a console type interface. 
+
+pirates should stay tinted red on death
+
+fill out the rest of map 7.  Big room with just 3 pirates. L shaped room around starting corner. A door on either end. both lead to a locked door. There is a maze between the 2 doors where you find the key. So you might end up on the other side of the map or vise versa depending on where you start. Make the path of least resistance the longest. 
+
+Dungeon 3 should exit back up to surface. on the little island in the back. make another entrance you can get to dungeon 3 by boat or swimming to the other island. 
+
+make dungeon 4 and 5 and put an entrance on one of the side islands. left 4 5 6, right 7 8 9. center 1 2 3 then switch to a different island chain. second island chain should be fat perlin noise. 
+
+would the left island dungeons exit out on the right side? Maybe we could make small island exit and right exit locked from the outside. 
+
+Gold. buys magic scrolls. Lightning, fireball, ice, barrels can contain gold, like diablo. 
+
+what to do about webs? We need to draw webs as a flat quad, they can't be a billboard. but everything else is a billboard and needs to be sorted to not occlude each other. we can't put the flat quad into a vector of billboards. could we make a billboard that always faces a certain direction. 
+
+Made a struct called drawRequest. and a vector of drawRequests. drawRequests contain all the data needed to draw an animated billboard, or flatquad, or decal, everything 2d in the game. Then we sort the vector of drawRequests based on distance to camera, and draw in that order. We have functions called GatherEnemies, GatherDecals ect. that copy the data from the character class to the drawReqest. In the final draw function we have a switch case that draws either flat quads or billboards depending on drawRequestType, an enum class in transparentDraw.h this and transparentDraw.cpp contains all the code to make this happen. we just call gatherAllbillboards, then draw the requests. -this solves all the occlusion problems. 
+
+Added line of sight to tint based lighting. each wall segment checks distance to light source AND does a line of sight check. That way light doesn't bleed through walls. Could add double walls to stop light bleeding to other side of lit wall. Player has simpler light source without raycasts. It looks better that way. -Started using worldLOS check instead of dungeon map. 3d raycasts better spread the light if I give it an epsilon. where the ray goes further than it should so it actualy hits the walls. Needed to do this for floor ceiling doors and walls. 
+
+Changed pirates vision to be just a worldLOS check, instead of both dungeon map and world ray cast. They can now see through open doors better and notice the player when he's around a corner but still in eye sight. Probably can do this for skeleton as well. 
+
+Make a fireball type in bullet. 
+
+bullets get occluded by billboards x fixed. bullets are 3d, draw them before transparent 2d stuff. 
+
+started on a revolver, but Now i'm not too sure I want one. finding a good model was impossible, and it wouldn't fit the pirate era theme. Then what else? Another slow firing black powder weapon is too similar to the blunderbuss. A magic staff? that could shoot magic projectiles. maybe you have a book in your left hand and a staff in your right. You do some dark magic rituals to cast spells. 
+
+Added magic staff, and a bullet parameter fireball. fireballs are just big yellow spheres with a light source attached. Need to apply a shader with a fire texture. maybe work on 3d particle system. Maybe fireball bullets have gravity and fly in an arc until they hit the ground and explode. like a grenade launcher! grenade.h? no it would be a bullet. 
+-added arcing to fireballs. still need to apply a shader with a moving texture. 
+-firballs need to explode when they hit the ground. Explosions would require particles no? we could do a 3d model of an explosion quake 2 style. both particles and model would be ideal. 
+
+3d particle system. It was easy enough in 2d. Try it in 3d for blood and smoke. Your limited with just raylib. particles is one thing that you can do. so you should do it. 
+
+Added fireballs and particles. Fireball is a model I made in blender with a fire texture attached. it slowly rotates when fired. when it hits the ground or an enemy it spawns a animated explosion decal. While the fireball is in the air it emits dark grey smoke particles and when it explodes it emits orange spark particles. I also add blood particles that get emitted from bullets when they hit a non skeleton enemy. 
+
+Add blood particles to sword hits. 

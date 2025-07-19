@@ -2,7 +2,7 @@
 #include <iostream>
 
 Emitter::Emitter()
-    : position({0, -9999, 0}) // Or something like {0, -9999, 0} to keep it hidden
+    : position({0, -9999, 0}) //-9999 off screen
 {
     particles.resize(maxParticles);
 }
@@ -15,7 +15,7 @@ void Emitter::SetPosition(Vector3 newPos) {
     position = newPos;
 }
 
-void Emitter::Update(float dt) {
+void Emitter::Update(float dt) { //rename to UpdateSmoke
     
     if (emissionRate > 0.0f) {
         timeSinceLastEmit += dt;
@@ -66,9 +66,9 @@ void Emitter::EmitBlood(Vector3 pos, int count) {
                     (float)GetRandomValue(-100, 100)
                 };
 
-                p.maxLife = 1.0f;
+                p.maxLife = 1.5f;
                 p.life = p.maxLife;
-                p.size = 2.5f;
+                p.size = 5.0f;
 
                 break;
             }
@@ -93,7 +93,7 @@ void Emitter::CreateParticle(Particle& p) {
     p.active = true;
     p.position = position;
 
-    if (isExplosionBurst) {
+    if (isExplosionBurst) { //sparks
         p.color = ORANGE;
         p.gavity = 980.0f;
         p.velocity = {
@@ -101,7 +101,7 @@ void Emitter::CreateParticle(Particle& p) {
             (float)(GetRandomValue(300, 1000)),
             (float)(GetRandomValue(-300, 300))
         };
-    } else {
+    } else { //smoke
         p.color = DARKGRAY;
         p.gavity = -100.0f;
         p.velocity = {
@@ -113,7 +113,7 @@ void Emitter::CreateParticle(Particle& p) {
 
     p.maxLife = 1.5f;
     p.life = p.maxLife;
-    p.size = 4.0f;
+    p.size = 8.0f;
 }
 
 

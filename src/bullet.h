@@ -35,7 +35,7 @@ public:
 
 private:
     Emitter fireEmitter;
-    Emitter bloodEmitter;
+
     Vector3 position;
     Vector3 velocity;   // replaces direction and speed
     bool alive;

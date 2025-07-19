@@ -240,6 +240,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
             //do nothing
             stateTimer += deltaTime;
             if (stateTimer >= 0.6f) {
+                canBleed = true;
                 state = CharacterState::Chase;
                 SetAnimation(1, 5, 0.12f);
                 stateTimer = 0.0f;
@@ -918,10 +919,11 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
     
             //currentWorldPath.clear(); //loose the path on stagger
             if (stateTimer >= 1.0f) {
+                canBleed = true; //for spiders
                 state = CharacterState::Chase;
                 SetAnimation(1, 4, 0.25f);
                 stateTimer = 0.0f;
-                //chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
+                
             }
             break;
         }
@@ -987,6 +989,10 @@ void Character::TakeDamage(int amount) {
         isDead = true;
         deathTimer = 0.0f;
         state = CharacterState::Death;
+
+        if (type != CharacterType::Skeleton){
+            bloodEmitter.EmitBlood(position, 20);
+        }
         if (type == CharacterType::Raptor) SetAnimation(4, 5, 0.12f, false);
         if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f, false); //less frames for skele death.
         if (type == CharacterType::Pirate) SetAnimation(4, 2, 1, false);
@@ -999,7 +1005,10 @@ void Character::TakeDamage(int amount) {
     } else {
         hitTimer = 0.5f; //tint red
         state = CharacterState::Stagger;
-
+        if (type != CharacterType::Skeleton && canBleed){
+            canBleed = false;
+            bloodEmitter.EmitBlood(position, 20);
+        }
         SetAnimation(4, 1, 1.0f); // Use first frame of death anim for 1 second. for all enemies
         currentFrame = 0;         // Always start at first frame
         stateTimer = 0.0f;
@@ -1078,6 +1087,7 @@ void Character::eraseCharacters() {
 
 void Character::Update(float deltaTime, Player& player,const  Image& heightmap, Vector3 terrainScale ) {
     if (isLoadingLevel) return;
+    bloodEmitter.UpdateBlood(deltaTime);
     animationTimer += deltaTime;
     stateTimer += deltaTime;
     previousPosition = position;

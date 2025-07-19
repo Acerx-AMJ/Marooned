@@ -619,11 +619,14 @@ int main() {
         DrawDungeonDoorways(); 
         DrawPlayer(player, camera);
         DrawBullets(camera); 
+        for (Character* enemy : enemyPtrs) { //draw enemy blood
+             enemy->bloodEmitter.Draw(camera);
+        }
 
         //draw things with transparecy last.
         rlDisableDepthMask();
         DrawBillboards(camera);
-        
+
         UpdateCollectables(camera, deltaTime); 
         DrawDungeonPillars(deltaTime, camera);
         rlEnableDepthMask();

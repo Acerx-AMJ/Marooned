@@ -7,8 +7,6 @@
 #include "decal.h"
 #include "sound_manager.h"
 
-// Bullet::Bullet(Vector3 startPos, Vector3 dir, float spd, float lifetime)
-//     : position(startPos), direction(Vector3Normalize(dir)), speed(spd), alive(true), age(0.0f), maxLifetime(lifetime) {}
 
 // New constructor matching velocity-based logic
 Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, bool fb, float r)
@@ -78,12 +76,12 @@ void Bullet::Update(Camera& camera, float deltaTime) {
         fireEmitter.Update(deltaTime);
         UpdateFireball(camera, deltaTime);
         if (!exploded && explosionTriggered) {
-            
+            exploded = true;
             timeSinceExploded += deltaTime;
 
             if (timeSinceExploded >= 2.0f) { //wait for particles to act. 
 
-                exploded = true;
+                
                 alive = false;
                 
             }
@@ -92,15 +90,6 @@ void Bullet::Update(Camera& camera, float deltaTime) {
         return; //skip normal bullet logic
     }
 
-    if (explosionTriggered){
-        exploded = true;
-        timeSinceExploded += deltaTime;
-        bloodEmitter.UpdateBlood(deltaTime);
-        if (timeSinceExploded >= 2.0f) { //wait for particles to act.      
-            alive = false;   
-        }
-        return;
-    }
 
     // Case 4: Standard bullet movement (non-fireball)
     if (!IsEnemy() && !isFireball())
@@ -133,10 +122,10 @@ void Bullet::Draw(Camera& camera) const {
         DrawModelEx(fireballModel, position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
         
     }else{
-        if (!exploded) DrawSphere(position, 1.5f, WHITE); // simple debug visualization
+        DrawSphere(position, 1.5f, WHITE); // simple debug visualization
     }
     
-    bloodEmitter.Draw(camera);
+
 
     
 
@@ -192,21 +181,22 @@ Vector3 Bullet::GetPosition() const {
     return position;
 }
 
-void Bullet::SpawnBloodEffect(const Vector3& pos, Camera& camera) {
-    bloodEmitter.EmitBlood(pos, 3);  //3 particles for every bullet, up to six bullets so 18 total particles.  
-    if (!explosionTriggered){
-        explosionTriggered = true; //dont kill the bullet right away. exlosionTriggered starts the count. 
-    }
+// void Bullet::SpawnBloodEffect(const Vector3& pos, Camera& camera) {
+//     bloodEmitter.EmitBlood(pos, 3);  //3 particles for every bullet, up to six bullets so 18 total particles.  
+//     if (!explosionTriggered){
+//         explosionTriggered = true; //dont kill the bullet right away. exlosionTriggered starts the count. 
+//     }
     
     
-}
+// }
 
 
 void Bullet::Explode(Camera& camera) {
     if (!alive) return; // prevent double-triggering
     if (!explosionTriggered){
         explosionTriggered = true;  
-        SoundManager::GetInstance().Play("explosion");
+        SoundManager::GetInstance().PlaySoundAtPosition("explosion", position, player.position, 1.0f, 3000.0f);
+        //SoundManager::GetInstance().Play("explosion");
         Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
         Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
 

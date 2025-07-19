@@ -265,20 +265,16 @@ void CheckBulletHits(Camera& camera) {
             if (enemy->isDead) continue;
 
             if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), b.GetPosition(), b.GetRadius())) {
-                if (!b.IsEnemy() && !b.isFireball() && !b.isExploded()) {
+                if (!b.IsEnemy() && !b.isFireball()) {
                     enemy->TakeDamage(25);
 
                     bool isSkeleton = (enemy->type == CharacterType::Skeleton);
 
-                    if (!isSkeleton) {
-                        b.SpawnBloodEffect(enemy->position, camera);
-                    }
-
                     if (!isSkeleton && enemy->isDead) {
                         b.Blood(camera);  // spawn death blood decal
-                        b.SpawnBloodEffect(enemy->position, camera);
+                        b.kill(camera);
                     } else if (isSkeleton || enemy->isDead) {
-                        b.kill(camera);  // kill on hit unless blood linger effect is playing
+                        b.kill(camera);  
                     }
 
                     break;

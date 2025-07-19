@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include "player.h"
 #include <vector>
+#include "emitter.h"
 
 enum class CharacterType {
     Raptor,
@@ -33,6 +34,7 @@ public:
     Texture2D* texture;
     Vector3 previousPosition;
     CharacterState state = CharacterState::Idle;
+    Emitter bloodEmitter;
     int frameWidth, frameHeight;
     int currentFrame, maxFrames;
     int rowIndex;
@@ -63,7 +65,7 @@ public:
     float forgetTime = 10.0f;           // After 3 seconds of no visibility, give up
     Vector3 lastKnownPlayerPos;
     bool hasLastKnownPlayerPos = false;
-
+    bool canBleed = true;
     float radius = 50;
     float hearingRadius = 600.0f;
     bool heardPlayer = false;
@@ -88,7 +90,6 @@ public:
     void AlertNearbySkeletons(Vector3 alertOrigin, float radius);
 
     void eraseCharacters();
-    void setPath();
     void TakeDamage(int amount);
     void Draw(Camera3D camera);
     void SetAnimation(int row, int frames, float speed, bool loop=true);
