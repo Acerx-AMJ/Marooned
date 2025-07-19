@@ -639,7 +639,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal = WorldToImageCoords(player.position);
 
-    bool canSee = (LineOfSightRaycast(start, goal, dungeonImg, 100, 0.0f) && HasWorldLineOfSight(position, player.position, 0.0f)); //Vision test
+    bool canSee = HasWorldLineOfSight(position, player.position, 0.0f); //Vision test //(LineOfSightRaycast(start, goal, dungeonImg, 100, 0.0f)
 
     if (canSee) {
         playerVisible = true;

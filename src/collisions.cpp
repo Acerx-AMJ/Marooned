@@ -264,8 +264,8 @@ void CheckBulletHits(Camera& camera) {
         for (Character* enemy : enemyPtrs) {
             if (enemy->isDead) continue;
 
-            if (CheckCollisionPointBox(pos, enemy->GetBoundingBox())) {
-                if (!b.IsEnemy()) {
+            if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), b.GetPosition(), b.GetRadius())) {
+                if (!b.IsEnemy() && !b.isFireball()) {
                     enemy->TakeDamage(25);
                     
                     if (enemy->type != CharacterType::Skeleton && enemy->currentHealth <= 0){
@@ -273,9 +273,14 @@ void CheckBulletHits(Camera& camera) {
                     }else{
                         b.kill(camera);
                     }
-
                     break;
-                } else if (enemy->type == CharacterType::Skeleton) { // friendly fire
+
+                }else if (!b.IsEnemy() && b.isFireball()){
+                    enemy->TakeDamage(25); //explosion does the bulk of the damage. 
+                    //explode
+                    b.Explode(camera);
+
+                } else if (b.IsEnemy() && enemy->type == CharacterType::Skeleton) { // friendly fire
                     enemy->TakeDamage(25);
                     b.kill(camera);
                     break;
@@ -288,22 +293,41 @@ void CheckBulletHits(Camera& camera) {
         // 🔹 3. Hit walls
         for (WallRun& w : wallRunColliders) {
             if (CheckCollisionPointBox(pos, w.bounds)) {
-                b.kill(camera);
-                break;
+                if (b.isFireball()){
+                    b.Explode(camera);
+                    break;
+                }else{
+                    b.kill(camera);
+                    break;
+
+                }
+
             }
         }
 
         // 🔹 4. Hit doors
         for (Door& d : doors) {
             if (!d.isOpen && CheckCollisionPointBox(pos, d.collider)) {
-                b.kill(camera);
-                break;
+                if (b.isFireball()){
+                    b.Explode(camera);
+                    break;
+                }else{
+                    b.kill(camera);
+                    break;
+
+                }
             }
             //archway side colliders
             for (BoundingBox& side : d.sideColliders){
                 if (d.isOpen && CheckCollisionPointBox(pos, side)){
-                    b.kill(camera);
-                    break;
+                    if (b.isFireball()){
+                        b.Explode(camera);
+                        break;
+                    }else{
+                        b.kill(camera);
+                        break;
+
+                    }
                 }
             }
         }
@@ -312,7 +336,11 @@ void CheckBulletHits(Camera& camera) {
         for (BarrelInstance& barrel : barrelInstances) {
             if (!barrel.destroyed && CheckCollisionPointBox(pos, barrel.bounds)) {
                 barrel.destroyed = true;
-                b.kill(camera);
+                if (b.isFireball()){
+                    b.Explode(camera);
+                }else{
+                    b.kill(camera);
+                }
                 SoundManager::GetInstance().Play("barrelBreak");
 
                 if (barrel.containsPotion) {
@@ -335,16 +363,28 @@ void CheckBulletHits(Camera& camera) {
         // 🔹 6. Hit pillars
         for (PillarInstance& pillar : pillars) {
             if (CheckCollisionPointBox(pos, pillar.bounds)) {
-                b.kill(camera);
-                break;
+                if (b.isFireball()){
+                    b.Explode(camera);
+                    break;
+                }else{
+                    b.kill(camera);
+                    break;
+
+                }
             }
         }
 
         for (SpiderWebInstance& web : spiderWebs){
             if (!web.destroyed && CheckCollisionBoxSphere(web.bounds, b.GetPosition(), 2)){
                 web.destroyed = true;
-                b.kill(camera);
-                break;
+                if (b.isFireball()){
+                    b.Explode(camera);
+                    break;
+                }else{
+                    b.kill(camera);
+                    break;
+
+                }
             }
         }
     }

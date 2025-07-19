@@ -147,12 +147,23 @@ void GatherDecals(Camera& camera, const std::vector<Decal>& decals) {
 
         float dist = Vector3Distance(camera.position, decal.position);
 
-        Rectangle sourceRect = {
-            static_cast<float>(decal.currentFrame * 64),
-            0,
-            64,
-            64
-        };
+        Rectangle sourceRect;
+
+        if (decal.type == DecalType::Explosion) {
+            sourceRect = {
+                static_cast<float>(decal.currentFrame * 196),
+                0,
+                196,
+                190
+            };
+        } else {
+            sourceRect = {
+                static_cast<float>(decal.currentFrame * 64),
+                0,
+                64,
+                64
+            };
+        }
 
         billboardRequests.push_back({
             Billboard_Decal,
@@ -162,10 +173,11 @@ void GatherDecals(Camera& camera, const std::vector<Decal>& decals) {
             decal.size,
             WHITE,
             dist,
-            0.0f // rotationY unused for billboards
+            0.0f
         });
     }
 }
+
 
 void GatherMuzzleFlashes(Camera3D camera, Weapon& weapon) {
     if (weapon.flashTimer <= 0.0f) return;

@@ -7,6 +7,7 @@
 enum class DecalType {
     Smoke,
     Blood,
+    Explosion,
     // Add more types later
 };
 
@@ -41,19 +42,30 @@ struct Decal {
         if (currentFrame >= maxFrames) currentFrame = maxFrames - 1;
     }
 
-    void Draw(Camera3D camera) {
-        if (!alive) return;
-        
-        Rectangle sourceRec = {
-            static_cast<float>(currentFrame * 64), 
+void Draw(Camera3D camera) {
+    if (!alive) return;
+
+    Rectangle sourceRec;
+
+    if (type == DecalType::Explosion) {
+        sourceRec = {
+            static_cast<float>(currentFrame * 196),
+            0,
+            196,
+            190
+        };
+    } else {
+        sourceRec = {
+            static_cast<float>(currentFrame * 64),
             0,
             64,
             64
         };
-
-        Vector2 drawSize = { size, size }; // Convert float to Vector2 for width/height
-        DrawBillboardRec(camera, *texture, sourceRec, position, drawSize, WHITE);
-        
     }
+
+    Vector2 drawSize = { size, size };
+    DrawBillboardRec(camera, *texture, sourceRec, position, drawSize, WHITE);
+}
+
 
 };

@@ -1,10 +1,11 @@
 # Compiler and flags
 CC = g++
-CFLAGS = -std=c++17 -Wall -Wextra -O2
+CFLAGS = -std=c++17 -Wall -Wextra -O2 -MMD
 
 # Source and objects
 SRC = $(wildcard src/*.cpp)
 OBJ = $(SRC:.cpp=.o)
+DEP = $(OBJ:.o=.d)
 
 # Output
 OUT = Marooned.exe
@@ -24,19 +25,7 @@ $(OUT): $(OBJ)
 %.o: %.cpp
 	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
 
+-include $(DEP)
+
 clean:
-	rm -f src/*.o $(OUT)
-
-
-
-# CC = g++
-# CFLAGS = -O2 -Wall -std=c++17
-# INCLUDE = -IC:\raylib\raylib\src
-# LIBS = -LC:\raylib\raylib\src -lraylib -lopengl32 -lgdi32 -lwinmm
-
-# SRC =  $(wildcard src/*.c src/*.cpp)
-# OUT = Marooned.exe
-
-# all:
-# 	$(CC) $(CFLAGS) $(INCLUDE) $(SRC) -o $(OUT) $(LIBS)
-
+	rm -f src/*.o src/*.d $(OUT)

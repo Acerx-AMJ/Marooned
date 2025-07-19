@@ -4,5 +4,6 @@
 *.dll
 *.log
 *.hdr
+*.d
 raylib/
 build/

@@ -17,12 +17,61 @@ Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, bool fb)
       age(0.0f),
       maxLifetime(lifetime),
       enemy(en),
-      fireball(fb)
+      fireball(fb),
+      fireEmitter(startPos)
 {}
+
+
+void Bullet::UpdateFireball(Camera& camera, float deltaTime) {
+    // Gravity-based arc
+    gravity = 980;
+    fireEmitter.SetPosition(position);
+    fireEmitter.Update(deltaTime);
+    velocity.y -= gravity * deltaTime;
+
+    // Move
+    position = Vector3Add(position, Vector3Scale(velocity, deltaTime));
+
+    spinAngle += 90.0f * deltaTime; // 90 degrees per second
+    if (spinAngle >= 360.0f) spinAngle -= 360.0f;
+
+    // Collision with floor
+    if (isDungeon) {
+        if (position.y <= dungeonPlayerHeight) {
+            //Explode(camera);
+            Explode(camera);
+            return;
+        }
+        if (position.y >= ceilingHeight) {
+            Explode(camera);
+            return;
+        }
+    } else {
+        if (position.y <= waterHeightY) {
+            kill(camera);
+            return;
+        }
+    }
+
+    // Lifetime kill
+    age += deltaTime;
+    if (age >= maxLifetime) {
+        kill(camera);
+    }
+
+    // TODO: Add collision with enemies here if needed
+}
+
 
 
 void Bullet::Update(Camera& camera, float deltaTime) {
     if (!alive) return;
+
+    
+    if (isFireball()) {
+        UpdateFireball(camera, deltaTime);
+        return;
+    }
 
     // Apply gravity
     if (!IsEnemy() && !isFireball()) velocity.y -= gravity * deltaTime; //enemy bullets don't have gravity
@@ -45,11 +94,12 @@ void Bullet::Update(Camera& camera, float deltaTime) {
 }
 
 
-void Bullet::Draw() const {
+void Bullet::Draw(Camera& camera) const {
     if (!alive) return;
     if (fireball){
-        DrawSphere(position, 20, YELLOW);
-
+        fireEmitter.Draw(camera);
+        DrawModelEx(fireballModel, position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
+        
     }else{
         DrawSphere(position, 1.5f, WHITE); // simple debug visualization
     }
@@ -94,6 +144,35 @@ void Bullet::Blood(Camera camera){
 Vector3 Bullet::GetPosition() const {
     return position;
 }
+
+void Bullet::Explode(Camera& camera) {
+    alive = false;
+    Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
+    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
+
+    decals.emplace_back(offsetPos, DecalType::Explosion, &explosionSheet, 13, 1.0f, 0.1f, 500.0f);
+
+    float minDamage = 10;
+    float maxDamage = 200;
+    float explosionRadius = 200;
+    //area damage
+    for (Character* enemy : enemyPtrs){
+        float dist = Vector3Distance(position, enemy->position);
+        if (dist < explosionRadius) {
+            float dmg =  Lerp(maxDamage, minDamage, dist / explosionRadius);
+            enemy->TakeDamage(dmg);
+        }
+    }
+    //damage player if too close, 
+    float pDamage = 50.0f;
+    float pdist = Vector3Distance(player.position, position);
+    if (pdist < explosionRadius){
+        float dmg =  Lerp(pDamage, minDamage, pdist / explosionRadius);
+        player.TakeDamage(dmg);
+    }
+
+}
+
 
 
 

@@ -12,11 +12,11 @@
 RenderTexture2D sceneTexture, postProcessTexture, depthEffectTexture;
 
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, wallFallback, 
-doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture, spiderSheet, spiderWebTexture, brokeWebTexture;
+doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture, spiderSheet, spiderWebTexture, brokeWebTexture, explosionSheet;
 
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader, depthShader, pbrShader;
 
-Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2, floorTile3,chestModel,
+Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2, floorTile3,chestModel, fireballModel,
 bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel, staffModel;
 
 Image heightmap;
@@ -54,7 +54,7 @@ void LoadAllResources() {
     spiderWebTexture = LoadTexture("assets/sprites/spiderWeb.png");
     brokeWebTexture = LoadTexture("assets/sprites/brokeWeb.png");
     wallFallback = LoadTexture("assets/textures/wallBaseColor.png");
-
+    explosionSheet = LoadTexture("assets/sprites/explosionSheet.png");
     
 
     // Models
@@ -76,6 +76,7 @@ void LoadAllResources() {
     floorTile3 = LoadModel("assets/models/floorTile3.glb");
     chestModel = LoadModel("assets/models/chest.glb");
     staffModel = LoadModel("assets/models/staff.glb");
+    fireballModel = LoadModel("assets/models/fireball.glb");
 
     terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
 
@@ -266,6 +267,7 @@ void UnloadAllResources() {
     UnloadTexture(pirateSheet);
     UnloadTexture(coinTexture);
     UnloadTexture(spiderSheet);
+    UnloadTexture(explosionSheet);
     //shaders
     UnloadShader(fogShader);
     UnloadShader(skyShader);
@@ -290,6 +292,8 @@ void UnloadAllResources() {
     UnloadModel(chestModel);
     UnloadModel(lampModel);
     UnloadModel(staffModel);
+    UnloadModel(fireballModel);
+    
     
 
 }
