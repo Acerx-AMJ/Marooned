@@ -64,7 +64,7 @@ void Draw(Camera3D camera) {
     }
 
     Vector2 drawSize = { size, size };
-    DrawBillboardRec(camera, *texture, sourceRec, position, drawSize, WHITE);
+    //DrawBillboardRec(camera, *texture, sourceRec, position, drawSize, WHITE);
 }
 
 

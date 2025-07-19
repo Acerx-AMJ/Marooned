@@ -199,7 +199,11 @@ void UpdateBullets(Camera& camera, float deltaTime) {
 
 void DrawBullets(Camera& camera) {
     for (const Bullet& b : activeBullets) {
-        if (b.IsAlive()) b.Draw(camera);
+        if (b.IsAlive()){
+             b.Draw(camera);
+        }else if (b.isFireball() && !b.isExploded()){
+            b.Draw(camera);
+        } 
     }
 
 }
@@ -614,17 +618,16 @@ int main() {
         
         DrawDungeonDoorways(); 
         DrawPlayer(player, camera);
+        DrawBullets(camera); 
 
         //draw things with transparecy last.
         rlDisableDepthMask();
-        //DrawAllEnemies(camera);
-        
         DrawBillboards(camera);
         
         UpdateCollectables(camera, deltaTime); 
-        DrawDungeonPillars(deltaTime, camera); //light sources become invisible when behind enemies, but it's better then enemies being invisible being behind light sources. 
+        DrawDungeonPillars(deltaTime, camera);
         rlEnableDepthMask();
-        DrawBullets(camera); //and decals //draw bullets and decals after enemies,
+        
         if (!isDungeon) { //not a dungeon, draw terrain. 
             DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
             DrawModel(waterModel, waterPos, 1.0f, WHITE); 

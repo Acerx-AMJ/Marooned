@@ -5,12 +5,13 @@
 #include "world.h"
 #include "resources.h"
 #include "decal.h"
+#include "sound_manager.h"
 
 // Bullet::Bullet(Vector3 startPos, Vector3 dir, float spd, float lifetime)
 //     : position(startPos), direction(Vector3Normalize(dir)), speed(spd), alive(true), age(0.0f), maxLifetime(lifetime) {}
 
 // New constructor matching velocity-based logic
-Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, bool fb)
+Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, bool fb, float r)
     : position(startPos),
       velocity(vel),
       alive(true),
@@ -18,15 +19,17 @@ Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, bool fb)
       maxLifetime(lifetime),
       enemy(en),
       fireball(fb),
-      fireEmitter(startPos)
+      fireEmitter(startPos),
+      radius(r)
 {}
 
 
 void Bullet::UpdateFireball(Camera& camera, float deltaTime) {
+    if (!alive) return;
     // Gravity-based arc
     gravity = 980;
     fireEmitter.SetPosition(position);
-    fireEmitter.Update(deltaTime);
+    //fireEmitter.Update(deltaTime);
     velocity.y -= gravity * deltaTime;
 
     // Move
@@ -40,15 +43,18 @@ void Bullet::UpdateFireball(Camera& camera, float deltaTime) {
         if (position.y <= dungeonPlayerHeight) {
             //Explode(camera);
             Explode(camera);
+
             return;
         }
         if (position.y >= ceilingHeight) {
             Explode(camera);
+            
             return;
         }
     } else {
-        if (position.y <= waterHeightY) {
-            kill(camera);
+        float terrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
+        if (position.y <= terrainHeight) {
+            Explode(camera);
             return;
         }
     }
@@ -59,39 +65,65 @@ void Bullet::UpdateFireball(Camera& camera, float deltaTime) {
         kill(camera);
     }
 
-    // TODO: Add collision with enemies here if needed
 }
 
 
 
 void Bullet::Update(Camera& camera, float deltaTime) {
+
     if (!alive) return;
 
-    
-    if (isFireball()) {
+    // Fireball logic
+    if (fireball) {
+        fireEmitter.Update(deltaTime);
         UpdateFireball(camera, deltaTime);
+        if (!exploded && explosionTriggered) {
+            
+            timeSinceExploded += deltaTime;
+
+            if (timeSinceExploded >= 2.0f) { //wait for particles to act. 
+
+                exploded = true;
+                alive = false;
+                
+            }
+        }
+
+        return; //skip normal bullet logic
+    }
+
+    if (explosionTriggered){
+        exploded = true;
+        timeSinceExploded += deltaTime;
+        bloodEmitter.UpdateBlood(deltaTime);
+        if (timeSinceExploded >= 2.0f) { //wait for particles to act.      
+            alive = false;   
+        }
         return;
     }
 
-    // Apply gravity
-    if (!IsEnemy() && !isFireball()) velocity.y -= gravity * deltaTime; //enemy bullets don't have gravity
-    
-    // Move
+    // Case 4: Standard bullet movement (non-fireball)
+    if (!IsEnemy() && !isFireball())
+        velocity.y -= gravity * deltaTime;
+
     position = Vector3Add(position, Vector3Scale(velocity, deltaTime));
-
-    // Age out
     age += deltaTime;
-    if (age >= maxLifetime) alive = false;
 
-    //hit floor or ceiling
-    if (isDungeon){
-        if (position.y <= dungeonPlayerHeight) kill(camera);
-        if (position.y >= ceilingHeight) kill(camera);     
-    }else{
-        if (position.y <= waterHeightY) kill(camera);       
+    if (age >= maxLifetime && !exploded) alive = false;
+
+
+
+    // Handle floor/ceiling collision
+    if (isDungeon) {
+        if (position.y <= dungeonPlayerHeight || position.y >= ceilingHeight)
+            kill(camera);
+    } else {
+        float terrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
+        if (position.y <= terrainHeight)
+            kill(camera);
     }
-
 }
+
 
 
 void Bullet::Draw(Camera& camera) const {
@@ -101,11 +133,18 @@ void Bullet::Draw(Camera& camera) const {
         DrawModelEx(fireballModel, position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
         
     }else{
-        DrawSphere(position, 1.5f, WHITE); // simple debug visualization
+        if (!exploded) DrawSphere(position, 1.5f, WHITE); // simple debug visualization
     }
+    
+    bloodEmitter.Draw(camera);
+
     
 
 }
+bool Bullet::IsExpired() const {
+    return alive;
+}
+
 
 bool Bullet::IsAlive() const {
     return alive;
@@ -119,6 +158,10 @@ bool Bullet::isFireball() const {
     return fireball;
 }
 
+bool Bullet::isExploded() const {
+    return exploded;
+}
+
 void Bullet::kill(Camera& camera){
     //smoke decals and bullet death
     Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
@@ -128,6 +171,10 @@ void Bullet::kill(Camera& camera){
 
     alive = false;
     
+}
+
+void Bullet::Erase(){
+    alive = false;
 }
 
 void Bullet::Blood(Camera camera){
@@ -145,30 +192,45 @@ Vector3 Bullet::GetPosition() const {
     return position;
 }
 
-void Bullet::Explode(Camera& camera) {
-    alive = false;
-    Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
-    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
-
-    decals.emplace_back(offsetPos, DecalType::Explosion, &explosionSheet, 13, 1.0f, 0.1f, 500.0f);
-
-    float minDamage = 10;
-    float maxDamage = 200;
-    float explosionRadius = 200;
-    //area damage
-    for (Character* enemy : enemyPtrs){
-        float dist = Vector3Distance(position, enemy->position);
-        if (dist < explosionRadius) {
-            float dmg =  Lerp(maxDamage, minDamage, dist / explosionRadius);
-            enemy->TakeDamage(dmg);
-        }
+void Bullet::SpawnBloodEffect(const Vector3& pos, Camera& camera) {
+    bloodEmitter.EmitBlood(pos, 3);  //3 particles for every bullet, up to six bullets so 18 total particles.  
+    if (!explosionTriggered){
+        explosionTriggered = true; //dont kill the bullet right away. exlosionTriggered starts the count. 
     }
-    //damage player if too close, 
-    float pDamage = 50.0f;
-    float pdist = Vector3Distance(player.position, position);
-    if (pdist < explosionRadius){
-        float dmg =  Lerp(pDamage, minDamage, pdist / explosionRadius);
-        player.TakeDamage(dmg);
+    
+    
+}
+
+
+void Bullet::Explode(Camera& camera) {
+    if (!alive) return; // prevent double-triggering
+    if (!explosionTriggered){
+        explosionTriggered = true;  
+        SoundManager::GetInstance().Play("explosion");
+        Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
+        Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
+
+        decals.emplace_back(offsetPos, DecalType::Explosion, &explosionSheet, 13, 1.0f, 0.1f, 500.0f);
+        fireEmitter.EmitBurst(position, 200);
+        float minDamage = 10;
+        float maxDamage = 200;
+        float explosionRadius = 200;
+        //area damage
+        for (Character* enemy : enemyPtrs){
+            float dist = Vector3Distance(position, enemy->position);
+            if (dist < explosionRadius) {
+                float dmg =  Lerp(maxDamage, minDamage, dist / explosionRadius);
+                enemy->TakeDamage(dmg);
+            }
+        }
+        //damage player if too close, 
+        float pDamage = 50.0f;
+        float pdist = Vector3Distance(player.position, position);
+        if (pdist < explosionRadius){
+            float dmg =  Lerp(pDamage, minDamage, pdist / explosionRadius);
+            player.TakeDamage(dmg);
+        }
+
     }
 
 }
@@ -212,6 +274,14 @@ void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, b
     direction = Vector3Normalize(direction);
     Vector3 velocity = Vector3Scale(direction, speed);
 
-    activeBullets.emplace_back(origin, velocity, lifetime, enemy, fireball);
+    activeBullets.emplace_back(origin, velocity, lifetime, enemy, fireball, 25.0f);
+
+    if (rand() % 2 == 0){
+        SoundManager::GetInstance().Play("flame1");
+
+    }else{
+        SoundManager::GetInstance().Play("flame2");
+
+    }
 
 }
