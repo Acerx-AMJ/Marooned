@@ -10,7 +10,7 @@ public:
     void EmitBurst(Vector3 pos, int count);
     void EmitBlood(Vector3 pos, int count);
     void UpdateBlood(float dt);
-    void Update(float dt);
+    void Update(float dt); //update smoke and fire
     void Draw(Camera3D camera) const;
     void SetPosition(Vector3 newPos);
 

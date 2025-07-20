@@ -17,14 +17,14 @@ std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
     std::queue<Vector2> frontier;
     frontier.push(start);
 
-    // Use a map from tile to where we came from
+    // Use a map from tile to where we came from //used to reconstruct the path
     std::unordered_map<int, Vector2> cameFrom;
 
     auto toIndex = [&](int x, int y) {
-        return y * width + x; // unique key for unordered_map
+        return y * width + x;  //uniquely encodes (x, y) into a single number that is used as a key for the unordered map
     };
 
-    cameFrom[toIndex((int)start.x, (int)start.y)] = {-1, -1};
+    cameFrom[toIndex((int)start.x, (int)start.y)] = {-1, -1}; //mark the start as having no parent
 
     // 4-way movement
     const int dx[] = {1, -1, 0, 0};
@@ -35,15 +35,15 @@ std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
         frontier.pop();
 
         if ((int)current.x == (int)goal.x && (int)current.y == (int)goal.y) {
-            break;
+            break; //reached the goal, return path. 
         }
 
         for (int i = 0; i < 4; ++i) {
             int nx = (int)current.x + dx[i];
             int ny = (int)current.y + dy[i];
 
-            if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
-            if (!walkable[nx][ny]) continue;
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue; //out of bounds
+            if (!walkable[nx][ny]) continue; //unwalkable
 
             int index = toIndex(nx, ny);
             if (cameFrom.count(index) == 0) {
@@ -68,7 +68,7 @@ std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
 
     // Optional: check if path is valid
     if (path.size() == 1 && (int)path[0].x != (int)goal.x) {
-        return {}; // goal unreachable
+        return {}; // goal unreachable 
     }
 
     // Trim final step so skeleton stops adjacent to player //they stop too far away
@@ -88,19 +88,24 @@ void ConvertImageToWalkableGrid(const Image& dungeonMap) {
         for (int y = 0; y < dungeonMap.height; ++y) {
             Color c = GetImageColor(dungeonMap, x, y);
 
-            // If pixel is fully transparent, mark it not walkable
             if (c.a == 0) {
                 walkable[x][y] = false;
                 continue;
             }
 
-            bool isWall = (c.r < 50 && c.g < 50 && c.b < 50); // black
-            bool isBarrel = (c.b > 200 && c.r < 100 && c.g < 100); // blue barrel
+            bool black   = (c.r == 0 && c.g == 0 && c.b == 0);       // walls
+            bool blue    = (c.r == 0 && c.g == 0 && c.b == 255);     // barrels
+            bool yellow  = (c.r == 255 && c.g == 255 && c.b == 0);   // light pedestals
+            bool skyBlue = (c.r == 0 && c.g == 128 && c.b == 255);   // chests
+            bool purple  = (c.r == 128 && c.g == 0 && c.b == 128);   // closed doors
+            bool aqua    = (c.r == 0 && c.g == 255 && c.b == 255);   //Aqua
 
-            walkable[x][y] = !(isWall || isBarrel);
+            walkable[x][y] = !(black || blue || yellow || skyBlue || purple || aqua);
         }
     }
 }
+
+
 
 
 
@@ -116,10 +121,28 @@ Vector2 WorldToImageCoords(Vector3 worldPos) {
 }
 
 
-bool IsWalkable(int x, int y) {
-    if (x < 0 || x >= walkable.size() || y < 0 || y >= walkable[0].size()) return false;
-    return walkable[x][y];
+bool IsWalkable(int x, int y, const Image& dungeonMap) {
+    if (x < 0 || x >= dungeonMap.width || y < 0 || y >= dungeonMap.height)
+        return false;
+
+    Color c = GetImageColor(dungeonMap, x, y);
+
+    // Transparent = not walkable
+    if (c.a == 0)
+        return false;
+
+    // Match walkability rules from ConvertImageToWalkableGrid
+    bool black    = (c.r == 0 && c.g == 0 && c.b == 0);       // walls
+    bool blue     = (c.r == 0 && c.g == 0 && c.b == 255);     // barrels
+    bool yellow   = (c.r == 255 && c.g == 255 && c.b == 0);   // light pedestals
+    bool skyBlue  = (c.r == 0 && c.g == 128 && c.b == 255);   // chests 
+    bool purple   = (c.r == 128 && c.g == 0 && c.b == 128);   // closed doors
+    bool aqua     = (c.r == 0 && c.g == 255 && c.b == 255);   //Aqua
+
+    return !(black || blue || yellow || skyBlue || purple || aqua);
 }
+
+
 
 bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, const Character* self) {
     for (const Character* s : enemyPtrs) {
@@ -218,6 +241,14 @@ bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction) {
     return true;
 }
 
+Vector2 TileToWorldCenter(Vector2 tile) {
+    return {
+        tile.x + 0.5f * tileSize,
+        tile.y + 0.5f * tileSize
+    };
+}
+
+
 
 
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon) {
@@ -261,6 +292,8 @@ bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int m
     float x = start.x;
     float y = start.y;
 
+
+
     for (int i = 0; i < distance && i < maxSteps; ++i) {
         int tileX = (int)x;
         int tileY = (int)y;
@@ -288,40 +321,6 @@ bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int m
 
 
 
-// bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon) {
-//     float dx = end.x - start.x;
-//     float dy = end.y - start.y;
-//     float distance = sqrtf(dx*dx + dy*dy);
-//     if (distance == 0) return false;
-
-//     float stepX = dx / distance;
-//     float stepY = dy / distance;
-
-//     float x = start.x;
-//     float y = start.y;
-
-//     //const float epsilon = 2.0f; // 2 tile extra
-//     for (int i = 0; i < distance - epsilon && i < maxSteps; ++i) {
-//         int tileX = (int)x;
-//         int tileY = (int)y;
-
-//         if (tileX < 0 || tileX >= dungeonMap.width || tileY < 0 || tileY >= dungeonMap.height)
-//             return true;
-
-//         Color c = GetImageColor(dungeonMap, tileX, tileY);
-
-//         if (c.r < 50 && c.g < 50 && c.b < 50) return true; // wall
-//         if (c.r == 128 && c.g == 0 && c.b == 128 && !IsDoorOpenAt(tileX, tileY)) return true; // closed door
-//         if (c.r == 0 && c.g == 255 && c.b == 255 && !IsDoorOpenAt(tileX, tileY)) return true; //locked door, 
-//         //skeletons can see through exit and entrance doors but it don't matter because how they are placed. 
-
-//         x += stepX;
-//         y += stepY;
-//     }
-
-//     return false;
-// }
-
 
 std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& dungeonMap) {
     //check for short cuts. skip points if you can connect stright to a point further along. 
@@ -338,7 +337,10 @@ std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& d
         bool found = false;
 
         for (; j > i + 1; --j) {
-            if (LineOfSightRaycast(path[i], path[j], dungeonMap, 100, 0.0f)) {
+            Vector2 start = TileToWorldCenter(path[i]);
+            Vector2 end   = TileToWorldCenter(path[j]);
+
+            if (LineOfSightRaycast(start, end, dungeonMap, 100, 0.0f)) {
                 found = true;
                 break;
             }

@@ -5,6 +5,7 @@
 #include "sound_manager.h"
 #include "resources.h"
 #include "raymath.h"
+#include "pathfinding.h"
 
 
 bool CheckCollisionPointBox(Vector3 point, BoundingBox box) {
@@ -192,8 +193,12 @@ void HandleMeleeHitboxCollision(Camera& camera) {
 
     for (BarrelInstance& barrel : barrelInstances){
         if (barrel.destroyed) continue;
+        int tileX = GetDungeonImageX(barrel.position.x, tileSize, dungeonWidth);
+        int tileY = GetDungeonImageY(barrel.position.z, tileSize, dungeonHeight);
+
         if (CheckCollisionBoxes(barrel.bounds, player.meleeHitbox)){
             barrel.destroyed = true;
+            walkable[tileX][tileY] = true; //tile is now walkable for enemies
             SoundManager::GetInstance().Play("barrelBreak");
             if (barrel.containsPotion) {
                 Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
@@ -338,8 +343,11 @@ void CheckBulletHits(Camera& camera) {
 
         // 🔹 5. Hit barrels
         for (BarrelInstance& barrel : barrelInstances) {
+            int tileX = GetDungeonImageX(barrel.position.x, tileSize, dungeonWidth);
+            int tileY = GetDungeonImageY(barrel.position.z, tileSize, dungeonHeight);
             if (!barrel.destroyed && CheckCollisionPointBox(pos, barrel.bounds)) {
                 barrel.destroyed = true;
+                walkable[tileX][tileY] = true; //tile is now walkable for enemies. 
                 if (b.isFireball()){
                     b.Explode(camera);
                 }else{
@@ -379,7 +387,7 @@ void CheckBulletHits(Camera& camera) {
         }
 
         for (SpiderWebInstance& web : spiderWebs){
-            if (!web.destroyed && CheckCollisionBoxSphere(web.bounds, b.GetPosition(), 2)){
+            if (!web.destroyed && CheckCollisionBoxSphere(web.bounds, b.GetPosition(), b.GetRadius())){
                 web.destroyed = true;
                 if (b.isFireball()){
                     b.Explode(camera);
@@ -444,10 +452,12 @@ void TreeCollision(Camera& camera){
             if (!bullet.IsAlive()) continue; // <-- early out for dead bullets
             if (Vector3DistanceSqr(tree.position, bullet.GetPosition()) < 500 * 500) { 
                 if (CheckBulletHitsTree(tree, bullet.GetPosition())) {
-                   
-                   
-                    //Tree hit by bullet. Play a sound. 
-                    bullet.kill(camera);
+                   if (bullet.isFireball()){
+                    bullet.Explode(camera);
+                   }else{
+                        //Tree hit by bullet. Play a sound. 
+                        bullet.kill(camera);
+                   }
                     break;
                 }
 
@@ -512,9 +522,16 @@ void HandleDoorInteraction(Camera& camera) {
     if (isWaiting) {
         openTimer += deltaTime;
 
-        if (openTimer >= 0.5f && pendingDoorIndex != -1) { 
-            doors[pendingDoorIndex].isOpen = !doors[pendingDoorIndex].isOpen;//open if closed, close if open. both the archway and the door. 
+        if (openTimer >= 0.5f && pendingDoorIndex != -1) {
+            doors[pendingDoorIndex].isOpen = !doors[pendingDoorIndex].isOpen;
             doorways[pendingDoorIndex].isOpen = doors[pendingDoorIndex].isOpen;
+
+            // Update walkable grid, open doors are walkable. 
+            int tileX = GetDungeonImageX(doors[pendingDoorIndex].position.x, tileSize, dungeonWidth);
+            int tileY = GetDungeonImageY(doors[pendingDoorIndex].position.z, tileSize, dungeonHeight);
+            if (tileX >= 0 && tileY >= 0 && tileX < walkable.size() && tileY < walkable[0].size()) {
+                walkable[tileX][tileY] = doors[pendingDoorIndex].isOpen;
+            }
 
             // Reset
             isWaiting = false;

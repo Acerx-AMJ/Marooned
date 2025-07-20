@@ -42,28 +42,20 @@ float floorHeight = 80;
 float wallHeight = 270;
 float dungeonEnemyHeight = 165;
 float ElapsedTime = 0.0f;
-bool debugInfo = true;
+bool debugInfo = false;
 bool isLoadingLevel = false;
+float muzzleFlashTimer = 0.0f;
 
-// std::vector<Character> raptors;
-// std::vector<Character*> raptorPtrs;
 
-// std::vector<Character> skeletons;
-// std::vector<Character*> skeletonPtrs;
-
-// std::vector<Character> pirates;
-// std::vector<Character*> piratePtrs;
 
 std::vector<Bullet> activeBullets;
 std::vector<Decal> decals;
-
-std::vector<DungeonEntrance> dungeonEntrances;
-
+std::vector<MuzzleFlash> activeMuzzleFlashes;
 std::vector<Collectable> collectables;
 
 std::vector<Character> enemies;  
 std::vector<Character*> enemyPtrs;
-
+std::vector<DungeonEntrance> dungeonEntrances;
 
 
 void removeAllCharacters(){
@@ -165,11 +157,6 @@ void generateRaptors(int amount, Vector3 centerPos, float radius) {
     }
 
 
-}
-
-
-void regenerateRaptors(int amount, Vector3 position, float radius){
-    generateRaptors(amount, player.position, 6000); //regenerate raptors when pressing O
 }
 
 

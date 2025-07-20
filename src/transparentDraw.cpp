@@ -178,52 +178,40 @@ void GatherDecals(Camera& camera, const std::vector<Decal>& decals) {
     }
 }
 
-
-void GatherMuzzleFlashes(Camera3D camera, Weapon& weapon) {
-    if (weapon.flashTimer <= 0.0f) return;
-
-    float dist = Vector3Distance(camera.position, weapon.muzzlePos);
-
-    billboardRequests.push_back({
-        Billboard_MuzzleFlash,
-        weapon.muzzlePos,
-        &weapon.muzzleFlashTexture,
-        Rectangle{0, 0, (float)weapon.muzzleFlashTexture.width, (float)weapon.muzzleFlashTexture.height},
-        weapon.flashSize,         // or weapon.flashSize if dynamic
-        WHITE,
-        dist,
-        0.0f
-    });
+void GatherMuzzleFlashes(Camera& camera, const std::vector<MuzzleFlash>& flashes) {
+    for (const auto& flash : flashes) {
+        float dist = Vector3Distance(camera.position, flash.position);
+        
+        billboardRequests.push_back({
+            Billboard_FacingCamera,
+            flash.position,
+            flash.texture,
+            Rectangle{0, 0, (float)flash.texture->width, (float)flash.texture->height},
+            flash.size,
+            WHITE,
+            dist,
+            0.0f
+        });
+    }
 }
 
-// void GatherRevolverMuzzleFlashes(Camera3D camera, Revolver& revolver) {
-//     if (revolver.flashTimer <= 0.0f) return;
-
-//     float dist = Vector3Distance(camera.position, revolver.muzzlePos);
-
-//     billboardRequests.push_back({
-//         Billboard_MuzzleFlash,
-//         revolver.muzzlePos,
-//         &revolver.muzzleFlashTexture,
-//         Rectangle{0, 0, (float)revolver.muzzleFlashTexture.width, (float)revolver.muzzleFlashTexture.height},
-//         revolver.flashSize,         // or weapon.flashSize if dynamic
-//         WHITE,
-//         dist,
-//         0.0f
-//     });
-// }
 
 
 
-void GatherTransparentDrawRequests(Camera& camera, Weapon& weapon, float deltaTime) {
+
+void GatherTransparentDrawRequests(Camera& camera, float deltaTime) {
     billboardRequests.clear();
 
     GatherEnemies(camera);
     GatherDungeonFires(camera, deltaTime);
     GatherWebs(camera);
     GatherDecals(camera, decals);
-    GatherMuzzleFlashes(camera, weapon);
 
+    GatherMuzzleFlashes(camera, activeMuzzleFlashes);
+    
+
+
+    //if (player.activeWeapon == WeaponType::MagicStaff) GatherStaffMuzzleFlashes(camera, magicStaff);
     GatherCollectables(camera, collectables);
 }
 

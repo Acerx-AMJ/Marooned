@@ -5,6 +5,8 @@
 #include "inventory.h"
 
 
+
+
 struct Player {
     Vector3 position;
     Vector3 velocity;
@@ -46,11 +48,19 @@ struct Player {
     bool onBoard = false;
     bool disableMovement = false;
     bool blocking = false;
-
+    bool hasMagicStaff = false;
     float stamina = 100.0f;
     float maxStamina = 100.0f;
     bool canRun = true;
     bool canMove = true;
+
+    std::vector<WeaponType> collectedWeapons = {
+            WeaponType::Blunderbuss,
+            WeaponType::Sword,
+            //staff added later
+        };
+
+    int currentWeaponIndex = 0; // 0 is starting weapon blunderbuss
 
 
     WeaponType activeWeapon = WeaponType::Blunderbuss;

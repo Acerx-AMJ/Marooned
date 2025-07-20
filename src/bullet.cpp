@@ -181,22 +181,15 @@ Vector3 Bullet::GetPosition() const {
     return position;
 }
 
-// void Bullet::SpawnBloodEffect(const Vector3& pos, Camera& camera) {
-//     bloodEmitter.EmitBlood(pos, 3);  //3 particles for every bullet, up to six bullets so 18 total particles.  
-//     if (!explosionTriggered){
-//         explosionTriggered = true; //dont kill the bullet right away. exlosionTriggered starts the count. 
-//     }
-    
-    
-// }
 
 
 void Bullet::Explode(Camera& camera) {
-    if (!alive) return; // prevent double-triggering
+    if (!alive) return; 
+
     if (!explosionTriggered){
         explosionTriggered = true;  
         SoundManager::GetInstance().PlaySoundAtPosition("explosion", position, player.position, 1.0f, 3000.0f);
-        //SoundManager::GetInstance().Play("explosion");
+        
         Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
         Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
 
@@ -264,7 +257,7 @@ void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, b
     direction = Vector3Normalize(direction);
     Vector3 velocity = Vector3Scale(direction, speed);
 
-    activeBullets.emplace_back(origin, velocity, lifetime, enemy, fireball, 25.0f);
+    activeBullets.emplace_back(origin, velocity, lifetime, enemy, fireball, 20.0f);
 
     if (rand() % 2 == 0){
         SoundManager::GetInstance().Play("flame1");

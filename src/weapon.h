@@ -9,6 +9,14 @@ enum class WeaponType {
 
 };
 
+struct MuzzleFlash {
+    Vector3 position;
+    Texture2D* texture;
+    float size;
+    float lifetime;
+    float age = 0.0f;
+};
+
 
 
 struct MeleeWeapon {
@@ -82,14 +90,14 @@ struct Weapon {
     
 
     Texture2D muzzleFlashTexture;
-    float flashDuration = 0.1f;
+    float flashDuration = 0.05f;
     float flashTimer = 0.0f;
     //delayed reload sound
     bool reloadScheduled = false;
     float reloadTimer = 0.0f;
     float reloadDelay = 1.6f; // adjust as needed
     float reloadDip = 0.0f; // controls how far the gun dips down
- 
+    bool flashTriggered = false;  // set to true when firing
 
     void Fire(Camera& camera);
     void Update(float deltaTime);
@@ -118,7 +126,7 @@ struct MagicStaff {
     float timeSinceLastSwing = 999.0f;
 
     // Offsets for first-person placement
-    float forwardOffset = 75.0f;
+    float forwardOffset = 80.0f;
     float sideOffset = 28.0f;
     float verticalOffset = -25.0f;
 
@@ -137,12 +145,13 @@ struct MagicStaff {
     float lastFired = -999.0f;
 
     float recoil = 0.0f;
-    float recoilAmount = 6.0f;
+    float recoilAmount = 8.0f;
     float recoilRecoverySpeed = 20.0f;
 
     Texture2D muzzleFlashTexture;
     float flashDuration = 0.08f;
     float flashTimer = 0.0f;
+    float flashSize = 64.0f;
 
     float reloadDip = 0.0f;
 

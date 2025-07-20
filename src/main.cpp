@@ -135,7 +135,8 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
         GeneratePiratesFromImage(dungeonEnemyHeight-100);
         GenerateSpiderFromImage(dungeonEnemyHeight);
-        
+
+
         if (levelIndex == 4){
             levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
         }
@@ -180,6 +181,17 @@ void UpdateEnemies(float deltaTime) {
     }
 }
 
+void UpdateMuzzleFlashes(float deltaTime) {
+    for (auto& flash : activeMuzzleFlashes) {
+        flash.age += deltaTime;
+    }
+
+    // Remove expired flashes
+    activeMuzzleFlashes.erase(
+        std::remove_if(activeMuzzleFlashes.begin(), activeMuzzleFlashes.end(),
+                       [](const MuzzleFlash& flash) { return flash.age >= flash.lifetime; }),
+        activeMuzzleFlashes.end());
+}
 
 
 void UpdateBullets(Camera& camera, float deltaTime) {
@@ -556,6 +568,7 @@ int main() {
         UpdateEnemies(deltaTime);
         UpdateBullets(camera, deltaTime);
         UpdateDecals(deltaTime);
+        UpdateMuzzleFlashes(deltaTime);
         UpdateBoat(player_boat, deltaTime);
       
         UpdateDungeonChests();
@@ -575,7 +588,7 @@ int main() {
         ApplyBakedLighting();
         //gather up everything 2d and put it into a vector of struct drawRequests, then sort and draw every billboard/quad in the game.
         //Draw in order of furthest fisrt, closest last.  
-        GatherTransparentDrawRequests(camera, player.weapon, deltaTime);
+        GatherTransparentDrawRequests(camera, deltaTime);
         DrawTransparentDrawRequests(camera);
 
         if (!isDungeon) UpdateMusicStream(jungleAmbience);
@@ -615,11 +628,11 @@ int main() {
         DrawDungeonCeiling(floorTile);
         DrawDungeonBarrels();
         DrawDungeonChests();
-        
+        DrawDungeonPillars(deltaTime, camera);
         DrawDungeonDoorways(); 
         DrawPlayer(player, camera);
         DrawBullets(camera); 
-        for (Character* enemy : enemyPtrs) { //draw enemy blood
+        for (Character* enemy : enemyPtrs) { //draw enemy blood, blood is 3d so draw before billboards. 
              enemy->bloodEmitter.Draw(camera);
         }
 
@@ -628,7 +641,7 @@ int main() {
         DrawBillboards(camera);
 
         UpdateCollectables(camera, deltaTime); 
-        DrawDungeonPillars(deltaTime, camera);
+
         rlEnableDepthMask();
         
         if (!isDungeon) { //not a dungeon, draw terrain. 

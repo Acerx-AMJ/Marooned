@@ -16,6 +16,7 @@ Weapon weapon;
 MeleeWeapon meleeWeapon;
 MagicStaff magicStaff;
 
+
 //MagicStaff magicStaff;
 
 //
@@ -33,6 +34,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     weapon.scale = { 2.0f, 2.0f, 2.0f };
     weapon.muzzleFlashTexture = muzzleFlash;
     weapon.fireCooldown = 2.0f;
+    weapon.flashDuration = 1.0;
 
     InitMagicStaff(magicStaff);
 
@@ -93,20 +95,23 @@ void HandleKeyboardInput(float deltaTime) {
         player.grounded = false;
     }
 
-
     if (IsKeyPressed(KEY_Q)) {
+        // Wipe the blood if switching from sword
+        if (activeWeapon == WeaponType::Sword) {
+            swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean;
+        }
 
-        swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean; //wipe the blood off the blade. 
-        
-        // if (activeWeapon == WeaponType::Blunderbuss){
-        //     activeWeapon = WeaponType::Sword;
-        // }else{
-        //     activeWeapon = WeaponType::Blunderbuss;
-        // }
-
-        // cycle to next weapon
-        activeWeapon = static_cast<WeaponType>((static_cast<int>(activeWeapon) + 1) % 3);
+        // Cycle to next weapon in the collected list
+        player.currentWeaponIndex = (player.currentWeaponIndex + 1) % player.collectedWeapons.size();
+        activeWeapon = player.collectedWeapons[player.currentWeaponIndex];
     }
+    // if (IsKeyPressed(KEY_Q)) {
+
+    //     swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean; //wipe the blood off the blade. 
+        
+    //     // cycle to next weapon
+    //     activeWeapon = static_cast<WeaponType>((static_cast<int>(activeWeapon) + 1) % 3);
+    // }
 
     if (IsKeyPressed(KEY_ONE)){
         //temporary use health potion

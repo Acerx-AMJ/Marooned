@@ -52,6 +52,7 @@ extern float dungeonEnemyHeight;
 extern float ElapsedTime;
 extern bool debugInfo;
 extern bool isLoadingLevel;
+extern float muzzleFlashTimer;
 
 extern GameState currentGameState;
 // extern std::vector<Character> raptors;
@@ -64,6 +65,7 @@ extern std::vector<DungeonEntrance> dungeonEntrances;
 extern std::vector<Bullet> activeBullets;
 extern std::vector<Decal> decals;
 extern std::vector<Collectable> collectables;
+extern std::vector<MuzzleFlash> activeMuzzleFlashes;
 
 extern std::vector<Character> enemies;  
 extern std::vector<Character*> enemyPtrs;
@@ -72,7 +74,6 @@ float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrai
 void removeAllRaptors();
 void removeAllCharacters();
 void generateRaptors(int amount, Vector3 centerPos, float radius);
-void regenerateRaptors(int amount, Vector3 centerPos, float radius);
 bool CheckTreeCollision(const TreeInstance& tree, const Vector3& playerPos);
 void ResolveTreeCollision(const TreeInstance& tree, Vector3& playerPos);
 

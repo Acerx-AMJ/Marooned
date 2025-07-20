@@ -6,10 +6,10 @@ extern std::vector<std::vector<bool>> walkable;
 class Character;  // ✅ This is the key line
 void ConvertImageToWalkableGrid(const Image& dungeonMap);
 Vector2 WorldToImageCoords(Vector3 worldPos);
-bool IsWalkable(int x, int y);
+bool IsWalkable(int x, int y, const Image& dungeonMap);
 bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, const Character* self);
 Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeletons, const Character* self);
-
+Vector2 TileToWorldCenter(Vector2 tile);
 bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction = 0.0f);
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon);
 bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon);

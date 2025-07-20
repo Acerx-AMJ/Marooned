@@ -40,7 +40,7 @@ void Character::UpdateAI(float deltaTime, Player& player,const Image& heightmap,
             break;
 
         case CharacterType::Spider:
-            UpdateSkeletonAI(deltaTime, player); //spider uses same code as skeleton?
+            UpdateSkeletonAI(deltaTime, player); //spider uses same code as skeleton
             break;
     }
 }
@@ -272,7 +272,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal = WorldToImageCoords(player.position);
 
-    bool canSee = HasWorldLineOfSight(position, player.position, 0.0f); //Vision test //(LineOfSightRaycast(start, goal, dungeonImg, 100, 0.0f) && 
+    bool canSee = HasWorldLineOfSight(position, player.position, 0.0f); //Vision test // no dungeonLOS test makes for better vision.
     
 
     if (canSee) {
@@ -382,7 +382,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                     Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
                     Vector3 move = Vector3Scale(dir, skeleSpeed * deltaTime);
 
-                                    // Add repulsion from other raptors
+                                    // Add repulsion from other pirates
                     Vector3 repulsion = ComputeRepulsionForce(enemyPtrs, 50, 500);
                     Vector3 moveWithRepulsion = Vector3Add(move, Vector3Scale(repulsion, deltaTime));
                     position = Vector3Add(position, moveWithRepulsion);
@@ -415,7 +415,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             
             Vector2 myTile = WorldToImageCoords(position);
             Character* occupier = GetTileOccupier(myTile.x, myTile.y, enemyPtrs, this);
-
+            //pirates won't occupy the same tile while shooting. 
             if (occupier && occupier != this) {
                 // Only the one with the "greater" pointer backs off
                 if (this > occupier) {
@@ -467,7 +467,6 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                     stateTimer = 0;
                     currentFrame = 0;
                 }
-                //state = CharacterState::Idle;
                
             }
 
@@ -543,7 +542,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 int ty = (int)playerTile.y + (int)roundf(relativeOffsets[i].y);
 
                 if (tx < 0 || ty < 0 || tx >= dungeonWidth || ty >= dungeonHeight) continue;
-                if (!IsWalkable(tx, ty)) continue;
+                if (!IsWalkable(tx, ty, dungeonImg)) continue;
                 if (IsTileOccupied(tx, ty, enemyPtrs, this)) continue;
 
                 target = GetDungeonWorldPos(tx, ty, tileSize, dungeonPlayerHeight);
@@ -586,7 +585,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             if (!currentWorldPath.empty()) {
                 Vector3 targetPos = currentWorldPath[0];
                 Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
-                Vector3 move = Vector3Scale(dir, 500 * deltaTime); // slower than chase
+                Vector3 move = Vector3Scale(dir, 500 * deltaTime); // slower than chase //maybe make it even slower, pirates are hard to hit. 
                 position = Vector3Add(position, move);
                 rotationY = RAD2DEG * atan2f(dir.x, dir.z);
                 position.y = targetPos.y;
@@ -614,7 +613,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 state = CharacterState::Chase;
                 SetAnimation(1, 4, 0.25f);
                 stateTimer = 0.0f;
-                //chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
+                
             }
             break;
         }
@@ -639,7 +638,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
     playerVisible = false;
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal = WorldToImageCoords(player.position);
-
+    //changed vision to soley rely on world LOS. More forgiving 
     bool canSee = HasWorldLineOfSight(position, player.position, 0.0f); //Vision test //(LineOfSightRaycast(start, goal, dungeonImg, 100, 0.0f)
 
     if (canSee) {
@@ -739,6 +738,10 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                         Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
                         worldPos.y += 80.0f; //move up to match character height.
                         currentWorldPath.push_back(worldPos);
+                    }
+
+                    for (Vector2 step : tilePath) {
+                        TraceLog(LOG_INFO, "Path step: (%d, %d)", (int)step.x, (int)step.y);
                     }
                 }
 
@@ -846,7 +849,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 int ty = (int)playerTile.y + (int)roundf(relativeOffsets[i].y);
 
                 if (tx < 0 || ty < 0 || tx >= dungeonWidth || ty >= dungeonHeight) continue;
-                if (!IsWalkable(tx, ty)) continue;
+                if (!IsWalkable(tx, ty, dungeonImg)) continue;
                 if (IsTileOccupied(tx, ty, enemyPtrs, this)) continue;
 
                 target = GetDungeonWorldPos(tx, ty, tileSize, dungeonPlayerHeight);

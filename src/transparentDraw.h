@@ -8,7 +8,7 @@ enum BillboardType {
     Billboard_FacingCamera,
     Billboard_FixedFlat,
     Billboard_Decal,
-    Billboard_MuzzleFlash
+
 };
 
 struct BillboardDrawRequest {
@@ -24,11 +24,13 @@ struct BillboardDrawRequest {
 
 extern std::vector<BillboardDrawRequest> billboardRequests;
 
-void GatherTransparentDrawRequests(Camera& camera, Weapon& weapon, float deltaTime);
+void GatherTransparentDrawRequests(Camera& camera, float deltaTime);
 void DrawTransparentDrawRequests(Camera& camera);
 
+void GatherMuzzleFlashes(Camera& camera, const std::vector<MuzzleFlash>& activeMuzzleFlashes);
 void GatherEnemies(Camera& camera);
 void GatherDungeonFires(Camera& camera, float deltaTime);
 void GatherWebs(Camera& camera);
 void GatherDecals(Camera& camera, const std::vector<Decal>& decals);
+
 float GetAdjustedBillboardSize(float baseSize, float distance);

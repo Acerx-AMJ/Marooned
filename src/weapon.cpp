@@ -6,7 +6,7 @@
 #include "sound_manager.h"
 #include "resources.h"
 #include "player.h"
-
+#include "world.h"
 
 
 void Weapon::Fire(Camera& camera) {
@@ -16,7 +16,15 @@ void Weapon::Fire(Camera& camera) {
         
         recoil = recoilAmount;
         lastFired = GetTime();
-        flashTimer = flashDuration;
+
+        activeMuzzleFlashes.push_back({
+            muzzlePos,
+            &muzzleFlash,
+            flashSize,
+            0.1f  // lifetime in seconds
+        });
+
+        
         // Schedule reload sound
         reloadScheduled = true;
         reloadTimer = 0.0f;
@@ -107,18 +115,20 @@ void MeleeWeapon::Update(float deltaTime) {
 
 
 void Weapon::Update(float deltaTime) {
-
-
-
     if (recoil > 0.0f) {
         recoil -= recoilRecoverySpeed * deltaTime;
         if (recoil < 0.0f) recoil = 0.0f;
     }
 
+
     if (flashTimer > 0.0f) {
         flashTimer -= deltaTime;
-        if (flashTimer < 0.0f) flashTimer = 0.0f;
+        if (flashTimer <= 0.0f) {
+            flashTriggered = false;  // turn off after visible frame
+        }
     }
+
+    
 
     // Handle delayed reload sound
     if (reloadScheduled) {
@@ -161,16 +171,9 @@ void Weapon::Draw(const Camera& camera) {
     gunPos = Vector3Add(gunPos, Vector3Scale(camRight, sideOffset));
     gunPos = Vector3Add(gunPos, Vector3Scale(camUp, dynamicVertical));
 
+    //Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+    muzzlePos = Vector3Add(gunPos, Vector3Scale(camForward, 40.0f));
 
-    if (flashTimer > 0.0f) {//Muzzle Flash
-        Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
-        muzzlePos = Vector3Add(gunPos, Vector3Scale(camForward, 40.0f));
-        
-        // rlDisableDepthMask();
-        // DrawBillboard(camera, muzzleFlashTexture, muzzlePos, flashSize, WHITE);
-        // rlEnableDepthMask();
-
-    }
 
     DrawModelEx(model, gunPos, axis, angleDeg, scale, WHITE);
 
@@ -261,7 +264,14 @@ void MagicStaff::Fire(const Camera& camera) {
 
     lastFired = GetTime();
     recoil += recoilAmount;
-    flashTimer = flashDuration;
+    //flashTimer = flashDuration;
+
+    activeMuzzleFlashes.push_back({
+            muzzlePos,
+            &muzzleFlash,
+            flashSize,
+            0.1f  // lifetime in seconds
+    });
 
     Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
     Vector3 targetPoint = Vector3Add(camera.position, Vector3Scale(camForward, 1000.0f));
@@ -359,16 +369,12 @@ void MagicStaff::Draw(const Camera& camera) {
     staffPos = Vector3Add(staffPos, Vector3Scale(camRight, finalSide));
     staffPos = Vector3Add(staffPos, Vector3Scale(camUp, finalVertical));
 
-    DrawModelEx(model, staffPos, axis, angleDeg, scale, WHITE);
     muzzlePos = Vector3Add(staffPos, Vector3Scale(camForward, 40.0f));
-    // === Optional: Draw muzzle flash ===
-    if (flashTimer > 0.0f) {
-        //muzzlePos = Vector3Add(staffPos, Vector3Scale(camForward, 40.0f));
-        // Uncomment to draw magical flash:
-        // rlDisableDepthMask();
-        // DrawBillboard(camera, muzzleFlashTexture, muzzlePos, flashSize, WHITE);
-        // rlEnableDepthMask();
-    }
+
+    DrawModelEx(model, staffPos, axis, angleDeg, scale, WHITE);
+
+
 }
+
 
 

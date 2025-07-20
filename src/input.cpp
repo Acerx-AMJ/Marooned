@@ -90,6 +90,14 @@ void debugControls(Camera& camera){
         FireFireball(player.position, targetPoint, 1000, 10, false, true);
     }
 
+    if (IsKeyPressed(KEY_L)) {
+        if (!player.hasMagicStaff) {
+            player.hasMagicStaff = true;
+            player.collectedWeapons.push_back(WeaponType::MagicStaff);
+}
+
+    }
+
 
 
 

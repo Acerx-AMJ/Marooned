@@ -43,7 +43,7 @@ void generateVegetation(){
 
     // Copy tree pointers into a separate list so we can sort them by distance
     // without modifying the original `trees` vector (which holds the actual data)
-    for (const auto& tree : trees) { //solves tree leaf glitches. We do the same for raptors. 
+    for (const auto& tree : trees) { //solves tree leaf glitches. 
         sortedTrees.push_back(&tree);
     }
 }
