@@ -24,7 +24,8 @@ public:
     void Explode(Camera& camera);
     //void SetRadius(float r) { radius = r; } //inline, dont need to define in cpp
     float GetRadius() const { return radius; }
-
+    bool pendingExplosion = false;
+    float explosionTimer = 0.0f;
 
     Vector3 GetPosition() const;
 

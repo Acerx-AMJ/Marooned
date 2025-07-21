@@ -88,7 +88,7 @@ public:
     void UpdatePirateAI(float deltaTime, Player& player);
 
     void AlertNearbySkeletons(Vector3 alertOrigin, float radius);
-
+    void SetPath(Vector2 start);
     void eraseCharacters();
     void TakeDamage(int amount);
     void Draw(Camera3D camera);

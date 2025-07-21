@@ -57,6 +57,14 @@ void Bullet::UpdateFireball(Camera& camera, float deltaTime) {
         }
     }
 
+    if (pendingExplosion) {
+        explosionTimer -= deltaTime;
+        if (explosionTimer <= 0.0f) {
+            Explode(camera); // now do the actual explosion logic
+            pendingExplosion = false;
+        }
+    }
+
     // Lifetime kill
     age += deltaTime;
     if (age >= maxLifetime) {
@@ -188,7 +196,7 @@ void Bullet::Explode(Camera& camera) {
 
     if (!explosionTriggered){
         explosionTriggered = true;  
-        SoundManager::GetInstance().PlaySoundAtPosition("explosion", position, player.position, 1.0f, 3000.0f);
+        SoundManager::GetInstance().PlaySoundAtPosition("explosion", position, player.position, player.rotation.y, 3000.0f);
         
         Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
         Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));

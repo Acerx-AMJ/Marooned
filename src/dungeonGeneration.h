@@ -160,7 +160,6 @@ extern int dungeonHeight;
 
 void InitChests();
 void UpdateDungeonChests();
-void OpenChest(ChestInstance& chest); 
 void LoadDungeonLayout(const std::string& imagePath); // Just loads and caches image
 void GenerateFloorTiles(float baseY);
 void GenerateWallTiles(float baseY);
@@ -181,7 +180,7 @@ void DrawSpiderWebs(Camera& camera);
 void DrawDungeonChests(); 
 void DrawDungeonPillars(float deltaTime, Camera3D camera);
 void DrawDungeonDoorways();
-void DrawFlatDoor(const Door& door);
+void DrawFlatDoor(Texture2D* tex, Vector3 pos, float width, float height, float rotY, Color tint);
 void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height, float rotationY, Color tint);
 //void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY);
 void DrawDungeonCeiling(Model ceilingTileModel);

@@ -251,6 +251,7 @@ void HandleMeleeHitboxCollision(Camera& camera) {
 }
 
 void CheckBulletHits(Camera& camera) {
+    
     for (Bullet& b : activeBullets) {
         if (!b.IsAlive()) continue;
 
@@ -268,28 +269,29 @@ void CheckBulletHits(Camera& camera) {
         // 🔹 2. Hit enemy
         for (Character* enemy : enemyPtrs) {
             if (enemy->isDead) continue;
-
+            bool isSkeleton = (enemy->type == CharacterType::Skeleton);
             if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), b.GetPosition(), b.GetRadius())) {
                 if (!b.IsEnemy() && !b.isFireball()) {
                     enemy->TakeDamage(25);
 
-                    bool isSkeleton = (enemy->type == CharacterType::Skeleton);
-
-                    if (!isSkeleton && enemy->isDead) {
-                        b.Blood(camera);  // spawn death blood decal
+                    if (enemy->isDead) {
+                        if (!isSkeleton) b.Blood(camera);  // blood decals on death
                         b.kill(camera);
-                    } else if (isSkeleton || enemy->isDead) {
-                        b.kill(camera);  
+                    } else {
+                        b.kill(camera);
                     }
 
                     break;
+                }
+                
+                else if (!b.IsEnemy() && b.isFireball()){
+                    enemy->TakeDamage(25);
 
-                }else if (!b.IsEnemy() && b.isFireball()){
-                    enemy->TakeDamage(25); //explosion does the bulk of the damage. 
-                    //explode
-                    b.Explode(camera);
+                    b.pendingExplosion = true;
+                    b.explosionTimer = 0.04f; // short delay
+                    // Don't call b.Explode() yet //called in updateFireball
 
-                } else if (b.IsEnemy() && enemy->type == CharacterType::Skeleton) { // friendly fire
+                } else if (b.IsEnemy() && isSkeleton) { // friendly fire
                     enemy->TakeDamage(25);
                     b.kill(camera);
                     break;

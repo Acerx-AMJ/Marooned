@@ -105,13 +105,7 @@ void HandleKeyboardInput(float deltaTime) {
         player.currentWeaponIndex = (player.currentWeaponIndex + 1) % player.collectedWeapons.size();
         activeWeapon = player.collectedWeapons[player.currentWeaponIndex];
     }
-    // if (IsKeyPressed(KEY_Q)) {
 
-    //     swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean; //wipe the blood off the blade. 
-        
-    //     // cycle to next weapon
-    //     activeWeapon = static_cast<WeaponType>((static_cast<int>(activeWeapon) + 1) % 3);
-    // }
 
     if (IsKeyPressed(KEY_ONE)){
         //temporary use health potion
@@ -126,9 +120,6 @@ void HandleKeyboardInput(float deltaTime) {
     }
 
 }
-
-
-
 
 
 void UpdateBlockHitbox(Player& player, float blockDistance = 500.0f, float width = 300.0f, float height = 64.0f) {

@@ -141,6 +141,25 @@ void GatherWebs(Camera& camera) {
     }
 }
 
+void GatherDoors(Camera& camera) {
+    for (const Door& door : doors) {
+        if (door.isOpen) continue;
+
+        billboardRequests.push_back({
+            Billboard_Door,
+            door.position,
+            door.doorTexture,
+            Rectangle{ 0, 0, (float)door.doorTexture->width, (float)door.doorTexture->height },
+            door.scale.x, // width, used in size
+            door.tint,
+            Vector3Distance(camera.position, door.position),
+            door.rotationY
+        });
+    }
+}
+
+
+
 void GatherDecals(Camera& camera, const std::vector<Decal>& decals) {
     for (const Decal& decal : decals) {
         if (!decal.alive) continue;
@@ -205,6 +224,7 @@ void GatherTransparentDrawRequests(Camera& camera, float deltaTime) {
     GatherEnemies(camera);
     GatherDungeonFires(camera, deltaTime);
     GatherWebs(camera);
+    GatherDoors(camera);
     GatherDecals(camera, decals);
 
     GatherMuzzleFlashes(camera, activeMuzzleFlashes);
@@ -245,6 +265,16 @@ void DrawTransparentDrawRequests(Camera& camera) {
                     req.rotationY,
                     req.tint
                 );
+                break;
+
+            case Billboard_Door:
+                DrawFlatDoor(
+                    req.texture, 
+                    req.position, 
+                    req.size, 
+                    req.size * 1.225f, 
+                    req.rotationY, 
+                    req.tint);
                 break;
         }
 

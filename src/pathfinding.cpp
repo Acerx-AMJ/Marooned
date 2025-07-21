@@ -197,7 +197,7 @@ bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<V
     if (isLoadingLevel) return false;
     Vector2 randomTile = GetRandomReachableTile(start, self);
 
-    if (randomTile.x == -1) return false;
+    if (IsWalkable(randomTile.x, randomTile.y, dungeonImg)) return false;
 
     std::vector<Vector2> tilePath = FindPath(start, randomTile);
     if (tilePath.empty()) return false;
@@ -205,7 +205,8 @@ bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<V
     outPath.clear();
     for (const Vector2& tile : tilePath) {
         Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
-        worldPos.y += 80.0f;
+        worldPos.y += 80.0f; //skeles at 80
+        if (self->type == CharacterType::Pirate) worldPos.y = 160;
         outPath.push_back(worldPos);
     }
 
@@ -308,9 +309,11 @@ bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int m
 
         Color c = GetImageColor(dungeonMap, tileX, tileY);
 
-        if (c.r < 50 && c.g < 50 && c.b < 50) return true; // wall
-        if (c.r == 128 && c.g == 0 && c.b == 128 && !IsDoorOpenAt(tileX, tileY)) return true;
-        if (c.r == 0 && c.g == 255 && c.b == 255 && !IsDoorOpenAt(tileX, tileY)) return true;
+        if (c.r == 0 && c.g == 0 && c.b == 0) return true; // wall
+        if (c.r == 255 && c.g == 255 && c.b == 0) return true; //light pedestal
+        if (c.r == 128 && c.g == 0 && c.b == 128 && !IsDoorOpenAt(tileX, tileY)) return true; //closed door
+        if (c.r == 0 && c.g == 255 && c.b == 255 && !IsDoorOpenAt(tileX, tileY)) return true; //locked closed door
+        
 
         x += stepX;
         y += stepY;
@@ -355,4 +358,7 @@ std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& d
 
     return result;
 }
+
+
+
 

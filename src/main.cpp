@@ -133,7 +133,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateLightSources(floorHeight);
         GenerateDoorways(floorHeight, levelIndex); //calls generate doors from archways
         GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
-        GeneratePiratesFromImage(dungeonEnemyHeight-100);
+        GeneratePiratesFromImage(dungeonEnemyHeight);
         GenerateSpiderFromImage(dungeonEnemyHeight);
 
 
@@ -432,48 +432,7 @@ void HandleDungeon(float deltaTime) {
     UpdateDoorTints(player.position);
 }
 
-void DrawBillboards(Camera3D camera) {
-    // 1️⃣ Sort all transparent billboards back-to-front
-    std::sort(billboardRequests.begin(), billboardRequests.end(),
-        [&camera](const BillboardDrawRequest& a, const BillboardDrawRequest& b) {
-            return a.distanceToCamera > b.distanceToCamera;
-        });
 
-    for (const BillboardDrawRequest& req : billboardRequests) {
-        rlDisableDepthMask();
-
-        switch (req.type) {
-            case Billboard_FacingCamera:
-            case Billboard_Decal:
-                DrawBillboardRec(
-                    camera,
-                    *(req.texture),
-                    req.sourceRect,
-                    req.position,
-                    Vector2{req.size, req.size},
-                    req.tint
-                );
-                break;
-            case Billboard_FixedFlat:
-                DrawFlatWeb(
-                    *(req.texture),
-                    req.position,
-                    req.size,
-                    req.size,
-                    req.rotationY,
-                    req.tint
-                );
-                break;
-        }
-
-        rlEnableDepthMask();
-    }
-
-
-
-    // 3️⃣ Clear list for next frame
-    billboardRequests.clear();
-}
 
 
 
@@ -638,8 +597,8 @@ int main() {
 
         //draw things with transparecy last.
         rlDisableDepthMask();
-        DrawBillboards(camera);
-
+        //DrawBillboards(camera);
+        DrawTransparentDrawRequests(camera);
         UpdateCollectables(camera, deltaTime); 
 
         rlEnableDepthMask();

@@ -981,35 +981,33 @@ void DrawDungeonDoorways(){
         DrawModelEx(doorWay, dPos, {0, 1, 0}, d.rotationY * RAD2DEG, {490, 595, 476}, d.tint);
     }
 
-    for (const Door& door : doors){
+    // for (const Door& door : doors){
    
-        DrawFlatDoor(door);
+    //     DrawFlatDoor(door);
 
-    }
+    // }
 }
 
-void DrawFlatDoor(const Door& door) {
-    if (door.isOpen) return;
-
-    float w = door.scale.x;
-    float h = door.scale.y;
+void DrawFlatDoor(Texture2D* tex, Vector3 pos, float width, float height, float rotY, Color tint) {
+    float w = width;
+    float h = height;
 
     // Determine local axes
-    Vector3 forward = Vector3RotateByAxisAngle({0, 0, 1}, {0, 1, 0}, door.rotationY);
+    Vector3 forward = Vector3RotateByAxisAngle({0, 0, 1}, {0, 1, 0}, rotY);
     Vector3 right = Vector3CrossProduct({0, 1, 0}, forward);
 
-    // Use door.position directly as the center
-    Vector3 center = door.position;
+    // Use pos directly as the center
+    Vector3 center = pos;
 
-    // Compute quad corners (centered on door.position)
-    Vector3 bottomLeft  = Vector3Add(center, Vector3Add(Vector3Scale(right, -w * 0.5f), Vector3Scale(forward, -door.scale.z * 0.5f)));
-    Vector3 bottomRight = Vector3Add(center, Vector3Add(Vector3Scale(right,  w * 0.5f), Vector3Scale(forward, -door.scale.z * 0.5f)));
+    // Compute quad corners (centered on position)
+    Vector3 bottomLeft  = Vector3Add(center, Vector3Add(Vector3Scale(right, -w * 0.5f), Vector3Scale(forward, -1.0f)));
+    Vector3 bottomRight = Vector3Add(center, Vector3Add(Vector3Scale(right,  w * 0.5f), Vector3Scale(forward, -1.0f)));
     Vector3 topLeft     = Vector3Add(bottomLeft, {0, h, 0});
     Vector3 topRight    = Vector3Add(bottomRight, {0, h, 0});
 
-    rlSetTexture(door.doorTexture->id);
+    rlSetTexture(tex->id);
     rlBegin(RL_QUADS);
-        rlColor4ub(door.tint.r, door.tint.g, door.tint.b, door.tint.a); //tint the door
+        rlColor4ub(tint.r, tint.g, tint.b, tint.a);
 
         rlTexCoord2f(0, 1); rlVertex3f(bottomLeft.x,  bottomLeft.y,  bottomLeft.z);
         rlTexCoord2f(1, 1); rlVertex3f(bottomRight.x, bottomRight.y, bottomRight.z);
@@ -1017,8 +1015,41 @@ void DrawFlatDoor(const Door& door) {
         rlTexCoord2f(0, 0); rlVertex3f(topLeft.x,     topLeft.y,     topLeft.z);
     rlEnd();
     rlSetTexture(0);
-    rlColor4ub(255, 255, 255, 255); // Reset color for next draw calls
+    rlColor4ub(255, 255, 255, 255);
 }
+
+
+// void DrawFlatDoor(const Door& door) {
+//     if (door.isOpen) return;
+
+//     float w = door.scale.x;
+//     float h = door.scale.y;
+
+//     // Determine local axes
+//     Vector3 forward = Vector3RotateByAxisAngle({0, 0, 1}, {0, 1, 0}, door.rotationY);
+//     Vector3 right = Vector3CrossProduct({0, 1, 0}, forward);
+
+//     // Use door.position directly as the center
+//     Vector3 center = door.position;
+
+//     // Compute quad corners (centered on door.position)
+//     Vector3 bottomLeft  = Vector3Add(center, Vector3Add(Vector3Scale(right, -w * 0.5f), Vector3Scale(forward, -door.scale.z * 0.5f)));
+//     Vector3 bottomRight = Vector3Add(center, Vector3Add(Vector3Scale(right,  w * 0.5f), Vector3Scale(forward, -door.scale.z * 0.5f)));
+//     Vector3 topLeft     = Vector3Add(bottomLeft, {0, h, 0});
+//     Vector3 topRight    = Vector3Add(bottomRight, {0, h, 0});
+
+//     rlSetTexture(door.doorTexture->id);
+//     rlBegin(RL_QUADS);
+//         rlColor4ub(door.tint.r, door.tint.g, door.tint.b, door.tint.a); //tint the door
+
+//         rlTexCoord2f(0, 1); rlVertex3f(bottomLeft.x,  bottomLeft.y,  bottomLeft.z);
+//         rlTexCoord2f(1, 1); rlVertex3f(bottomRight.x, bottomRight.y, bottomRight.z);
+//         rlTexCoord2f(1, 0); rlVertex3f(topRight.x,    topRight.y,    topRight.z);
+//         rlTexCoord2f(0, 0); rlVertex3f(topLeft.x,     topLeft.y,     topLeft.z);
+//     rlEnd();
+//     rlSetTexture(0);
+//     rlColor4ub(255, 255, 255, 255); // Reset color for next draw calls
+// }
 
 
 void DrawDungeonCeiling(Model ceilingTileModel) {

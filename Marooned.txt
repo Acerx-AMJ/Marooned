@@ -93,8 +93,12 @@ Gold. buys magic scrolls. Lightning, fireball, ice, barrels can contain gold, li
 what to do about webs? We need to draw webs as a flat quad, they can't be a billboard. but everything else is a billboard and needs to be sorted to not occlude each other. we can't put the flat quad into a vector of billboards. could we make a billboard that always faces a certain direction. 
 
 Made a struct called drawRequest. and a vector of drawRequests. drawRequests contain all the data needed to draw an animated billboard, or flatquad, or decal, everything 2d in the game. Then we sort the vector of drawRequests based on distance to camera, and draw in that order. We have functions called GatherEnemies, GatherDecals ect. that copy the data from the character class to the drawReqest. In the final draw function we have a switch case that draws either flat quads or billboards depending on drawRequestType, an enum class in transparentDraw.h this and transparentDraw.cpp contains all the code to make this happen. we just call gatherAllbillboards, then draw the requests. -this solves all the occlusion problems. 
+-doors are not included in this. but it doesn't seem to matter. they don't occlude anything. Should probably add draw flat door to the render pipeline anyway. 
 
-Added line of sight to tint based lighting. each wall segment checks distance to light source AND does a line of sight check. That way light doesn't bleed through walls. Could add double walls to stop light bleeding to other side of lit wall. Player has simpler light source without raycasts. It looks better that way. -Started using worldLOS check instead of dungeon map. 3d raycasts better spread the light if I give it an epsilon. where the ray goes further than it should so it actualy hits the walls. Needed to do this for floor ceiling doors and walls. 
+I never explained tint based lighting. Since the dungeons are constructed out of floor tiles and wall segments, we can light each one individually by changing the tint property of the model. We can iterate all the walls and measure the distance to a light source or sources, and change the tint brighter or darker the further away. This makes a really low res lighting system. We can even do dynamic lights by just attaching a light source to a moving object like bullet, and then check for it each frame.
+
+
+Added line of sight to tint based lighting. each wall segment checks distance to light source AND does a line of sight check. That way light doesn't bleed through walls. Could add double walls to stop light bleeding to other side of lit wall. Player has simpler light source without raycasts. It looks better that way. -Started using worldLOS check instead of dungeon map. 3d raycasts better spread the light if I give it an epsilon. where the ray goes further than it should so it actualy hits the walls. Needed to do this for floor ceiling doors and walls. The ray was stopping at the colliders i guess. not making it to wall.position. 
 
 Changed pirates vision to be just a worldLOS check, instead of both dungeon map and world ray cast. They can now see through open doors better and notice the player when he's around a corner but still in eye sight. Probably can do this for skeleton as well. 
 
@@ -110,6 +114,18 @@ Added magic staff, and a bullet parameter fireball. fireballs are just big yello
 
 3d particle system. It was easy enough in 2d. Try it in 3d for blood and smoke. Your limited with just raylib. particles is one thing that you can do. so you should do it. 
 
-Added fireballs and particles. Fireball is a model I made in blender with a fire texture attached. it slowly rotates when fired. when it hits the ground or an enemy it spawns a animated explosion decal. While the fireball is in the air it emits dark grey smoke particles and when it explodes it emits orange spark particles. I also add blood particles that get emitted from bullets when they hit a non skeleton enemy. 
+Added fireballs and particles. Fireball is a model I made in blender with a fire texture attached. it slowly rotates when fired. when it hits the ground or an enemy it spawns a animated explosion decal. While the fireball is in the air it emits dark grey smoke particles and when it explodes it emits orange spark particles. I also add blood particles that get emitted from bullets when they hit a non skeleton enemy. -possibly do half orange half yellow particles on explosion, might look like confetti. 
 
-Add blood particles to sword hits. 
+Add blood particles to sword hits. Would need to add emitter to enemy. spawn blood on take damage. Removes need for spawn blood in bullet. -Moved blood emitter to character. Emit blood on take damage if your not a skeleton. 
+
+make staff not available until you pick it up? Where do you pick it up? Level 4? make it a color on the dungeon map and spawn the model in world at that position. make it a collectable? It's lame if you have it from the beginning. for now just make a hasStaff member variable. then you can only switch to it if you hasStaff. 
+
+-Made an std::vector of weaponType, we can than % vector.size() to scroll through weapons. No matter how many weapons you may have unlocked. We simply add the weaponType to the vector when you pick up the weapon. 
+
+         player.currentWeaponIndex = (player.currentWeaponIndex + 1) % player.collectedWeapons.size();
+        activeWeapon = player.collectedWeapons[player.currentWeaponIndex];
+
+sword is bloody when starting in dungeon for mysterious reasons. 
+
+
+
