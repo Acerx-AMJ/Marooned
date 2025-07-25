@@ -5,7 +5,8 @@
 enum class WeaponType { 
     Blunderbuss, 
     Sword,
-    MagicStaff
+    MagicStaff,
+    None,
 
 };
 

@@ -27,8 +27,6 @@ std::vector<LightSource> dungeonLights; //static lights.
 std::vector<LightSource> bulletLights; //lights attached to bullets for testing.
 std::vector<Fire> fires;
 
-
-
 Image dungeonImg; //save the dungeon info globaly
 Color* dungeonPixels = nullptr;
 int dungeonWidth = 0;
@@ -39,7 +37,9 @@ const Color COLOR_BLACK  = { 0, 0, 0, 255 }; //walls
 const Color COLOR_BLUE   = { 0, 0, 255, 255 }; //barrels
 const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
 
-
+float playerLightRange = 800.0f;
+float playerLightIntensity = 0.5f;
+float fireballRange = 400.0f;
 //Dungeon Legend
 
 //   Transparent = Void (no floor tiles)
@@ -74,6 +74,8 @@ const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
 
 // ⚫ Dark Gray = Spider (64, 64, 64)
 
+//    Dark Red = magicStaff (128, 0, 0)
+
 void InitChests() {
     //chestModel = LoadModel("assets/models/chest.glb");
     //chestAnimations = LoadModelAnimations("assets/models/chest.glb", &chestAnimCount);
@@ -92,6 +94,21 @@ float ColorAverage(Color c) {
     return ((c.r + c.g + c.b) / 3.0f) / 255.0f;
 }
 
+void GenerateWeapons(float Height){
+    worldWeapons.clear();
+
+    for (int y = 0; y < dungeonHeight; y++) {
+        for (int x = 0; x < dungeonWidth; x++) {
+            Color current = dungeonPixels[y * dungeonWidth + x];
+
+            if (current.r == 128 && current.g == 0 && current.b == 0) { // Dark red staff
+                Vector3 pos = GetDungeonWorldPos(x, y, tileSize, Height);
+                worldWeapons.push_back(CollectableWeapon(WeaponType::MagicStaff, pos, &staffModel));
+
+            }
+        }
+    }
+}
 
 
 
@@ -566,38 +583,6 @@ void GenerateSpiderWebs(float baseY)
 }
 
 
-// void GenerateSpiderWebs(float baseY) {
-//     spiderWebs.clear();
-
-//     for (int y = 0; y < dungeonHeight; y++) {
-//         for (int x = 0; x < dungeonWidth; x++) {
-//             Color current = dungeonPixels[y * dungeonWidth + x];
-
-//             if (current.r == 128 && current.g == 128 && current.b == 128) { // light grey = spiderweb
-//                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
-
-//                 // Define bounding box as 200x200x200 cube centered on pos
-//                 float halfSize = 100.0f;
-//                 BoundingBox box;
-//                 box.min = {
-//                     pos.x - halfSize,
-//                     pos.y,
-//                     pos.z - halfSize
-//                 };
-//                 box.max = {
-//                     pos.x + halfSize,
-//                     pos.y + 100.0f,
-//                     pos.z + halfSize
-//                 };
-                
-//                 spiderWebs.push_back({pos, WHITE, box, false});
-
-//             }
-//         }
-//     }
-// }
-
-
 void GenerateBarrels(float baseY) {
     barrelInstances.clear();
 
@@ -716,26 +701,26 @@ void GenerateKeys(float baseY) {
 }
 
 
-void GenerateRaptorsFromImage( float baseY) { //unused. no raptors allowed in dungeons, red means skeleton
+// void GenerateRaptorsFromImage( float baseY) { //unused. no raptors allowed in dungeons, red means skeleton
 
-    for (int y = 0; y < dungeonHeight; y++) {
-        for (int x = 0; x < dungeonWidth; x++) {
-            Color current = dungeonPixels[y * dungeonWidth + x];
+//     for (int y = 0; y < dungeonHeight; y++) {
+//         for (int x = 0; x < dungeonWidth; x++) {
+//             Color current = dungeonPixels[y * dungeonWidth + x];
 
-            // Look for pure red pixels (255, 0, 0)
-            if (current.r == 255 && current.g == 0 && current.b == 0) {
-                Vector3 spawnPos = GetDungeonWorldPos(x, y, tileSize, 135);
+//             // Look for pure red pixels (255, 0, 0)
+//             if (current.r == 255 && current.g == 0 && current.b == 0) {
+//                 Vector3 spawnPos = GetDungeonWorldPos(x, y, tileSize, 135);
                 
-                Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
+//                 Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
 
-                enemies.push_back(raptor);
-                enemyPtrs.push_back(&enemies.back());
-            }
-        }
-    }
+//                 enemies.push_back(raptor);
+//                 enemyPtrs.push_back(&enemies.back());
+//             }
+//         }
+//     }
 
 
-}
+//}
 
 void GenerateSpiderFromImage(float baseY) {
     for (int y = 0; y < dungeonHeight; y++) {
@@ -823,6 +808,7 @@ void GeneratePiratesFromImage(float baseY) {
                 pirate.currentHealth = 400;//bullets are 25 damage x 6 for the blunderbus. 150 if all the pellets hit 
                 enemies.push_back(pirate);
                 enemyPtrs.push_back(&enemies.back()); 
+
             }
         }
     }
@@ -1095,8 +1081,10 @@ void ResetAllBakedTints() {
 
 
 void BakeStaticLighting() {
-
-    float ambientBrightness = 0.4f;
+    Vector3 warmTint = { 1.0f, 0.8f, 0.2f };
+    float brightnessScale = 0.75f; // Try values between 0.1 and 0.5
+    
+    float ambientBrightness = 0.6f;
     const float ambientFloorBrightness = 0.30;
     float epsilon = 0.25f;
     if (!isDungeon) ambientBrightness = 1.0f;
@@ -1122,17 +1110,20 @@ void BakeStaticLighting() {
             float dist = Vector3Distance(light.position, wall.position);
             if (dist > light.range) continue;
             if (!HasWorldLineOfSight(light.position, wall.position, epsilon)) continue;
+            float t = Clamp(dist / light.range, 0.0f, 1.0f);
+            float contribution = (1.0f - (t * t * (3 - 2 * t))) * light.intensity;
             
-            float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
             wall.bakedBrightness += contribution * light.intensity;
         }
 
         for (FloorTile& floor : floorTiles){
+            
             float dist = Vector3Distance(light.position, floor.position);
             if (dist > light.range) continue;
             if (!HasWorldLineOfSight(light.position, floor.position, epsilon)) continue;
-
-            float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
+            float t = Clamp(dist / light.range, 0.0f, 1.0f);
+            float contribution = (1.0f - (t * t * (3 - 2 * t))) * light.intensity;
+            //float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
             floor.bakedBrightness += contribution * light.intensity;
         }
 
@@ -1146,23 +1137,48 @@ void BakeStaticLighting() {
         }
     }
 
-    Vector3 warmTint = { 1.0f, 0.85f, 0.7f };
+   
     for (WallInstance& wall : wallInstances) {
-        wall.bakedBrightness = Clamp(wall.bakedBrightness, 0.0f, 1.0f);
-        Vector3 tinted = Vector3Scale(warmTint, wall.bakedBrightness);
-        wall.bakedTint = ColorFromNormalized({ tinted.x, tinted.y, tinted.z, 1.0f });
+        float scaledBrightness = Clamp(wall.bakedBrightness * brightnessScale, 0.0f, 1.0f);
+        Vector3 tinted = Vector3Scale(warmTint, scaledBrightness);
+
+        float gamma = 1.25f;
+        Vector3 gammaCorrected = {
+            powf(tinted.x, 1.0f / gamma),
+            powf(tinted.y, 1.0f / gamma),
+            powf(tinted.z, 1.0f / gamma)
+        };
+
+        wall.bakedTint = ColorFromNormalized({ gammaCorrected.x, gammaCorrected.y, gammaCorrected.z, 1.0f });
     }
 
     for (DoorwayInstance& door : doorways) {
-        door.bakedBrightness = Clamp(door.bakedBrightness, 0.0f, 1.0f);
-        Vector3 tinted = Vector3Scale(warmTint, door.bakedBrightness);
-        door.bakedTint = ColorFromNormalized({ tinted.x, tinted.y, tinted.z, 1.0f });
+        float scaledBrightness = Clamp(door.bakedBrightness * brightnessScale, 0.0f, 1.0f);
+        Vector3 tinted = Vector3Scale(warmTint, scaledBrightness);
+
+        float gamma = 1.25f;
+        Vector3 gammaCorrected = {
+            powf(tinted.x, 1.0f / gamma),
+            powf(tinted.y, 1.0f / gamma),
+            powf(tinted.z, 1.0f / gamma)
+        };
+
+        door.bakedTint = ColorFromNormalized({ gammaCorrected.x, gammaCorrected.y, gammaCorrected.z, 1.0f });
     }
 
+    
     for (FloorTile& floor : floorTiles) {
-        floor.bakedBrightness = Clamp(floor.bakedBrightness, 0.0f, 1.0f);
-        Vector3 tinted = Vector3Scale(warmTint, floor.bakedBrightness);
-        floor.bakedTint = ColorFromNormalized({ tinted.x, tinted.y, tinted.z, 1.0f });
+        float scaledBrightness = Clamp(floor.bakedBrightness * brightnessScale, 0.0f, 1.0f);
+        Vector3 tinted = Vector3Scale(warmTint, scaledBrightness);
+
+        float gamma = 1.25f;
+        Vector3 gammaCorrected = {
+            powf(tinted.x, 1.0f / gamma),
+            powf(tinted.y, 1.0f / gamma),
+            powf(tinted.z, 1.0f / gamma)
+        };
+
+        floor.bakedTint = ColorFromNormalized({ gammaCorrected.x, gammaCorrected.y, gammaCorrected.z, 1.0f });
     }
 
     //copy floor baked light to ceiling. No need to recalculate cause it's the same. 
@@ -1200,8 +1216,7 @@ void ApplyBakedLighting() {
 
 
 void UpdateDoorwayTints(Vector3 playerPos) {
-    const float playerLightRange = 800.0f;
-    const float fireballRange = 400.0f;
+
     Vector3 warmTint = { 1.0f, 0.85f, 0.7f };
 
     for (DoorwayInstance& door : doorways) {
@@ -1211,7 +1226,7 @@ void UpdateDoorwayTints(Vector3 playerPos) {
         // --- 2. Player light contribution ---
         float distToPlayer = Vector3Distance(playerPos, door.position);
         float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        brightness += playerContribution * 1.0f; // Assuming intensity = 1
+        brightness += playerContribution * playerLightIntensity;
 
         // --- 3. Dynamic fireball lights ---
         for (const LightSource& light : bulletLights) {
@@ -1219,7 +1234,7 @@ void UpdateDoorwayTints(Vector3 playerPos) {
             if (distToLight > light.range) continue;
 
             float lightContribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
-            brightness += lightContribution * light.intensity;
+            brightness += lightContribution * light.fireballIntensity;
         }
 
         // --- 4. Clamp total brightness ---
@@ -1233,8 +1248,7 @@ void UpdateDoorwayTints(Vector3 playerPos) {
 
 
 void UpdateWallTints(Vector3 playerPos) {
-    const float playerLightRange = 800.0f;
-    const float fireballRange = 400.0f;
+
 
     // Consistent wall light tint (your warm color)
     Vector3 warmTint = {1.0f, 0.85f, 0.7f};
@@ -1246,7 +1260,7 @@ void UpdateWallTints(Vector3 playerPos) {
         // 2️⃣ Add player light
         float distToPlayer = Vector3Distance(playerPos, wall.position);
         float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        brightness += playerContribution * 1.0f; // Assuming intensity = 1
+        brightness += playerContribution * playerLightIntensity;
 
         // 3️⃣ Add dynamic fireball lights
         for (const LightSource& light : bulletLights) {
@@ -1254,7 +1268,7 @@ void UpdateWallTints(Vector3 playerPos) {
             if (distToLight > light.range) continue;
 
             float contribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
-            brightness += contribution * light.intensity;
+            brightness += contribution * light.fireballIntensity;
         }
 
         // 4️⃣ Clamp total brightness
@@ -1271,8 +1285,6 @@ void UpdateWallTints(Vector3 playerPos) {
 
 
 void UpdateFloorTints(Vector3 playerPos) {
-    const float fireballRange = 400.0f;
-    const float playerLightRange = 800.0f;
 
     // This is your *consistent* light color tint
     Vector3 warmTint = { 1.0f, 0.85f, 0.7f };
@@ -1285,7 +1297,7 @@ void UpdateFloorTints(Vector3 playerPos) {
         // --- 2. Player light contribution ---
         float distToPlayer = Vector3Distance(playerPos, tile.position);
         float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        brightness += playerContribution * 1.0f; // Assuming intensity = 1
+        brightness += playerContribution * playerLightIntensity;
 
         // --- 3. Dynamic fireball lights ---
         for (const LightSource& light : bulletLights) {
@@ -1293,7 +1305,7 @@ void UpdateFloorTints(Vector3 playerPos) {
             if (distToLight > light.range) continue;
 
             float lightContribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
-            brightness += lightContribution * light.intensity;
+            brightness += lightContribution * light.fireballIntensity;
         }
 
         // --- 4. Clamp brightness to [0,1] ---
@@ -1311,8 +1323,6 @@ void UpdateFloorTints(Vector3 playerPos) {
 
 
 void UpdateCeilingTints(Vector3 playerPos) {
-    const float playerLightRange = 800.0f;
-    const float fireballRange = 400.0f;
     Vector3 warmCeilingColor = {0.7f, 0.6f, 0.5f}; // slightly muted warm tone
 
     for (CeilingTile& ceiling : ceilingTiles) {
@@ -1322,7 +1332,7 @@ void UpdateCeilingTints(Vector3 playerPos) {
         // --- 2. Player light contribution ---
         float distToPlayer = Vector3Distance(playerPos, ceiling.position);
         float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        brightness += playerContribution * 1.0f; // Assuming intensity = 1
+        brightness += playerContribution * playerLightIntensity;
 
         // --- 3. Dynamic fireball lights ---
         for (const LightSource& light : bulletLights) {
@@ -1330,7 +1340,7 @@ void UpdateCeilingTints(Vector3 playerPos) {
             if (distToLight > light.range) continue;
 
             float lightContribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
-            brightness += lightContribution * light.intensity;
+            brightness += lightContribution * light.fireballIntensity;
         }
 
         // --- 4. Clamp total brightness ---

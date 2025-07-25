@@ -13,9 +13,7 @@ struct Player {
     Vector2 rotation;
     Vector3 forward;
     Vector3 startPosition;
-    Weapon weapon;
-    MeleeWeapon meleeWeapon;
-    MagicStaff magicStaff;
+
     BoundingBox meleeHitbox;
     BoundingBox blockHitbox;
 
@@ -48,39 +46,34 @@ struct Player {
     bool onBoard = false;
     bool disableMovement = false;
     bool blocking = false;
-    bool hasMagicStaff = false;
+
     float stamina = 100.0f;
     float maxStamina = 100.0f;
     bool canRun = true;
     bool canMove = true;
 
-    std::vector<WeaponType> collectedWeapons = {
-            WeaponType::Blunderbuss,
-            WeaponType::Sword,
-            //staff added later
-        };
+    std::vector<WeaponType> collectedWeapons;
 
-    int currentWeaponIndex = 0; // 0 is starting weapon blunderbuss
+    int currentWeaponIndex = -1; // 
 
 
-    WeaponType activeWeapon = WeaponType::Blunderbuss;
+    WeaponType activeWeapon = WeaponType::None;
 
     float switchTimer = 0.0f;
     float switchDuration = 0.3f; // time to lower or raise
     BoundingBox GetBoundingBox() const;
     void PlayFootstepSound();
     void TakeDamage(int amount);
-
-
-
-    //void PlaySwipe();
+    void EquipNextWeapon();
 };
+
+
 
 // Initializes the player at a given position
 void InitPlayer(Player& player, Vector3 startPosition);
 
 // Updates player movement and physics
-void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& camera);
+void UpdatePlayer(Player& player, float deltaTime, Camera& camera);
 
 void DrawPlayer(const Player& player, Camera& camera);
 

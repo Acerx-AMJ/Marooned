@@ -237,13 +237,15 @@ void HandleMeleeHitboxCollision(Camera& camera) {
                     
                 } 
             }
-            SoundManager::GetInstance().Play("swordHit");
+            if (player.activeWeapon == WeaponType::Sword) SoundManager::GetInstance().Play("swordHit");
+            if (player.activeWeapon == WeaponType::MagicStaff) SoundManager::GetInstance().Play("staffHit");
         }
     }
 
     for (SpiderWebInstance& web : spiderWebs){
         if (!web.destroyed && CheckCollisionBoxes(web.bounds, player.meleeHitbox)){
             web.destroyed = true;
+            //play a sound
         }
     }
 

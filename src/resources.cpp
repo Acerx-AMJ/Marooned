@@ -176,7 +176,10 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("flame1", "assets/sounds/flame1.ogg");
     SoundManager::GetInstance().LoadSound("flame2", "assets/sounds/flame2.ogg");
     SoundManager::GetInstance().LoadSound("explosion", "assets/sounds/explosion.ogg");
+    SoundManager::GetInstance().LoadSound("staffHit", "assets/sounds/staffHit.ogg");
 
+    SoundManager::GetInstance().LoadMusic("dungeonAir", "assets/sounds/dungeonAir.ogg");
+    SoundManager::GetInstance().LoadMusic("jungleAmbience", "assets/sounds/jungleSounds.ogg");
     
 
 
@@ -185,19 +188,17 @@ void LoadAllResources() {
 void UpdateShaders(Camera& camera){
     float t = GetTime();
     Vector3 camPos = camera.position;
+    int dungeonFlag = isDungeon ? 1 : 0;
+    int isDungeonLoc = GetShaderLocation(skyShader, "isDungeon");
+    
+    int camLoc = GetShaderLocation(waterShader, "cameraPos");
+    int camPosLoc = GetShaderLocation(terrainShader, "cameraPos");
+    SetShaderValue(waterShader, camLoc, &camPos, SHADER_UNIFORM_VEC3);
     SetShaderValue(waterShader, GetShaderLocation(waterShader, "time"), &t, SHADER_UNIFORM_FLOAT);
 
-    int camLoc = GetShaderLocation(waterShader, "cameraPos");
-    SetShaderValue(waterShader, camLoc, &camPos, SHADER_UNIFORM_VEC3);
-
- 
-    int camPosLoc = GetShaderLocation(terrainShader, "cameraPos");
     SetShaderValue(terrainShader, camPosLoc, &camPos, SHADER_UNIFORM_VEC3);
-    //float time = GetTime();
-    SetShaderValue(skyShader, GetShaderLocation(skyShader, "time"), &t, SHADER_UNIFORM_FLOAT);
 
-    int isDungeonLoc = GetShaderLocation(skyShader, "isDungeon");
-    int dungeonFlag = isDungeon ? 1 : 0;
+    SetShaderValue(skyShader, GetShaderLocation(skyShader, "time"), &t, SHADER_UNIFORM_FLOAT);
     SetShaderValue(skyShader, isDungeonLoc, &dungeonFlag, SHADER_UNIFORM_INT);
 
     //red vignette intensity over time
@@ -205,13 +206,12 @@ void UpdateShaders(Camera& camera){
 
     //dungeonDarkness
     float dungeonDarkness = 0.0f;//darkened 5 percent. it darkens the gun model as well, so go easy. negative number 
-    float dungeonContrast = 1.25f; //makes darks darker. 
+    float dungeonContrast = 1.15f; //makes darks darker. 
 
-    float aaStrengthValue = 0.5f; //maybe this does something? 
+    float aaStrengthValue = 0.5f; //fake antialiasing strength
 
     int isDungeonVal = isDungeon ? 1 : 0;
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
-
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "isDungeon"), &isDungeonVal, SHADER_UNIFORM_INT);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonDarkness"), &dungeonDarkness, SHADER_UNIFORM_FLOAT);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonContrast"), &dungeonContrast, SHADER_UNIFORM_FLOAT);

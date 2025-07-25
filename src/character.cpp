@@ -321,15 +321,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 SetAnimation(1, 4, 0.2f);
                 stateTimer = 0.0f;
                 SetPath(start);
-                // Vector2 goal = WorldToImageCoords(player.position);
-                // std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
 
-                // currentWorldPath.clear(); //construct the path the frame before chasing
-                // for (const Vector2& tile : tilePath) {
-                //     Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
-                //     worldPos.y = pirateHeight;
-                //     currentWorldPath.push_back(worldPos);
-                // }
             }
             // Wander if idle too long
             else if (stateTimer > 10.0f) {
@@ -522,8 +514,6 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                         SetAnimation(3, 5, 0.12f); // idle anim
 
                     }
-
-                    
 
                 } else {
                     

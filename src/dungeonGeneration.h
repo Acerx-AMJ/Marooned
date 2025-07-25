@@ -96,8 +96,9 @@ struct PillarInstance {
 
 struct LightSource {
     Vector3 position;
-    float intensity = 1.0;  // maybe 1.0 = full bright, 0.5 = dim, etc.
-    float range = 1000;
+    float intensity = 1.0f;  // maybe 1.0 = full bright, 0.5 = dim, etc.
+    float fireballIntensity = 0.1f;
+    float range = 1000.0f;
     float lifeTime = 1.0f;
     float age;
 
@@ -157,6 +158,9 @@ extern Image dungeonImg;
 extern Color* dungeonPixels;
 extern int dungeonWidth;
 extern int dungeonHeight;
+extern float playerLightRange;
+extern float playerLightIntensity;
+extern float fireballRange;
 
 void InitChests();
 void UpdateDungeonChests();
@@ -182,6 +186,7 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera);
 void DrawDungeonDoorways();
 void DrawFlatDoor(Texture2D* tex, Vector3 pos, float width, float height, float rotY, Color tint);
 void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height, float rotationY, Color tint);
+void GenerateWeapons(float Height);
 //void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY);
 void DrawDungeonCeiling(Model ceilingTileModel);
 void ResetAllBakedTints();
@@ -201,7 +206,7 @@ int GetDungeonImageY(float worldZ, float tileSize, int dungeonHeight);
 bool IsDungeonFloorTile(int x, int y); 
 Vector3 GetDungeonWorldPos(int x, int y, float tileSize, float baseY);
 Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, float baseY);
-void GenerateRaptorsFromImage(float baseY);
+//void GenerateRaptorsFromImage(float baseY);
 void GenerateSkeletonsFromImage(float baseY);
 void GeneratePiratesFromImage(float baseY);
 void GenerateSpiderFromImage(float baseY);

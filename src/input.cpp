@@ -87,14 +87,18 @@ void debugControls(Camera& camera){
     if (IsKeyPressed(KEY_F)) {
         Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
         Vector3 targetPoint = Vector3Add(camera.position, Vector3Scale(camForward, 1000.0f));
-        FireFireball(player.position, targetPoint, 1000, 10, false, true);
+        FireFireball(player.position, targetPoint, 5000, 10, false, true);
     }
-
-    if (IsKeyPressed(KEY_L)) {
-        if (!player.hasMagicStaff) {
-            player.hasMagicStaff = true;
+    //give all weapons
+    if (IsKeyPressed(KEY_SEMICOLON)) {
+        if (player.collectedWeapons.size() == 0) {
+            player.collectedWeapons.push_back(WeaponType::Blunderbuss);
+            player.collectedWeapons.push_back(WeaponType::Sword);
             player.collectedWeapons.push_back(WeaponType::MagicStaff);
-}
+            
+            
+            player.activeWeapon = WeaponType::Blunderbuss;
+        }
 
     }
 

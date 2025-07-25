@@ -22,6 +22,7 @@
 #include "custom_rendertexture.h"
 #include "transparentDraw.h"
 #include <direct.h>
+#include "collectableWeapon.h"
 
 
 void BeginCustom3D(Camera3D camera, float farClip) {
@@ -41,19 +42,16 @@ void BeginCustom3D(Camera3D camera, float farClip) {
 
 void ClearLevel() {
     billboardRequests.clear();
-    std::cout << "billboards clear\n";
-    removeAllCharacters();
-    std::cout << "chracters clear\n";
+    removeAllCharacters();\
     activeBullets.clear();
     ClearDungeon();
-    std::cout << "dungeon clear\n";
     bulletLights.clear();
     dungeonEntrances.clear();
     RemoveAllVegetation();
 
     if (terrainMesh.vertexCount > 0) UnloadMesh(terrainMesh); //unload mesh when switching levels. 
     if (heightmap.data != nullptr) UnloadImage(heightmap);
-    std::cout << "Clearing level\n";
+
     isDungeon = false;
 }
 
@@ -98,6 +96,7 @@ void InitLevel(const LevelData& level, Camera camera) {
     camera.position = player.position;
     levelIndex = level.levelIndex; //update current level index to new level. 
 
+    //why not level.isDungeon? cause it crashes, isDungeon is false to begin and then set by level. 
     if (!isDungeon){ // Generate the terrain mesh and model from the heightmap
         vignetteStrengthValue = 0.2f; //less of vignette outdoors. 
         // Load and format the heightmap image
@@ -119,7 +118,7 @@ void InitLevel(const LevelData& level, Camera camera) {
     if (level.isDungeon){
         isDungeon = true;
         vignetteStrengthValue = 0.5f; //darker vignette in dungeons
-        swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean; //start with a clean sword
+        //swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean; //start with a clean sword
         LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);
         GenerateFloorTiles(floorHeight);//80
@@ -130,12 +129,19 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateChests(floorHeight);
         GeneratePotions(floorHeight);
         GenerateKeys(floorHeight);
+        GenerateWeapons(200);
         GenerateLightSources(floorHeight);
         GenerateDoorways(floorHeight, levelIndex); //calls generate doors from archways
+        enemies.clear();
+        enemyPtrs.clear();
         GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
         GeneratePiratesFromImage(dungeonEnemyHeight);
         GenerateSpiderFromImage(dungeonEnemyHeight);
-
+        int total = 0;
+        for (Character* p : enemyPtrs){
+            if (p->type == CharacterType::Pirate) total += 1; 
+        }
+        std::cout << "number of pirates = " << total << "\n";
 
         if (levelIndex == 4){
             levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
@@ -163,6 +169,15 @@ void InitLevel(const LevelData& level, Camera camera) {
     ResetAllBakedTints();
     BakeStaticLighting();
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
+    player.collectedWeapons = {WeaponType::Blunderbuss, WeaponType::Sword};
+    player.activeWeapon = WeaponType::Blunderbuss;
+    // resolvedSpawn.z += 300; //move the staff forward
+    // resolvedSpawn.y += 100;
+    // worldWeapons.push_back(CollectableWeapon(WeaponType::MagicStaff, resolvedSpawn, &staffModel));
+    // resolvedSpawn.x -= 200;
+    // worldWeapons.push_back(CollectableWeapon(WeaponType::Blunderbuss, resolvedSpawn, &blunderbuss));
+    // resolvedSpawn.x -= 200;
+    // worldWeapons.push_back(CollectableWeapon(WeaponType::Sword, resolvedSpawn, &swordModel));
 
 }
 
@@ -432,7 +447,32 @@ void HandleDungeon(float deltaTime) {
     UpdateDoorTints(player.position);
 }
 
+void DrawBloodParticles(Camera& camera){
+    for (Character* enemy : enemyPtrs) { //draw enemy blood, blood is 3d so draw before billboards. 
+            enemy->bloodEmitter.Draw(camera);
+    }
+}
 
+void DrawCollectableWeapons(Player& player, float deltaTime){
+    for (CollectableWeapon& cw : worldWeapons){
+        cw.Update(deltaTime);
+        cw.Draw();
+
+        if (cw.CheckPickup(player) && player.collectedWeapons.size() < 3) {
+            player.collectedWeapons.push_back(cw.type);
+            if (player.activeWeapon == WeaponType::None) {
+    
+                player.activeWeapon = cw.type;
+                player.currentWeaponIndex = 0;
+                
+            }else{
+            
+                player.activeWeapon = cw.type;
+            }
+        }
+
+    }
+}
 
 
 
@@ -447,34 +487,35 @@ void DrawTimer(){
 }
 
 
+
+
 int main() { 
     InitWindow(1600, 900, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
     LoadAllResources();
-    
+    DisableCursor();
     SetExitKey(KEY_NULL); //Escape brings up menu, not quit
-    Music dungeonAir = LoadMusicStream("assets/sounds/dungeonAir.ogg");
-    Music jungleAmbience = LoadMusicStream("assets/sounds/jungleSounds.ogg"); 
-    PlayMusicStream(jungleAmbience); // Starts playback
-    PlayMusicStream(dungeonAir);
-    SetMusicVolume(jungleAmbience, 0.5f);
-    SetMusicVolume(dungeonAir, 1.0f);
-    controlPlayer = true; //start as player
+    SoundManager::GetInstance().PlayMusic("dungeonAir");
+    SoundManager::GetInstance().PlayMusic("jungleAmbience");
+    // Music dungeonAir = LoadMusicStream("assets/sounds/dungeonAir.ogg");
+    // Music jungleAmbience = LoadMusicStream("assets/sounds/jungleSounds.ogg"); 
+    // PlayMusicStream(jungleAmbience); // Starts playback
+    //PlayMusicStream(dungeonAir); //start both, only update dungeonAir when in dungeon, else jungleAmbience
+    SetMusicVolume(SoundManager::GetInstance().GetMusic("jungleAmbience"), 0.5f);
 
-    // Camera //we pass camera around like crazy maybe make a global camera. 
+
+    controlPlayer = true; //start as player //hit tab for free camera
+
+    // Camera //we pass camera around like crazy
     Camera3D camera = { 0 };
     camera.position = startPosition;
     camera.target = (Vector3){ 0.0f, 0.0f, 1.0f };
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
-    DisableCursor();
 
 
-
-    //SetupFogShader(camera);
-    //InitChests();
     Vector3 terrainPosition = { //center the terrain around 0, 0, 0
             -terrainScale.x / 2.0f,
             0.0f,
@@ -518,6 +559,11 @@ int main() {
             currentGameState = GameState::Menu;
         }
         float deltaTime = GetFrameTime();
+        if (isDungeon) {
+            UpdateMusicStream(SoundManager::GetInstance().GetMusic("dungeonAir"));
+        } else {
+            UpdateMusicStream(SoundManager::GetInstance().GetMusic("jungleAmbience"));
+        }
         UpdateInputMode(); //handle both gamepad and keyboard/mouse
         debugControls(camera); 
         UpdateShaders(camera);
@@ -529,7 +575,7 @@ int main() {
         UpdateDecals(deltaTime);
         UpdateMuzzleFlashes(deltaTime);
         UpdateBoat(player_boat, deltaTime);
-      
+        UpdateCollectables(camera, deltaTime); 
         UpdateDungeonChests();
 
         lightBullets(deltaTime);
@@ -550,10 +596,9 @@ int main() {
         GatherTransparentDrawRequests(camera, deltaTime);
         DrawTransparentDrawRequests(camera);
 
-        if (!isDungeon) UpdateMusicStream(jungleAmbience);
+       
         if (isDungeon){
             HandleDungeon(deltaTime);
-            UpdateMusicStream(dungeonAir);
             
         }
 
@@ -588,18 +633,17 @@ int main() {
         DrawDungeonBarrels();
         DrawDungeonChests();
         DrawDungeonPillars(deltaTime, camera);
-        DrawDungeonDoorways(); 
+        DrawDungeonDoorways();
+
         DrawPlayer(player, camera);
         DrawBullets(camera); 
-        for (Character* enemy : enemyPtrs) { //draw enemy blood, blood is 3d so draw before billboards. 
-             enemy->bloodEmitter.Draw(camera);
-        }
+        DrawBloodParticles(camera);
+        DrawCollectableWeapons(player, deltaTime);
 
         //draw things with transparecy last.
         rlDisableDepthMask();
-        //DrawBillboards(camera);
         DrawTransparentDrawRequests(camera);
-        UpdateCollectables(camera, deltaTime); 
+
 
         rlEnableDepthMask();
         

@@ -9,15 +9,14 @@
 #include "sound_manager.h"
 #include "inventory.h"
 #include "input.h"
+#include "weapon.h"
 
 
-WeaponType activeWeapon = WeaponType::Blunderbuss;
+
 Weapon weapon;
 MeleeWeapon meleeWeapon;
 MagicStaff magicStaff;
 
-
-//MagicStaff magicStaff;
 
 //
 void InitPlayer(Player& player, Vector3 startPosition) {
@@ -39,13 +38,13 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     InitMagicStaff(magicStaff);
 
 
-
+    
     meleeWeapon.model = swordModel;
     meleeWeapon.scale = {2, 2, 2};
 
     player.inventory.SetupItemTextures();
 
-    swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordBloody;
+    swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean;
 
 
     if (first){
@@ -57,6 +56,17 @@ void InitPlayer(Player& player, Vector3 startPosition) {
 }
 
 
+void Player::EquipNextWeapon() {
+    if (collectedWeapons.empty()) {
+       
+        activeWeapon = WeaponType::None;
+        currentWeaponIndex = -1;
+        return;
+    }
+    
+    currentWeaponIndex = (currentWeaponIndex + 1) % collectedWeapons.size();
+    activeWeapon = collectedWeapons[currentWeaponIndex];
+}
 
 
 
@@ -97,13 +107,14 @@ void HandleKeyboardInput(float deltaTime) {
 
     if (IsKeyPressed(KEY_Q)) {
         // Wipe the blood if switching from sword
-        if (activeWeapon == WeaponType::Sword) {
-            swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean;
-        }
+        // if (activeWeapon == WeaponType::Sword) {
+        //     swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean;
+        // }
 
-        // Cycle to next weapon in the collected list
-        player.currentWeaponIndex = (player.currentWeaponIndex + 1) % player.collectedWeapons.size();
-        activeWeapon = player.collectedWeapons[player.currentWeaponIndex];
+        // // Cycle to next weapon in the collected list
+        // player.currentWeaponIndex = (player.currentWeaponIndex + 1) % player.collectedWeapons.size();
+        // activeWeapon = player.collectedWeapons[player.currentWeaponIndex];
+        player.EquipNextWeapon();
     }
 
 
@@ -235,7 +246,7 @@ void InitMagicStaff(MagicStaff& magicStaff) {
 
 
 
-void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& camera) {
+void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     //player should have been a class. but maybe it's too late...
     weapon.Update(deltaTime);
 
@@ -268,10 +279,10 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
 
     if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
 
-        if (activeWeapon == WeaponType::Sword){
+        if (player.activeWeapon == WeaponType::Sword){
             player.blocking = true; //only block with the sword
             meleeWeapon.StartBlock();
-        }else if (activeWeapon == WeaponType::MagicStaff){
+        }else if (player.activeWeapon == WeaponType::MagicStaff){
             magicStaff.Fire(camera);
         }
     } else {
@@ -283,17 +294,17 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         if (!player.isSwimming){
-           if (activeWeapon == WeaponType::Blunderbuss){
+           if (player.activeWeapon == WeaponType::Blunderbuss){
                 weapon.Fire(camera); 
-           } else if (activeWeapon == WeaponType::Sword){
+           } else if (player.activeWeapon == WeaponType::Sword){
                 meleeWeapon.StartSwing();
-           } else if (activeWeapon == WeaponType::MagicStaff){
+           } else if (player.activeWeapon == WeaponType::MagicStaff){
                 magicStaff.StartSwing();
            }
            
            
         }else{
-            if (activeWeapon == WeaponType::Blunderbuss) SoundManager::GetInstance().Play("reload"); //play "click" if in water with gun
+            if (player.activeWeapon == WeaponType::Blunderbuss) SoundManager::GetInstance().Play("reload"); //play "click" if in water with gun
         }
         
     }
@@ -385,7 +396,7 @@ void UpdatePlayer(Player& player, float deltaTime, Mesh& terrainMesh, Camera& ca
     //start the dying process. 
     if (player.dying) {
         player.deathTimer += deltaTime;
-        player.velocity = {0}; //stop moving when dying. should hide the gun as well. 
+        player.velocity = {0.0f, 0.0f, 0.0f}; //stop moving when dying. should hide the gun as well. 
         player.canMove = false;
         vignetteIntensity = 1.0f; //should stay red becuase its set to 1 everyframe. 
         vignetteFade = 0.0f;
@@ -451,25 +462,29 @@ void Player::TakeDamage(int amount){
 void DrawPlayer(const Player& player, Camera& camera) {
     DrawCapsule(player.position, Vector3 {player.position.x, player.height, player.position.z}, 10, 4, 4, RED);
     DrawBoundingBox(player.GetBoundingBox(), RED);
-    if (controlPlayer){
-        if (activeWeapon == WeaponType::Blunderbuss){
-            weapon.Draw(camera); 
-        
-        }else if (activeWeapon == WeaponType::Sword){
-            meleeWeapon.Draw(camera);
-            if (meleeWeapon.hitboxActive){
-                //DrawBoundingBox(player.meleeHitbox, RED);
-            }
 
-            if (player.blocking){
-                //DrawBoundingBox(player.blockHitbox, RED);
-            }
-        }else if (activeWeapon == WeaponType::MagicStaff){
-            magicStaff.Draw(camera);
+    if (controlPlayer) {
+        switch (player.activeWeapon) {
+            case WeaponType::Blunderbuss:
+                weapon.Draw(camera);
+                break;
+            case WeaponType::Sword:
+                meleeWeapon.Draw(camera);
+                if (meleeWeapon.hitboxActive) {
+                    // DrawBoundingBox(player.meleeHitbox, RED);
+                }
+                if (player.blocking) {
+                    // DrawBoundingBox(player.blockHitbox, RED);
+                }
+                break;
+            case WeaponType::MagicStaff:
+                magicStaff.Draw(camera);
+                break;
+            case WeaponType::None:
+                // draw nothing
+                break;
         }
-        
     }
-
-
 }
+
 

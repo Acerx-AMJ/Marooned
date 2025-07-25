@@ -1,0 +1,27 @@
+#include "collectableWeapon.h"
+#include "player.h"
+
+CollectableWeapon::CollectableWeapon(WeaponType type, Vector3 position, Model* model)
+    : type(type), position(position), model(model), rotationY(0.0f), isCollected(false) {}
+
+void CollectableWeapon::Update(float deltaTime) {
+    rotationY += 45.0f * deltaTime;
+    if (rotationY >= 360.0f) rotationY -= 360.0f;
+}
+
+void CollectableWeapon::Draw() {
+    if (isCollected) return;
+
+    Vector3 drawPos = position;
+    drawPos.y += sin(GetTime() * 2.0f) * 2.0f; // Hover effect
+    DrawModelEx(*model, drawPos, {0, 1, 0}, rotationY, {1, 1, 1}, WHITE);
+}
+
+bool CollectableWeapon::CheckPickup(Player& player, float pickupRadius) {
+    if (isCollected) return false;
+    if (Vector3Distance(player.position, position) < pickupRadius) {
+        isCollected = true;
+        return true;
+    }
+    return false;
+}

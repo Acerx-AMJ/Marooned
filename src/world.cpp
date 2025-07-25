@@ -52,7 +52,7 @@ std::vector<Bullet> activeBullets;
 std::vector<Decal> decals;
 std::vector<MuzzleFlash> activeMuzzleFlashes;
 std::vector<Collectable> collectables;
-
+std::vector<CollectableWeapon> worldWeapons;
 std::vector<Character> enemies;  
 std::vector<Character*> enemyPtrs;
 std::vector<DungeonEntrance> dungeonEntrances;
@@ -247,8 +247,9 @@ void UpdateCustomCamera(Camera3D* camera, float deltaTime) {
 }
 
 void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, float deltaTime) {
+    //please refactor this, this is from when we only had a camera. 
     if (controlPlayer) {
-        UpdatePlayer(player, GetFrameTime(), terrainMesh, camera);
+        UpdatePlayer(player, GetFrameTime(), camera);
         DisableCursor();
 
         float yawRad = DEG2RAD * player.rotation.y;

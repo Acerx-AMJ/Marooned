@@ -9,6 +9,7 @@
 #include "decal.h"
 #include "level.h"
 #include "collectable.h"
+#include "collectableWeapon.h"
 
 enum class GameState {
     Menu,
@@ -66,6 +67,8 @@ extern std::vector<Bullet> activeBullets;
 extern std::vector<Decal> decals;
 extern std::vector<Collectable> collectables;
 extern std::vector<MuzzleFlash> activeMuzzleFlashes;
+
+extern std::vector<CollectableWeapon> worldWeapons;
 
 extern std::vector<Character> enemies;  
 extern std::vector<Character*> enemyPtrs;
