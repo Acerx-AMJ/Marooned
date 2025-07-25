@@ -56,12 +56,7 @@ extern bool isLoadingLevel;
 extern float muzzleFlashTimer;
 
 extern GameState currentGameState;
-// extern std::vector<Character> raptors;
-// extern std::vector<Character*> raptorPtrs;
-// extern std::vector<Character> skeletons;
-// extern std::vector<Character*> skeletonPtrs;
-// extern std::vector<Character> pirates;
-// extern std::vector<Character*> piratePtrs;
+
 extern std::vector<DungeonEntrance> dungeonEntrances;
 extern std::vector<Bullet> activeBullets;
 extern std::vector<Decal> decals;
@@ -74,11 +69,9 @@ extern std::vector<Character> enemies;
 extern std::vector<Character*> enemyPtrs;
 
 float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
-void removeAllRaptors();
 void removeAllCharacters();
 void generateRaptors(int amount, Vector3 centerPos, float radius);
-bool CheckTreeCollision(const TreeInstance& tree, const Vector3& playerPos);
-void ResolveTreeCollision(const TreeInstance& tree, Vector3& playerPos);
+
 
 void UpdateCustomCamera(Camera3D* camera, float deltaTime);
 void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, float deltaTime);

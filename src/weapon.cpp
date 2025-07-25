@@ -115,6 +115,14 @@ void MeleeWeapon::Update(float deltaTime) {
 
 
 void Weapon::Update(float deltaTime) {
+
+
+
+    float amplitude = 1.0f;
+    bobVertical = sinf(bobbingTime) * amplitude;
+    bobSide = sinf(bobbingTime * 0.5f) * amplitude * 0.5f;
+
+
     if (recoil > 0.0f) {
         recoil -= recoilRecoverySpeed * deltaTime;
         if (recoil < 0.0f) recoil = 0.0f;
@@ -148,7 +156,21 @@ void Weapon::Update(float deltaTime) {
         reloadDip -= 100.0f * deltaTime; 
         if (reloadDip < 0.0f) reloadDip = 0.0f;
     }
+
+    if (isMoving) {
+        bobbingTime += deltaTime * 12.0f; 
+    } else {
+        // Smoothly return to idle
+        bobbingTime = 0.0f;
+        bobVertical = Lerp(bobVertical, 0.0f, deltaTime * 5.0f);
+        bobSide = Lerp(bobSide, 0.0f, deltaTime * 5.0f);
+        return;
+    }
+
+
 }
+
+
 
 void Weapon::Draw(const Camera& camera) {
     Matrix lookAt = MatrixLookAt(camera.position, camera.target, { 0, 1, 0 });
@@ -165,13 +187,12 @@ void Weapon::Draw(const Camera& camera) {
     Vector3 camUp = { 0, 1, 0 };
 
     float dynamicForward = forwardOffset - recoil;
-    float dynamicVertical = verticalOffset - reloadDip;
+    float dynamicVertical = verticalOffset - reloadDip + bobVertical;
     Vector3 gunPos = camera.position;
     gunPos = Vector3Add(gunPos, Vector3Scale(camForward, dynamicForward));
-    gunPos = Vector3Add(gunPos, Vector3Scale(camRight, sideOffset));
+    gunPos = Vector3Add(gunPos, Vector3Scale(camRight, sideOffset + bobSide));
     gunPos = Vector3Add(gunPos, Vector3Scale(camUp, dynamicVertical));
 
-    //Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
     muzzlePos = Vector3Add(gunPos, Vector3Scale(camForward, 40.0f));
 
 

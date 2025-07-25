@@ -45,7 +45,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     player.inventory.SetupItemTextures();
 
     swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean;
-
+    
 
     if (first){
         first = false; // player first starting position uses first as well, it's set to false here
@@ -249,7 +249,7 @@ void InitMagicStaff(MagicStaff& magicStaff) {
 void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     //player should have been a class. but maybe it's too late...
     weapon.Update(deltaTime);
-
+    weapon.isMoving = player.isMoving;
     meleeWeapon.Update(deltaTime);
     magicStaff.Update(deltaTime);
     UpdateMeleeHitbox(camera);

@@ -169,15 +169,11 @@ void InitLevel(const LevelData& level, Camera camera) {
     ResetAllBakedTints();
     BakeStaticLighting();
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
+
+    //start with blunderbus and sword in that order
     player.collectedWeapons = {WeaponType::Blunderbuss, WeaponType::Sword};
     player.activeWeapon = WeaponType::Blunderbuss;
-    // resolvedSpawn.z += 300; //move the staff forward
-    // resolvedSpawn.y += 100;
-    // worldWeapons.push_back(CollectableWeapon(WeaponType::MagicStaff, resolvedSpawn, &staffModel));
-    // resolvedSpawn.x -= 200;
-    // worldWeapons.push_back(CollectableWeapon(WeaponType::Blunderbuss, resolvedSpawn, &blunderbuss));
-    // resolvedSpawn.x -= 200;
-    // worldWeapons.push_back(CollectableWeapon(WeaponType::Sword, resolvedSpawn, &swordModel));
+    player.currentWeaponIndex = 0;
 
 }
 

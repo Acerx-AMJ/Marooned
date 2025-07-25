@@ -12,7 +12,8 @@ bool CheckCollisionPointBox(Vector3 point, BoundingBox box);
 void HandleDoorInteraction(Camera& camera);
 void DoorCollision();
 void TreeCollision(Camera& camera);
-
+bool CheckTreeCollision(const TreeInstance& tree, const Vector3& playerPos);
+void ResolveTreeCollision(const TreeInstance& tree, Vector3& playerPos);
 void HandleEnemyPlayerCollision(Player* player);
 
 bool CheckBulletHitsTree(const TreeInstance& tree, const Vector3& bulletPos);

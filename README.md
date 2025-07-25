@@ -2,8 +2,8 @@
 
 Marooned is a first-person exploration/survival game with procedural terrain and dungeon elements. Built in C++ with Raylib. Explore a chain of mysterious tropical islands teeming with danger, lost ruins, and ancient secrets.
 
-![Gameplay Screenshot](assets/Screenshot3.png)
-![Gameplay Screenshot](assets/Screenshot4.png)
+![Gameplay Screenshot](assets/screenshots/dinoFrame.png)
+![Gameplay Screenshot](assets/screenshots/dungeonFrame.png)
 
 ---
 

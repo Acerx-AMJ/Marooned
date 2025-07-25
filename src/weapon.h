@@ -88,7 +88,10 @@ struct Weapon {
     float lastFired = -999.0f;
     float fireCooldown; //set in player init
 
-    
+    float bobbingTime = 0.0f;
+    bool isMoving = false; // set this externally based on player movement
+    float bobVertical = 0.0f;
+    float bobSide = 0.0f;
 
     Texture2D muzzleFlashTexture;
     float flashDuration = 0.05f;
