@@ -127,5 +127,17 @@ make staff not available until you pick it up? Where do you pick it up? Level 4?
 
 sword is bloody when starting in dungeon for mysterious reasons. 
 
+Use dinoBite for spider attack sound. current one is weird sounding. 
+
+make another release with the staff sitting on little island. Maybe we could take a picture of the staff and show a billboard of the staff instead of instancing the 3d model. that seems like more work than just draw model. We would need to worry about sorting if it were a billboard. The model should be scaled correctly to look good at a distance. It would have to be a struct though. we can't just have some one off model floating around, it needs  to be a collectable...it can't be a collectable. It needs to be a one off thing. What if you needed to pick up the blunderbuss or sword. We should have in world pickupable weapons. Start with nothing. you already have the vector of weapon types. What would you call this class? CollectableWeapon
+
+
+Make the light range super far but the intensity low. it blends things out wayyyy better. Well way better for fireball anyway. 
+I got it a little bit smoother. 
+
+the gun should bob up and down while you walk. the sword should swing up and down. the staff should do something as well when moving. x
+
+
+
 
 

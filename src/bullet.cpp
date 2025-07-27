@@ -6,6 +6,7 @@
 #include "resources.h"
 #include "decal.h"
 #include "sound_manager.h"
+#include "utilities.h"
 
 
 // New constructor matching velocity-based logic
@@ -130,7 +131,7 @@ void Bullet::Draw(Camera& camera) const {
         DrawModelEx(fireballModel, position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
         
     }else{
-        DrawSphere(position, 1.5f, WHITE); // simple debug visualization
+        DrawSphere(position, 1.5f, WHITE); 
     }
     
 
@@ -235,8 +236,9 @@ void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int p
         float spreadRad = spreadDegrees * DEG2RAD;
 
         // Random horizontal and vertical spread
-        float yaw = ((float)GetRandomValue(-1000, 1000) / 1000.0f) * spreadRad;
-        float pitch = ((float)GetRandomValue(-1000, 1000) / 1000.0f) * spreadRad;
+        float yaw   = RandomFloat(-spreadRad, spreadRad);
+        float pitch = RandomFloat(-spreadRad, spreadRad);
+
 
         // Create rotation matrix from yaw and pitch
         Matrix rotYaw = MatrixRotateY(yaw);

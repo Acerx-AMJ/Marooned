@@ -7,6 +7,7 @@
 #include "dungeonGeneration.h"
 #include "pathfinding.h"
 #include "sound_manager.h"
+#include "utilities.h"
 
 InputMode currentInputMode = InputMode::KeyboardMouse;
 
@@ -53,10 +54,10 @@ void debugControls(Camera& camera){
     }
 
     if (IsKeyPressed(KEY_L)) {
-        std::cout << "Player Position: X=" << player.position.x
-                << " Y=" << player.position.y
-                << " Z=" << player.position.z << "\n";
+        std::cout << "Player Position: ";
+        DebugPrintVector(player.position);
     }
+
 
     if (IsKeyPressed(KEY_I)){
         RemoveAllVegetation();
@@ -91,9 +92,8 @@ void debugControls(Camera& camera){
     }
     //give all weapons
     if (IsKeyPressed(KEY_SEMICOLON)) {
-        if (player.collectedWeapons.size() == 0) {
-            player.collectedWeapons.push_back(WeaponType::Blunderbuss);
-            player.collectedWeapons.push_back(WeaponType::Sword);
+        if (player.collectedWeapons.size() < 3) {
+
             player.collectedWeapons.push_back(WeaponType::MagicStaff);
             
             

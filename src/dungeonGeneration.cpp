@@ -606,18 +606,32 @@ void GenerateBarrels(float baseY) {
                     pos.y + 100.0f,
                     pos.z + halfSize
                 };
-                bool willContainPotion = (GetRandomValue(0, 99) < 25); // 25% chance
-                bool willContainGold = (GetRandomValue(0, 99) < 50);
-                if (willContainPotion) willContainGold = false;
+                //Decide what the barrel will drop. 
+                int roll = GetRandomValue(0, 99);
+                bool willContainPotion = false;
+                bool willContainMana = false;
+                bool willContainGold = false;
+
+                if (roll < 25) {
+                    willContainPotion = true;     // 0 - 24 → 25%
+                } else if (roll < 35) {
+                    willContainMana = true;       // 25 - 34 → 10%
+                } else if (roll < 85) {
+                    willContainGold = true;       // 35 - 84 → 50%
+                }
+                // 85 - 99 → 15% chance barrel contains nothing
+                
                 barrelInstances.push_back({
                     pos,
                     WHITE,
                     box,
                     false,
                     willContainPotion,
-                    willContainGold
+                    willContainGold,
+                    willContainMana,
+                    
                 });
-                //barrelInstances.push_back({ pos, WHITE, box });
+                
             }
         }
     }
@@ -700,27 +714,6 @@ void GenerateKeys(float baseY) {
     }
 }
 
-
-// void GenerateRaptorsFromImage( float baseY) { //unused. no raptors allowed in dungeons, red means skeleton
-
-//     for (int y = 0; y < dungeonHeight; y++) {
-//         for (int x = 0; x < dungeonWidth; x++) {
-//             Color current = dungeonPixels[y * dungeonWidth + x];
-
-//             // Look for pure red pixels (255, 0, 0)
-//             if (current.r == 255 && current.g == 0 && current.b == 0) {
-//                 Vector3 spawnPos = GetDungeonWorldPos(x, y, tileSize, 135);
-                
-//                 Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
-
-//                 enemies.push_back(raptor);
-//                 enemyPtrs.push_back(&enemies.back());
-//             }
-//         }
-//     }
-
-
-//}
 
 void GenerateSpiderFromImage(float baseY) {
     for (int y = 0; y < dungeonHeight; y++) {

@@ -7,9 +7,10 @@
 
 std::vector<std::string> slotOrder = {
     "HealthPotion",
+    "ManaPotion",
     "GoldKey",
-    "RustyKey",
-    "MagicScroll"
+    "PlaceHolder",
+    
 };
 
 std::map<std::string, Texture2D> itemTextures;
@@ -17,6 +18,7 @@ std::map<std::string, Texture2D> itemTextures;
 void Inventory::SetupItemTextures() {
     itemTextures["HealthPotion"] = healthPotTexture;
     itemTextures["GoldKey"] = keyTexture;
+    itemTextures["ManaPotion" ] = manaPotion;
 }
 
 
@@ -43,13 +45,6 @@ int Inventory::GetItemCount(const std::string& itemId) const {
     return (it != items.end()) ? it->second : 0;
 }
 
-void Inventory::DrawInventoryUI(int x, int y) const {
-    int spacing = 24;
-    for (const auto& [id, count] : items) {
-        //DrawText(TextFormat("%s x%d", id.c_str(), count), x, y, 20, WHITE);
-        y += spacing;
-    }
-}
 
 void Inventory::DrawInventoryUIWithIcons(const std::map<std::string, Texture2D>& itemTextures, const std::vector<std::string>& slotOrder, int x, int y, int slotSize) const {
     int spacing = slotSize + 10;

@@ -1,0 +1,97 @@
+// ui.cpp
+#include "ui.h"
+#include <cmath>
+#include "raymath.h"
+#include "level.h"
+
+void DrawHealthBar(const Player& player) {
+    float healthPercent = (float)player.currentHealth / player.maxHealth;
+    healthPercent = Clamp(healthPercent, 0.0f, 1.0f);
+
+    int barWidth = 300;
+    int barHeight = 30;
+    int barX = GetScreenWidth() / 3 - barWidth / 2;
+    int barY = GetScreenHeight() - 80;
+
+    Rectangle healthBarCurrent = { (float)barX, (float)barY, (float)(barWidth * healthPercent), (float)barHeight };
+
+    DrawRectangleLines(barX - 1, barY - 1, barWidth + 2, barHeight + 2, WHITE);
+
+    Color barColor = WHITE;
+    if (healthPercent < 0.25f) {
+        float pulse = sin(GetTime() * 10.0f) * 0.5f + 0.5f;
+        barColor = ColorLerp(WHITE, RED, pulse);
+    }
+
+    DrawRectangleRec(healthBarCurrent, barColor);
+}
+
+void DrawStaminaBar(const Player& player) {
+    float percent = player.stamina / player.maxStamina;
+    percent = Clamp(percent, 0.0f, 1.0f);
+
+    int width = 300;
+    int height = 10;
+    int x = GetScreenWidth() / 3 - width / 2;
+    int y = GetScreenHeight() - 40;
+
+    Rectangle barCurrent = { (float)x, (float)y, (float)(width * percent), (float)height };
+
+    DrawRectangleLines(x - 1, y - 1, width + 2, height + 2, DARKGRAY);
+    Color color = ColorLerp((Color){50, 50, 150, 255}, BLUE, percent);
+    DrawRectangleRec(barCurrent, color);
+}
+
+void DrawManaBar(const Player& player) {
+    float percent = (float)player.currentMana / player.maxMana;
+    percent = Clamp(percent, 0.0f, 1.0f);
+
+    int width = 300;
+    int height = 10;
+    int x = GetScreenWidth() / 3 - width / 2;
+    int y = GetScreenHeight() - 25;
+
+    Rectangle barCurrent = { (float)x, (float)y, (float)(width * percent), (float)height };
+
+    DrawRectangleLines(x - 1, y - 1, width + 2, height + 2, DARKBLUE);
+    Color color = ColorLerp((Color){30, 30, 60, 255}, (Color){100, 100, 255, 255}, percent);
+    DrawRectangleRec(barCurrent, color);
+}
+
+void DrawMenu(Texture2D& backDrop, int selectedOption, int levelIndex) {
+    ClearBackground(BLACK);
+    
+    DrawTexturePro(
+        backDrop,
+        Rectangle{ 0, 0, (float)backDrop.width, (float)backDrop.height },
+        Rectangle{ 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() },
+        Vector2{ 0, 0 },
+        0.0f,
+        WHITE
+    );
+
+    //float middle = GetScreenWidth()/2 - 150;
+    const char* title = "MAROONED";
+    int fontSize = 60;
+    int titleX = GetScreenWidth() / 2 - MeasureText(title, fontSize) / 2;
+    DrawText(title, titleX, 180, fontSize, GREEN);
+
+    DrawText(selectedOption == 0 ? "> Start" : "  Start", titleX, 280, 30, WHITE);
+    
+    DrawText(
+        TextFormat("%s Level: %s", selectedOption == 1 ? ">" : " ", levels[levelIndex].name.c_str()),
+        titleX, 330, 30, YELLOW
+    );
+
+    DrawText(selectedOption == 2 ? "> Quit" : "  Quit", titleX, 380, 30, WHITE);
+}
+
+void DrawTimer(float ElapsedTime){
+    int minutes = (int)(ElapsedTime / 60.0f);
+    int seconds = (int)ElapsedTime % 60;
+
+    char buffer[16];
+    sprintf(buffer, "Time: %02d:%02d", minutes, seconds);
+
+    DrawText(buffer, GetScreenWidth()-150, 30, 20, WHITE); 
+}

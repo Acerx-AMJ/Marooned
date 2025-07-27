@@ -34,6 +34,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     weapon.muzzleFlashTexture = muzzleFlash;
     weapon.fireCooldown = 2.0f;
     weapon.flashDuration = 1.0;
+    
 
     InitMagicStaff(magicStaff);
 
@@ -119,12 +120,22 @@ void HandleKeyboardInput(float deltaTime) {
 
 
     if (IsKeyPressed(KEY_ONE)){
-        //temporary use health potion
+        //use health potion
         if (player.inventory.HasItem("HealthPotion")){
             
             if (player.currentHealth < player.maxHealth){
                 player.currentHealth = player.maxHealth;
                 player.inventory.UseItem("HealthPotion");
+                SoundManager::GetInstance().Play("gulp");
+            }
+        }
+    }
+
+    if (IsKeyPressed(KEY_TWO)){
+        if (player.inventory.HasItem("ManaPotion")){
+            if (player.currentMana < player.maxMana){
+                player.currentMana = player.maxMana;
+                player.inventory.UseItem("ManaPotion");
                 SoundManager::GetInstance().Play("gulp");
             }
         }
@@ -247,9 +258,11 @@ void InitMagicStaff(MagicStaff& magicStaff) {
 
 
 void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
-    //player should have been a class. but maybe it's too late...
+
     weapon.Update(deltaTime);
     weapon.isMoving = player.isMoving;
+    meleeWeapon.isMoving = player.isMoving;
+    magicStaff.isMoving = player.isMoving;
     meleeWeapon.Update(deltaTime);
     magicStaff.Update(deltaTime);
     UpdateMeleeHitbox(camera);

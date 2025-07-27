@@ -76,6 +76,7 @@ struct BarrelInstance {
     bool destroyed = false;
     bool containsPotion = false;
     bool containsGold = false;
+    bool containsMana = false;
 };
 
 struct SpiderWebInstance {

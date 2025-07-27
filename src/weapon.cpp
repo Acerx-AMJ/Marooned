@@ -60,6 +60,9 @@ void Weapon::Fire(Camera& camera) {
 }
 
 void MeleeWeapon::Update(float deltaTime) {
+    float amplitude = 1.0f;
+    bobVertical = sinf(bobbingTime) * amplitude;
+    bobSide = sinf(bobbingTime * 0.5f) * amplitude * 0.5f;
 
     // Smooth transition into and out of block pose
     if (blocking) {
@@ -111,14 +114,21 @@ void MeleeWeapon::Update(float deltaTime) {
             hitboxActive = false;
         }
     }
+
+    if (isMoving) {
+        bobbingTime += deltaTime * 12.0f; 
+    } else {
+        // Smoothly return to idle
+        bobbingTime = 0.0f;
+        bobVertical = Lerp(bobVertical, 0.0f, deltaTime * 5.0f);
+        bobSide = Lerp(bobSide, 0.0f, deltaTime * 5.0f);
+        return;
+    }
 }
 
 
 void Weapon::Update(float deltaTime) {
-
-
-
-    float amplitude = 1.0f;
+    float amplitude = 0.5f;
     bobVertical = sinf(bobbingTime) * amplitude;
     bobSide = sinf(bobbingTime * 0.5f) * amplitude * 0.5f;
 
@@ -173,6 +183,7 @@ void Weapon::Update(float deltaTime) {
 
 
 void Weapon::Draw(const Camera& camera) {
+    // === Camera rotation math ===
     Matrix lookAt = MatrixLookAt(camera.position, camera.target, { 0, 1, 0 });
     Matrix gunRotation = MatrixInvert(lookAt);
     Quaternion q = QuaternionFromMatrix(gunRotation);
@@ -182,24 +193,32 @@ void Weapon::Draw(const Camera& camera) {
     float sinTheta = sqrtf(1.0f - q.w * q.w);
     Vector3 axis = (sinTheta < 0.001f) ? Vector3{1, 0, 0} : Vector3{ q.x / sinTheta, q.y / sinTheta, q.z / sinTheta };
 
+    // === Camera basis vectors ===
     Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
     Vector3 camRight = Vector3Normalize(Vector3CrossProduct(camForward, { 0, 1, 0 }));
     Vector3 camUp = { 0, 1, 0 };
 
+    // === Aspect ratio correction ===
+    float screenAspect = (float)GetScreenWidth() / (float)GetScreenHeight();
+    float baseAspect = 16.0f / 9.0f;
+
+    float aspectCorrection = (baseAspect - screenAspect) * 10.0f;  // Tune this multiplier
+    float correctedSideOffset = sideOffset - aspectCorrection;
+
+    // === Gun positioning ===
     float dynamicForward = forwardOffset - recoil;
     float dynamicVertical = verticalOffset - reloadDip + bobVertical;
+
     Vector3 gunPos = camera.position;
     gunPos = Vector3Add(gunPos, Vector3Scale(camForward, dynamicForward));
-    gunPos = Vector3Add(gunPos, Vector3Scale(camRight, sideOffset + bobSide));
+    gunPos = Vector3Add(gunPos, Vector3Scale(camRight, correctedSideOffset + bobSide));
     gunPos = Vector3Add(gunPos, Vector3Scale(camUp, dynamicVertical));
 
+    // === Muzzle position and drawing ===
     muzzlePos = Vector3Add(gunPos, Vector3Scale(camForward, 40.0f));
-
-
     DrawModelEx(model, gunPos, axis, angleDeg, scale, WHITE);
-
-
 }
+
 
 
 
@@ -226,13 +245,13 @@ void MeleeWeapon::Draw(const Camera& camera) {
     // === Apply swing arc if not blocking ===
     blendedForward += swingOffset;
     blendedSide += horizontalSwingOffset;
-    blendedVertical += verticalSwingOffset;
+    blendedVertical += verticalSwingOffset + bobVertical;
 
     // === Final sword position ===
     //Vector3 swordPos = camera.position;
     Vector3 swordPos = {camera.position.x, camera.position.y -10, camera.position.z};
     swordPos = Vector3Add(swordPos, Vector3Scale(camForward, blendedForward));
-    swordPos = Vector3Add(swordPos, Vector3Scale(camRight, blendedSide));
+    swordPos = Vector3Add(swordPos, Vector3Scale(camRight, blendedSide + bobSide));
     swordPos = Vector3Add(swordPos, Vector3Scale(camUp, blendedVertical));
 
     DrawModelEx(model, swordPos, axis, angleDeg, scale, WHITE);
@@ -281,7 +300,14 @@ void MeleeWeapon::PlaySwipe(){
 }
 
 void MagicStaff::Fire(const Camera& camera) {
+
     if (GetTime() - lastFired < fireCooldown) return;
+
+    if (player.currentMana > 10){
+        player.currentMana -= 10;
+    }else{
+        return;
+    }
 
     lastFired = GetTime();
     recoil += recoilAmount;
@@ -335,6 +361,10 @@ void MagicStaff::StartSwing() {
 
 
 void MagicStaff::Update(float deltaTime) {
+    float amplitude = 2.0f;
+    bobVertical = sinf(bobbingTime) * amplitude;
+    bobSide = sinf(bobbingTime * 0.5f) * amplitude * 0.5f;
+
     // Melee swing timer
     if (swinging) {
         swingTimer += deltaTime;
@@ -362,6 +392,16 @@ void MagicStaff::Update(float deltaTime) {
     swingOffset = Lerp(swingOffset, 0.0f, deltaTime * 10.0f);
     verticalSwingOffset = Lerp(verticalSwingOffset, 0.0f, deltaTime * 10.0f);
     horizontalSwingOffset = Lerp(horizontalSwingOffset, 0.0f, deltaTime * 10.0f);
+
+    if (isMoving) {
+        bobbingTime += deltaTime * 12.0f; 
+    } else {
+        // Smoothly return to idle
+        bobbingTime = 0.0f;
+        bobVertical = Lerp(bobVertical, 0.0f, deltaTime * 5.0f);
+        bobSide = Lerp(bobSide, 0.0f, deltaTime * 5.0f);
+        return;
+    }
 }
 
 void MagicStaff::Draw(const Camera& camera) {
@@ -382,12 +422,12 @@ void MagicStaff::Draw(const Camera& camera) {
     // === Apply swing arc offsets ===
     float finalForward = forwardOffset + swingOffset - recoil;
     float finalSide = sideOffset + horizontalSwingOffset;
-    float finalVertical = verticalOffset + verticalSwingOffset - reloadDip;
+    float finalVertical = verticalOffset + verticalSwingOffset - reloadDip + bobVertical;
 
     // === Final staff position ===
     Vector3 staffPos = camera.position;
     staffPos = Vector3Add(staffPos, Vector3Scale(camForward, finalForward));
-    staffPos = Vector3Add(staffPos, Vector3Scale(camRight, finalSide));
+    staffPos = Vector3Add(staffPos, Vector3Scale(camRight, finalSide + bobSide));
     staffPos = Vector3Add(staffPos, Vector3Scale(camUp, finalVertical));
 
     muzzlePos = Vector3Add(staffPos, Vector3Scale(camForward, 40.0f));

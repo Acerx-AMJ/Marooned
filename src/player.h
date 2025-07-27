@@ -33,6 +33,8 @@ struct Player {
     float footstepTimer = 0.0;
     float maxHealth = 100;
     float currentHealth = maxHealth;
+    float maxMana = 100;
+    float currentMana = maxMana;
     float radius = 150;
 
     bool dying = false;

@@ -12,7 +12,8 @@
 RenderTexture2D sceneTexture, postProcessTexture, depthEffectTexture;
 
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, wallFallback, 
-doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture, spiderSheet, spiderWebTexture, brokeWebTexture, explosionSheet;
+doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture, spiderSheet, spiderWebTexture, brokeWebTexture, explosionSheet,
+manaPotion;
 
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader, depthShader, pbrShader;
 
@@ -55,6 +56,7 @@ void LoadAllResources() {
     brokeWebTexture = LoadTexture("assets/sprites/brokeWeb.png");
     wallFallback = LoadTexture("assets/textures/wallBaseColor.png");
     explosionSheet = LoadTexture("assets/sprites/explosionSheet.png");
+    manaPotion = LoadTexture("assets/sprites/manaPotion.png");
     
 
     // Models
@@ -205,8 +207,8 @@ void UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
     //dungeonDarkness
-    float dungeonDarkness = 0.0f;//darkened 5 percent. it darkens the gun model as well, so go easy. negative number 
-    float dungeonContrast = 1.15f; //makes darks darker. 
+    float dungeonDarkness = 0.0f;//it darkens the gun model as well, so go easy. negative number brightens it. 
+    float dungeonContrast = 1.2f; //makes darks darker. 
 
     float aaStrengthValue = 0.5f; //fake antialiasing strength
 
@@ -271,6 +273,7 @@ void UnloadAllResources() {
     UnloadTexture(coinTexture);
     UnloadTexture(spiderSheet);
     UnloadTexture(explosionSheet);
+    UnloadTexture(manaPotion);
     //shaders
     UnloadShader(fogShader);
     UnloadShader(skyShader);

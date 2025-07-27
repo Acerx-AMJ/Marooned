@@ -215,6 +215,13 @@ void HandleMeleeHitboxCollision(Camera& camera) {
 
             }
 
+            if (barrel.containsMana) {
+                Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
+                Collectable manaPot = Collectable(CollectableType::ManaPotion, pos, &manaPotion, 40);
+                collectables.push_back(manaPot);
+
+            }
+
         }
     }
 

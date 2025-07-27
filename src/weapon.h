@@ -42,9 +42,14 @@ struct MeleeWeapon {
 
     // Block pose offsets
     float blockForwardOffset = 50.0f;
-    float blockVerticalOffset = -30.0f;
+    float blockVerticalOffset = -50.0f;
     float blockSideOffset = 0.0f;
 
+    
+    float bobbingTime = 0.0f;
+    bool isMoving = false; // set this externally based on player movement
+    float bobVertical = 0.0f;
+    float bobSide = 0.0f;
 
 
     float swingAmount = 20.0f;   // how far forward it jabs or sweeps
@@ -133,6 +138,11 @@ struct MagicStaff {
     float forwardOffset = 80.0f;
     float sideOffset = 28.0f;
     float verticalOffset = -25.0f;
+
+    float bobbingTime = 0.0f;
+    bool isMoving = false; // set this externally based on player movement
+    float bobVertical = 0.0f;
+    float bobSide = 0.0f;
 
     float swingAmount = -50.0f; 
     float swingOffset = 0.0f;

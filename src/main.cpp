@@ -23,6 +23,7 @@
 #include "transparentDraw.h"
 #include <direct.h>
 #include "collectableWeapon.h"
+#include "ui.h"
 
 
 void BeginCustom3D(Camera3D camera, float farClip) {
@@ -30,7 +31,9 @@ void BeginCustom3D(Camera3D camera, float farClip) {
     rlMatrixMode(RL_PROJECTION);
     rlLoadIdentity();
     float nearClip = 60.0f; //20 wider than the capsule. to 50k outside, 10k in dungeons
-    Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), nearClip, farClip);
+
+    float testFOV = 50.0f; // 50
+    Matrix proj = MatrixPerspective(DEG2RAD * testFOV, (float)GetScreenWidth() / (float)GetScreenHeight(), nearClip, farClip);
 
     rlMultMatrixf(MatrixToFloat(proj));
 
@@ -132,16 +135,11 @@ void InitLevel(const LevelData& level, Camera camera) {
         GenerateWeapons(200);
         GenerateLightSources(floorHeight);
         GenerateDoorways(floorHeight, levelIndex); //calls generate doors from archways
-        enemies.clear();
-        enemyPtrs.clear();
+
         GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
         GeneratePiratesFromImage(dungeonEnemyHeight);
         GenerateSpiderFromImage(dungeonEnemyHeight);
-        int total = 0;
-        for (Character* p : enemyPtrs){
-            if (p->type == CharacterType::Pirate) total += 1; 
-        }
-        std::cout << "number of pirates = " << total << "\n";
+
 
         if (levelIndex == 4){
             levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
@@ -231,106 +229,7 @@ void DrawBullets(Camera& camera) {
 
 }
 
-
-void DrawHealthBar(){
-
-    float healthPercent = (float)player.currentHealth / player.maxHealth;
-    healthPercent = Clamp(healthPercent, 0.0f, 1.0f); // safety first
-    int barWidth = 300;
-    int barHeight = 30;
-    int barX = GetScreenWidth()/3 - barWidth/2;
-    int barY = GetScreenHeight() -80;
-
-    Rectangle healthBarFull = { (float)barX, (float)barY, (float)barWidth, (float)barHeight };
-
-    Rectangle healthBarCurrent = { 
-        (float)barX, 
-        (float)barY, 
-        (float)(barWidth * healthPercent), 
-        (float)barHeight 
-    };
-
-    // Background frame 
-    DrawRectangleLines(barX - 1, barY - 1, barWidth + 2, barHeight + 2, WHITE);
-
-    // Tint white to red based on health
-    //Color barColor = GetHealthBarColor(healthPercent);
-
-    Color barColor = WHITE;
-    if (healthPercent < 0.25f) {
-        float pulse = sin(GetTime() * 10.0f) * 0.5f + 0.5f; // 0..1
-        barColor = ColorLerp(WHITE, RED, pulse);
-    }
-
-    // Current health fill
-    DrawRectangleRec(healthBarCurrent, barColor);
-
-}
-
-void DrawStaminaBar(){
-    float staminaPercent = player.stamina / player.maxStamina;
-    staminaPercent = Clamp(staminaPercent, 0.0f, 1.0f);
-
-    int staminaBarWidth = 300;
-    int staminaBarHeight = 10;
-    int staminaBarX = GetScreenWidth()/3 - staminaBarWidth/2;
-    int staminaBarY = GetScreenHeight() - 40;  
-
-    Rectangle staminaBarBack = { (float)staminaBarX, (float)staminaBarY, (float)staminaBarWidth, (float)staminaBarHeight };
-    Rectangle staminaBarCurrent = {
-        (float)staminaBarX,
-        (float)staminaBarY,
-        (float)(staminaBarWidth * staminaPercent),
-        (float)staminaBarHeight
-
-    
-    };
-
-    // Outline
-    DrawRectangleLines(staminaBarX - 1, staminaBarY - 1, staminaBarWidth + 2, staminaBarHeight + 2, DARKGRAY);
-
-    // Color based on stamina
-    Color barColor = ColorLerp((Color){50, 50, 150, 255}, BLUE, staminaPercent);  // subtle fade
-
-    DrawRectangleRec(staminaBarCurrent, barColor);
-
-}
-
-
-
-
-
-void DrawMenu() {
-    ClearBackground(BLACK);
-    
-    DrawTexturePro(
-        backDrop,
-        Rectangle{ 0, 0, (float)backDrop.width, (float)backDrop.height },
-        Rectangle{ 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() },
-        Vector2{ 0, 0 },
-        0.0f,
-        WHITE
-    );
-
-    //float middle = GetScreenWidth()/2 - 150;
-    const char* title = "MAROONED";
-    int fontSize = 60;
-    int titleX = GetScreenWidth() / 2 - MeasureText(title, fontSize) / 2;
-    DrawText(title, titleX, 180, fontSize, GREEN);
-
-    DrawText(selectedOption == 0 ? "> Start" : "  Start", titleX, 280, 30, WHITE);
-    
-    DrawText(
-        TextFormat("%s Level: %s", selectedOption == 1 ? ">" : " ", levels[levelIndex].name.c_str()),
-        titleX, 330, 30, YELLOW
-    );
-
-    DrawText(selectedOption == 2 ? "> Quit" : "  Quit", titleX, 380, 30, WHITE);
-}
-
-
-
-void UpdateCollectables(Camera& camera, float deltaTime) { //update and DRAW
+void UpdateCollectables(Camera& camera, float deltaTime) { 
     for (int i = 0; i < collectables.size(); i++) {
         collectables[i].Update(deltaTime);
 
@@ -347,6 +246,9 @@ void UpdateCollectables(Camera& camera, float deltaTime) { //update and DRAW
             else if (collectables[i].type == CollectableType::Gold) {
                 player.gold += collectables[i].value;
                 SoundManager::GetInstance().Play("key");
+            } else if (collectables[i].type == CollectableType::ManaPotion) {
+                player.inventory.AddItem("ManaPotion");
+                SoundManager::GetInstance().Play("clink");
             }
 
             collectables.erase(collectables.begin() + i);
@@ -472,16 +374,6 @@ void DrawCollectableWeapons(Player& player, float deltaTime){
 
 
 
-void DrawTimer(){
-    int minutes = (int)(ElapsedTime / 60.0f);
-    int seconds = (int)ElapsedTime % 60;
-
-    char buffer[16];
-    sprintf(buffer, "Time: %02d:%02d", minutes, seconds);
-
-    DrawText(buffer, GetScreenWidth()-150, 30, 20, WHITE); 
-}
-
 
 
 
@@ -494,10 +386,6 @@ int main() {
     SetExitKey(KEY_NULL); //Escape brings up menu, not quit
     SoundManager::GetInstance().PlayMusic("dungeonAir");
     SoundManager::GetInstance().PlayMusic("jungleAmbience");
-    // Music dungeonAir = LoadMusicStream("assets/sounds/dungeonAir.ogg");
-    // Music jungleAmbience = LoadMusicStream("assets/sounds/jungleSounds.ogg"); 
-    // PlayMusicStream(jungleAmbience); // Starts playback
-    //PlayMusicStream(dungeonAir); //start both, only update dungeonAir when in dungeon, else jungleAmbience
     SetMusicVolume(SoundManager::GetInstance().GetMusic("jungleAmbience"), 0.5f);
 
 
@@ -523,7 +411,6 @@ int main() {
     while (!WindowShouldClose()) {
         ElapsedTime += GetFrameTime();
 
-        
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
             if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Playing;
@@ -543,7 +430,7 @@ int main() {
 
 
             BeginDrawing();
-            DrawMenu();
+            DrawMenu(backDrop, selectedOption, levelIndex);
             EndDrawing();
 
             if (currentGameState == GameState::Quit) break;
@@ -563,9 +450,9 @@ int main() {
         UpdateInputMode(); //handle both gamepad and keyboard/mouse
         debugControls(camera); 
         UpdateShaders(camera);
-        sortTrees(camera); //sort trees by distance to player, draw closest trees last.
+        sortTrees(camera); //sort trees by distance to camera
         
-        UpdateFade(deltaTime, camera); //triggers init level
+        UpdateFade(deltaTime, camera); //triggers init level on fadeout
         UpdateEnemies(deltaTime);
         UpdateBullets(camera, deltaTime);
         UpdateDecals(deltaTime);
@@ -693,11 +580,12 @@ int main() {
         if (pendingLevelIndex != -1) { //fading out...draw loading text and nothing else. 
             DrawText("Loading...", GetScreenWidth() / 2 - MeasureText("Loading...", 20) / 2, GetScreenHeight() / 2, 20, WHITE);
         }else{
-            DrawHealthBar();
-            DrawStaminaBar();
+            DrawHealthBar(player);
+            DrawStaminaBar(player);
+            DrawManaBar(player);
             DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD); 
             if (debugInfo){//press ~ to hide debug info
-                DrawTimer(); 
+                DrawTimer(ElapsedTime); 
                 DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
                 DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
                 DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 280, 30, 20, WHITE);
@@ -705,8 +593,6 @@ int main() {
             }
 
             player.inventory.DrawInventoryUIWithIcons(itemTextures, slotOrder, 20, GetScreenHeight() - 80, 64);
-
-            player.inventory.DrawInventoryUI();
             
         }
 
