@@ -155,7 +155,7 @@ struct MagicStaff {
 
     // === Shooting / Magic Projectile ===
     Vector3 muzzlePos;
-    float fireCooldown = 0.5f;
+    float fireCooldown = 1.0f;
     float lastFired = -999.0f;
 
     float recoil = 0.0f;

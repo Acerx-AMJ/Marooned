@@ -222,9 +222,7 @@ void DrawBullets(Camera& camera) {
     for (const Bullet& b : activeBullets) {
         if (b.IsAlive()){
              b.Draw(camera);
-        }else if (b.isFireball() && !b.isExploded()){
-            b.Draw(camera);
-        } 
+        }
     }
 
 }
@@ -271,6 +269,8 @@ void UpdateDecals(float deltaTime){
 }
 
 void lightBullets(float deltaTime){
+    //debug lights attached to blunderbuss bullets
+
    // === Clean up expired bullet lights ===
     for (int i = bulletLights.size() - 1; i >= 0; --i) {
         bulletLights[i].age += deltaTime;
@@ -351,26 +351,7 @@ void DrawBloodParticles(Camera& camera){
     }
 }
 
-void DrawCollectableWeapons(Player& player, float deltaTime){
-    for (CollectableWeapon& cw : worldWeapons){
-        cw.Update(deltaTime);
-        cw.Draw();
 
-        if (cw.CheckPickup(player) && player.collectedWeapons.size() < 3) {
-            player.collectedWeapons.push_back(cw.type);
-            if (player.activeWeapon == WeaponType::None) {
-    
-                player.activeWeapon = cw.type;
-                player.currentWeaponIndex = 0;
-                
-            }else{
-            
-                player.activeWeapon = cw.type;
-            }
-        }
-
-    }
-}
 
 
 

@@ -10,14 +10,14 @@
 
 
 // New constructor matching velocity-based logic
-Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, bool fb, float r)
+Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, BulletType t, float r)
     : position(startPos),
       velocity(vel),
       alive(true),
       age(0.0f),
       maxLifetime(lifetime),
       enemy(en),
-      fireball(fb),
+      type(t),
       fireEmitter(startPos),
       radius(r)
 {}
@@ -81,7 +81,7 @@ void Bullet::Update(Camera& camera, float deltaTime) {
     if (!alive) return;
 
     // Fireball logic
-    if (fireball) {
+    if (type == BulletType::Fireball) {
         fireEmitter.Update(deltaTime);
         UpdateFireball(camera, deltaTime);
         if (!exploded && explosionTriggered) {
@@ -100,8 +100,8 @@ void Bullet::Update(Camera& camera, float deltaTime) {
     }
 
 
-    // Case 4: Standard bullet movement (non-fireball)
-    if (!IsEnemy() && !isFireball())
+    // Standard bullet movement (non-fireball)
+    if (!IsEnemy() && type != BulletType::Fireball)
         velocity.y -= gravity * deltaTime;
 
     position = Vector3Add(position, Vector3Scale(velocity, deltaTime));
@@ -126,19 +126,15 @@ void Bullet::Update(Camera& camera, float deltaTime) {
 
 void Bullet::Draw(Camera& camera) const {
     if (!alive) return;
-    if (fireball){
+    if (type == BulletType::Fireball){
         fireEmitter.Draw(camera);
         DrawModelEx(fireballModel, position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
         
     }else{
         DrawSphere(position, 1.5f, WHITE); 
     }
-    
-
-
-    
-
 }
+
 bool Bullet::IsExpired() const {
     return alive;
 }
@@ -160,6 +156,14 @@ bool Bullet::isExploded() const {
     return exploded;
 }
 
+Vector3 Bullet::GetPosition() const {
+    return position;
+}
+
+void Bullet::Erase(){
+    alive = false;
+}
+
 void Bullet::kill(Camera& camera){
     //smoke decals and bullet death
     Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
@@ -171,9 +175,7 @@ void Bullet::kill(Camera& camera){
     
 }
 
-void Bullet::Erase(){
-    alive = false;
-}
+
 
 void Bullet::Blood(Camera camera){
     //spawn blood decals at bullet position, if it's not a skeleton.
@@ -186,9 +188,6 @@ void Bullet::Blood(Camera camera){
 
 }
 
-Vector3 Bullet::GetPosition() const {
-    return position;
-}
 
 
 
@@ -262,12 +261,11 @@ void FireBullet(Vector3 origin, Vector3 target, float speed, float lifetime, boo
     activeBullets.emplace_back(origin, velocity, lifetime, enemy);
 }
 
-void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy, bool fireball){
-    Vector3 direction = Vector3Subtract(target, origin);
-    direction = Vector3Normalize(direction);
+void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy) {
+    Vector3 direction = Vector3Normalize(Vector3Subtract(target, origin));
     Vector3 velocity = Vector3Scale(direction, speed);
+    activeBullets.emplace_back(origin, velocity, lifetime, enemy, BulletType::Fireball, 20.0f);
 
-    activeBullets.emplace_back(origin, velocity, lifetime, enemy, fireball, 20.0f);
 
     if (rand() % 2 == 0){
         SoundManager::GetInstance().Play("flame1");

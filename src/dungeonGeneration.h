@@ -181,7 +181,7 @@ void DrawDungeonFloor();
 void DrawDungeonWalls();
 void DrawDungeonFloor();
 void DrawDungeonBarrels();
-void DrawSpiderWebs(Camera& camera);
+//void DrawSpiderWebs(Camera& camera);
 void DrawDungeonChests(); 
 void DrawDungeonPillars(float deltaTime, Camera3D camera);
 void DrawDungeonDoorways();

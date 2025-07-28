@@ -88,7 +88,7 @@ void debugControls(Camera& camera){
     if (IsKeyPressed(KEY_F)) {
         Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
         Vector3 targetPoint = Vector3Add(camera.position, Vector3Scale(camForward, 1000.0f));
-        FireFireball(player.position, targetPoint, 5000, 10, false, true);
+        FireFireball(player.position, targetPoint, 5000, 10, false);
     }
     //give all weapons
     if (IsKeyPressed(KEY_SEMICOLON)) {

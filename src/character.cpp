@@ -62,6 +62,39 @@ void Character::SetPath(Vector2 start){
 
 }
 
+bool FindRepositionTarget(const Player& player, const Vector3& selfPos, Vector3& outTarget) {
+    //surround the player, don't all stand on the same tile. 
+    Vector2 playerTile = WorldToImageCoords(player.position);
+
+    // Get facing direction
+    float playerYaw = player.rotation.y;
+    Vector3 forward = Vector3Normalize({ sinf(DEG2RAD * playerYaw), 0.0f, cosf(DEG2RAD * playerYaw) });
+    Vector3 right = Vector3Normalize(Vector3CrossProduct({ 0, 1, 0 }, forward));
+
+    // Generate offsets
+    Vector2 relativeOffsets[3];
+    relativeOffsets[0] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(forward, tileSize))) - playerTile;
+    relativeOffsets[1] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(right, tileSize))) - playerTile;
+    relativeOffsets[2] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(Vector3Negate(right), tileSize))) - playerTile;
+    relativeOffsets[3] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(Vector3Negate(forward), tileSize))) - playerTile;
+
+    for (int i = 0; i < 4; ++i) {
+        int tx = (int)playerTile.x + (int)roundf(relativeOffsets[i].x);
+        int ty = (int)playerTile.y + (int)roundf(relativeOffsets[i].y);
+
+        if (tx < 0 || ty < 0 || tx >= dungeonWidth || ty >= dungeonHeight) continue;
+        if (!IsWalkable(tx, ty, dungeonImg)) continue;
+        if (IsTileOccupied(tx, ty, enemyPtrs, nullptr)) continue;
+
+        outTarget = GetDungeonWorldPos(tx, ty, tileSize, dungeonPlayerHeight);
+        outTarget.y += 80.0f;
+        return true;
+    }
+
+    return false;
+}
+
+
 
 
 
@@ -537,33 +570,8 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             Vector2 playerTile = WorldToImageCoords(player.position);
             Vector3 target = position; // fallback
 
-            // Get player's facing direction
-            float playerYaw = player.rotation.y;
-            Vector3 forward = Vector3Normalize({ sinf(DEG2RAD * playerYaw), 0.0f, cosf(DEG2RAD * playerYaw) });
-            Vector3 right = Vector3Normalize(Vector3CrossProduct({ 0, 1, 0 }, forward));
+            bool foundSpot = FindRepositionTarget(player, position, target);
 
-            // Generate 4 offsets relative to player facing
-            Vector2 relativeOffsets[4];
-            relativeOffsets[0] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(forward, tileSize))) - playerTile;         // front
-            relativeOffsets[1] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(right, tileSize))) - playerTile;           // right
-            relativeOffsets[2] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(Vector3Negate(right), tileSize))) - playerTile; // left
-            //relativeOffsets[3] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(Vector3Negate(forward), tileSize))) - playerTile; // back
-            //prevent skeletons from running behind you, by just omiting that offset, it doesn't feel good to have skeles flanking that hard.  
-            bool foundSpot = false;
-
-            for (int i = 0; i < 4; ++i) {
-                int tx = (int)playerTile.x + (int)roundf(relativeOffsets[i].x);
-                int ty = (int)playerTile.y + (int)roundf(relativeOffsets[i].y);
-
-                if (tx < 0 || ty < 0 || tx >= dungeonWidth || ty >= dungeonHeight) continue;
-                if (!IsWalkable(tx, ty, dungeonImg)) continue;
-                if (IsTileOccupied(tx, ty, enemyPtrs, this)) continue;
-
-                target = GetDungeonWorldPos(tx, ty, tileSize, dungeonPlayerHeight);
-                target.y += pirateHeight;
-                foundSpot = true;
-                break;
-            }
 
             if (foundSpot) {
                 foundSpot = false;
@@ -811,33 +819,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             Vector2 playerTile = WorldToImageCoords(player.position);
             Vector3 target = position; // fallback
 
-            // Get player's facing direction
-            float playerYaw = player.rotation.y;
-            Vector3 forward = Vector3Normalize({ sinf(DEG2RAD * playerYaw), 0.0f, cosf(DEG2RAD * playerYaw) });
-            Vector3 right = Vector3Normalize(Vector3CrossProduct({ 0, 1, 0 }, forward));
-
-            // Generate 4 offsets relative to player facing
-            Vector2 relativeOffsets[4];
-            relativeOffsets[0] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(forward, tileSize))) - playerTile;         // front
-            relativeOffsets[1] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(right, tileSize))) - playerTile;           // right
-            relativeOffsets[2] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(Vector3Negate(right), tileSize))) - playerTile; // left
-            //relativeOffsets[3] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(Vector3Negate(forward), tileSize))) - playerTile; // back
-
-            bool foundSpot = false;
-
-            for (int i = 0; i < 4; ++i) {
-                int tx = (int)playerTile.x + (int)roundf(relativeOffsets[i].x);
-                int ty = (int)playerTile.y + (int)roundf(relativeOffsets[i].y);
-
-                if (tx < 0 || ty < 0 || tx >= dungeonWidth || ty >= dungeonHeight) continue;
-                if (!IsWalkable(tx, ty, dungeonImg)) continue;
-                if (IsTileOccupied(tx, ty, enemyPtrs, this)) continue;
-
-                target = GetDungeonWorldPos(tx, ty, tileSize, dungeonPlayerHeight);
-                target.y += 80.0f;
-                foundSpot = true;
-                break;
-            }
+            bool foundSpot = FindRepositionTarget(player, position, target);
 
             if (foundSpot) {
                 Vector3 dir = Vector3Normalize(Vector3Subtract(target, position));
@@ -975,7 +957,9 @@ void Character::TakeDamage(int amount) {
         state = CharacterState::Death;
 
         if (type != CharacterType::Skeleton){
-            bloodEmitter.EmitBlood(position, 20);
+            bloodEmitter.EmitBlood(position, 20, RED);
+        }else{
+            bloodEmitter.EmitBlood(position, 20, WHITE); //white blood for skeletons. chunks of bones flying off maybe. 
         }
         if (type == CharacterType::Raptor) SetAnimation(4, 5, 0.12f, false);
         if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f, false); //less frames for skele death.
@@ -989,9 +973,14 @@ void Character::TakeDamage(int amount) {
     } else {
         hitTimer = 0.5f; //tint red
         state = CharacterState::Stagger;
-        if (type != CharacterType::Skeleton && canBleed){
+        if (canBleed){
             canBleed = false;
-            bloodEmitter.EmitBlood(position, 20);
+            if (type != CharacterType::Skeleton){
+                bloodEmitter.EmitBlood(position, 20, RED);
+            }else{
+                bloodEmitter.EmitBlood(position, 10, WHITE);
+            }
+       
         }
         SetAnimation(4, 1, 1.0f); // Use first frame of death anim for 1 second. for all enemies
         currentFrame = 0;         // Always start at first frame

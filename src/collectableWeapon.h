@@ -18,3 +18,5 @@ struct CollectableWeapon {
     void Draw();
     bool CheckPickup(Player& player, float pickupRadius = 80.0f);
 };
+
+void DrawCollectableWeapons(Player& player, float deltaTime);

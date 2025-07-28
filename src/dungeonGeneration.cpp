@@ -550,7 +550,7 @@ void GenerateSpiderWebs(float baseY)
 
             // World position
             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
-            Vector3 offsetPos = {pos.x, pos.y + 150, pos.z};
+            Vector3 offsetPos = {pos.x, pos.y + 200, pos.z};
             pos = offsetPos;
 
             // Define oriented bounding box (thin plane)
@@ -593,7 +593,7 @@ void GenerateBarrels(float baseY) {
             if (current.r == 0 && current.g == 0 && current.b == 255) { // Blue = Barrel
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
 
-                // Define bounding box as 100x100x100 cube centered on pos
+                // Define bounding box as 100x100x100 cube centered on pos, tileSize is 200 so half tile size centered. 
                 float halfSize = 50.0f;
                 BoundingBox box;
                 box.min = {
@@ -611,7 +611,7 @@ void GenerateBarrels(float baseY) {
                 bool willContainPotion = false;
                 bool willContainMana = false;
                 bool willContainGold = false;
-
+                //barrels only drop one thing at a time. 
                 if (roll < 25) {
                     willContainPotion = true;     // 0 - 24 → 25%
                 } else if (roll < 35) {
@@ -844,6 +844,7 @@ void GenerateLightSources(float baseY) {
 }
 
 Vector3 GetDungeonWorldPos(int x, int y, float tileSize, float baseY) {
+    //returns world position, centered on tile. 
     int flippedY = dungeonHeight - 1 - y;
     int flippedX = dungeonWidth - 1 - x;
     //flip x and y to match world coords. 
@@ -861,11 +862,6 @@ int GetDungeonImageX(float worldX, float tileSize, int dungeonWidth) {
 int GetDungeonImageY(float worldZ, float tileSize, int dungeonHeight) {
     return dungeonHeight - 1 - (int)(worldZ / tileSize);
 }
-
-// for (const BarrelInstance& barrel : barrelInstances) {
-//     Model modelToDraw = barrel.destroyed ? brokeBarrelModel : regularBarrelModel;
-//     DrawModel(modelToDraw, barrel.position, 1.0f, barrel.tint);
-// }
 
 
 
@@ -906,12 +902,12 @@ void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height,
     rlSetTexture(0);
 }
 
-void DrawSpiderWebs(Camera& camera) {
-    for (const SpiderWebInstance& web : spiderWebs) {
-        Texture2D webTexture = web.destroyed ? brokeWebTexture : spiderWebTexture;
-        DrawFlatWeb(webTexture, web.position, 300.0f, 300.0f, web.rotationY, WHITE);
-    }
-}
+// void DrawSpiderWebs(Camera& camera) {
+//     for (const SpiderWebInstance& web : spiderWebs) {
+//         Texture2D webTexture = web.destroyed ? brokeWebTexture : spiderWebTexture;
+//         DrawFlatWeb(webTexture, web.position, 300.0f, 300.0f, web.rotationY, web.tint);
+//     }
+// }
 
 
 

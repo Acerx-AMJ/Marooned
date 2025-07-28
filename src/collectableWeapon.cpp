@@ -1,5 +1,6 @@
 #include "collectableWeapon.h"
 #include "player.h"
+#include "world.h"
 
 CollectableWeapon::CollectableWeapon(WeaponType type, Vector3 position, Model* model)
     : type(type), position(position), model(model), rotationY(0.0f), isCollected(false) {}
@@ -24,4 +25,25 @@ bool CollectableWeapon::CheckPickup(Player& player, float pickupRadius) {
         return true;
     }
     return false;
+}
+
+void DrawCollectableWeapons(Player& player, float deltaTime){
+    for (CollectableWeapon& cw : worldWeapons){
+        cw.Update(deltaTime);
+        cw.Draw();
+
+        if (cw.CheckPickup(player) && player.collectedWeapons.size() < 3) {
+            player.collectedWeapons.push_back(cw.type);
+            if (player.activeWeapon == WeaponType::None) {
+    
+                player.activeWeapon = cw.type;
+                player.currentWeaponIndex = 0;
+                
+            }else{
+            
+                player.activeWeapon = cw.type;
+            }
+        }
+
+    }
 }

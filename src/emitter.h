@@ -8,7 +8,7 @@ public:
     Emitter(); // <-- add this
     Emitter(Vector3 pos);
     void EmitBurst(Vector3 pos, int count);
-    void EmitBlood(Vector3 pos, int count);
+    void EmitBlood(Vector3 pos, int count, Color color);
     void UpdateBlood(float dt);
     void Update(float dt); //update smoke and fire
     void Draw(Camera3D camera) const;

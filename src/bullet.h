@@ -4,11 +4,17 @@
 #include <vector>
 #include "emitter.h"
 
+enum class BulletType {
+    Default,
+    Fireball,
+    Iceball,
+   
+};
 
 
 class Bullet {
 public:
-    Bullet(Vector3 position, Vector3 velocity, float lifetime, bool enemy, bool fireball = false, float radius = 1.0f);
+    Bullet(Vector3 position, Vector3 velocity, float lifetime, bool enemy,  BulletType t = BulletType::Default, float radius = 1.0f);
 
     void Update(Camera& camera, float deltaTime);
     void UpdateFireball(Camera& camera, float deltaTime);
@@ -26,7 +32,7 @@ public:
     float GetRadius() const { return radius; }
     bool pendingExplosion = false;
     float explosionTimer = 0.0f;
-
+    BulletType type = BulletType::Default;
     Vector3 GetPosition() const;
 
 
@@ -59,4 +65,4 @@ private:
 
 void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int pelletCount, float speed, float lifetime, bool enemy);
 void FireBullet(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy);
-void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy, bool firball);
+void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy);

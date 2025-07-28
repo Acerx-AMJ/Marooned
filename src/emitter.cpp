@@ -49,7 +49,7 @@ void Emitter::EmitBurst(Vector3 pos, int count) {
     }
 }
 
-void Emitter::EmitBlood(Vector3 pos, int count) {
+void Emitter::EmitBlood(Vector3 pos, int count, Color color) {
     SetPosition(pos);
 
     for (int i = 0; i < count; ++i) {
@@ -58,7 +58,7 @@ void Emitter::EmitBlood(Vector3 pos, int count) {
                 p.active = true;
                 p.position = position;
 
-                p.color = RED;
+                p.color = color;
                 p.gavity = 200.0f;  
                 p.velocity = {
                     (float)GetRandomValue(-100, 100),

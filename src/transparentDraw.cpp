@@ -133,7 +133,7 @@ void GatherWebs(Camera& camera) {
             web.position,
             tex,
             Rectangle{0, 0, (float)spiderWebTexture.width, (float)spiderWebTexture.height},
-            300.0f,
+            400.0f,
             WHITE,
             Vector3Distance(camera.position, web.position),
             web.rotationY
