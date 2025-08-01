@@ -12,7 +12,6 @@
 InputMode currentInputMode = InputMode::KeyboardMouse;
 
 
-
 void UpdateCameraWithGamepad(Camera3D& camera) {
     if (!IsGamepadAvailable(0)) return;
 

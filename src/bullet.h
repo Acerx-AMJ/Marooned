@@ -17,7 +17,7 @@ public:
     Bullet(Vector3 position, Vector3 velocity, float lifetime, bool enemy,  BulletType t = BulletType::Default, float radius = 1.0f);
 
     void Update(Camera& camera, float deltaTime);
-    void UpdateFireball(Camera& camera, float deltaTime);
+    void UpdateMagicBall(Camera& camera, float deltaTime);
     void Erase();
     void Draw(Camera& camera) const;
     void kill(Camera& camera);
@@ -66,3 +66,4 @@ private:
 void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int pelletCount, float speed, float lifetime, bool enemy);
 void FireBullet(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy);
 void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy);
+void FireIceball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy);

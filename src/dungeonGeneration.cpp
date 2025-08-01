@@ -128,7 +128,7 @@ void UpdateDungeonChests() {
         }
 
         if (chest.animPlaying) {
-            chest.animFrame += GetFrameTime() * 24.0f;
+            chest.animFrame += GetFrameTime() * 50.0f;
 
             if (chest.animFrame > OPEN_END_FRAME) {
                 chest.animFrame = OPEN_END_FRAME;

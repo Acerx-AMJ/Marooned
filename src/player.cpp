@@ -268,8 +268,16 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     UpdateMeleeHitbox(camera);
     UpdateFootsteps(deltaTime);
     UpdateBlockHitbox(player, 250, 300, 100);
-    vignetteFade += deltaTime * 2.0f; // tweak fade speed
+    vignetteFade += deltaTime * 2.0f; 
     vignetteIntensity = Clamp(1.0f - vignetteFade, 0.0f, 1.0f);
+
+    if (player.hitTimer > 0.0f){
+        player.hitTimer -= deltaTime;
+        camera.fovy = Lerp(camera.fovy, player.targetFOV, deltaTime * 12.0f); // fast zoom
+    }else{
+        player.hitTimer = 0;
+        camera.fovy = Lerp(camera.fovy, 45, deltaTime * 4.0f); // smooth return
+    }
 
     float goldLerpSpeed = 5.0f;
     player.displayedGold += (player.gold - player.displayedGold) * goldLerpSpeed * deltaTime;
@@ -458,7 +466,7 @@ void Player::TakeDamage(int amount){
            
         }
     }
-
+    hitTimer = 0.15;
     vignetteIntensity = 1.0f;
     vignetteFade = 0.0f;
 

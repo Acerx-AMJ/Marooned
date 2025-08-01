@@ -18,7 +18,7 @@ manaPotion;
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader, depthShader, pbrShader;
 
 Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2, floorTile3,chestModel, fireballModel,
-bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel, staffModel;
+bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel, staffModel, iceballModel;
 
 Image heightmap;
 Mesh terrainMesh;
@@ -79,6 +79,7 @@ void LoadAllResources() {
     chestModel = LoadModel("assets/models/chest.glb");
     staffModel = LoadModel("assets/models/staff.glb");
     fireballModel = LoadModel("assets/models/fireball.glb");
+    iceballModel = LoadModel("assets/models/iceBall.glb");
 
     terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
 
@@ -299,6 +300,7 @@ void UnloadAllResources() {
     UnloadModel(lampModel);
     UnloadModel(staffModel);
     UnloadModel(fireballModel);
+    UnloadModel(iceballModel);
     
     
 

@@ -1,5 +1,6 @@
 #include "Emitter.h"
 #include <iostream>
+#include "utilities.h"
 
 Emitter::Emitter()
     : position({0, -9999, 0}) //-9999 off screen
@@ -15,7 +16,7 @@ void Emitter::SetPosition(Vector3 newPos) {
     position = newPos;
 }
 
-void Emitter::Update(float dt) { //rename to UpdateSmoke
+void Emitter::Update(float dt) { 
     
     if (emissionRate > 0.0f) {
         timeSinceLastEmit += dt;
@@ -38,14 +39,13 @@ void Emitter::UpdateBlood(float dt){
     }
 }
 
-void Emitter::EmitBurst(Vector3 pos, int count) {
+void Emitter::EmitBurst(Vector3 pos, int count, ParticleType t) {
     if (canBurst) {
         canBurst = false;
         SetPosition(pos);
-
-        this->isExplosionBurst = true; // Store the flag
+        SetParticleType(t);
         EmitParticles(count);
-        this->isExplosionBurst = false; // Reset after emitting
+        
     }
 }
 
@@ -93,28 +93,59 @@ void Emitter::CreateParticle(Particle& p) {
     p.active = true;
     p.position = position;
 
-    if (isExplosionBurst) { //sparks
-        p.color = ORANGE;
-        p.gavity = 980.0f;
+    switch (particleType) {
+        case ParticleType::Sparks:
+            p.color = ORANGE;
+            p.gavity = 980.0f;
+            p.velocity = {
+                RandomFloat(-300, 300),
+                RandomFloat(300, 1000),
+                RandomFloat(-300, 300)
+            };
+            break;
+
+        case ParticleType::Smoke:
+            p.color = DARKGRAY;
+            p.gavity = -100.0f;
+            p.velocity = {
+                RandomFloat(-50, 50),
+                RandomFloat(-25, 25),
+                RandomFloat(-50, 50)
+            };
+            break;
+
+        case ParticleType::IceMist:
+
+            p.color = SKYBLUE;
+            p.gavity = -50.0f;
+            p.velocity = {
+                RandomFloat(-40, 40),
+                RandomFloat(-10, 20),
+                RandomFloat(-40, 40)
+            };
+            break;
+
+        case ParticleType::IceBlast:
+        p.color = SKYBLUE;
+        p.gavity = 980.0f; // rising slowly
         p.velocity = {
-            (float)(GetRandomValue(-300, 300)),
-            (float)(GetRandomValue(300, 1000)),
-            (float)(GetRandomValue(-300, 300))
+            RandomFloat(-250, 250),
+            RandomFloat(300, 1000),
+            RandomFloat(-250, 250)
         };
-    } else { //smoke
-        p.color = DARKGRAY;
-        p.gavity = -100.0f;
-        p.velocity = {
-            (float)(GetRandomValue(-50, 50)),
-            (float)(GetRandomValue(-25, 25)),
-            (float)(GetRandomValue(-50, 50))
-        };
+        p.size = 10.0f;
+        break;
+
+        default:
+            p.color = GRAY;
+            break;
     }
 
     p.maxLife = 1.5f;
     p.life = p.maxLife;
     p.size = 8.0f;
 }
+
 
 
 

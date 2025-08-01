@@ -11,7 +11,7 @@ manaPotion;
 
 extern Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader, depthShader, pbrShader;
 extern Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2,floorTile3,chestModel, fireballModel, 
-bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel, staffModel;
+bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel, staffModel, iceballModel;
 extern Image heightmap;
 extern Mesh terrainMesh;
 extern Vector3 terrainScale;

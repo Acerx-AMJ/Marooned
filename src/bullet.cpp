@@ -23,7 +23,7 @@ Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, BulletTyp
 {}
 
 
-void Bullet::UpdateFireball(Camera& camera, float deltaTime) {
+void Bullet::UpdateMagicBall(Camera& camera, float deltaTime) {
     if (!alive) return;
     // Gravity-based arc
     gravity = 980;
@@ -82,8 +82,9 @@ void Bullet::Update(Camera& camera, float deltaTime) {
 
     // Fireball logic
     if (type == BulletType::Fireball) {
+        fireEmitter.SetParticleType(ParticleType::Smoke);
         fireEmitter.Update(deltaTime);
-        UpdateFireball(camera, deltaTime);
+        UpdateMagicBall(camera, deltaTime);
         if (!exploded && explosionTriggered) {
             exploded = true;
             timeSinceExploded += deltaTime;
@@ -98,10 +99,28 @@ void Bullet::Update(Camera& camera, float deltaTime) {
 
         return; //skip normal bullet logic
     }
+    else if (type == BulletType::Iceball){
+        fireEmitter.SetParticleType(ParticleType::IceMist);
+        fireEmitter.Update(deltaTime);
+        UpdateMagicBall(camera, deltaTime);
+        if (!exploded && explosionTriggered) {
+            exploded = true;
+            timeSinceExploded += deltaTime;
+
+            if (timeSinceExploded >= 2.0f) { //wait for particles to act. 
+
+                
+                alive = false;
+                
+            }
+        }
+
+        return;
+    }
 
 
     // Standard bullet movement (non-fireball)
-    if (!IsEnemy() && type != BulletType::Fireball)
+    if (!IsEnemy() && type == BulletType::Default)
         velocity.y -= gravity * deltaTime;
 
     position = Vector3Add(position, Vector3Scale(velocity, deltaTime));
@@ -130,7 +149,10 @@ void Bullet::Draw(Camera& camera) const {
         fireEmitter.Draw(camera);
         DrawModelEx(fireballModel, position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
         
-    }else{
+    }else if (type == BulletType::Iceball){
+        fireEmitter.Draw(camera);
+        DrawModelEx(iceballModel, position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
+    } else{
         DrawSphere(position, 1.5f, WHITE); 
     }
 }
@@ -200,9 +222,14 @@ void Bullet::Explode(Camera& camera) {
         
         Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
         Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
+        if (type == BulletType::Fireball){
+            decals.emplace_back(offsetPos, DecalType::Explosion, &explosionSheet, 13, 1.0f, 0.1f, 500.0f);
+            fireEmitter.EmitBurst(position, 200, ParticleType::Sparks);
 
-        decals.emplace_back(offsetPos, DecalType::Explosion, &explosionSheet, 13, 1.0f, 0.1f, 500.0f);
-        fireEmitter.EmitBurst(position, 200);
+        }else if (type == BulletType::Iceball){
+            fireEmitter.EmitBurst(position, 200, ParticleType::IceBlast);
+        }
+
         float minDamage = 10;
         float maxDamage = 200;
         float explosionRadius = 200;
@@ -276,3 +303,13 @@ void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, b
     }
 
 }
+
+void FireIceball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy) {
+    Vector3 direction = Vector3Normalize(Vector3Subtract(target, origin));
+    Vector3 velocity = Vector3Scale(direction, speed);
+
+    activeBullets.emplace_back(origin, velocity, lifetime, enemy, BulletType::Iceball, 20.0f);
+
+    //SoundManager::GetInstance().Play("icecast");
+}
+

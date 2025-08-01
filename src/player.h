@@ -29,18 +29,18 @@ struct Player {
 
     float gravity = 980.0f;
     float height = 200.0f;
-    float jumpStrength = 600; 
-    float footstepTimer = 0.0;
-    float maxHealth = 100;
+    float jumpStrength = 600.0f; 
+    float footstepTimer = 0.0f;
+    float maxHealth = 100.0f;
     float currentHealth = maxHealth;
-    float maxMana = 100;
+    float maxMana = 100.0f;
     float currentMana = maxMana;
-    float radius = 150;
-
+    float radius = 150.0f;
+    float hitTimer = 0.0f;
     bool dying = false;
     bool dead = false;
     float deathTimer = 0.0f;
-
+    float targetFOV = 40.0f;  // or wider (zoom out) for disorientation
     float groundY;
     bool grounded = false;
     bool isSwimming = false;

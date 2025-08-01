@@ -32,11 +32,10 @@ void BeginCustom3D(Camera3D camera, float farClip) {
     rlLoadIdentity();
     float nearClip = 60.0f; //20 wider than the capsule. to 50k outside, 10k in dungeons
 
-    float testFOV = 50.0f; // 50
-    Matrix proj = MatrixPerspective(DEG2RAD * testFOV, (float)GetScreenWidth() / (float)GetScreenHeight(), nearClip, farClip);
+    float testFOV = 45.0f; // 45 is default 
+    Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), nearClip, farClip);
 
     rlMultMatrixf(MatrixToFloat(proj));
-
     rlMatrixMode(RL_MODELVIEW);
     rlLoadIdentity();
     Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
@@ -50,10 +49,11 @@ void ClearLevel() {
     ClearDungeon();
     bulletLights.clear();
     dungeonEntrances.clear();
+
     RemoveAllVegetation();
 
     if (terrainMesh.vertexCount > 0) UnloadMesh(terrainMesh); //unload mesh when switching levels. 
-    if (heightmap.data != nullptr) UnloadImage(heightmap);
+    if (heightmap.data != nullptr) UnloadImage(heightmap); 
 
     isDungeon = false;
 }
@@ -70,7 +70,8 @@ void GenerateEntrances(){
         d.tint = WHITE;
         d.linkedLevelIndex = e.linkedLevelIndex; //use entrance's linkedLevelIndex to determine which dungeon to enter from overworld
         //allowing more than one enterance to dungeon per overworld
-        d.doorType = DoorType::GoToNext; 
+
+        d.doorType = DoorType::GoToNext; //Go to Dungeon
 
         float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
         float height = 365.0f;
@@ -94,12 +95,15 @@ void GenerateEntrances(){
 
 void InitLevel(const LevelData& level, Camera camera) {
     isLoadingLevel = true;
-    //Called when starting game and changing level. init the level you pass. 
+    //Called when starting game and changing level. init the level you pass it. the level is chosen by menu or door's linkedLevelIndex. 
     ClearLevel();//clears everything. 
-    camera.position = player.position;
+    camera.position = player.position; //start as player, not freecam.
     levelIndex = level.levelIndex; //update current level index to new level. 
 
-    //why not level.isDungeon? cause it crashes, isDungeon is false to begin and then set by level. 
+    //why not level.isDungeon? cause it crashes, isDungeon is false to begin and then set by level. Does that mean we create terrain mesh even for dungeons?
+    //because if isDungeon is false this code runs. everything is set to zero or null anyway. do we init boat on dungeon levels? WE DO! 
+    //just try putting if (level.isDungeon) first. I think something in dugneon still tries to touch the heightmap or maybe it's boat. 
+
     if (!isDungeon){ // Generate the terrain mesh and model from the heightmap
         vignetteStrengthValue = 0.2f; //less of vignette outdoors. 
         // Load and format the heightmap image
@@ -282,7 +286,7 @@ void lightBullets(float deltaTime){
    // === Collect new lights to add after cleanup ===
     std::vector<LightSource> newBulletLights;
     for (const Bullet& bullet : activeBullets) {
-        if (!bullet.isFireball()) continue;
+        if (bullet.type == BulletType::Default) continue;
         LightSource bulletLight;
         bulletLight.position = bullet.GetPosition();
         bulletLight.range = 300.0f;

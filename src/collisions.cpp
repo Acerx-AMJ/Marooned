@@ -280,7 +280,7 @@ void CheckBulletHits(Camera& camera) {
             if (enemy->isDead) continue;
             bool isSkeleton = (enemy->type == CharacterType::Skeleton);
             if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), b.GetPosition(), b.GetRadius())) {
-                if (!b.IsEnemy() && !b.isFireball()) {
+                if (!b.IsEnemy() && (b.type != BulletType::Fireball && b.type != BulletType::Iceball)) {
                     enemy->TakeDamage(25);
 
                     if (enemy->isDead) {
@@ -293,7 +293,7 @@ void CheckBulletHits(Camera& camera) {
                     break;
                 }
                 
-                else if (!b.IsEnemy() && b.isFireball()){
+                else if (!b.IsEnemy() && (b.type == BulletType::Fireball || b.type == BulletType::Iceball)){
                     enemy->TakeDamage(25);
 
                     b.pendingExplosion = true;
@@ -313,7 +313,7 @@ void CheckBulletHits(Camera& camera) {
         // 🔹 3. Hit walls
         for (WallRun& w : wallRunColliders) {
             if (CheckCollisionPointBox(pos, w.bounds)) {
-                if (b.isFireball()){
+                if (b.type == BulletType::Fireball || b.type == BulletType::Iceball){
                     b.Explode(camera);
                     break;
                 }else{
@@ -328,7 +328,7 @@ void CheckBulletHits(Camera& camera) {
         // 🔹 4. Hit doors
         for (Door& d : doors) {
             if (!d.isOpen && CheckCollisionPointBox(pos, d.collider)) {
-                if (b.isFireball()){
+                if (b.type == BulletType::Fireball || b.type == BulletType::Iceball){
                     b.Explode(camera);
                     break;
                 }else{
@@ -340,7 +340,7 @@ void CheckBulletHits(Camera& camera) {
             //archway side colliders
             for (BoundingBox& side : d.sideColliders){
                 if (d.isOpen && CheckCollisionPointBox(pos, side)){
-                    if (b.isFireball()){
+                    if (b.type == BulletType::Fireball || b.type == BulletType::Iceball){
                         b.Explode(camera);
                         break;
                     }else{
@@ -359,10 +359,13 @@ void CheckBulletHits(Camera& camera) {
             if (!barrel.destroyed && CheckCollisionPointBox(pos, barrel.bounds)) {
                 barrel.destroyed = true;
                 walkable[tileX][tileY] = true; //tile is now walkable for enemies. 
-                if (b.isFireball()){
+                if (b.type == BulletType::Fireball || b.type == BulletType::Iceball){
                     b.Explode(camera);
+                    break;
                 }else{
                     b.kill(camera);
+                    break;
+
                 }
                 SoundManager::GetInstance().Play("barrelBreak");
 
@@ -386,7 +389,7 @@ void CheckBulletHits(Camera& camera) {
         // 🔹 6. Hit pillars
         for (PillarInstance& pillar : pillars) {
             if (CheckCollisionPointBox(pos, pillar.bounds)) {
-                if (b.isFireball()){
+                if (b.type == BulletType::Fireball || b.type == BulletType::Iceball){
                     b.Explode(camera);
                     break;
                 }else{
@@ -400,7 +403,7 @@ void CheckBulletHits(Camera& camera) {
         for (SpiderWebInstance& web : spiderWebs){
             if (!web.destroyed && CheckCollisionBoxSphere(web.bounds, b.GetPosition(), b.GetRadius())){
                 web.destroyed = true;
-                if (b.isFireball()){
+                if (b.type == BulletType::Fireball || b.type == BulletType::Iceball){
                     b.Explode(camera);
                     break;
                 }else{
