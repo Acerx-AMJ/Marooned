@@ -86,6 +86,7 @@ void GenerateEntrances(){
         dw.rotationY = 90.0f * DEG2RAD; //rotate to match door 0 rotation, we could rotate door to match arch instead.
         dw.isOpen = false;
         dw.isLocked = false;
+        dw.tint = GRAY;
 
         doorways.push_back(dw);
     }
@@ -293,6 +294,17 @@ void lightBullets(float deltaTime){
         bulletLight.intensity = 1.2f;
         bulletLight.lifeTime = 0.5f;
         bulletLight.age = 0.0f;
+        if (bullet.type == BulletType::Iceball) {
+            bulletLight.intensity = 0.25f;
+            bulletLight.colorTint = {0.0f, 0.7f, 0.9f};
+            bulletLight.type = LightType::Iceball;
+        } else if (bullet.type == BulletType::Fireball) {
+            bulletLight.colorTint = {1.0f, 0.15f, 0.0f};
+            bulletLight.type = LightType::Fireball;
+        } else {
+            bulletLight.type = LightType::Other;
+        }
+
         newBulletLights.push_back(bulletLight);
     }
 

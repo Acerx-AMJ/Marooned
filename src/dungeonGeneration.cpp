@@ -39,7 +39,7 @@ const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
 
 float playerLightRange = 800.0f;
 float playerLightIntensity = 0.5f;
-float fireballRange = 400.0f;
+
 //Dungeon Legend
 
 //   Transparent = Void (no floor tiles)
@@ -1205,68 +1205,72 @@ void ApplyBakedLighting() {
 
 
 void UpdateDoorwayTints(Vector3 playerPos) {
+    for (DoorwayInstance& wall : doorways) {
+        // 1️⃣ Start with baked brightness
+        float brightness = ColorAverage(wall.bakedTint);
 
-    Vector3 warmTint = { 1.0f, 0.85f, 0.7f };
+        // Start with baked tint as base color
+        Vector3 finalColor = Vector3Scale({1.0f, 0.85f, 0.7f}, brightness);  // base warm tint
 
-    for (DoorwayInstance& door : doorways) {
-        // --- 1. Start with baked static lighting as brightness ---
-        float brightness = ColorAverage(door.bakedTint);
-
-        // --- 2. Player light contribution ---
-        float distToPlayer = Vector3Distance(playerPos, door.position);
+        // 2️⃣ Player light contribution
+        float distToPlayer = Vector3Distance(playerPos, wall.position);
         float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        brightness += playerContribution * playerLightIntensity;
+        float playerLight = playerContribution * playerLightIntensity;
+        finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight));  // same warm tint
 
-        // --- 3. Dynamic fireball lights ---
+        // 3️⃣ Bullet lights (fireball or iceball, etc.)
         for (const LightSource& light : bulletLights) {
-            float distToLight = Vector3Distance(light.position, door.position);
+            float distToLight = Vector3Distance(light.position, wall.position);
             if (distToLight > light.range) continue;
 
-            float lightContribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
-            brightness += lightContribution * light.fireballIntensity;
+            float contribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);
+            float brightnessFromLight = contribution * light.fireballIntensity;
+
+            finalColor = Vector3Add(finalColor, Vector3Scale(light.colorTint, brightnessFromLight));
         }
 
-        // --- 4. Clamp total brightness ---
-        brightness = Clamp(brightness, 0.0f, 1.0f);
+        // 4️⃣ Clamp final color to avoid overbright
+        finalColor.x = Clamp(finalColor.x, 0.0f, 1.0f);
+        finalColor.y = Clamp(finalColor.y, 0.0f, 1.0f);
+        finalColor.z = Clamp(finalColor.z, 0.0f, 1.0f);
 
-        // --- 5. Apply consistent warm tint once ---
-        Vector3 tinted = Vector3Scale(warmTint, brightness);
-        door.tint = ColorFromNormalized({ tinted.x, tinted.y, tinted.z, 1.0f });
+        // 5️⃣ Store to wall.tint
+        wall.tint = ColorFromNormalized((Vector4){ finalColor.x, finalColor.y, finalColor.z, 1.0f });
     }
 }
 
 
 void UpdateWallTints(Vector3 playerPos) {
-
-
-    // Consistent wall light tint (your warm color)
-    Vector3 warmTint = {1.0f, 0.85f, 0.7f};
-
     for (WallInstance& wall : wallInstances) {
         // 1️⃣ Start with baked brightness
         float brightness = ColorAverage(wall.bakedTint);
 
-        // 2️⃣ Add player light
+        // Start with baked tint as base color
+        Vector3 finalColor = Vector3Scale({1.0f, 0.85f, 0.7f}, brightness);  // base warm tint
+
+        // 2️⃣ Player light contribution
         float distToPlayer = Vector3Distance(playerPos, wall.position);
         float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        brightness += playerContribution * playerLightIntensity;
+        float playerLight = playerContribution * playerLightIntensity;
+        finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight));  // same warm tint
 
-        // 3️⃣ Add dynamic fireball lights
+        // 3️⃣ Bullet lights (fireball or iceball, etc.)
         for (const LightSource& light : bulletLights) {
             float distToLight = Vector3Distance(light.position, wall.position);
             if (distToLight > light.range) continue;
 
-            float contribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
-            brightness += contribution * light.fireballIntensity;
+            float contribution = Clamp(1.0f - (distToLight / light.fireballRange), 0.0f, 1.0f);
+            float brightnessFromLight = contribution * light.fireballIntensity;
+
+            finalColor = Vector3Add(finalColor, Vector3Scale(light.colorTint, brightnessFromLight));
         }
 
-        // 4️⃣ Clamp total brightness
-        brightness = Clamp(brightness, 0.0f, 1.0f);
+        // 4️⃣ Clamp final color to avoid overbright
+        finalColor.x = Clamp(finalColor.x, 0.0f, 1.0f);
+        finalColor.y = Clamp(finalColor.y, 0.0f, 1.0f);
+        finalColor.z = Clamp(finalColor.z, 0.0f, 1.0f);
 
-        // 5️⃣ Apply warm tint once
-        Vector3 finalColor = Vector3Scale(warmTint, brightness);
-
-        // 6️⃣ Store back to wall.tint
+        // 5️⃣ Store to wall.tint
         wall.tint = ColorFromNormalized((Vector4){ finalColor.x, finalColor.y, finalColor.z, 1.0f });
     }
 }
@@ -1274,36 +1278,35 @@ void UpdateWallTints(Vector3 playerPos) {
 
 
 void UpdateFloorTints(Vector3 playerPos) {
-
-    // This is your *consistent* light color tint
-    Vector3 warmTint = { 1.0f, 0.85f, 0.7f };
-
     for (FloorTile& tile : floorTiles) {
-
-        // --- 1. Start with baked static brightness ---
         float brightness = ColorAverage(tile.bakedTint);
 
-        // --- 2. Player light contribution ---
+        // Accumulate final color contribution per tile
+        Vector3 finalColor = Vector3Scale({1.0f, 0.85f, 0.7f}, brightness); // baked tint as base
+
+        // Player light
         float distToPlayer = Vector3Distance(playerPos, tile.position);
         float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        brightness += playerContribution * playerLightIntensity;
+        float playerLight = playerContribution * playerLightIntensity;
+        finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); // assume player light is warm
 
-        // --- 3. Dynamic fireball lights ---
+        // Dynamic lights
         for (const LightSource& light : bulletLights) {
             float distToLight = Vector3Distance(light.position, tile.position);
             if (distToLight > light.range) continue;
 
-            float lightContribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
-            brightness += lightContribution * light.fireballIntensity;
+            float lightContribution = Clamp(1.0f - (distToLight / light.fireballRange), 0.0f, 1.0f);
+            float lightBrightness = lightContribution * light.fireballIntensity;
+
+            // Add this light’s color scaled by brightness
+            finalColor = Vector3Add(finalColor, Vector3Scale(light.colorTint, lightBrightness));
         }
 
-        // --- 4. Clamp brightness to [0,1] ---
-        brightness = Clamp(brightness, 0.0f, 1.0f);
+        // Clamp color channels
+        finalColor.x = Clamp(finalColor.x, 0.0f, 1.0f);
+        finalColor.y = Clamp(finalColor.y, 0.0f, 1.0f);
+        finalColor.z = Clamp(finalColor.z, 0.0f, 1.0f);
 
-        // --- 5. Apply warm tint once ---
-        Vector3 finalColor = Vector3Scale(warmTint, brightness);
-
-        // --- 6. Store in tile.tint ---
         tile.tint = ColorFromNormalized({ finalColor.x, finalColor.y, finalColor.z, 1.0f });
     }
 }
@@ -1311,35 +1314,41 @@ void UpdateFloorTints(Vector3 playerPos) {
 
 
 
+
 void UpdateCeilingTints(Vector3 playerPos) {
-    Vector3 warmCeilingColor = {0.7f, 0.6f, 0.5f}; // slightly muted warm tone
+    for (CeilingTile& tile : ceilingTiles) {
+        float brightness = ColorAverage(tile.bakedTint);
 
-    for (CeilingTile& ceiling : ceilingTiles) {
-        // --- 1. Start with baked static lighting as brightness ---
-        float brightness = ColorAverage(ceiling.bakedTint);
+        // Accumulate final color contribution per tile
+        Vector3 finalColor = Vector3Scale({1.0f, 0.85f, 0.7f}, brightness); // baked tint as base
 
-        // --- 2. Player light contribution ---
-        float distToPlayer = Vector3Distance(playerPos, ceiling.position);
+        // Player light
+        float distToPlayer = Vector3Distance(playerPos, tile.position);
         float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        brightness += playerContribution * playerLightIntensity;
+        float playerLight = playerContribution * playerLightIntensity;
+        finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); // assume player light is warm
 
-        // --- 3. Dynamic fireball lights ---
+        // Dynamic lights
         for (const LightSource& light : bulletLights) {
-            float distToLight = Vector3Distance(light.position, ceiling.position);
+            float distToLight = Vector3Distance(light.position, tile.position);
             if (distToLight > light.range) continue;
 
-            float lightContribution = Clamp(1.0f - (distToLight / fireballRange), 0.0f, 1.0f);
-            brightness += lightContribution * light.fireballIntensity;
+            float lightContribution = Clamp(1.0f - (distToLight / light.fireballRange), 0.0f, 1.0f);
+            float lightBrightness = lightContribution * light.fireballIntensity;
+
+            // Add this light’s color scaled by brightness
+            finalColor = Vector3Add(finalColor, Vector3Scale(light.colorTint, lightBrightness));
         }
 
-        // --- 4. Clamp total brightness ---
-        brightness = Clamp(brightness, 0.0f, 1.0f);
+        // Clamp color channels
+        finalColor.x = Clamp(finalColor.x, 0.0f, 1.0f);
+        finalColor.y = Clamp(finalColor.y, 0.0f, 1.0f);
+        finalColor.z = Clamp(finalColor.z, 0.0f, 1.0f);
 
-        // --- 5. Apply consistent ceiling tint once ---
-        Vector3 tinted = Vector3Scale(warmCeilingColor, brightness);
-        ceiling.tint = ColorFromNormalized((Vector4){ tinted.x, tinted.y, tinted.z, 1.0f });
+        tile.tint = ColorFromNormalized({ finalColor.x, finalColor.y, finalColor.z, 1.0f });
     }
 }
+
 
 
 

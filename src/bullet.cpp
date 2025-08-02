@@ -25,6 +25,7 @@ Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, BulletTyp
 
 void Bullet::UpdateMagicBall(Camera& camera, float deltaTime) {
     if (!alive) return;
+
     // Gravity-based arc
     gravity = 980;
     fireEmitter.SetPosition(position);
@@ -215,6 +216,7 @@ void Bullet::Blood(Camera camera){
 
 void Bullet::Explode(Camera& camera) {
     if (!alive) return; 
+    if (type == BulletType::Default) return;
 
     if (!explosionTriggered){
         explosionTriggered = true;  
@@ -275,7 +277,7 @@ void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int p
         dir = Vector3Normalize(dir);
 
         Vector3 velocity = Vector3Scale(dir, speed);
-        activeBullets.emplace_back(origin, velocity, lifetime, enemy);
+        activeBullets.emplace_back(origin, velocity, lifetime, enemy, BulletType::Default);
 
     }
 }
@@ -310,6 +312,6 @@ void FireIceball(Vector3 origin, Vector3 target, float speed, float lifetime, bo
 
     activeBullets.emplace_back(origin, velocity, lifetime, enemy, BulletType::Iceball, 20.0f);
 
-    //SoundManager::GetInstance().Play("icecast");
+    SoundManager::GetInstance().Play("iceMagic");
 }
 

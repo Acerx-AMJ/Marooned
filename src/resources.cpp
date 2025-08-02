@@ -180,6 +180,8 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("flame2", "assets/sounds/flame2.ogg");
     SoundManager::GetInstance().LoadSound("explosion", "assets/sounds/explosion.ogg");
     SoundManager::GetInstance().LoadSound("staffHit", "assets/sounds/staffHit.ogg");
+    SoundManager::GetInstance().LoadSound("iceMagic", "assets/sounds/iceMagic.ogg");
+
 
     SoundManager::GetInstance().LoadMusic("dungeonAir", "assets/sounds/dungeonAir.ogg");
     SoundManager::GetInstance().LoadMusic("jungleAmbience", "assets/sounds/jungleSounds.ogg");

@@ -40,7 +40,7 @@ struct Player {
     bool dying = false;
     bool dead = false;
     float deathTimer = 0.0f;
-    float targetFOV = 40.0f;  // or wider (zoom out) for disorientation
+    float targetFOV = 50.0f;  //change camera.fovy slightly on hit
     float groundY;
     bool grounded = false;
     bool isSwimming = false;

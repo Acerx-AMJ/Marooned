@@ -12,6 +12,14 @@ enum class DoorType {
     GoToNext
 };
 
+enum class LightType {
+    StaticFire,
+    Fireball,
+    Iceball,
+    Other // fallback or future expansion
+};
+
+
 struct Fire {
     int fireFrame = 0;
     float fireAnimTimer = 0.0f;
@@ -24,7 +32,7 @@ struct DoorwayInstance {
     float rotationY;
     bool isOpen = false;
     bool isLocked = false;
-    Color tint = WHITE;
+    Color tint = GRAY;
     Color bakedTint;
     float bakedBrightness;
     int tileX;
@@ -97,12 +105,15 @@ struct PillarInstance {
 
 struct LightSource {
     Vector3 position;
-    float intensity = 1.0f;  // maybe 1.0 = full bright, 0.5 = dim, etc.
+    float intensity = 0.5f;  // maybe 1.0 = full bright, 0.5 = dim, etc.
     float fireballIntensity = 0.1f;
     float range = 1000.0f;
     float lifeTime = 1.0f;
     float age;
-
+    float fireballRange = 400.0f;
+    
+    Vector3 colorTint = {1.0f, 0.85f, 0.7f}; // default warm
+    LightType type = LightType::Other;
 };
 
 
@@ -161,7 +172,7 @@ extern int dungeonWidth;
 extern int dungeonHeight;
 extern float playerLightRange;
 extern float playerLightIntensity;
-extern float fireballRange;
+
 
 void InitChests();
 void UpdateDungeonChests();
