@@ -46,6 +46,9 @@ void GatherEnemies(Camera& camera) {
         float billboardSize = GetAdjustedBillboardSize(enemy->frameWidth * enemy->scale, dist);
         // Dynamic tint for damage
         Color finalTint = (enemy->hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
+        if (enemy->state == CharacterState::Freeze){
+            finalTint = SKYBLUE;
+        }
 
         billboardRequests.push_back({
             Billboard_FacingCamera,

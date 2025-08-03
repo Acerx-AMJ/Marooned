@@ -10,6 +10,11 @@ enum class WeaponType {
 
 };
 
+enum class MagicType {
+    Fireball,
+    Iceball,
+};
+
 struct MuzzleFlash {
     Vector3 position;
     Texture2D* texture;
@@ -117,7 +122,7 @@ struct Weapon {
 struct MagicStaff {
     Model model;
     Vector3 scale = { 1.0f, 1.0f, 1.0f };
-
+    MagicType magicType = MagicType::Fireball;
     // === Melee / Swinging ===
     float swingTimer = 0.0f;
     float swingDuration = 1.0f;

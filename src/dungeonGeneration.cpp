@@ -24,7 +24,7 @@ std::vector<Door> doors;
 std::vector<PillarInstance> pillars;
 std::vector<WallRun> wallRunColliders;
 std::vector<LightSource> dungeonLights; //static lights. 
-std::vector<LightSource> bulletLights; //lights attached to bullets for testing.
+std::vector<LightSource> bulletLights; //fireball/iceball
 std::vector<Fire> fires;
 
 Image dungeonImg; //save the dungeon info globaly
@@ -32,10 +32,6 @@ Color* dungeonPixels = nullptr;
 int dungeonWidth = 0;
 int dungeonHeight = 0;
 
-// === Constants ===
-const Color COLOR_BLACK  = { 0, 0, 0, 255 }; //walls
-const Color COLOR_BLUE   = { 0, 0, 255, 255 }; //barrels
-const Color COLOR_RED   = { 255, 0, 0, 255 }; //enemies
 
 float playerLightRange = 800.0f;
 float playerLightIntensity = 0.5f;
@@ -76,11 +72,7 @@ float playerLightIntensity = 0.5f;
 
 //    Dark Red = magicStaff (128, 0, 0)
 
-void InitChests() {
-    //chestModel = LoadModel("assets/models/chest.glb");
-    //chestAnimations = LoadModelAnimations("assets/models/chest.glb", &chestAnimCount);
 
-}
 
 Vector3 ColorToNormalized(Color color) {
     return (Vector3){
@@ -244,15 +236,15 @@ inline bool ColorsEqual(Color a, Color b) {
 }
 
 inline bool IsWallColor(Color c) {
-    return ColorsEqual(c, COLOR_BLACK);
+    return ColorsEqual(c, { 0, 0, 0, 255 });
 }
 
 inline bool IsBarrelColor(Color c) {
-    return ColorsEqual(c, COLOR_BLUE);
+    return ColorsEqual(c, { 0, 0, 255, 255 });
 }
 
 inline bool IsEnemyColor(Color c) {
-    return ColorsEqual(c, COLOR_RED);
+    return ColorsEqual(c, { 255, 0, 0, 255 });
 }
 
 

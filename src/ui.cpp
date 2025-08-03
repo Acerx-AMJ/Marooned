@@ -3,6 +3,38 @@
 #include <cmath>
 #include "raymath.h"
 #include "level.h"
+#include "resources.h"
+#include "weapon.h"
+
+void DrawMagicIcon(const Player& player){
+    Texture2D currentTexture;
+
+    if (magicStaff.magicType == MagicType::Fireball) {
+        currentTexture = fireIcon;
+    } else if (magicStaff.magicType == MagicType::Iceball) {
+        currentTexture = iceIcon;
+    }
+
+    int targetSize = 64;
+    int marginX = 314; // distance from right screen edge
+    int marginY = GetScreenHeight() - targetSize - 20;
+    // Source rect: crop entire original texture
+    Rectangle src = { 0.0f, 0.0f, (float)currentTexture.width, (float)currentTexture.height };
+
+    // Destination rect: bottom-left corner, scaled to 64x64
+    Rectangle dest = {
+        (float)marginX,
+        (float)marginY,
+        (float)targetSize,
+        (float)targetSize
+    };
+
+    Vector2 origin = { 0.0f, 0.0f }; // top-left origin
+
+    DrawTexturePro(currentTexture, src, dest, origin, 0.0f, WHITE);
+}
+
+
 
 void DrawHealthBar(const Player& player) {
     float healthPercent = (float)player.currentHealth / player.maxHealth;

@@ -4,6 +4,9 @@
 #include "weapon.h"
 #include "inventory.h"
 
+extern Weapon weapon;
+extern MeleeWeapon meleeWeapon;
+extern MagicStaff magicStaff;
 
 
 

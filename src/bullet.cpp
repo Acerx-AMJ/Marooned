@@ -109,8 +109,6 @@ void Bullet::Update(Camera& camera, float deltaTime) {
             timeSinceExploded += deltaTime;
 
             if (timeSinceExploded >= 2.0f) { //wait for particles to act. 
-
-                
                 alive = false;
                 
             }
@@ -212,11 +210,9 @@ void Bullet::Blood(Camera camera){
 }
 
 
-
-
 void Bullet::Explode(Camera& camera) {
     if (!alive) return; 
-    if (type == BulletType::Default) return;
+    if (type == BulletType::Default) return; //we were calling explode on default bullets some how. 
 
     if (!explosionTriggered){
         explosionTriggered = true;  
@@ -236,20 +232,38 @@ void Bullet::Explode(Camera& camera) {
         float maxDamage = 200;
         float explosionRadius = 200;
         //area damage
-        for (Character* enemy : enemyPtrs){
-            float dist = Vector3Distance(position, enemy->position);
-            if (dist < explosionRadius) {
-                float dmg =  Lerp(maxDamage, minDamage, dist / explosionRadius);
-                enemy->TakeDamage(dmg);
+        if (type == BulletType::Fireball){
+            for (Character* enemy : enemyPtrs){
+                float dist = Vector3Distance(position, enemy->position);
+                if (dist < explosionRadius) {
+                    float dmg =  Lerp(maxDamage, minDamage, dist / explosionRadius);
+                    enemy->TakeDamage(dmg);
+                    
+                }
             }
+            //damage player if too close, 
+            float pDamage = 50.0f;
+            float pdist = Vector3Distance(player.position, position);
+            if (pdist < explosionRadius){
+                float dmg =  Lerp(pDamage, minDamage, pdist / explosionRadius);
+                player.TakeDamage(dmg);
+            }
+
+        }else if (type == BulletType::Iceball){
+            for (Character* enemy : enemyPtrs){
+                float dist = Vector3Distance(position, enemy->position);
+                if (dist < explosionRadius) {
+                    float dmg =  Lerp(maxDamage, minDamage, dist / explosionRadius);
+                    enemy->state = CharacterState::Freeze;
+                    enemy->currentHealth -= dmg; //dont call take damage, it triggers stagger which over rides freeze. 
+
+                    
+
+                }
+            }
+
         }
-        //damage player if too close, 
-        float pDamage = 50.0f;
-        float pdist = Vector3Distance(player.position, position);
-        if (pdist < explosionRadius){
-            float dmg =  Lerp(pDamage, minDamage, pdist / explosionRadius);
-            player.TakeDamage(dmg);
-        }
+
 
     }
 

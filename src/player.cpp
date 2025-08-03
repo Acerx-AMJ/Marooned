@@ -11,8 +11,6 @@
 #include "input.h"
 #include "weapon.h"
 
-
-
 Weapon weapon;
 MeleeWeapon meleeWeapon;
 MagicStaff magicStaff;
@@ -107,14 +105,7 @@ void HandleKeyboardInput(float deltaTime) {
     }
 
     if (IsKeyPressed(KEY_Q)) {
-        // Wipe the blood if switching from sword
-        // if (activeWeapon == WeaponType::Sword) {
-        //     swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean;
-        // }
-
-        // // Cycle to next weapon in the collected list
-        // player.currentWeaponIndex = (player.currentWeaponIndex + 1) % player.collectedWeapons.size();
-        // activeWeapon = player.collectedWeapons[player.currentWeaponIndex];
+ 
         player.EquipNextWeapon();
     }
 
@@ -139,6 +130,14 @@ void HandleKeyboardInput(float deltaTime) {
                 SoundManager::GetInstance().Play("gulp");
             }
         }
+    }
+
+    if (IsKeyPressed(KEY_T)){
+       if (magicStaff.magicType == MagicType::Fireball){
+            magicStaff.magicType = MagicType::Iceball;
+       }else{
+            magicStaff.magicType = MagicType::Fireball;
+       }
     }
 
 }

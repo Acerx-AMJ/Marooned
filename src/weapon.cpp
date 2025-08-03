@@ -322,8 +322,14 @@ void MagicStaff::Fire(const Camera& camera) {
 
     Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
     Vector3 targetPoint = Vector3Add(camera.position, Vector3Scale(camForward, 1000.0f));
-    FireFireball(muzzlePos, targetPoint, 2000, 10, false);
-    //FireIceball(muzzlePos, targetPoint, 2000, 10, false);
+    
+    if (magicType == MagicType::Fireball){
+        FireFireball(muzzlePos, targetPoint, 2000, 10, false);
+    }else{
+        FireIceball(muzzlePos, targetPoint, 2000, 10, false);
+    }
+    
+    
 }
 
 void MagicStaff::PlaySwipe(){

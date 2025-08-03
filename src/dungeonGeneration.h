@@ -173,8 +173,6 @@ extern int dungeonHeight;
 extern float playerLightRange;
 extern float playerLightIntensity;
 
-
-void InitChests();
 void UpdateDungeonChests();
 void LoadDungeonLayout(const std::string& imagePath); // Just loads and caches image
 void GenerateFloorTiles(float baseY);

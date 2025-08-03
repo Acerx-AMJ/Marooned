@@ -280,7 +280,7 @@ void CheckBulletHits(Camera& camera) {
             if (enemy->isDead) continue;
             bool isSkeleton = (enemy->type == CharacterType::Skeleton);
             if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), b.GetPosition(), b.GetRadius())) {
-                if (!b.IsEnemy() && (b.type != BulletType::Fireball && b.type != BulletType::Iceball)) {
+                if (!b.IsEnemy() && (b.type == BulletType::Default)) {
                     enemy->TakeDamage(25);
 
                     if (enemy->isDead) {
@@ -293,13 +293,20 @@ void CheckBulletHits(Camera& camera) {
                     break;
                 }
                 
-                else if (!b.IsEnemy() && (b.type == BulletType::Fireball || b.type == BulletType::Iceball)){
+                else if (!b.IsEnemy() && (b.type == BulletType::Fireball)){
                     enemy->TakeDamage(25);
-
+                    
                     b.pendingExplosion = true;
                     b.explosionTimer = 0.04f; // short delay
                     // Don't call b.Explode() yet //called in updateFireball
 
+                }else if (!b.IsEnemy() && (b.type == BulletType::Iceball)){
+                    //enemy->TakeDamage(25);
+                    enemy->state = CharacterState::Freeze;
+                    b.pendingExplosion = true;
+                    b.explosionTimer = 0.04f;
+
+                    
                 } else if (b.IsEnemy() && isSkeleton) { // friendly fire
                     enemy->TakeDamage(25);
                     b.kill(camera);

@@ -287,6 +287,19 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
             break;
         }
 
+        case CharacterState::Freeze: {
+            stateTimer += deltaTime;
+            //do nothing
+
+            if (stateTimer > 5.0f){
+                state = CharacterState::Idle;
+                SetAnimation(0, 1, 1.0f);
+                stateTimer = 0;
+            }
+            break;
+
+        }
+
         case CharacterState::Stagger: {
             //do nothing
             stateTimer += deltaTime;
@@ -310,10 +323,6 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heig
             break;
         }
     }
-
-
-
-
 
 
 void Character::UpdatePirateAI(float deltaTime, Player& player) {
@@ -366,8 +375,6 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
             break;
         }
-
-
         
         case CharacterState::Chase:
             stateTimer += deltaTime;
@@ -564,7 +571,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
 
         case CharacterState::Reposition: {
-            //skeletons and pirates when close surround the player. Instead of all standing on the same tile. 
+            //skeletons and pirates and spiders, when close, surround the player. Instead of all standing on the same tile. 
             stateTimer += deltaTime;
 
             Vector2 playerTile = WorldToImageCoords(player.position);
@@ -623,6 +630,19 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             }
 
             break;
+        }
+
+        case CharacterState::Freeze: {
+            stateTimer += deltaTime;
+            //do nothing
+
+            if (stateTimer > 5.0f){
+                state = CharacterState::Idle;
+                SetAnimation(0, 1, 1.0f);
+                stateTimer = 0;
+            }
+            break;
+
         }
 
 
@@ -712,7 +732,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
             if (distance < 300.0f && playerVisible) {
                 state = CharacterState::Attack;
-                SetAnimation(2, 4, 0.2f);
+                SetAnimation(2, 4, 0.2f); //0.8 seconds total, this should match attack cooldown
                 stateTimer = 0.0f;
                 attackCooldown = 0.0f;
 
@@ -780,7 +800,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
             attackCooldown -= deltaTime;
             if (attackCooldown <= 0.0f && currentFrame == 1 && canSee) { // make sure you can see what your attacking. 
-                attackCooldown = 1.0f; // 1 second cooldown for 1 second of animation. 
+                attackCooldown = 0.8f; // 0.2 * 4 frames on animation for skele attack. 
 
                 // Play attack sound
                 if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play("swipe3");
@@ -878,11 +898,24 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             break;
         }
 
+        case CharacterState::Freeze: {
+            stateTimer += deltaTime;
+            //do nothing
+
+            if (stateTimer > 5.0f){
+                state = CharacterState::Idle;
+                SetAnimation(0, 1, 1.0f);
+                stateTimer = 0;
+            }
+            break;
+
+        }
+
 
         case CharacterState::Stagger: {
             stateTimer += deltaTime;
             //do nothing
-    
+
             //currentWorldPath.clear(); //loose the path on stagger
             if (stateTimer >= 1.0f) {
                 canBleed = true; //for spiders
@@ -1067,11 +1100,8 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
     float groundY = GetHeightAtWorldPosition(position, heightmap, terrainScale); //get groundY from heightmap
     if (isDungeon) groundY = dungeonPlayerHeight;
 
-    if (hitTimer > 0){
-        hitTimer -= deltaTime;
-    }else{
-        hitTimer = 0;
-    }
+
+
     // Gravity
     float gravity = 980.0f; //we need gravity for outside maps so characters stick to heightmap.
     if (isDungeon) gravity = 0.0f; //no gravity in dungeons. floor is fixed height. 
@@ -1107,7 +1137,11 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
         }
     }
 
-
+    if (hitTimer > 0.0f){
+        hitTimer -= deltaTime;
+    }else{
+        hitTimer = 0.0f;
+    }
 
 
     eraseCharacters(); //clean up dead rators and skeletons
@@ -1115,30 +1149,36 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
 }
 
 
-void Character::Draw(Camera3D camera) {
-    //never called. we draw billboards in transparentDraw
-    Rectangle sourceRec = {
-        (float)(currentFrame * frameWidth),
-        (float)(rowIndex * frameHeight),
-        (float)frameWidth,
-        (float)frameHeight
-    };
+// void Character::Draw(Camera3D camera) {
+//     //never called. we draw billboards in transparentDraw
+//     Rectangle sourceRec = {
+//         (float)(currentFrame * frameWidth),
+//         (float)(rowIndex * frameHeight),
+//         (float)frameWidth,
+//         (float)frameHeight
+//     };
 
-    // Calculate a slight camera-facing offset to reduce z-fighting
-    Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.position, position));
-    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 10.0f));
-    if (type == CharacterType::Skeleton) scale = 0.8; //resize skele before drawing
-    Vector2 size = { frameWidth * scale, frameHeight * scale };
+//     // Calculate a slight camera-facing offset to reduce z-fighting
+//     Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.position, position));
+//     Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 10.0f));
+//     if (type == CharacterType::Skeleton) scale = 0.8; //resize skele before drawing
+//     Vector2 size = { frameWidth * scale, frameHeight * scale };
 
-    Color redTint = (hitTimer > 0.0f) ? (Color){255, 50, 50, 255} : WHITE;
-    rlDisableDepthMask();
-    if (isDead && type == CharacterType::Pirate) offsetPos.y -= 25; 
-    if (isDead && type == CharacterType::Spider) offsetPos.y -= 25; 
-    //DrawBoundingBox(GetBoundingBox(), RED); //debug visible bounding boxes
-    DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, redTint);
+//     Color newTint = WHITE;
+//     if (hitTimer > 0.0f) {
+//         newTint = RED;
+//     }else if (state == CharacterState::Freeze){
+//         newTint = SKYBLUE;
+//     } 
+    
+//     rlDisableDepthMask();
+//     if (isDead && type == CharacterType::Pirate) offsetPos.y -= 25; 
+//     if (isDead && type == CharacterType::Spider) offsetPos.y -= 25; 
+//     //DrawBoundingBox(GetBoundingBox(), RED); //debug visible bounding boxes
+//     DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, newTint);
 
-    rlEnableDepthMask();
-}
+//     rlEnableDepthMask();
+// }
 
 
 void Character::SetAnimation(int row, int frames, float speed, bool loop) {

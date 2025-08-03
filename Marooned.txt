@@ -129,13 +129,34 @@ sword is bloody when starting in dungeon for mysterious reasons.
 
 Use dinoBite for spider attack sound. current one is weird sounding. 
 
-make another release with the staff sitting on little island. Maybe we could take a picture of the staff and show a billboard of the staff instead of instancing the 3d model. that seems like more work than just draw model. We would need to worry about sorting if it were a billboard. The model should be scaled correctly to look good at a distance. It would have to be a struct though. we can't just have some one off model floating around, it needs  to be a collectable...it can't be a collectable. It needs to be a one off thing. What if you needed to pick up the blunderbuss or sword. We should have in world pickupable weapons. Start with nothing. you already have the vector of weapon types. What would you call this class? CollectableWeapon
+make another release with the staff sitting on little island. Maybe we could take a picture of the staff and show a billboard of the staff instead of instancing the 3d model. that seems like more work than just draw model. We would need to worry about sorting if it were a billboard. The model should be scaled correctly to look good at a distance. It would have to be a struct though. we can't just have some one off model floating around, it needs  to be a collectable...it can't be a collectable. It needs to be a one off thing. What if you needed to pick up the blunderbuss or sword. We should have in world pickupable weapons. Start with nothing. you already have the vector of weapon types. What would you call this class? CollectableWeapon.
+-made CollectableWeapon class. Uses existing WeaponType enum. instance and add to worldWeapons vector. update and draw the 3d models hovering and spinning. For now start with blunderbuss and sword. find the staff on level 4. 
+
+Staff isn't too overpowered. Should maybe slow the fire rate. Self damage seems good, you can accidently hurt yourself with fireballs if too close, but it's not that much damage, 50 max that falls off with distance. Should the staff have different projectiles? How could we do that? FireFireball(), FireIceball(), FireLightning(). Freezing enemies and them hitting them with the sword shaders them. erase the sprite and spawn ice particles, lots of them with high gravity. Ice ball would emit blue particles when in the air instead of smoke. Ice explosion on hit. Could reuse existing explosion just add an ice flag and change the color. 
+
+Implement mana. Player member var. Mana bar. maxMana, currentMana. animate the mana going down. Mana potions are spawn from barrels, and can be spawned in world with a dark blue pixel maybe. Shooting a fireball only costs like 10 mana. shoot 10 times before you need more mana. May need to make fireballs more powerful if they are going to be limited. 
+-implemented mana. 10 mana to cast fireball maybe to low. Barrels can drop mana potions 10 percent of the time. 
 
 
 Make the light range super far but the intensity low. it blends things out wayyyy better. Well way better for fireball anyway. 
 I got it a little bit smoother. 
 
-the gun should bob up and down while you walk. the sword should swing up and down. the staff should do something as well when moving. x
+the gun should bob up and down while you walk. the sword should swing up and down. the staff should do something as well when moving. -added weapon bob to all weapons. bobbing every 2 steps looks most like a how a video game should be. x
+
+make staff shoot slower. - slowed from 0.5 to 1.0
+
+chest open animation seems way too slow. x
+
+bullets now kill skeles in one hit. they seems to be penetrating them. how is that possible? we are early returning? -fixed but I dont remember what was wrong. 
+
+Improved bullet light code.
+
+Character has rotationY var that gets set when moving. We never use this. Why would we need rotationY on character? bullet gets direction from player.position - position. billboards always face camera. Could we use it for something in the future? 
+
+
+
+
+
 
 
 

@@ -13,7 +13,7 @@ RenderTexture2D sceneTexture, postProcessTexture, depthEffectTexture;
 
 Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, wallFallback, 
 doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture, spiderSheet, spiderWebTexture, brokeWebTexture, explosionSheet,
-manaPotion;
+manaPotion, fireIcon, iceIcon;
 
 Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader, depthShader, pbrShader;
 
@@ -57,7 +57,8 @@ void LoadAllResources() {
     wallFallback = LoadTexture("assets/textures/wallBaseColor.png");
     explosionSheet = LoadTexture("assets/sprites/explosionSheet.png");
     manaPotion = LoadTexture("assets/sprites/manaPotion.png");
-    
+    fireIcon = LoadTexture("assets/sprites/fireIcon.png");
+    iceIcon = LoadTexture("assets/sprites/iceIcon.png");
 
     // Models
     palmTree = LoadModel("assets/models/bigPalmTree.glb");

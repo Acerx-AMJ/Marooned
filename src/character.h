@@ -19,6 +19,7 @@ enum class CharacterState {
     Chase,
     Attack,
     RunAway,
+    Freeze,
     Stagger,
     Reposition,
     Patrol,
@@ -51,6 +52,7 @@ public:
     float attackCooldown = 0.0f;
     float chaseDuration = 0.0f;
     float hitTimer = 0.0f;
+    float freezeTimer = 0.0f;
     float runawayAngleOffset = 0.0f;
     int patrolRadius = 3;
     bool hasRunawayAngle = false;
@@ -91,7 +93,7 @@ public:
     void SetPath(Vector2 start);
     void eraseCharacters();
     void TakeDamage(int amount);
-    void Draw(Camera3D camera);
+    //void Draw(Camera3D camera);
     void SetAnimation(int row, int frames, float speed, bool loop=true);
     void playRaptorSounds();
 };

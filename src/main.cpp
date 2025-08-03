@@ -274,7 +274,7 @@ void UpdateDecals(float deltaTime){
 }
 
 void lightBullets(float deltaTime){
-    //debug lights attached to blunderbuss bullets
+    //Fireball/iceball light
 
    // === Clean up expired bullet lights ===
     for (int i = bulletLights.size() - 1; i >= 0; --i) {
@@ -291,11 +291,10 @@ void lightBullets(float deltaTime){
         LightSource bulletLight;
         bulletLight.position = bullet.GetPosition();
         bulletLight.range = 300.0f;
-        bulletLight.intensity = 1.2f;
+        //bulletLight.intensity = 1.2f;
         bulletLight.lifeTime = 0.5f;
         bulletLight.age = 0.0f;
         if (bullet.type == BulletType::Iceball) {
-            bulletLight.intensity = 0.25f;
             bulletLight.colorTint = {0.0f, 0.7f, 0.9f};
             bulletLight.type = LightType::Iceball;
         } else if (bullet.type == BulletType::Fireball) {
@@ -580,6 +579,7 @@ int main() {
             DrawHealthBar(player);
             DrawStaminaBar(player);
             DrawManaBar(player);
+            if (player.activeWeapon == WeaponType::MagicStaff) DrawMagicIcon(player);
             DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD); 
             if (debugInfo){//press ~ to hide debug info
                 DrawTimer(ElapsedTime); 
