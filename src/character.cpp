@@ -916,7 +916,6 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             stateTimer += deltaTime;
             //do nothing
 
-            //currentWorldPath.clear(); //loose the path on stagger
             if (stateTimer >= 1.0f) {
                 canBleed = true; //for spiders
                 state = CharacterState::Chase;
@@ -982,7 +981,6 @@ void Character::TakeDamage(int amount) {
 
     if (currentHealth <= 0) { //die
 
-        
         hitTimer = 5.0f; //stay red for five seconds testing //0.5f
         currentHealth = 0;
         isDead = true;
@@ -1053,9 +1051,6 @@ void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
 }
 
 
-
-
-
 Vector3 Character::ComputeRepulsionForce(const std::vector<Character*>& allRaptors, float repulsionRadius, float repulsionStrength) {
     Vector3 repulsion = { 0 };
     //prevent raptors overlapping 
@@ -1099,8 +1094,6 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
     previousPosition = position;
     float groundY = GetHeightAtWorldPosition(position, heightmap, terrainScale); //get groundY from heightmap
     if (isDungeon) groundY = dungeonPlayerHeight;
-
-
 
     // Gravity
     float gravity = 980.0f; //we need gravity for outside maps so characters stick to heightmap.
@@ -1147,38 +1140,6 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
     eraseCharacters(); //clean up dead rators and skeletons
 
 }
-
-
-// void Character::Draw(Camera3D camera) {
-//     //never called. we draw billboards in transparentDraw
-//     Rectangle sourceRec = {
-//         (float)(currentFrame * frameWidth),
-//         (float)(rowIndex * frameHeight),
-//         (float)frameWidth,
-//         (float)frameHeight
-//     };
-
-//     // Calculate a slight camera-facing offset to reduce z-fighting
-//     Vector3 camDir = Vector3Normalize(Vector3Subtract(camera.position, position));
-//     Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, 10.0f));
-//     if (type == CharacterType::Skeleton) scale = 0.8; //resize skele before drawing
-//     Vector2 size = { frameWidth * scale, frameHeight * scale };
-
-//     Color newTint = WHITE;
-//     if (hitTimer > 0.0f) {
-//         newTint = RED;
-//     }else if (state == CharacterState::Freeze){
-//         newTint = SKYBLUE;
-//     } 
-    
-//     rlDisableDepthMask();
-//     if (isDead && type == CharacterType::Pirate) offsetPos.y -= 25; 
-//     if (isDead && type == CharacterType::Spider) offsetPos.y -= 25; 
-//     //DrawBoundingBox(GetBoundingBox(), RED); //debug visible bounding boxes
-//     DrawBillboardRec(camera, *texture, sourceRec, offsetPos, size, newTint);
-
-//     rlEnableDepthMask();
-// }
 
 
 void Character::SetAnimation(int row, int frames, float speed, bool loop) {

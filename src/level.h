@@ -27,7 +27,7 @@ struct LevelData {
 
     std::vector<DungeonEntrance> entrances;
     int levelIndex; //current LevelIndex
-    int nextLevel;
+    int nextLevel; //next level index
     
     
 };

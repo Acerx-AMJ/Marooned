@@ -7,6 +7,7 @@
 #include "custom_rendertexture.h"
 #include "dungeonGeneration.h"
 #include "rlgl.h"
+#include "resourceManager.h"
 
 
 RenderTexture2D sceneTexture, postProcessTexture, depthEffectTexture;
@@ -29,86 +30,89 @@ Vector3 terrainScale = {16000.0f, 200.0f, 16000.0f}; //very large x and z,
 
 Vector2 screenResolution; //global shader resolution
 #define MAX_MATERIAL_MAPS 12
+ResourceManager R;
 
 void LoadAllResources() {
     screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
     sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
     depthEffectTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
-    
     postProcessTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
-    raptorTexture = LoadTexture("assets/sprites/raptorSheet.png");
-    skeletonSheet = LoadTexture("assets/sprites/skeletonSheet.png");
-    gunTexture = LoadTexture("assets/sprites/flintlock.png");
-    muzzleFlash = LoadTexture("assets/sprites/muzzleFlash.png");
-    backDrop = LoadTexture("assets/screenshots/dungeon1.png");
-    smokeSheet = LoadTexture("assets/sprites/smokeSheet.png");
-    bloodSheet = LoadTexture("assets/sprites/bloodSheet.png");
-    doorTexture = LoadTexture("assets/sprites/door.png");
-    healthPotTexture = LoadTexture("assets/sprites/Healthpot.png");
-    keyTexture = LoadTexture("assets/sprites/key.png");
-    swordBloody = LoadTexture("assets/textures/swordBloody.png");
-    swordClean = LoadTexture("assets/textures/swordClean.png");
-    fireSheet = LoadTexture("assets/sprites/fireSheet.png");
-    pirateSheet = LoadTexture("assets/sprites/pirateSheet.png");
-    coinTexture = LoadTexture("assets/sprites/coin.png");
-    spiderSheet = LoadTexture("assets/sprites/spiderSheet.png");
-    spiderWebTexture = LoadTexture("assets/sprites/spiderWeb.png");
-    brokeWebTexture = LoadTexture("assets/sprites/brokeWeb.png");
-    wallFallback = LoadTexture("assets/textures/wallBaseColor.png");
-    explosionSheet = LoadTexture("assets/sprites/explosionSheet.png");
-    manaPotion = LoadTexture("assets/sprites/manaPotion.png");
-    fireIcon = LoadTexture("assets/sprites/fireIcon.png");
-    iceIcon = LoadTexture("assets/sprites/iceIcon.png");
+
+    raptorTexture = R.LoadTexture("assets/sprites/raptorSheet.png");
+    skeletonSheet = R.LoadTexture("assets/sprites/skeletonSheet.png");
+    gunTexture = R.LoadTexture("assets/sprites/flintlock.png");
+    muzzleFlash = R.LoadTexture("assets/sprites/muzzleFlash.png");
+    backDrop = R.LoadTexture("assets/screenshots/dungeon1.png");
+    smokeSheet = R.LoadTexture("assets/sprites/smokeSheet.png");
+    bloodSheet = R.LoadTexture("assets/sprites/bloodSheet.png");
+    doorTexture = R.LoadTexture("assets/sprites/door.png");
+    healthPotTexture = R.LoadTexture("assets/sprites/Healthpot.png");
+    keyTexture = R.LoadTexture("assets/sprites/key.png");
+    swordBloody = R.LoadTexture("assets/textures/swordBloody.png");
+    swordClean = R.LoadTexture("assets/textures/swordClean.png");
+    fireSheet = R.LoadTexture("assets/sprites/fireSheet.png");
+    pirateSheet = R.LoadTexture("assets/sprites/pirateSheet.png");
+    coinTexture = R.LoadTexture("assets/sprites/coin.png");
+    spiderSheet = R.LoadTexture("assets/sprites/spiderSheet.png");
+    spiderWebTexture = R.LoadTexture("assets/sprites/spiderWeb.png");
+    brokeWebTexture = R.LoadTexture("assets/sprites/brokeWeb.png");
+    wallFallback = R.LoadTexture("assets/textures/wallBaseColor.png");
+    explosionSheet = R.LoadTexture("assets/sprites/explosionSheet.png");
+    manaPotion = R.LoadTexture("assets/sprites/manaPotion.png");
+    fireIcon = R.LoadTexture("assets/sprites/fireIcon.png");
+    iceIcon = R.LoadTexture("assets/sprites/iceIcon.png");
+    bushTex = R.LoadTexture("assets/bush.png");
+    shadowTex = LoadTexture("assets/shadow_decal.png");
 
     // Models
-    palmTree = LoadModel("assets/models/bigPalmTree.glb");
-    palm2 = LoadModel("assets/models/smallPalmTree.glb");
-    bush = LoadModel("assets/models/grass(stripped).glb");
-    boatModel = LoadModel("assets/models/boat.glb");
-    blunderbuss = LoadModel("assets/models/blunderbus.glb");
-    bushTex = LoadTexture("assets/bush.png");
-    floorTile = LoadModel("assets/models/floorTile.glb");
-    doorWay = LoadModel("assets/models/doorWay.glb");
-    wall = LoadModel("assets/models/wall.glb");
-    barrelModel = LoadModel("assets/models/barrel.glb");
-    pillarModel = LoadModel("assets/models/pillar.glb");
-    swordModel = LoadModel("assets/models/sword.glb");
-    lampModel = LoadModel("assets/models/lamp.glb");
-    brokeBarrel = LoadModel("assets/models/brokeBarrel.glb");
-    floorTile2 = LoadModel("assets/models/floorTile2.glb");
-    floorTile3 = LoadModel("assets/models/floorTile3.glb");
-    chestModel = LoadModel("assets/models/chest.glb");
-    staffModel = LoadModel("assets/models/staff.glb");
-    fireballModel = LoadModel("assets/models/fireball.glb");
-    iceballModel = LoadModel("assets/models/iceBall.glb");
+    palmTree = R.LoadModel("assets/models/bigPalmTree.glb");
+    palm2 = R.LoadModel("assets/models/smallPalmTree.glb");
+    bush = R.LoadModel("assets/models/grass(stripped).glb");
+    boatModel = R.LoadModel("assets/models/boat.glb");
+    blunderbuss = R.LoadModel("assets/models/blunderbus.glb");
 
-    terrainShader = LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
+    floorTile = R.LoadModel("assets/models/floorTile.glb");
+    doorWay = R.LoadModel("assets/models/doorWay.glb");
+    wall = R.LoadModel("assets/models/wall.glb");
+    barrelModel = R.LoadModel("assets/models/barrel.glb");
+    pillarModel = R.LoadModel("assets/models/pillar.glb");
+    swordModel = R.LoadModel("assets/models/sword.glb");
+    lampModel = R.LoadModel("assets/models/lamp.glb");
+    brokeBarrel = R.LoadModel("assets/models/brokeBarrel.glb");
+    floorTile2 = R.LoadModel("assets/models/floorTile2.glb");
+    floorTile3 = R.LoadModel("assets/models/floorTile3.glb");
+    chestModel = R.LoadModel("assets/models/chest.glb");
+    staffModel = R.LoadModel("assets/models/staff.glb");
+    fireballModel = R.LoadModel("assets/models/fireball.glb");
+    iceballModel = R.LoadModel("assets/models/iceBall.glb");
+
+    terrainShader = R.LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
 
     // Shaders
 
     //Post processing shader. AO shader + red vignette + fade to black
-    fogShader = LoadShader(0, "assets/shaders/fog_postprocess.fs");
+    fogShader = R.LoadShader(0, "assets/shaders/fog_postprocess.fs");
 
     sceneTextureLoc = GetShaderLocation(fogShader, "sceneTexture");
     //sceneDepthLoc = GetShaderLocation(fogShader, "sceneDepth");
     //SetShaderValueTexture(fogShader, sceneDepthLoc, sceneTexture.depth);
 
-    depthShader = LoadShader(0, "assets/shaders/depth_shader.fs");//does nothing. 
+    depthShader = R.LoadShader(0, "assets/shaders/depth_shader.fs");//does nothing. 
 
     // Sky
-    skyShader = LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
+    skyShader = R.LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
     skyModel = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
     skyModel.materials[0].shader = skyShader;
 
     // Shadow ////unused. 
-    shadowTex = LoadTexture("assets/shadow_decal.png");
-    shadowShader = LoadShader("assets/shaders/shadow_decal.vs", "assets/shaders/shadow_decal.fs");
+
+    shadowShader = R.LoadShader("assets/shaders/shadow_decal.vs", "assets/shaders/shadow_decal.fs");
     shadowQuad = LoadModelFromMesh(GenMeshPlane(1.0f, 1.0f, 1, 1));
     shadowQuad.materials[0].shader = shadowShader;
     SetMaterialTexture(&shadowQuad.materials[0], MATERIAL_MAP_DIFFUSE, shadowTex);
 
     // Water
-    waterShader = LoadShader("assets/shaders/water.vs", "assets/shaders/water.fs");
+    waterShader = R.LoadShader("assets/shaders/water.vs", "assets/shaders/water.fs");
     SetShaderValue(waterShader, GetShaderLocation(waterShader, "waterLevel"), &waterHeightY, SHADER_UNIFORM_FLOAT);
     waterModel = LoadModelFromMesh(GenMeshPlane(30000, 30000, 1, 1));
     bottomPlane = LoadModelFromMesh(GenMeshPlane(30000, 30000, 1, 1));
@@ -122,7 +126,7 @@ void LoadAllResources() {
     staffModel.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture;
 
 
-    bloomShader = LoadShader(0, "assets/shaders/bloom.fs");
+    bloomShader = R.LoadShader(0, "assets/shaders/bloom.fs");
     float bloomStrengthValue = 0.3f;
     //vignetteStrengthValue = 0.2f; //set globaly for black vignette strength
     
@@ -261,50 +265,16 @@ void UpdateShaders(Camera& camera){
 }
 
 void UnloadAllResources() {
-    //textures
-    UnloadRenderTexture(sceneTexture);
-    UnloadTexture(bushTex);
-    UnloadTexture(shadowTex);
-    UnloadTexture(raptorTexture);
-    UnloadTexture(gunTexture);
-    UnloadTexture(smokeSheet);
-    UnloadTexture(bloodSheet);
-    UnloadTexture(skeletonSheet);
-    UnloadTexture(doorTexture);
-    UnloadTexture(healthPotTexture);
-    UnloadTexture(keyTexture);
-    UnloadTexture(pirateSheet);
-    UnloadTexture(coinTexture);
-    UnloadTexture(spiderSheet);
-    UnloadTexture(explosionSheet);
-    UnloadTexture(manaPotion);
-    //shaders
-    UnloadShader(fogShader);
-    UnloadShader(skyShader);
-    UnloadShader(waterShader);
-    UnloadShader(terrainShader);
-    UnloadShader(shadowShader);
-    UnloadShader(bloomShader);
-    //models
+    R.UnloadAll();
+    SoundManager::GetInstance().UnloadAll();
+    //generated models
     UnloadModel(skyModel);
     UnloadModel(waterModel);
     UnloadModel(shadowQuad);
-    UnloadModel(palmTree);
-    UnloadModel(palm2);
-    UnloadModel(bush);
-    UnloadModel(boatModel);
-    UnloadModel(wall);
-    UnloadModel(floorTile);
-    UnloadModel(doorWay);
-    UnloadModel(barrelModel);
-    UnloadModel(pillarModel);
-    UnloadModel(swordModel);
-    UnloadModel(chestModel);
-    UnloadModel(lampModel);
-    UnloadModel(staffModel);
-    UnloadModel(fireballModel);
-    UnloadModel(iceballModel);
-    
-    
+    UnloadModel(bottomPlane);
+    //renderTextures
+    UnloadRenderTexture(sceneTexture);
+    UnloadRenderTexture(depthEffectTexture);
+    UnloadRenderTexture(postProcessTexture);
 
 }

@@ -6,7 +6,7 @@
 #include "resources.h"
 #include "weapon.h"
 
-void DrawMagicIcon(const Player& player){
+void DrawMagicIcon(){
     Texture2D currentTexture;
 
     if (magicStaff.magicType == MagicType::Fireball) {
@@ -17,7 +17,7 @@ void DrawMagicIcon(const Player& player){
 
     int targetSize = 64;
     int marginX = 314; // distance from right screen edge
-    int marginY = GetScreenHeight() - targetSize - 20;
+    int marginY = GetScreenHeight() - targetSize - 16;
     // Source rect: crop entire original texture
     Rectangle src = { 0.0f, 0.0f, (float)currentTexture.width, (float)currentTexture.height };
 

@@ -93,7 +93,6 @@ public:
     void SetPath(Vector2 start);
     void eraseCharacters();
     void TakeDamage(int amount);
-    //void Draw(Camera3D camera);
     void SetAnimation(int row, int frames, float speed, bool loop=true);
     void playRaptorSounds();
 };

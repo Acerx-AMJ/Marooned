@@ -101,9 +101,7 @@ void InitLevel(const LevelData& level, Camera camera) {
     camera.position = player.position; //start as player, not freecam.
     levelIndex = level.levelIndex; //update current level index to new level. 
 
-    //why not level.isDungeon? cause it crashes, isDungeon is false to begin and then set by level. Does that mean we create terrain mesh even for dungeons?
-    //because if isDungeon is false this code runs. everything is set to zero or null anyway. do we init boat on dungeon levels? WE DO! 
-    //just try putting if (level.isDungeon) first. I think something in dugneon still tries to touch the heightmap or maybe it's boat. 
+    //we still generate terrain mesh for dungeons.
 
     if (!isDungeon){ // Generate the terrain mesh and model from the heightmap
         vignetteStrengthValue = 0.2f; //less of vignette outdoors. 
@@ -579,7 +577,7 @@ int main() {
             DrawHealthBar(player);
             DrawStaminaBar(player);
             DrawManaBar(player);
-            if (player.activeWeapon == WeaponType::MagicStaff) DrawMagicIcon(player);
+            if (player.activeWeapon == WeaponType::MagicStaff) DrawMagicIcon();
             DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD); 
             if (debugInfo){//press ~ to hide debug info
                 DrawTimer(ElapsedTime); 
