@@ -7,5 +7,5 @@ void DrawMagicIcon();
 void DrawHealthBar(const Player& player);
 void DrawStaminaBar(const Player& player);
 void DrawManaBar(const Player& player);
-void DrawMenu(Texture2D& backDrop, int selectedOption, int levelIndex); 
+void DrawMenu(int selectedOption, int levelIndex); 
 void DrawTimer(float ElapsedTime);

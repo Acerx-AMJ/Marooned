@@ -32,7 +32,7 @@ enum class CharacterState {
 class Character {
 public:
     Vector3 position;
-    Texture2D* texture;
+    Texture2D texture;
     Vector3 previousPosition;
     CharacterState state = CharacterState::Idle;
     Emitter bloodEmitter;
@@ -80,7 +80,7 @@ public:
     std::vector<Vector3> currentWorldPath;
 
 
-    Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, float speed, float scl, int row = 0, CharacterType t = CharacterType::Raptor);
+    Character(Vector3 pos, Texture2D& tex, int fw, int fh, int frames, float speed, float scl, int row = 0, CharacterType t = CharacterType::Raptor);
     BoundingBox GetBoundingBox() const;
     void Update(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale);
     Vector3 ComputeRepulsionForce(const std::vector<Character*>& allRaptors, float repulsionRadius = 500.0f, float repulsionStrength = 6000.0f);

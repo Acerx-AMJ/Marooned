@@ -1,7 +1,7 @@
 #include "Character.h"
 #include "raymath.h"
 #include <iostream>
-#include "resources.h"
+//#include "resources.h"
 #include "rlgl.h"
 #include "world.h"
 #include "algorithm"
@@ -12,7 +12,7 @@
 
 
 
-Character::Character(Vector3 pos, Texture2D* tex, int fw, int fh, int frames, float speed, float scl, int row, CharacterType t)
+Character::Character(Vector3 pos, Texture2D& tex, int fw, int fh, int frames, float speed, float scl, int row, CharacterType t)
     : position(pos),
       texture(tex),
       frameWidth(fw),

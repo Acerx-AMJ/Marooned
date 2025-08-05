@@ -24,6 +24,8 @@
 #include <direct.h>
 #include "collectableWeapon.h"
 #include "ui.h"
+#include "resourceManager.h"
+
 
 
 void BeginCustom3D(Camera3D camera, float farClip) {
@@ -63,7 +65,7 @@ void GenerateEntrances(){
         Door d;
         d.position = e.position;
         d.rotationY = 0.0f; 
-        d.doorTexture = &doorTexture;
+        d.doorTexture = R.GetTexture("doorTexture");
         d.isOpen = false;
         d.isLocked = false;
         d.scale = {300, 365, 1};
@@ -111,7 +113,7 @@ void InitLevel(const LevelData& level, Camera camera) {
         
         terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
         terrainModel = LoadModelFromMesh(terrainMesh);
-        terrainModel.materials[0].shader = terrainShader;
+        terrainModel.materials[0].shader = R.GetShader("terrainShader");
         dungeonEntrances = level.entrances; //get level entrances from level data
 
         generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
@@ -179,7 +181,7 @@ void InitLevel(const LevelData& level, Camera camera) {
 }
 
 void SpawnRaptor(Vector3 pos) {
-    Character raptor(pos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
+    Character raptor(pos, R.GetTexture("raptorTexture"), 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
     enemies.push_back(raptor);
     enemyPtrs.push_back(&enemies.back());
 }
@@ -334,7 +336,7 @@ void UpdateFade(float deltaTime, Camera& camera){
                 isFading = false;
             }
         }
-
+        Shader fogShader = R.GetShader("fogShader");
         SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
     }
 
@@ -424,7 +426,7 @@ int main() {
 
 
             BeginDrawing();
-            DrawMenu(backDrop, selectedOption, levelIndex);
+            DrawMenu(selectedOption, levelIndex);
             EndDrawing();
 
             if (currentGameState == GameState::Quit) break;
@@ -493,20 +495,20 @@ int main() {
         bottomPos = {0, waterHeightY - 100, 0};
 
         // === RENDER TO TEXTURE ===
-        BeginTextureMode(sceneTexture);
+        BeginTextureMode(R.GetRenderTexture("sceneTexture"));
         ClearBackground(SKYBLUE);
         float farClip = isDungeon ? 10000.0f : 50000.0f;//10k in dungeons 50k outside
 
         BeginCustom3D(camera, farClip);
         rlDisableBackfaceCulling(); rlDisableDepthMask(); rlDisableDepthTest();
-        DrawModel(skyModel, camera.position, 10000.0f, WHITE); //draw skybox with no depthmask or test or backface culling, leave backfaceculling off. 
+        DrawModel(R.GetModel("skyModel"), camera.position, 10000.0f, WHITE); //draw skybox with no depthmask or test or backface culling, leave backfaceculling off. 
         rlEnableDepthMask(); rlEnableDepthTest();
         rlSetBlendMode(BLEND_ALPHA); //required 
         //rlEnableColorBlend(); //not sure
 
         DrawDungeonFloor();
         DrawDungeonWalls();
-        DrawDungeonCeiling(floorTile);
+        DrawDungeonCeiling();
         DrawDungeonBarrels();
         DrawDungeonChests();
         DrawDungeonPillars(deltaTime, camera);
@@ -526,11 +528,11 @@ int main() {
         
         if (!isDungeon) { //not a dungeon, draw terrain. 
             DrawModel(terrainModel, terrainPosition, 1.0f, WHITE);
-            DrawModel(waterModel, waterPos, 1.0f, WHITE); 
-            DrawModel(bottomPlane, bottomPos, 1.0f, DARKBLUE); //a second plane below water plane. to prevent seeing through the world when looking down.
+            DrawModel(R.GetModel("waterModel"), waterPos, 1.0f, WHITE); 
+            DrawModel(R.GetModel("bottomPlane"), bottomPos, 1.0f, DARKBLUE); //a second plane below water plane. to prevent seeing through the world when looking down.
             DrawBoat(player_boat);
-            DrawTrees(trees, palmTree, palm2, shadowQuad); 
-            DrawBushes(bushes, shadowQuad);
+            DrawTrees(trees, R.GetModel("shadowQuad")); 
+            DrawBushes(bushes, R.GetModel("shadowQuad"));
         }
 
 
@@ -540,21 +542,10 @@ int main() {
         rlDisableDepthTest();
         EndTextureMode();//////end drawing to texture
 
-        BeginTextureMode(depthEffectTexture);
-            BeginShaderMode(depthShader);
-                SetShaderValueTexture(depthShader, sceneTextureLoc, sceneTexture.texture);
-                SetShaderValueTexture(depthShader, sceneDepthLoc, sceneTexture.depth);
-
-                DrawTextureRec(sceneTexture.texture, 
-                    (Rectangle){0, 0, (float)GetScreenWidth(), -(float)GetScreenHeight()},
-                    (Vector2){0, 0}, WHITE);
-            EndShaderMode();
-        EndTextureMode();
-
                 // === POSTPROCESS TO postProcessTexture ===
-        BeginTextureMode(postProcessTexture);
-            BeginShaderMode(fogShader); // original post shader
-                DrawTextureRec(depthEffectTexture.texture, 
+        BeginTextureMode(R.GetRenderTexture("postProcessTexture"));
+            BeginShaderMode(R.GetShader("fogShader")); // original post shader
+                DrawTextureRec(R.GetRenderTexture("sceneTexture").texture, 
                     (Rectangle){0, 0, (float)GetScreenWidth(), -(float)GetScreenHeight()},
                     (Vector2){0, 0}, WHITE);
             EndShaderMode();
@@ -564,8 +555,8 @@ int main() {
         BeginDrawing();
             ClearBackground(WHITE);
 
-            BeginShaderMode(bloomShader); // second pass
-                DrawTextureRec(postProcessTexture.texture,
+            BeginShaderMode(R.GetShader("bloomShader")); // second pass
+                DrawTextureRec(R.GetRenderTexture("postProcessTexture").texture,
                     (Rectangle){0, 0, (float)GetScreenWidth(), -(float)GetScreenHeight()},
                     (Vector2){0, 0}, WHITE);
             EndShaderMode();

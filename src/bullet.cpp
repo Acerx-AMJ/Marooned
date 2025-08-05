@@ -4,6 +4,7 @@
 #include <cmath>
 #include "world.h"
 #include "resources.h"
+#include "resourceManager.h"
 #include "decal.h"
 #include "sound_manager.h"
 #include "utilities.h"
@@ -146,11 +147,11 @@ void Bullet::Draw(Camera& camera) const {
     if (!alive) return;
     if (type == BulletType::Fireball){
         fireEmitter.Draw(camera);
-        DrawModelEx(fireballModel, position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
+        DrawModelEx(R.GetModel("fireballModel"), position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
         
     }else if (type == BulletType::Iceball){
         fireEmitter.Draw(camera);
-        DrawModelEx(iceballModel, position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
+        DrawModelEx(R.GetModel("iceballModel"), position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
     } else{
         DrawSphere(position, 1.5f, WHITE); 
     }
@@ -190,7 +191,7 @@ void Bullet::kill(Camera& camera){
     Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
     Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
 
-    decals.emplace_back(offsetPos, DecalType::Smoke, &smokeSheet, 7, 0.8f, 0.1f, 25.0f);
+    decals.emplace_back(offsetPos, DecalType::Smoke, R.GetTexture("smokeSheet"), 7, 0.8f, 0.1f, 25.0f);
 
     alive = false;
     
@@ -203,7 +204,7 @@ void Bullet::Blood(Camera camera){
     Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
     Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
 
-    decals.emplace_back(offsetPos, DecalType::Blood, &bloodSheet, 7, 1.0f, 0.1f, 60.0f);
+    decals.emplace_back(offsetPos, DecalType::Blood, R.GetTexture("bloodSheet"), 7, 1.0f, 0.1f, 60.0f);
 
     alive = false;
 
@@ -221,7 +222,7 @@ void Bullet::Explode(Camera& camera) {
         Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
         Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
         if (type == BulletType::Fireball){
-            decals.emplace_back(offsetPos, DecalType::Explosion, &explosionSheet, 13, 1.0f, 0.1f, 500.0f);
+            decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("explosionSheet"), 13, 1.0f, 0.1f, 500.0f);
             fireEmitter.EmitBurst(position, 200, ParticleType::Sparks);
 
         }else if (type == BulletType::Iceball){

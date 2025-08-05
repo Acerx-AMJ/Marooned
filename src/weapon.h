@@ -17,7 +17,7 @@ enum class MagicType {
 
 struct MuzzleFlash {
     Vector3 position;
-    Texture2D* texture;
+    Texture2D texture;
     float size;
     float lifetime;
     float age = 0.0f;

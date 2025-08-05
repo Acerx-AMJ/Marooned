@@ -3,16 +3,16 @@
 #include <cmath>
 #include "raymath.h"
 #include "level.h"
-#include "resources.h"
+#include "resourceManager.h"
 #include "weapon.h"
 
 void DrawMagicIcon(){
     Texture2D currentTexture;
 
     if (magicStaff.magicType == MagicType::Fireball) {
-        currentTexture = fireIcon;
+        currentTexture = R.GetTexture("fireIcon");
     } else if (magicStaff.magicType == MagicType::Iceball) {
-        currentTexture = iceIcon;
+        currentTexture = R.GetTexture("iceIcon");
     }
 
     int targetSize = 64;
@@ -90,9 +90,9 @@ void DrawManaBar(const Player& player) {
     DrawRectangleRec(barCurrent, color);
 }
 
-void DrawMenu(Texture2D& backDrop, int selectedOption, int levelIndex) {
+void DrawMenu(int selectedOption, int levelIndex) {
     ClearBackground(BLACK);
-    
+    Texture2D backDrop = R.GetTexture("backDrop");
     DrawTexturePro(
         backDrop,
         Rectangle{ 0, 0, (float)backDrop.width, (float)backDrop.height },

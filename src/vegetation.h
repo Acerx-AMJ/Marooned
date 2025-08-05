@@ -50,11 +50,11 @@ std::vector<TreeInstance> GenerateTrees(Image& heightmap, unsigned char* pixels,
 std::vector<TreeInstance> FilterTreesAboveHeightThreshold(const std::vector<TreeInstance>& inputTrees, Image& heightmap,
                                                           unsigned char* pixels, Vector3 terrainScale,
                                                           float treeHeightThreshold);
-void DrawTrees(const std::vector<TreeInstance>& trees, Model& model1, Model& model2, Model& shadowQuad);
+void DrawTrees(const std::vector<TreeInstance>& trees, Model& shadowQuad);
 void DrawBushes(const std::vector<BushInstance>& bushes, Model& shadowQuad);
 
 std::vector<BushInstance> GenerateBushes(Image& heightmap, unsigned char* pixels, Vector3 terrainScale,
-                                         float bushSpacing, float heightThreshold, Model& bushModel);
+                                         float bushSpacing, float heightThreshold);
 std::vector<BushInstance> FilterBushsAboveHeightThreshold(const std::vector<BushInstance>& inputTrees, Image& heightmap,
                                                           unsigned char* pixels, Vector3 terrainScale,
                                                           float treeHeightThreshold);

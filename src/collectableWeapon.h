@@ -10,9 +10,9 @@ struct CollectableWeapon {
     Vector3 position;
     float rotationY;
     bool isCollected;
-    Model* model;
+    Model model;
 
-    CollectableWeapon(WeaponType type, Vector3 position, Model* model);
+    CollectableWeapon(WeaponType type, Vector3 position, Model model);
     
     void Update(float deltaTime);
     void Draw();

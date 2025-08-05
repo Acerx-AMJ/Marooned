@@ -1,8 +1,8 @@
 #include "Inventory.h"
 #include "raylib.h" // Only needed for DrawText
 #include <vector>
-#include "resources.h"
-
+//#include "resources.h"
+#include "resourceManager.h"
 
 
 std::vector<std::string> slotOrder = {
@@ -16,9 +16,9 @@ std::vector<std::string> slotOrder = {
 std::map<std::string, Texture2D> itemTextures;
 
 void Inventory::SetupItemTextures() {
-    itemTextures["HealthPotion"] = healthPotTexture;
-    itemTextures["GoldKey"] = keyTexture;
-    itemTextures["ManaPotion" ] = manaPotion;
+    itemTextures["HealthPotion"] = R.GetTexture("healthPotTexture");
+    itemTextures["GoldKey"] = R.GetTexture("keyTexture");
+    itemTextures["ManaPotion" ] = R.GetTexture("manaPotion");
 }
 
 

@@ -2,7 +2,7 @@
 #include "player.h"
 #include "world.h"
 
-CollectableWeapon::CollectableWeapon(WeaponType type, Vector3 position, Model* model)
+CollectableWeapon::CollectableWeapon(WeaponType type, Vector3 position, Model model)
     : type(type), position(position), model(model), rotationY(0.0f), isCollected(false) {}
 
 void CollectableWeapon::Update(float deltaTime) {
@@ -15,7 +15,7 @@ void CollectableWeapon::Draw() {
 
     Vector3 drawPos = position;
     drawPos.y += sin(GetTime() * 2.0f) * 2.0f; // Hover effect
-    DrawModelEx(*model, drawPos, {0, 1, 0}, rotationY, {1, 1, 1}, WHITE);
+    DrawModelEx(model, drawPos, {0, 1, 0}, rotationY, {1, 1, 1}, WHITE);
 }
 
 bool CollectableWeapon::CheckPickup(Player& player, float pickupRadius) {

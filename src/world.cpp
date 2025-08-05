@@ -2,6 +2,7 @@
 #include "player.h"
 #include "raymath.h"
 #include "resources.h"
+#include "resourceManager.h"
 #include "vegetation.h"
 #include "dungeonGeneration.h"
 #include "boat.h"
@@ -107,7 +108,7 @@ void generateRaptors(int amount, Vector3 centerPos, float radius) {
 
         //std::cout << "generated raptor\n";
 
-        Character raptor(spawnPos, &raptorTexture, 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
+        Character raptor(spawnPos, R.GetTexture("raptorTexture"), 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
         enemies.push_back(raptor);
         enemyPtrs.push_back(&enemies.back()); 
         ++spawned;

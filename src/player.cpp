@@ -3,6 +3,7 @@
 #include "world.h"
 #include <iostream>
 #include "resources.h"
+#include "resourceManager.h"
 #include "input.h"
 #include "boat.h"
 #include "rlgl.h"
@@ -27,9 +28,9 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     player.grounded = false;
     player.groundY = 0.0;
 
-    weapon.model = blunderbuss;
+    weapon.model = R.GetModel("blunderbuss");
     weapon.scale = { 2.0f, 2.0f, 2.0f };
-    weapon.muzzleFlashTexture = muzzleFlash;
+    weapon.muzzleFlashTexture = R.GetTexture("muzzleFlash");
     weapon.fireCooldown = 2.0f;
     weapon.flashDuration = 1.0;
     
@@ -38,12 +39,12 @@ void InitPlayer(Player& player, Vector3 startPosition) {
 
 
     
-    meleeWeapon.model = swordModel;
+    meleeWeapon.model = R.GetModel("swordModel");
     meleeWeapon.scale = {2, 2, 2};
 
     player.inventory.SetupItemTextures();
 
-    swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordClean;
+    meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordClean");
     
 
     if (first){
@@ -56,6 +57,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
 
 
 void Player::EquipNextWeapon() {
+    meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordClean"); //wipe the blood off. 
     if (collectedWeapons.empty()) {
        
         activeWeapon = WeaponType::None;
@@ -240,18 +242,17 @@ void UpdateMeleeHitbox(Camera& camera){
 }
 
 void InitMagicStaff(MagicStaff& magicStaff) {
-
-
-    magicStaff.model = staffModel;
+    magicStaff.model = R.GetModel("staffModel");
     magicStaff.scale = {1.0f, 1.0f, 1.0f};
-    magicStaff.muzzleFlashTexture = muzzleFlash;
+    magicStaff.muzzleFlashTexture = R.GetTexture("muzzleFlash");
     magicStaff.fireCooldown = 1.0f;
 
+    //set starting offsets here
     magicStaff.forwardOffset = 75.0f;
     magicStaff.sideOffset = 28.0f;
     magicStaff.verticalOffset = -25.0f;
 
-    // Set any other tuning params here
+   
 }
 
 

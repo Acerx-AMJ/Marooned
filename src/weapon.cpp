@@ -5,6 +5,7 @@
 #include "bullet.h"
 #include "sound_manager.h"
 #include "resources.h"
+#include "resourceManager.h"
 #include "player.h"
 #include "world.h"
 
@@ -19,7 +20,7 @@ void Weapon::Fire(Camera& camera) {
 
         activeMuzzleFlashes.push_back({
             muzzlePos,
-            &muzzleFlash,
+            R.GetTexture("muzzleFlash"),
             flashSize,
             0.1f  // lifetime in seconds
         });
@@ -315,7 +316,7 @@ void MagicStaff::Fire(const Camera& camera) {
 
     activeMuzzleFlashes.push_back({
             muzzlePos,
-            &muzzleFlash,
+            R.GetTexture("muzzleFlash"),
             flashSize,
             0.1f  // lifetime in seconds
     });

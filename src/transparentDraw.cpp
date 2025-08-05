@@ -5,7 +5,8 @@
 #include "dungeonGeneration.h"
 #include "raymath.h"
 #include "world.h"
-#include "resources.h"
+
+#include "resourceManager.h"
 #include "vector"
 #include "rlgl.h"
 #include "algorithm"
@@ -73,7 +74,7 @@ void GatherCollectables(Camera& camera, const std::vector<Collectable>& collecta
             Billboard_FacingCamera,
             c.position,
             c.icon,
-            Rectangle{0, 0, (float)c.icon->width, (float)c.icon->height},
+            Rectangle{0, 0, (float)c.icon.width, (float)c.icon.height},
             c.scale,
             WHITE,
             dist,
@@ -115,7 +116,7 @@ void GatherDungeonFires(Camera& camera, float deltaTime) {
         billboardRequests.push_back({
             Billboard_FacingCamera,
             firePos,
-            &fireSheet,
+            R.GetTexture("fireSheet"),
             sourceRect,
             100.0f,
             WHITE,
@@ -129,13 +130,13 @@ void GatherWebs(Camera& camera) {
     for (const SpiderWebInstance& web : spiderWebs) {
         //if (web.destroyed && !web.showBrokeWebTexture) continue;
 
-        Texture2D* tex = web.destroyed ? &brokeWebTexture : &spiderWebTexture;
+        Texture2D tex = web.destroyed ? R.GetTexture("brokeWebTexture") : R.GetTexture("spiderWebTexture");
 
         billboardRequests.push_back({
             Billboard_FixedFlat,
             web.position,
             tex,
-            Rectangle{0, 0, (float)spiderWebTexture.width, (float)spiderWebTexture.height},
+            Rectangle{0, 0, (float)tex.width, (float)tex.height},
             400.0f,
             WHITE,
             Vector3Distance(camera.position, web.position),
@@ -152,7 +153,7 @@ void GatherDoors(Camera& camera) {
             Billboard_Door,
             door.position,
             door.doorTexture,
-            Rectangle{ 0, 0, (float)door.doorTexture->width, (float)door.doorTexture->height },
+            Rectangle{ 0, 0, (float)door.doorTexture.width, (float)door.doorTexture.height },
             door.scale.x, // width, used in size
             door.tint,
             Vector3Distance(camera.position, door.position),
@@ -208,7 +209,7 @@ void GatherMuzzleFlashes(Camera& camera, const std::vector<MuzzleFlash>& flashes
             Billboard_FacingCamera,
             flash.position,
             flash.texture,
-            Rectangle{0, 0, (float)flash.texture->width, (float)flash.texture->height},
+            Rectangle{0, 0, (float)flash.texture.width, (float)flash.texture.height},
             flash.size,
             WHITE,
             dist,
@@ -252,7 +253,7 @@ void DrawTransparentDrawRequests(Camera& camera) {
             case Billboard_Decal:
                 DrawBillboardRec(
                     camera,
-                    *(req.texture),
+                    (req.texture),
                     req.sourceRect,
                     req.position,
                     Vector2{req.size, req.size},
@@ -261,7 +262,7 @@ void DrawTransparentDrawRequests(Camera& camera) {
                 break;
             case Billboard_FixedFlat: //special case for webs
                 DrawFlatWeb(
-                    *(req.texture),
+                    (req.texture),
                     req.position,
                     req.size,
                     req.size,
@@ -272,7 +273,7 @@ void DrawTransparentDrawRequests(Camera& camera) {
 
             case Billboard_Door:
                 DrawFlatDoor(
-                    req.texture, 
+                    (req.texture), 
                     req.position, 
                     req.size, 
                     req.size * 1.225f, 

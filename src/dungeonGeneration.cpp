@@ -9,7 +9,7 @@
 #include "sound_manager.h"
 #include "transparentDraw.h"
 #include "pathfinding.h"
-
+#include "resourceManager.h"
 
 
 std::vector<FloorTile> floorTiles;
@@ -95,7 +95,7 @@ void GenerateWeapons(float Height){
 
             if (current.r == 128 && current.g == 0 && current.b == 0) { // Dark red staff
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, Height);
-                worldWeapons.push_back(CollectableWeapon(WeaponType::MagicStaff, pos, &staffModel));
+                worldWeapons.push_back(CollectableWeapon(WeaponType::MagicStaff, pos, R.GetModel("staffModel")));
 
             }
         }
@@ -136,7 +136,7 @@ void UpdateDungeonChests() {
             chest.canDrop = false;
             UpdateModelAnimation(chest.model, chest.animations[0], OPEN_END_FRAME);
             Vector3 pos = {chest.position.x, chest.position.y + 100, chest.position.z};
-            Collectable key(CollectableType::Key, pos, &keyTexture, 100);
+            Collectable key(CollectableType::Key, pos, R.GetTexture("keyTexture"), 100);
             
             collectables.push_back(key);
             
@@ -455,7 +455,7 @@ void GenerateDoorsFromArchways() {
         door.rotationY = dw.rotationY + DEG2RAD * 90.0f;
         door.isOpen = false;
         door.isLocked = dw.isLocked;
-        door.doorTexture = &doorTexture;
+        door.doorTexture = R.GetTexture("doorTexture");
         door.scale = {300, 365, 1}; //stretch it taller
         door.tileX = dw.tileX;
         door.tileY = dw.tileY;
@@ -631,7 +631,7 @@ void GenerateBarrels(float baseY) {
 
 void GenerateChests(float baseY) {
     chestInstances.clear();
-
+    int chestID = 0;
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
@@ -653,7 +653,13 @@ void GenerateChests(float baseY) {
                     pos.z + halfSize
                 };
 
-                Model model = LoadModel("assets/models/chest.glb");
+                                // create a unique key for this chest model
+                std::string key = "chestModel#" + std::to_string(chestID++);
+
+                // load a _separate_ model for this chest
+                // (this reads the same GLB but gives you independent skeleton data)
+                R.LoadModel(key, "assets/models/chest.glb");
+                Model& model = R.GetModel(key);
 
                 int animCount = 0;
                 ModelAnimation *anims = LoadModelAnimations("assets/models/chest.glb", &animCount);
@@ -685,7 +691,7 @@ void GeneratePotions(float baseY) {
 
             if (current.r == 255 && current.g == 105 && current.b == 180) { // pink for potions
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 50); // raised slightly off floor
-                Collectable p = {CollectableType::HealthPotion, pos, &healthPotTexture, 40};
+                Collectable p = {CollectableType::HealthPotion, pos, R.GetTexture("healthPotTexture"), 40};
                 collectables.push_back(p);
             }
         }
@@ -699,7 +705,7 @@ void GenerateKeys(float baseY) {
 
             if (current.r == 255 && current.g == 200 && current.b == 0) { // Gold for keys
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 60); // raised slightly off floor
-                Collectable key = {CollectableType::Key, pos, &keyTexture, 100.0f};
+                Collectable key = {CollectableType::Key, pos, R.GetTexture("keyTexture"), 100.0f};
                 collectables.push_back(key);
             }
         }
@@ -718,7 +724,7 @@ void GenerateSpiderFromImage(float baseY) {
 
                 Character spider(
                     spawnPos,
-                    &spiderSheet, 
+                    R.GetTexture("spiderSheet"), 
                     200, 200,         // frame width, height
                     1,                // max frames
                     0.5f, 0.5f,       // scale, speed
@@ -749,7 +755,7 @@ void GenerateSkeletonsFromImage(float baseY) {
 
                 Character skeleton(
                     spawnPos,
-                    &skeletonSheet, 
+                    R.GetTexture("skeletonSheet"), 
                     200, 200,         // frame width, height
                     1,                // max frames
                     0.8f, 0.5f,       // scale, speed
@@ -781,7 +787,7 @@ void GeneratePiratesFromImage(float baseY) {
 
                 Character pirate(
                     spawnPos,
-                    &pirateSheet, 
+                    R.GetTexture("pirateSheet"), 
                     200, 200,         // frame width, height 
                     1,                // max frames, set when setting animations
                     0.5f, 0.5f,       // scale, speed
@@ -906,7 +912,7 @@ void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height,
 void DrawDungeonBarrels() {
     for (const BarrelInstance& barrel : barrelInstances) {
         Vector3 offsetPos = {barrel.position.x, barrel.position.y + 20, barrel.position.z}; //move the barrel up a bit
-        Model modelToDraw = barrel.destroyed ? brokeBarrel : barrelModel;
+        Model modelToDraw = barrel.destroyed ? R.GetModel("brokeBarrel") : R.GetModel("barrelModel");
         DrawModelEx(modelToDraw, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{350.0f, 350.0f, 350.0f}, barrel.tint); //scaled half size
         
     }
@@ -927,7 +933,7 @@ void DrawDungeonChests() {
 
 void DrawDungeonFloor() {
     for (const FloorTile& tile : floorTiles) {
-        DrawModelEx(floorTile, tile.position, Vector3{0,1,0}, 0.0f, Vector3{700,700,700}, tile.tint);
+        DrawModelEx(R.GetModel("floorTile"), tile.position, Vector3{0,1,0}, 0.0f, Vector3{700,700,700}, tile.tint);
     }
 }
 
@@ -936,7 +942,7 @@ void DrawDungeonWalls() {
 
     for (const WallInstance& _wall : wallInstances) {
         
-        DrawModelEx(wall, _wall.position, Vector3{0, 1, 0}, _wall.rotationY, Vector3{700, 700, 700}, _wall.tint);
+        DrawModelEx(R.GetModel("wall"), _wall.position, Vector3{0, 1, 0}, _wall.rotationY, Vector3{700, 700, 700}, _wall.tint);
 
     }
 }
@@ -945,7 +951,7 @@ void DrawDungeonDoorways(){
 
     for (const DoorwayInstance& d : doorways) {
         Vector3 dPos = {d.position.x, d.position.y + 100, d.position.z};
-        DrawModelEx(doorWay, dPos, {0, 1, 0}, d.rotationY * RAD2DEG, {490, 595, 476}, d.tint);
+        DrawModelEx(R.GetModel("doorWay"), dPos, {0, 1, 0}, d.rotationY * RAD2DEG, {490, 595, 476}, d.tint);
     }
 
     // for (const Door& door : doors){
@@ -955,7 +961,7 @@ void DrawDungeonDoorways(){
     // }
 }
 
-void DrawFlatDoor(Texture2D* tex, Vector3 pos, float width, float height, float rotY, Color tint) {
+void DrawFlatDoor(Texture2D tex, Vector3 pos, float width, float height, float rotY, Color tint) {
     float w = width;
     float h = height;
 
@@ -972,7 +978,7 @@ void DrawFlatDoor(Texture2D* tex, Vector3 pos, float width, float height, float 
     Vector3 topLeft     = Vector3Add(bottomLeft, {0, h, 0});
     Vector3 topRight    = Vector3Add(bottomRight, {0, h, 0});
 
-    rlSetTexture(tex->id);
+    rlSetTexture(tex.id);
     rlBegin(RL_QUADS);
         rlColor4ub(tint.r, tint.g, tint.b, tint.a);
 
@@ -986,43 +992,10 @@ void DrawFlatDoor(Texture2D* tex, Vector3 pos, float width, float height, float 
 }
 
 
-// void DrawFlatDoor(const Door& door) {
-//     if (door.isOpen) return;
-
-//     float w = door.scale.x;
-//     float h = door.scale.y;
-
-//     // Determine local axes
-//     Vector3 forward = Vector3RotateByAxisAngle({0, 0, 1}, {0, 1, 0}, door.rotationY);
-//     Vector3 right = Vector3CrossProduct({0, 1, 0}, forward);
-
-//     // Use door.position directly as the center
-//     Vector3 center = door.position;
-
-//     // Compute quad corners (centered on door.position)
-//     Vector3 bottomLeft  = Vector3Add(center, Vector3Add(Vector3Scale(right, -w * 0.5f), Vector3Scale(forward, -door.scale.z * 0.5f)));
-//     Vector3 bottomRight = Vector3Add(center, Vector3Add(Vector3Scale(right,  w * 0.5f), Vector3Scale(forward, -door.scale.z * 0.5f)));
-//     Vector3 topLeft     = Vector3Add(bottomLeft, {0, h, 0});
-//     Vector3 topRight    = Vector3Add(bottomRight, {0, h, 0});
-
-//     rlSetTexture(door.doorTexture->id);
-//     rlBegin(RL_QUADS);
-//         rlColor4ub(door.tint.r, door.tint.g, door.tint.b, door.tint.a); //tint the door
-
-//         rlTexCoord2f(0, 1); rlVertex3f(bottomLeft.x,  bottomLeft.y,  bottomLeft.z);
-//         rlTexCoord2f(1, 1); rlVertex3f(bottomRight.x, bottomRight.y, bottomRight.z);
-//         rlTexCoord2f(1, 0); rlVertex3f(topRight.x,    topRight.y,    topRight.z);
-//         rlTexCoord2f(0, 0); rlVertex3f(topLeft.x,     topLeft.y,     topLeft.z);
-//     rlEnd();
-//     rlSetTexture(0);
-//     rlColor4ub(255, 255, 255, 255); // Reset color for next draw calls
-// }
-
-
-void DrawDungeonCeiling(Model ceilingTileModel) {
+void DrawDungeonCeiling() {
     for (const CeilingTile& ceiling : ceilingTiles) {
         DrawModelEx(
-            ceilingTileModel,
+            R.GetModel("floorTile"),
             ceiling.position,
             Vector3{1, 0, 0}, // Flip to face downward
             180.0f,
@@ -1041,7 +1014,7 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera) {
         Fire& fire = fires[i];
 
         // Draw the pedestal model
-        DrawModelEx(lampModel, pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{350, 350, 350}, WHITE);
+        DrawModelEx(R.GetModel("lampModel"), pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{350, 350, 350}, WHITE);
 
     }
 }
@@ -1438,7 +1411,6 @@ void ClearDungeon() {
     decals.clear();
    
     for (ChestInstance& chest : chestInstances) {
-        UnloadModel(chest.model);
         UnloadModelAnimations(chest.animations, chest.animCount);
     }
     chestInstances.clear();

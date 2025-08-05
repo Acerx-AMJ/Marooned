@@ -1,35 +1,53 @@
-// ResourceManager.h
 #pragma once
-#include <vector>
-#include <unordered_map>
-#include <functional>
-#include "raylib.h"
 #include <string>
+#include <unordered_map>
+#include "raylib.h"
+#include <stdexcept>
 
 class ResourceManager {
 public:
-    // Load
-    Texture2D& LoadTexture(const char* path);
-    Model&     LoadModel(const char* path);
-    Shader&    LoadShader(const char* vsPath, const char* fsPath);
+    static ResourceManager& Get();
+    
+    // Texture
+    Texture2D& LoadTexture(const std::string& name, const std::string& path);
+    Texture2D& GetTexture(const std::string& name) const;
+
+    // Model
+    Model&      LoadModel(const std::string& name, const std::string& path);
+    Model&      LoadModelFromMesh(const std::string& name, const Mesh& mesh);
+    Model&      GetModel(const std::string& name) const;
+
+    // Shader
+    Shader&     LoadShader(const std::string& name, const std::string& vsPath, const std::string& fsPath);
+    Shader&     GetShader(const std::string& name) const;
 
 
-    // Unload everything
+    // RenderTexture
+    RenderTexture2D& LoadRenderTexture(const std::string& name, int width, int height);
+    RenderTexture2D& GetRenderTexture(const std::string& name) const;
+
+    // Clean-up
     void UnloadAll();
+    ~ResourceManager();
 
 private:
-    std::vector<Texture2D>                     _textures;
-    std::vector<Model>                         _models;
-    std::vector<Shader>                        _shaders;
+    ResourceManager() = default;
+    ResourceManager(const ResourceManager&) = delete;
+    ResourceManager& operator=(const ResourceManager&) = delete;
 
-   
-    // now unloadFn can be any void(T)
-    template<typename T>
-    void _UnloadContainer(std::vector<T>& container,
-                        void(*unloadFn)(T))
-    {
-        for (auto& item : container) unloadFn(item);
+    template<typename T, typename UnloadFn>
+    void UnloadContainer(std::unordered_map<std::string, T>& container, UnloadFn unloadFn) {
+        for (auto& kv : container) unloadFn(kv.second);
         container.clear();
     }
 
+    // Storage maps
+    std::unordered_map<std::string, Texture2D>      _textures;
+    std::unordered_map<std::string, Model>          _models;
+    std::unordered_map<std::string, Shader>         _shaders;
+    std::unordered_map<std::string, RenderTexture2D> _renderTextures;
+
+    static ResourceManager* _instance;
 };
+
+inline ResourceManager& R = ResourceManager::Get();

@@ -15,7 +15,7 @@ enum BillboardType {
 struct BillboardDrawRequest {
     BillboardType type;
     Vector3 position;
-    Texture2D* texture;
+    Texture2D texture;
     Rectangle sourceRect;
     float size;
     Color tint;

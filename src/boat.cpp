@@ -1,6 +1,7 @@
 #include "boat.h"
 #include "raymath.h"
 #include "resources.h"
+#include "resourceManager.h"
 #include "world.h"
 #include <iostream>
 
@@ -70,5 +71,5 @@ void DrawBoat(const Boat& boat) {
     Vector3 drawPos = boat.position;
     if (!boat.beached) drawPos.y += bob;
     
-    DrawModelEx(boatModel, drawPos, {0, 1, 0}, boat.rotationY, {1.0f, 1.0f, 1.0f}, WHITE);
+    DrawModelEx(R.GetModel("boatModel"), drawPos, {0, 1, 0}, boat.rotationY, {1.0f, 1.0f, 1.0f}, WHITE);
 }

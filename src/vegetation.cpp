@@ -7,6 +7,7 @@
 #include "raymath.h"
 #include "rlgl.h"
 #include "resources.h"
+#include "resourceManager.h"
 #include "world.h"
 #include "algorithm"
 
@@ -38,7 +39,7 @@ void generateVegetation(){
     // 🌴 Filter trees based on final height cutoff
     trees = FilterTreesAboveHeightThreshold(trees, heightmap, heightmapPixels, terrainScale, treeHeightThreshold);
 
-    bushes = GenerateBushes(heightmap, heightmapPixels, terrainScale, treeSpacing, bushHeightThreshold, bush);
+    bushes = GenerateBushes(heightmap, heightmapPixels, terrainScale, treeSpacing, bushHeightThreshold);
     bushes = FilterBushsAboveHeightThreshold(bushes, heightmap, heightmapPixels, terrainScale, bushHeightThreshold);
 
     // Copy tree pointers into a separate list so we can sort them by distance
@@ -129,7 +130,7 @@ std::vector<TreeInstance> FilterTreesAboveHeightThreshold(const std::vector<Tree
 }
 
 std::vector<BushInstance> GenerateBushes(Image& heightmap, unsigned char* pixels, Vector3 terrainScale,
-                                         float bushSpacing, float heightThreshold, Model& bushModel) {
+                                         float bushSpacing, float heightThreshold) {
     std::vector<BushInstance> bushes;
 
     for (int z = 0; z < heightmap.height; z += (int)bushSpacing) {
@@ -147,7 +148,7 @@ std::vector<BushInstance> GenerateBushes(Image& heightmap, unsigned char* pixels
                 BushInstance bush;
                 bush.position = pos;
                 bush.scale = 100.0f + ((float)GetRandomValue(0, 1000) / 100.0f);
-                bush.model = bushModel;
+                bush.model = R.GetModel("bush");
                 bush.yOffset = ((float)GetRandomValue(-200, 200)) / 100.0f;     // -2.0 to 2.0
                 bush.xOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2));
                 bush.zOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2)); //space them out wider, then cull more aggresively. 
@@ -191,14 +192,14 @@ void RemoveAllVegetation() {
     sortedTrees.clear();
 }
 
-void DrawTrees(const std::vector<TreeInstance>& trees, Model& model1, Model& model2, Model& shadowQuad){
+void DrawTrees(const std::vector<TreeInstance>& trees, Model& shadowQuad){
     for (const TreeInstance* tree : sortedTrees) {
         Vector3 pos = tree->position;
         pos.y += tree->yOffset;
         pos.x += tree->xOffset;
         pos.z += tree->zOffset;
 
-        Model& treeModel = tree->useAltModel ? model1 : model2;
+        Model& treeModel = tree->useAltModel ? R.GetModel("palmTree") : R.GetModel("palm2");
 
         DrawModelEx(treeModel, pos, { 0, 1, 0 }, tree->rotationY,
                     { tree->scale, tree->scale, tree->scale }, WHITE);

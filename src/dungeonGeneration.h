@@ -49,7 +49,7 @@ struct Door {
     std::vector<BoundingBox> sideColliders;
     bool isOpen = false;
     bool isLocked = false;
-    Texture2D* doorTexture;
+    Texture2D doorTexture;
     Vector3 scale = {100.0f, 200.0f, 1.0f}; // width, height, unused
     Color tint = WHITE;
 
@@ -194,11 +194,11 @@ void DrawDungeonBarrels();
 void DrawDungeonChests(); 
 void DrawDungeonPillars(float deltaTime, Camera3D camera);
 void DrawDungeonDoorways();
-void DrawFlatDoor(Texture2D* tex, Vector3 pos, float width, float height, float rotY, Color tint);
+void DrawFlatDoor(Texture2D tex, Vector3 pos, float width, float height, float rotY, Color tint);
 void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height, float rotationY, Color tint);
 void GenerateWeapons(float Height);
 //void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY);
-void DrawDungeonCeiling(Model ceilingTileModel);
+void DrawDungeonCeiling();
 void ResetAllBakedTints();
 void BakeStaticLighting(); 
 void ApplyBakedLighting();

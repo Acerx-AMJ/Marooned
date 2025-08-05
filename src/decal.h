@@ -23,9 +23,9 @@ struct Decal {
     bool alive = true;
     DecalType type;
 
-    Texture2D* texture;
+    Texture2D texture;
 
-    Decal(Vector3 pos, DecalType t, Texture2D* tex, int frameCount, float life, float frameDuration, float scale = 1.0f)
+    Decal(Vector3 pos, DecalType t, Texture2D tex, int frameCount, float life, float frameDuration, float scale = 1.0f)
         : position(pos), type(t), texture(tex), maxFrames(frameCount),
           lifetime(life), frameTime(frameDuration), size(scale)
     {}

@@ -8,138 +8,113 @@
 #include "dungeonGeneration.h"
 #include "rlgl.h"
 #include "resourceManager.h"
+//Add maps and a get function to resources manager instead of global variable hell. 
 
-
-RenderTexture2D sceneTexture, postProcessTexture, depthEffectTexture;
-
-Texture2D bushTex, shadowTex, raptorFront, raptorTexture, gunTexture, muzzleFlash, backDrop, smokeSheet, bloodSheet, skeletonSheet, wallFallback, 
-doorTexture, healthPotTexture, keyTexture, swordBloody, swordClean, fireSheet, pirateSheet, coinTexture, spiderSheet, spiderWebTexture, brokeWebTexture, explosionSheet,
-manaPotion, fireIcon, iceIcon;
-
-Shader fogShader, skyShader, waterShader, terrainShader, shadowShader, simpleFogShader, bloomShader, depthShader, pbrShader;
-
-Model terrainModel, skyModel, waterModel, shadowQuad, palmTree, palm2, bush, boatModel, floorTile2, floorTile3,chestModel, fireballModel,
-bottomPlane, blunderbuss, floorTile, doorWay, wall, barrelModel, pillarModel, swordModel, lampModel, brokeBarrel, staffModel, iceballModel;
+Model terrainModel;
 
 Image heightmap;
 Mesh terrainMesh;
 
-int sceneTextureLoc;
-int sceneDepthLoc; 
+// int sceneTextureLoc;
+// int sceneDepthLoc; 
 Vector3 terrainScale = {16000.0f, 200.0f, 16000.0f}; //very large x and z, 
 
 Vector2 screenResolution; //global shader resolution
 #define MAX_MATERIAL_MAPS 12
-ResourceManager R;
+//auto& R = ResourceManager::Get();
 
 void LoadAllResources() {
     screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
-    sceneTexture = LoadRenderTexture((int)screenResolution.x, (int)screenResolution.y);
-    depthEffectTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
-    postProcessTexture = LoadRenderTexture((int)screenResolution.x,(int) screenResolution.y);
+    //slowly get rid of the globals, When you need a texture, use the resourceManager::Get() function. 
+    R.LoadRenderTexture("sceneTexture", (int)screenResolution.x, (int)screenResolution.y);
+    R.LoadRenderTexture("postProcessTexture", (int)screenResolution.x,(int) screenResolution.y);
 
-    raptorTexture = R.LoadTexture("assets/sprites/raptorSheet.png");
-    skeletonSheet = R.LoadTexture("assets/sprites/skeletonSheet.png");
-    gunTexture = R.LoadTexture("assets/sprites/flintlock.png");
-    muzzleFlash = R.LoadTexture("assets/sprites/muzzleFlash.png");
-    backDrop = R.LoadTexture("assets/screenshots/dungeon1.png");
-    smokeSheet = R.LoadTexture("assets/sprites/smokeSheet.png");
-    bloodSheet = R.LoadTexture("assets/sprites/bloodSheet.png");
-    doorTexture = R.LoadTexture("assets/sprites/door.png");
-    healthPotTexture = R.LoadTexture("assets/sprites/Healthpot.png");
-    keyTexture = R.LoadTexture("assets/sprites/key.png");
-    swordBloody = R.LoadTexture("assets/textures/swordBloody.png");
-    swordClean = R.LoadTexture("assets/textures/swordClean.png");
-    fireSheet = R.LoadTexture("assets/sprites/fireSheet.png");
-    pirateSheet = R.LoadTexture("assets/sprites/pirateSheet.png");
-    coinTexture = R.LoadTexture("assets/sprites/coin.png");
-    spiderSheet = R.LoadTexture("assets/sprites/spiderSheet.png");
-    spiderWebTexture = R.LoadTexture("assets/sprites/spiderWeb.png");
-    brokeWebTexture = R.LoadTexture("assets/sprites/brokeWeb.png");
-    wallFallback = R.LoadTexture("assets/textures/wallBaseColor.png");
-    explosionSheet = R.LoadTexture("assets/sprites/explosionSheet.png");
-    manaPotion = R.LoadTexture("assets/sprites/manaPotion.png");
-    fireIcon = R.LoadTexture("assets/sprites/fireIcon.png");
-    iceIcon = R.LoadTexture("assets/sprites/iceIcon.png");
-    bushTex = R.LoadTexture("assets/bush.png");
-    shadowTex = LoadTexture("assets/shadow_decal.png");
+    //normal textures. Save textures to an unordered map, look up by string, call R.GetTexture("name") to access texture
+    R.LoadTexture("raptorTexture",    "assets/sprites/raptorSheet.png");
+    R.LoadTexture("skeletonSheet",    "assets/sprites/skeletonSheet.png");
+    R.LoadTexture("muzzleFlash",      "assets/sprites/muzzleFlash.png");
+    R.LoadTexture("backDrop",         "assets/screenshots/dungeon1.png");
+    R.LoadTexture("smokeSheet",       "assets/sprites/smokeSheet.png");
+    R.LoadTexture("bloodSheet",       "assets/sprites/bloodSheet.png");
+    R.LoadTexture("doorTexture",      "assets/sprites/door.png");
+    R.LoadTexture("healthPotTexture", "assets/sprites/Healthpot.png");
+    R.LoadTexture("keyTexture",       "assets/sprites/key.png");
+    R.LoadTexture("swordBloody",      "assets/textures/swordBloody.png");
+    R.LoadTexture("swordClean",       "assets/textures/swordClean.png");
+    R.LoadTexture("fireSheet",        "assets/sprites/fireSheet.png");
+    R.LoadTexture("pirateSheet",      "assets/sprites/pirateSheet.png");
+    R.LoadTexture("coinTexture",      "assets/sprites/coin.png");
+    R.LoadTexture("spiderSheet",      "assets/sprites/spiderSheet.png");
+    R.LoadTexture("spiderWebTexture", "assets/sprites/spiderWeb.png");
+    R.LoadTexture("brokeWebTexture",  "assets/sprites/brokeWeb.png");
+    R.LoadTexture("explosionSheet",   "assets/sprites/explosionSheet.png");
+    R.LoadTexture("manaPotion",       "assets/sprites/manaPotion.png");
+    R.LoadTexture("fireIcon",         "assets/sprites/fireIcon.png");
+    R.LoadTexture("iceIcon",          "assets/sprites/iceIcon.png");
+    R.LoadTexture("shadowTex",        "assets/textures/shadow_decal.png");
 
-    // Models
-    palmTree = R.LoadModel("assets/models/bigPalmTree.glb");
-    palm2 = R.LoadModel("assets/models/smallPalmTree.glb");
-    bush = R.LoadModel("assets/models/grass(stripped).glb");
-    boatModel = R.LoadModel("assets/models/boat.glb");
-    blunderbuss = R.LoadModel("assets/models/blunderbus.glb");
 
-    floorTile = R.LoadModel("assets/models/floorTile.glb");
-    doorWay = R.LoadModel("assets/models/doorWay.glb");
-    wall = R.LoadModel("assets/models/wall.glb");
-    barrelModel = R.LoadModel("assets/models/barrel.glb");
-    pillarModel = R.LoadModel("assets/models/pillar.glb");
-    swordModel = R.LoadModel("assets/models/sword.glb");
-    lampModel = R.LoadModel("assets/models/lamp.glb");
-    brokeBarrel = R.LoadModel("assets/models/brokeBarrel.glb");
-    floorTile2 = R.LoadModel("assets/models/floorTile2.glb");
-    floorTile3 = R.LoadModel("assets/models/floorTile3.glb");
-    chestModel = R.LoadModel("assets/models/chest.glb");
-    staffModel = R.LoadModel("assets/models/staff.glb");
-    fireballModel = R.LoadModel("assets/models/fireball.glb");
-    iceballModel = R.LoadModel("assets/models/iceBall.glb");
+    // Models (registering with string keys)
+    R.LoadModel("palmTree",       "assets/models/bigPalmTree.glb");
+    R.LoadModel("palm2",          "assets/models/smallPalmTree.glb");
+    R.LoadModel("bush",           "assets/models/grass(stripped).glb");
+    R.LoadModel("boatModel",      "assets/models/boat.glb");
+    R.LoadModel("blunderbuss",    "assets/models/blunderbus.glb");
+    R.LoadModel("floorTile",      "assets/models/floorTile.glb");
+    R.LoadModel("doorWay",        "assets/models/doorWay.glb");
+    R.LoadModel("wall",           "assets/models/wall.glb");
+    R.LoadModel("barrelModel",    "assets/models/barrel.glb");
+    R.LoadModel("swordModel",     "assets/models/sword.glb");
+    R.LoadModel("lampModel",      "assets/models/lamp.glb");
+    R.LoadModel("brokeBarrel",    "assets/models/brokeBarrel.glb");
+    R.LoadModel("chestModel",     "assets/models/chest.glb");
+    R.LoadModel("staffModel",     "assets/models/staff.glb");
+    R.LoadModel("fireballModel",  "assets/models/fireball.glb");
+    R.LoadModel("iceballModel",   "assets/models/iceBall.glb");
 
-    terrainShader = R.LoadShader("assets/shaders/height_color.vs", "assets/shaders/height_color.fs");
+    //generated models
+    R.LoadModelFromMesh("skyModel", GenMeshCube(1.0f, 1.0f, 1.0f));
+    R.LoadModelFromMesh("waterModel",GenMeshPlane(30000, 30000, 1, 1));
+    R.LoadModelFromMesh("bottomPlane",GenMeshPlane(30000, 30000, 1, 1));
+    R.LoadModelFromMesh("shadowQuad",GenMeshPlane(1.0f, 1.0f, 1, 1));
 
-    // Shaders
+    //shaders
+    R.LoadShader("terrainShader", "assets/shaders/height_color.vs",  "assets/shaders/height_color.fs");
+    R.LoadShader("fogShader",     /*vsPath=*/"",                    "assets/shaders/fog_postprocess.fs");
+    R.LoadShader("shadowShader",  "assets/shaders/shadow_decal.vs", "assets/shaders/shadow_decal.fs");
+    R.LoadShader("skyShader",     "assets/shaders/skybox.vs",       "assets/shaders/skybox.fs");
+    R.LoadShader("waterShader",   "assets/shaders/water.vs",        "assets/shaders/water.fs");
+    R.LoadShader("bloomShader",   /*vsPath=*/"",                    "assets/shaders/bloom.fs");
 
-    //Post processing shader. AO shader + red vignette + fade to black
-    fogShader = R.LoadShader(0, "assets/shaders/fog_postprocess.fs");
 
-    sceneTextureLoc = GetShaderLocation(fogShader, "sceneTexture");
-    //sceneDepthLoc = GetShaderLocation(fogShader, "sceneDepth");
-    //SetShaderValueTexture(fogShader, sceneDepthLoc, sceneTexture.depth);
-
-    depthShader = R.LoadShader(0, "assets/shaders/depth_shader.fs");//does nothing. 
+    // set shader uniforms
+    Shader& fogShader = R.GetShader("fogShader");
+    Shader& bloomShader = R.GetShader("bloomShader");
+    Shader& shadowShader = R.GetShader("shadowShader");
+    Shader& waterShader = R.GetShader("waterShader");
 
     // Sky
-    skyShader = R.LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
-    skyModel = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
-    skyModel.materials[0].shader = skyShader;
+    
+    R.GetModel("skyModel").materials[0].shader = R.GetShader("skyShader");
 
-    // Shadow ////unused. 
-
-    shadowShader = R.LoadShader("assets/shaders/shadow_decal.vs", "assets/shaders/shadow_decal.fs");
-    shadowQuad = LoadModelFromMesh(GenMeshPlane(1.0f, 1.0f, 1, 1));
+    // Shadow //
+    Model& shadowQuad = R.GetModel("shadowQuad");//LoadModelFromMesh(GenMeshPlane(1.0f, 1.0f, 1, 1));
     shadowQuad.materials[0].shader = shadowShader;
-    SetMaterialTexture(&shadowQuad.materials[0], MATERIAL_MAP_DIFFUSE, shadowTex);
+    SetMaterialTexture(&shadowQuad.materials[0], MATERIAL_MAP_DIFFUSE, R.GetTexture("shadowTex"));
 
     // Water
-    waterShader = R.LoadShader("assets/shaders/water.vs", "assets/shaders/water.fs");
-    SetShaderValue(waterShader, GetShaderLocation(waterShader, "waterLevel"), &waterHeightY, SHADER_UNIFORM_FLOAT);
-    waterModel = LoadModelFromMesh(GenMeshPlane(30000, 30000, 1, 1));
-    bottomPlane = LoadModelFromMesh(GenMeshPlane(30000, 30000, 1, 1));
-    waterModel.materials[0].shader = waterShader;
-    bottomPlane.materials[0].shader = waterShader;
-
-    TraceLog(LOG_INFO, "Material count: %d", staffModel.materialCount);
-    TraceLog(LOG_INFO, "Texture ID: %d", staffModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture.id);
-
-    staffModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = 
-    staffModel.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture;
-
-
-    bloomShader = R.LoadShader(0, "assets/shaders/bloom.fs");
-    float bloomStrengthValue = 0.3f;
-    //vignetteStrengthValue = 0.2f; //set globaly for black vignette strength
     
+    SetShaderValue(waterShader, GetShaderLocation(waterShader, "waterLevel"), &waterHeightY, SHADER_UNIFORM_FLOAT);
+    R.GetModel("waterModel").materials[0].shader = waterShader;
+    R.GetModel("bottomPlane").materials[0].shader = waterShader;
+
+    //bloom post process. 
+    float bloomStrengthValue = 0.3f;
     float bloomColor[3] = { 1.0f, 0.0f, 1.0f }; // Slight purple tint
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
-
-
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomColor"), bloomColor, SHADER_UNIFORM_VEC3);
-
-
-
 
 
     //Sounds
@@ -186,21 +161,24 @@ void LoadAllResources() {
     SoundManager::GetInstance().LoadSound("explosion", "assets/sounds/explosion.ogg");
     SoundManager::GetInstance().LoadSound("staffHit", "assets/sounds/staffHit.ogg");
     SoundManager::GetInstance().LoadSound("iceMagic", "assets/sounds/iceMagic.ogg");
-
-
+    //music (ambience)
     SoundManager::GetInstance().LoadMusic("dungeonAir", "assets/sounds/dungeonAir.ogg");
     SoundManager::GetInstance().LoadMusic("jungleAmbience", "assets/sounds/jungleSounds.ogg");
-    
-
 
 }
 
 void UpdateShaders(Camera& camera){
+    Shader& waterShader = R.GetShader("waterShader");
+    Shader& skyShader = R.GetShader("skyShader");
+    Shader& terrainShader = R.GetShader("terrainShader");
+    Shader& fogShader = R.GetShader("fogShader");
+    Shader& bloomShader = R.GetShader("bloomShader");
+
     float t = GetTime();
     Vector3 camPos = camera.position;
     int dungeonFlag = isDungeon ? 1 : 0;
     int isDungeonLoc = GetShaderLocation(skyShader, "isDungeon");
-    
+
     int camLoc = GetShaderLocation(waterShader, "cameraPos");
     int camPosLoc = GetShaderLocation(terrainShader, "cameraPos");
     SetShaderValue(waterShader, camLoc, &camPos, SHADER_UNIFORM_VEC3);
@@ -228,53 +206,11 @@ void UpdateShaders(Camera& camera){
 
     //check every frame
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
-
-    
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "aaStrength"), &aaStrengthValue, SHADER_UNIFORM_FLOAT);
-
-    // int sceneTextureLoc = GetShaderLocation(depthShader, "sceneTexture");
-    // int sceneDepthLoc   = GetShaderLocation(depthShader, "sceneDepth");
-
-    // int cameraNearLoc = GetShaderLocation(depthShader, "cameraNear");
-    // int cameraFarLoc  = GetShaderLocation(depthShader, "cameraFar");
-
-    // int fogNearLoc = GetShaderLocation(depthShader, "fogNear");
-    // int fogFarLoc  = GetShaderLocation(depthShader, "fogFar");
-    // int fogAmountLoc = GetShaderLocation(depthShader, "fogAmount");
-
-    // // Camera near/far match render pass
-    // float cameraNearClip = 60.0f;
-    // float cameraFarClip = 10000.0f;
-
-    // float fogAmount = 1.0f; // 0.0 = no fog, 1.0 = full fog
-    // SetShaderValue(depthShader, fogAmountLoc, &fogAmount, SHADER_UNIFORM_FLOAT);
-
-    // SetShaderValue(depthShader, cameraNearLoc, &cameraNearClip, SHADER_UNIFORM_FLOAT);
-    // SetShaderValue(depthShader, cameraFarLoc, &cameraFarClip, SHADER_UNIFORM_FLOAT);
-
-    // // Fog control
-    // float fogNear = 60.0f;
-    // float fogFar  = 60.1f;
-
-    // SetShaderValue(depthShader, fogNearLoc, &fogNear, SHADER_UNIFORM_FLOAT);
-    // SetShaderValue(depthShader, fogFarLoc, &fogFar, SHADER_UNIFORM_FLOAT);
-
-
-
 
 }
 
 void UnloadAllResources() {
-    R.UnloadAll();
+    ResourceManager::Get().UnloadAll();
     SoundManager::GetInstance().UnloadAll();
-    //generated models
-    UnloadModel(skyModel);
-    UnloadModel(waterModel);
-    UnloadModel(shadowQuad);
-    UnloadModel(bottomPlane);
-    //renderTextures
-    UnloadRenderTexture(sceneTexture);
-    UnloadRenderTexture(depthEffectTexture);
-    UnloadRenderTexture(postProcessTexture);
-
 }

@@ -4,6 +4,7 @@
 #include "dungeonGeneration.h"
 #include "sound_manager.h"
 #include "resources.h"
+#include "resourceManager.h"
 #include "raymath.h"
 #include "pathfinding.h"
 
@@ -202,14 +203,14 @@ void HandleMeleeHitboxCollision(Camera& camera) {
             SoundManager::GetInstance().Play("barrelBreak");
             if (barrel.containsPotion) {
                 Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
-                collectables.push_back(Collectable(CollectableType::HealthPotion, pos, &healthPotTexture, 40));
+                collectables.push_back(Collectable(CollectableType::HealthPotion, pos, R.GetTexture("healthPotTexture"), 40));
 
             }
 
             if (barrel.containsGold) {
                 Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
                 int gvalue = GetRandomValue(1, 100);
-                Collectable gold = Collectable(CollectableType::Gold, pos, &coinTexture, 40);
+                Collectable gold = Collectable(CollectableType::Gold, pos, R.GetTexture("coinTexture"), 40);
                 gold.value = gvalue;
                 collectables.push_back(gold);
 
@@ -217,7 +218,7 @@ void HandleMeleeHitboxCollision(Camera& camera) {
 
             if (barrel.containsMana) {
                 Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
-                Collectable manaPot = Collectable(CollectableType::ManaPotion, pos, &manaPotion, 40);
+                Collectable manaPot = Collectable(CollectableType::ManaPotion, pos, R.GetTexture("manaPotion"), 40);
                 collectables.push_back(manaPot);
 
             }
@@ -233,13 +234,13 @@ void HandleMeleeHitboxCollision(Camera& camera) {
             enemy->TakeDamage(50);
             if (enemy->type != CharacterType::Skeleton){ //if raptor or pirate, bloody sword on death. 
                 if (enemy->currentHealth <= 0){
-                    swordModel.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = swordBloody;
+                    meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordBloody");
                     //spawning decals here doesn't work for whatever reason
 
                     Vector3 camDir = Vector3Normalize(Vector3Subtract(enemy->position, camera.position));
                     Vector3 offsetPos = Vector3Add(enemy->position, Vector3Scale(camDir, -100.0f));
                     offsetPos.y += 10; 
-                    decals.emplace_back(offsetPos, DecalType::Blood, &bloodSheet, 7, 0.7f, 0.1f, 60.0f);
+                    decals.emplace_back(offsetPos, DecalType::Blood, R.GetTexture("bloodSheet"), 7, 0.7f, 0.1f, 60.0f);
                     
                     
                 } 
@@ -378,13 +379,13 @@ void CheckBulletHits(Camera& camera) {
 
                 if (barrel.containsPotion) {
                     Vector3 dropPos = { barrel.position.x, barrel.position.y + 100, barrel.position.z };
-                    collectables.push_back(Collectable(CollectableType::HealthPotion, dropPos, &healthPotTexture, 40));
+                    collectables.push_back(Collectable(CollectableType::HealthPotion, dropPos, R.GetTexture("healthPotTexture"), 40));
                 }
 
                 if (barrel.containsGold) {
                     Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
                     int gvalue = GetRandomValue(1, 100);
-                    Collectable gold(CollectableType::Gold, pos, &coinTexture, 40);
+                    Collectable gold(CollectableType::Gold, pos, R.GetTexture("coinTexture"), 40);
                     gold.value = gvalue;
                     collectables.push_back(gold);
 
