@@ -3,7 +3,6 @@
 #include <raylib.h>
 #include <cmath>
 #include "world.h"
-#include "resources.h"
 #include "resourceManager.h"
 #include "decal.h"
 #include "sound_manager.h"

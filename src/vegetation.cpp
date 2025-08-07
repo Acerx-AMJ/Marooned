@@ -6,7 +6,6 @@
 #include <cmath>
 #include "raymath.h"
 #include "rlgl.h"
-#include "resources.h"
 #include "resourceManager.h"
 #include "world.h"
 #include "algorithm"
@@ -30,8 +29,8 @@ void generateVegetation(){
 
     float treeSpacing = 150.0f;
     float minTreeSpacing = 50.0f;
-    float treeHeightThreshold = terrainScale.y * TREE_HEIGHT_RATIO;
-    float bushHeightThreshold = terrainScale.y * BUSH_HEIGHT_RATIO;
+    float treeHeightThreshold = terrainScale.y * 0.8f;
+    float bushHeightThreshold = terrainScale.y * 0.9f;
     heightmapPixels = (unsigned char*)heightmap.data; //for iterating heightmap data for tree placement
     // 🌴 Generate the trees
     trees = GenerateTrees(heightmap, heightmapPixels, terrainScale, treeSpacing, minTreeSpacing, treeHeightThreshold);

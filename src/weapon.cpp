@@ -4,7 +4,6 @@
 #include "rlgl.h"
 #include "bullet.h"
 #include "sound_manager.h"
-#include "resources.h"
 #include "resourceManager.h"
 #include "player.h"
 #include "world.h"

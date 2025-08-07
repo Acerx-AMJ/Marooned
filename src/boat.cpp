@@ -1,6 +1,5 @@
 #include "boat.h"
 #include "raymath.h"
-#include "resources.h"
 #include "resourceManager.h"
 #include "world.h"
 #include <iostream>

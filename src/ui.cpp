@@ -5,6 +5,7 @@
 #include "level.h"
 #include "resourceManager.h"
 #include "weapon.h"
+#include "world.h"
 
 void DrawMagicIcon(){
     Texture2D currentTexture;
@@ -116,6 +117,27 @@ void DrawMenu(int selectedOption, int levelIndex) {
     );
 
     DrawText(selectedOption == 2 ? "> Quit" : "  Quit", titleX, 380, 30, WHITE);
+}
+
+void UpdateMenu(Camera& camera){
+    //Main Menu - level select 
+    if (currentGameState == GameState::Menu) {
+        if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Playing;
+        if (IsKeyPressed(KEY_UP)) selectedOption = (selectedOption - 1 + 3) % 3;
+        if (IsKeyPressed(KEY_DOWN)) selectedOption = (selectedOption + 1) % 3;
+
+        if (IsKeyPressed(KEY_ENTER)) {
+            if (selectedOption == 0) {
+                InitLevel(levels[levelIndex], camera);
+                currentGameState = GameState::Playing;
+            } else if (selectedOption == 1) {
+                levelIndex = (levelIndex + 1) % levels.size(); // Cycle through levels
+            } else if (selectedOption == 2) {
+                currentGameState = GameState::Quit;
+            }
+        }
+
+    }
 }
 
 void DrawTimer(float ElapsedTime){

@@ -99,3 +99,53 @@ void SoundManager::UnloadAll() {
     musicTracks.clear();
 
 }
+
+void SoundManager::LoadSounds() {
+    //Sounds
+    SoundManager::GetInstance().LoadSound("dinoHit", "assets/sounds/dinoHit.ogg");
+    SoundManager::GetInstance().LoadSound("dinoDeath", "assets/sounds/dinoDeath.ogg");
+    SoundManager::GetInstance().LoadSound("dinoTweet", "assets/sounds/dino1.ogg");
+    SoundManager::GetInstance().LoadSound("dinoTarget", "assets/sounds/dino2.ogg");
+    SoundManager::GetInstance().LoadSound("dinoTweet2", "assets/sounds/dino3.ogg");
+    SoundManager::GetInstance().LoadSound("dinoBite", "assets/sounds/bite.ogg");
+    SoundManager::GetInstance().LoadSound("reload", "assets/sounds/reload.ogg");
+    SoundManager::GetInstance().LoadSound("shotgun", "assets/sounds/shotgun.ogg");
+
+    SoundManager::GetInstance().LoadSound("step1", "assets/sounds/step1.ogg");
+    SoundManager::GetInstance().LoadSound("step2", "assets/sounds/step2.ogg");
+    SoundManager::GetInstance().LoadSound("step3", "assets/sounds/step3.ogg");
+    SoundManager::GetInstance().LoadSound("step4", "assets/sounds/step4.ogg");
+
+    SoundManager::GetInstance().LoadSound("phit1", "assets/sounds/PlayerHit1.ogg");
+    SoundManager::GetInstance().LoadSound("phit2", "assets/sounds/PlayerHit2.ogg");
+
+    SoundManager::GetInstance().LoadSound("doorOpen", "assets/sounds/doorOpen.ogg");
+    SoundManager::GetInstance().LoadSound("doorClose", "assets/sounds/doorCLose.ogg");
+    SoundManager::GetInstance().LoadSound("swipe1", "assets/sounds/swipe1.ogg");
+    SoundManager::GetInstance().LoadSound("swipe2", "assets/sounds/swipe2.ogg");
+    SoundManager::GetInstance().LoadSound("swipe3", "assets/sounds/swipe3.ogg");
+    SoundManager::GetInstance().LoadSound("swordHit", "assets/sounds/swordHit.ogg");
+    SoundManager::GetInstance().LoadSound("swordBlock", "assets/sounds/swordBlock.ogg");
+    SoundManager::GetInstance().LoadSound("swordBlock2", "assets/sounds/swordBlock2.ogg");
+    SoundManager::GetInstance().LoadSound("bones", "assets/sounds/bones.ogg");
+    SoundManager::GetInstance().LoadSound("bones2", "assets/sounds/bones2.ogg");
+    SoundManager::GetInstance().LoadSound("gulp", "assets/sounds/gulp.ogg");
+    SoundManager::GetInstance().LoadSound("clink", "assets/sounds/clink.ogg");
+    SoundManager::GetInstance().LoadSound("lockedDoor", "assets/sounds/lockedDoor.ogg");
+    SoundManager::GetInstance().LoadSound("unlock", "assets/sounds/unlock.ogg");
+    SoundManager::GetInstance().LoadSound("key", "assets/sounds/KeyGet.ogg");
+    SoundManager::GetInstance().LoadSound("barrelBreak", "assets/sounds/barrelBreak.ogg");
+    SoundManager::GetInstance().LoadSound("musket", "assets/sounds/musket.ogg");
+    SoundManager::GetInstance().LoadSound("chestOpen", "assets/sounds/chestOpen.ogg");
+    SoundManager::GetInstance().LoadSound("spiderBite1", "assets/sounds/spiderBite1.ogg");
+    SoundManager::GetInstance().LoadSound("spiderBite2", "assets/sounds/spiderBite2.ogg");
+    SoundManager::GetInstance().LoadSound("spiderDeath", "assets/sounds/spiderDeath.ogg");
+    SoundManager::GetInstance().LoadSound("flame1", "assets/sounds/flame1.ogg");
+    SoundManager::GetInstance().LoadSound("flame2", "assets/sounds/flame2.ogg");
+    SoundManager::GetInstance().LoadSound("explosion", "assets/sounds/explosion.ogg");
+    SoundManager::GetInstance().LoadSound("staffHit", "assets/sounds/staffHit.ogg");
+    SoundManager::GetInstance().LoadSound("iceMagic", "assets/sounds/iceMagic.ogg");
+    //music (ambience)
+    SoundManager::GetInstance().LoadMusic("dungeonAir", "assets/sounds/dungeonAir.ogg");
+    SoundManager::GetInstance().LoadMusic("jungleAmbience", "assets/sounds/jungleSounds.ogg");
+}

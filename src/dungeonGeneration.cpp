@@ -1,6 +1,5 @@
 #include "dungeonGeneration.h"
 #include "raymath.h"
-#include "resources.h"
 #include <iostream>
 #include "player.h"
 #include "vector"
@@ -1017,6 +1016,20 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera) {
         DrawModelEx(R.GetModel("lampModel"), pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{350, 350, 350}, WHITE);
 
     }
+}
+
+void HandleDungeonTints(float deltaTime) {
+    if (isLoadingLevel) return;
+     //Model Color Lighting
+    // === Update tints ===
+
+    UpdateWallTints(player.position);
+    UpdateCeilingTints(player.position);
+    UpdateFloorTints(player.position);
+    UpdateBarrelTints(player.position);
+    UpdateChestTints(player.position);
+    UpdateDoorwayTints(player.position);
+    UpdateDoorTints(player.position);
 }
 
 void ResetAllBakedTints() {

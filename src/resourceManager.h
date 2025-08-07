@@ -26,6 +26,11 @@ public:
     RenderTexture2D& LoadRenderTexture(const std::string& name, int width, int height);
     RenderTexture2D& GetRenderTexture(const std::string& name) const;
 
+    void LoadAllResources();
+    void UpdateShaders(Camera& camera);
+
+    void SetShaderValues();
+
     // Clean-up
     void UnloadAll();
     ~ResourceManager();

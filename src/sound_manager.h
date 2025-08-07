@@ -16,6 +16,7 @@ public:
     void LoadSound(const std::string& name, const std::string& filePath);
     Sound GetSound(const std::string& name);
     void Play(const std::string& name);
+    void LoadSounds();
     void UnloadAll();
 
 private:

@@ -2,7 +2,6 @@
 #include "raymath.h"
 #include "world.h"
 #include <iostream>
-#include "resources.h"
 #include "resourceManager.h"
 #include "input.h"
 #include "boat.h"

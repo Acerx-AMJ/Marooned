@@ -17,11 +17,20 @@ enum class GameState {
     Quit
 };
 
+extern Model terrainModel;
+extern Image heightmap;
+extern Mesh terrainMesh;
+extern Vector3 terrainScale;
+
+
+
+
 //gobal vars
 extern Player player;
 extern Vector3 boatPosition;
 extern Vector3 startPosition;
 extern Vector3 playerSpawnPoint;
+
 
 extern Vector3 bottomPos;
 
@@ -32,6 +41,7 @@ extern float floorHeight;
 extern float wallHeight;
 extern unsigned char* heightmapPixels;
 extern float vignetteStrengthValue;
+extern float bloomStrengthValue;
 extern int selectedOption; // 0 = Start, 1 = Quit
 extern int levelIndex;
 extern int previousLevelIndex;
@@ -42,8 +52,7 @@ extern float vignetteFade;
 extern float boatSpeed;
 extern float waterHeightY;
 extern float ceilingHeight;
-extern const float TREE_HEIGHT_RATIO;
-extern const float BUSH_HEIGHT_RATIO;
+
 extern float tileSize;
 extern bool isFading;
 extern float fadeSpeed; // units per second
@@ -53,7 +62,7 @@ extern float dungeonEnemyHeight;
 extern float ElapsedTime;
 extern bool debugInfo;
 extern bool isLoadingLevel;
-extern float muzzleFlashTimer;
+//extern float muzzleFlashTimer;
 
 extern GameState currentGameState;
 
@@ -68,10 +77,23 @@ extern std::vector<CollectableWeapon> worldWeapons;
 extern std::vector<Character> enemies;  
 extern std::vector<Character*> enemyPtrs;
 
-float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
+void ClearLevel();
+void InitLevel(const LevelData& level, Camera camera) ;
+void UpdateFade(float deltaTime, Camera& camera);
 void removeAllCharacters();
 void generateRaptors(int amount, Vector3 centerPos, float radius);
-
+void BeginCustom3D(Camera3D camera, float farClip);
+void GenerateEntrances();
+void UpdateEnemies(float deltaTime);
+void UpdateMuzzleFlashes(float deltaTime);
+void UpdateBullets(Camera& camera, float deltaTime);
+void lightBullets(float deltaTime);
+void UpdateDecals(float deltaTime);
+void UpdateCollectables(Camera& camera, float deltaTime);
+void DrawBullets(Camera& camera);
+void DrawBloodParticles(Camera& camera);
+Vector3 ResolveSpawnPoint(const LevelData& level, bool isDungeon, bool first, float floorHeight);
+float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
 
 void UpdateCustomCamera(Camera3D* camera, float deltaTime);
 void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, float deltaTime);

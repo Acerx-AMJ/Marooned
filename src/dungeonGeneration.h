@@ -198,6 +198,7 @@ void DrawFlatDoor(Texture2D tex, Vector3 pos, float width, float height, float r
 void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height, float rotationY, Color tint);
 void GenerateWeapons(float Height);
 //void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY);
+void HandleDungeonTints(float deltaTime);
 void DrawDungeonCeiling();
 void ResetAllBakedTints();
 void BakeStaticLighting(); 

@@ -64,8 +64,6 @@ void main()
     // Clamp final color
     result = clamp(result, 0.0, 1.0);
     finalColor = vec4(result, 1.0);
-    // vec3 color = texture(sceneTexture, fragTexCoord).rgb;
-    // color += vec3(0.5, 0.0, 0.0); // force red tint
-    // finalColor = vec4(color, 1.0);
+
 
 }
