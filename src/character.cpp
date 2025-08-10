@@ -1,4 +1,4 @@
-#include "Character.h"
+#include "character.h"
 #include "raymath.h"
 #include <iostream>
 #include "rlgl.h"

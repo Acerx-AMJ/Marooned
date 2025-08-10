@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include "raylib.h"
-#include "Particle.h"
+#include "particle.h"
 
 enum class ParticleType {
     Smoke,

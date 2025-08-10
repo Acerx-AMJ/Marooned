@@ -1,5 +1,5 @@
 
-#include "ResourceManager.h"
+#include "resourceManager.h"
 #include "world.h"
 
 ResourceManager* ResourceManager::_instance = nullptr;

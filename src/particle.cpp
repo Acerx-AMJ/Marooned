@@ -1,4 +1,4 @@
-#include "Particle.h"
+#include "particle.h"
 #include "raymath.h"
 #include <iostream>
 

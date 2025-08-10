@@ -1,4 +1,4 @@
-#include "Inventory.h"
+#include "inventory.h"
 #include "raylib.h" // Only needed for DrawText
 #include <vector>
 #include "resourceManager.h"
