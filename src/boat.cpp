@@ -60,7 +60,7 @@ void UpdateBoat(Boat& boat, float deltaTime) {
         boat.speed = 0;
         boat.velocity = {0, 0, 0};
         boat.beached = true;
-        // Optional: add bounce or visual feedback
+       
     }
 }
 

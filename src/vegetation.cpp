@@ -191,7 +191,10 @@ void RemoveAllVegetation() {
     sortedTrees.clear();
 }
 
-void DrawTrees(const std::vector<TreeInstance>& trees, Model& shadowQuad){
+
+
+void DrawTrees(const std::vector<TreeInstance>& trees, Model& shadowQuad, Camera& camera){
+    sortTrees(camera); //sort trees by distance to camera
     for (const TreeInstance* tree : sortedTrees) {
         Vector3 pos = tree->position;
         pos.y += tree->yOffset;

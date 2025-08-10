@@ -31,7 +31,7 @@ extern Vector3 boatPosition;
 extern Vector3 startPosition;
 extern Vector3 playerSpawnPoint;
 
-
+extern Vector3 waterPos;
 extern Vector3 bottomPos;
 
 extern bool controlPlayer;
@@ -84,6 +84,7 @@ void removeAllCharacters();
 void generateRaptors(int amount, Vector3 centerPos, float radius);
 void BeginCustom3D(Camera3D camera, float farClip);
 void GenerateEntrances();
+void HandleWaves();
 void UpdateEnemies(float deltaTime);
 void UpdateMuzzleFlashes(float deltaTime);
 void UpdateBullets(Camera& camera, float deltaTime);

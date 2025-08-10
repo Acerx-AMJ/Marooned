@@ -30,6 +30,7 @@ Player player = {};
 Vector3 startPosition = {5475.0f, 300.0f, -5665.0f}; //middle island start pos
 Vector3 boatPosition = {6000, -20, 0.0};
 Vector3 playerSpawnPoint = {0,0,0};
+Vector3 waterPos = {0, 0, 0};
 int pendingLevelIndex = -1; //wait to switch level until faded out. UpdateFade() needs to know the next level index. 
 
 float waterHeightY = 60;
@@ -88,9 +89,6 @@ void InitLevel(const LevelData& level, Camera camera) {
     camera.position = player.position; //start as player, not freecam.
     levelIndex = level.levelIndex; //update current level index to new level. 
 
-    //we still generate terrain mesh for dungeons.
-
-
     vignetteStrengthValue = 0.2f; //less of vignette outdoors.
     bloomStrengthValue = 0.0f; //turn on bloom in dungeons
     SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
@@ -115,13 +113,14 @@ void InitLevel(const LevelData& level, Camera camera) {
     if (level.isDungeon){
         isDungeon = true;
         vignetteStrengthValue = 0.5f; //darker vignette in dungeons
-        bloomStrengthValue = 0.35f; //turn on bloom in dungeons
+        bloomStrengthValue = 0.3f; //turn on bloom in dungeons
         SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
         SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
 
 
         LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);
+        GenerateLightSources(floorHeight);
         GenerateFloorTiles(floorHeight);//80
         GenerateWallTiles(wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
         GenerateCeilingTiles(ceilingHeight);//400
@@ -131,25 +130,28 @@ void InitLevel(const LevelData& level, Camera camera) {
         GeneratePotions(floorHeight);
         GenerateKeys(floorHeight);
         GenerateWeapons(200);
-        GenerateLightSources(floorHeight);
+        
         GenerateDoorways(floorHeight, levelIndex); //calls generate doors from archways
         //generate enemies.
         GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
         GeneratePiratesFromImage(dungeonEnemyHeight);
         GenerateSpiderFromImage(dungeonEnemyHeight);
 
+
+
         if (levelIndex == 4) levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
         
       
     }
-    
-    
+    isLoadingLevel = false;
+
+    ResetAllBakedTints(); 
+    BakeStaticLighting(); 
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
 
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
-    isLoadingLevel = false;
-    ResetAllBakedTints();
-    BakeStaticLighting();
+    
+
 
     //start with blunderbus and sword in that order
     player.collectedWeapons = {WeaponType::Blunderbuss, WeaponType::Sword};
@@ -188,6 +190,14 @@ void UpdateFade(float deltaTime, Camera& camera){
     }
 
 
+}
+
+void HandleWaves(){
+    //water
+    float wave = sin(GetTime() * 0.9f) * 0.9f;  // slow, subtle vertical motion
+    float animatedWaterLevel = waterHeightY + wave;
+    waterPos = {0, animatedWaterLevel, 0};
+    bottomPos = {0, waterHeightY - 100, 0};
 }
 
 

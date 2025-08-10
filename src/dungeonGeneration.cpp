@@ -507,6 +507,7 @@ void GenerateCeilingTiles(float ceilingOffsetY) {
 
 void GenerateSpiderWebs(float baseY)
 {
+    
     spiderWebs.clear();
 
     for (int y = 1; y < dungeonHeight - 1; y++) {
@@ -1019,7 +1020,8 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera) {
 }
 
 void HandleDungeonTints(float deltaTime) {
-    if (isLoadingLevel) return;
+    //if (isLoadingLevel) return;
+    //if (!isDungeon) return
      //Model Color Lighting
     // === Update tints ===
 
@@ -1183,6 +1185,7 @@ void ApplyBakedLighting() {
 
 
 void UpdateDoorwayTints(Vector3 playerPos) {
+    if (!isDungeon) return; //dont tint outside doorways
     for (DoorwayInstance& wall : doorways) {
         // 1️⃣ Start with baked brightness
         float brightness = ColorAverage(wall.bakedTint);
@@ -1360,6 +1363,7 @@ void UpdateBarrelTints(Vector3 playerPos) {
 }
 
 void UpdateDoorTints(Vector3 playerPos) {
+    if (!isDungeon) return;
     const float maxLightDistance = 4000.0f;
     const float minBrightness = 0.2f;
 

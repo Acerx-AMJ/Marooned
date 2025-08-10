@@ -127,6 +127,7 @@ void GatherDungeonFires(Camera& camera, float deltaTime) {
 
 void GatherWebs(Camera& camera) {
     for (const SpiderWebInstance& web : spiderWebs) {
+        if (!isDungeon) return;
         //if (web.destroyed && !web.showBrokeWebTexture) continue;
 
         Texture2D tex = web.destroyed ? R.GetTexture("brokeWebTexture") : R.GetTexture("spiderWebTexture");
