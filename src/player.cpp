@@ -10,6 +10,7 @@
 #include "inventory.h"
 #include "input.h"
 #include "weapon.h"
+#include "camera_system.h"
 
 Weapon weapon;
 MeleeWeapon meleeWeapon;
@@ -444,14 +445,9 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
 
     }
 
-
-    
-    // === Movement Input ===
-    if (currentInputMode == InputMode::Gamepad) {
-        HandleGamepadInput(deltaTime);
-    } else {
-        HandleKeyboardInput(deltaTime);
-    }
+    //PLAYER MOVEMENT KEYBOARD INPUT
+    if (controlPlayer) HandleKeyboardInput(deltaTime);
+   
 }
 
 void Player::TakeDamage(int amount){

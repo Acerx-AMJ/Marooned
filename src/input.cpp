@@ -1,50 +1,15 @@
 #include "input.h"
 #include "raymath.h"
-#include "vegetation.h"
 #include "world.h"
 #include <iostream>
 #include "player.h"
-#include "dungeonGeneration.h"
-#include "pathfinding.h"
-#include "sound_manager.h"
+
+
+
 #include "utilities.h"
 
 InputMode currentInputMode = InputMode::KeyboardMouse;
 
-
-void UpdateCameraWithGamepad(Camera3D& camera) {
-    if (!IsGamepadAvailable(0)) return;
-
-    float lookSensitivity = 0.03f;
-
-    float yawInput = GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_X);
-    float pitchInput = GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_Y);
-
-    float yaw = -yawInput * lookSensitivity;
-    float pitch = -pitchInput * lookSensitivity;
-
-    Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
-    Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
-
-    // Apply yaw (rotate around up)
-    Matrix yawRot = MatrixRotate(camera.up, yaw);
-    forward = Vector3Transform(forward, yawRot);
-
-    // Apply pitch (rotate around right)
-    Matrix pitchRot = MatrixRotate(right, pitch);
-    forward = Vector3Transform(forward, pitchRot);
-
-    // Move camera position
-    float moveSpeed = 1.0f;
-    Vector2 stick = {
-        GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X),
-        GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y)
-    };
-
-    camera.position = Vector3Add(camera.position, Vector3Scale(right, stick.x * moveSpeed));
-    camera.position = Vector3Add(camera.position, Vector3Scale(forward, -stick.y * moveSpeed));
-    camera.target = Vector3Add(camera.position, forward);
-}
 
 void debugControls(Camera& camera){
 
@@ -58,31 +23,7 @@ void debugControls(Camera& camera){
     }
 
 
-    if (IsKeyPressed(KEY_I)){
-        RemoveAllVegetation();
-    }
-    if (IsKeyPressed(KEY_O)){
-        //open all doors //what if a door is locked and open?
-        for (DoorwayInstance& d : doorways){
-            d.isOpen = true;
-        }
 
-        for (Door& door : doors){
-            door.isOpen = true;
-        }
-    }
-
-    if (IsKeyPressed(KEY_P)) {
-        //close all doors
-        for (DoorwayInstance& d : doorways){
-            d.isOpen = false;
-        }
-
-        for (Door& door : doors){
-            door.isOpen = false;
-        }
-        
-    }
     //debug fireball
     if (IsKeyPressed(KEY_F)) {
         Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
@@ -100,11 +41,6 @@ void debugControls(Camera& camera){
         }
 
     }
-
-
-
-
-
 }
 
 
@@ -139,6 +75,7 @@ void UpdateInputMode() {
 }
 
 void HandleMouseLook(float deltaTime){
+    //maybe this should be  inside player. 
     Vector2 mouseDelta = GetMouseDelta();
     float mouseSensitivity = 0.05f;
     player.rotation.y -= mouseDelta.x * mouseSensitivity;
@@ -162,34 +99,4 @@ void HandleStickLook(float deltaTime){
 
 }
 
-void HandleGamepadInput(float deltaTime) {
-
-
-    Vector2 moveStick = {
-        -GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X),
-        GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y)
-    };
-
-    float speed = player.running ? player.runSpeed : player.walkSpeed;
-
-    float yawRad = DEG2RAD * player.rotation.y;
-    Vector3 forward = { sinf(yawRad), 0, cosf(yawRad) };
-    Vector3 right = { forward.z, 0, -forward.x };
-
-    Vector3 moveDir = {
-        forward.x * -moveStick.y + right.x * moveStick.x,
-        0,
-        forward.z * -moveStick.y + right.z * moveStick.x
-    };
-
-    moveDir = Vector3Scale(Vector3Normalize(moveDir), speed * deltaTime);
-    player.position = Vector3Add(player.position, moveDir);
-    player.forward = forward;
-
-    if (player.grounded && IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
-        player.velocity.y = player.jumpStrength;
-        player.grounded = false;
-        //std::cout << "jumping\n";
-    }
-}
 

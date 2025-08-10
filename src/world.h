@@ -96,6 +96,4 @@ void DrawBloodParticles(Camera& camera);
 Vector3 ResolveSpawnPoint(const LevelData& level, bool isDungeon, bool first, float floorHeight);
 float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
 
-void UpdateCustomCamera(Camera3D* camera, float deltaTime);
-void UpdateCameraAndPlayer(Camera& camera, Player& player, bool controlPlayer, float deltaTime);
-void HandleCameraPlayerToggle(Camera& camera, Player& player, bool& controlPlayer);
+void UpdateWorldFrame(float dt, Player& player);

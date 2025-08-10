@@ -1,29 +1,15 @@
 #include "raylib.h"
 #include <iostream>
-#include "raymath.h"
-#include "rlgl.h"
-#include "string"
 #include "world.h"
-#include "vegetation.h"
-#include "player.h"
 #include "input.h"
 #include "boat.h"
-#include "character.h"
-#include "algorithm"
 #include "sound_manager.h"
-#include "level.h"
 #include "dungeonGeneration.h"
-#include "pathfinding.h"
-#include "collectable.h"
-#include "inventory.h"
 #include "collisions.h"
-#include "custom_rendertexture.h"
-#include "transparentDraw.h"
-#include <direct.h>
-#include "collectableWeapon.h"
 #include "ui.h"
 #include "resourceManager.h"
 #include "render_pipeline.h"
+#include "camera_system.h"
 
 int main() { 
     InitWindow(1600, 900, "Marooned");
@@ -40,15 +26,8 @@ int main() {
 
     controlPlayer = true; //start as player //hit tab for free camera
 
-    // Camera 
-    Camera3D camera = { 0 };
-    camera.position = startPosition;
-    camera.target = (Vector3){ 0.0f, 0.0f, 1.0f };
-    camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
-    camera.fovy = 45.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
-
-
+    CameraSystem::Get().Init(startPosition);
+    
     Vector3 terrainPosition = { //center the terrain around 0, 0, 0
             -terrainScale.x / 2.0f,
             0.0f,
@@ -60,6 +39,10 @@ int main() {
     while (!WindowShouldClose()) {
         ElapsedTime += GetFrameTime();
         float deltaTime = GetFrameTime();
+
+       // Use the active camera everywhere:
+        Camera3D& camera = CameraSystem::Get().Active();
+        
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
             UpdateMenu(camera);
@@ -76,7 +59,7 @@ int main() {
 
         UpdateMusicStream(SoundManager::GetInstance().GetMusic(isDungeon ? "dungeonAir" : "jungleAmbience"));
      
-        UpdateInputMode(); //handle both gamepad and keyboard/mouse
+        //UpdateInputMode(); //handle both gamepad and keyboard/mouse
         debugControls(camera); 
 
         R.UpdateShaders(camera);
@@ -110,21 +93,18 @@ int main() {
             HandleDungeonTints(deltaTime);
         }
 
-        
-
         //gather up everything 2d and put it into a vector of struct drawRequests, then sort and draw every billboard/quad in the game.
         //Draw in order of furthest fisrt, closest last.  
         GatherTransparentDrawRequests(camera, deltaTime);
         DrawTransparentDrawRequests(camera);
 
-            
+        controlPlayer = CameraSystem::Get().IsPlayerMode();
 
-        if (IsGamepadAvailable(0)) {  //free camera with gamepad
-            UpdateCameraWithGamepad(camera);
-        }
+        // Update camera based on player
 
-        HandleCameraPlayerToggle(camera, player, controlPlayer);
-        UpdateCameraAndPlayer(camera, player, controlPlayer, deltaTime);
+        UpdateWorldFrame(deltaTime, player);
+
+        UpdatePlayer(player, deltaTime, camera);
 
 
         RenderFrame(camera, player, deltaTime);
