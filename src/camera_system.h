@@ -1,5 +1,7 @@
 #pragma once
 #include "raylib.h"
+#include "rlgl.h"
+#include "raymath.h"
 
 enum class CamMode { Player, Free };
 
@@ -44,6 +46,9 @@ public:
     // read-only access for rendering
     Camera3D& Active();
     const Camera3D& Active() const;
+    void BeginCustom3D(const Camera3D& cam, float nearClip, float farClip);
+
+
 
 private:
     CameraSystem() = default;

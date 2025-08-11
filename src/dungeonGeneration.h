@@ -29,16 +29,16 @@ struct Fire {
 
 struct DoorwayInstance {
     Vector3 position;
-    float rotationY;
+    float rotationY = 0.0f;
     bool isOpen = false;
     bool isLocked = false;
     Color tint = GRAY;
-    Color bakedTint;
-    float bakedBrightness;
-    int tileX;
-    int tileY;
+    Color bakedTint = WHITE;
+    float bakedBrightness = 0.0f;
+    int tileX = 0;
+    int tileY = 0;
     int linkedLevelIndex = -1;
-    std::vector<BoundingBox> sideColliders;
+    std::vector<BoundingBox> sideColliders{};
 
 };
 
@@ -192,13 +192,13 @@ void DrawDungeonFloor();
 void DrawDungeonBarrels();
 //void DrawSpiderWebs(Camera& camera);
 void DrawDungeonChests(); 
-void DrawDungeonPillars(float deltaTime, Camera3D camera);
+void DrawDungeonPillars(float deltaTime);
 void DrawDungeonDoorways();
 void DrawFlatDoor(Texture2D tex, Vector3 pos, float width, float height, float rotY, Color tint);
 void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height, float rotationY, Color tint);
 void GenerateWeapons(float Height);
 //void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY);
-void HandleDungeonTints(float deltaTime);
+void HandleDungeonTints();
 void DrawDungeonCeiling();
 void ResetAllBakedTints();
 void BakeStaticLighting(); 

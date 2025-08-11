@@ -22,9 +22,6 @@ extern Image heightmap;
 extern Mesh terrainMesh;
 extern Vector3 terrainScale;
 
-
-
-
 //gobal vars
 extern Player player;
 extern Vector3 boatPosition;
@@ -82,7 +79,7 @@ void InitLevel(const LevelData& level, Camera camera) ;
 void UpdateFade(float deltaTime, Camera& camera);
 void removeAllCharacters();
 void generateRaptors(int amount, Vector3 centerPos, float radius);
-void BeginCustom3D(Camera3D camera, float farClip);
+//void BeginCustom3D(Camera3D camera, float farClip);
 void GenerateEntrances();
 void HandleWaves();
 void UpdateEnemies(float deltaTime);
@@ -90,9 +87,10 @@ void UpdateMuzzleFlashes(float deltaTime);
 void UpdateBullets(Camera& camera, float deltaTime);
 void lightBullets(float deltaTime);
 void UpdateDecals(float deltaTime);
-void UpdateCollectables(Camera& camera, float deltaTime);
+void UpdateCollectables(float deltaTime);
 void DrawBullets(Camera& camera);
 void DrawBloodParticles(Camera& camera);
+void DrawOverworldProps();
 Vector3 ResolveSpawnPoint(const LevelData& level, bool isDungeon, bool first, float floorHeight);
 float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
 

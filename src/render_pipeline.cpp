@@ -9,6 +9,8 @@
 #include "dungeonGeneration.h"
 #include "player.h"
 #include "input.h"
+#include "camera_system.h"
+
 
 
 void RenderFrame(Camera3D& camera, Player& player, float dt) {
@@ -16,8 +18,8 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
     BeginTextureMode(R.GetRenderTexture("sceneTexture"));
         ClearBackground(SKYBLUE);
         float farClip = isDungeon ? 10000.0f : 50000.0f;
-
-        BeginCustom3D(camera, farClip);
+        float nearclip = 60.0f;
+        CameraSystem::Get().BeginCustom3D(camera, nearclip, farClip);
 
         rlDisableBackfaceCulling(); rlDisableDepthMask(); rlDisableDepthTest();
         DrawModel(R.GetModel("skyModel"), camera.position, 10000.0f, WHITE);
@@ -32,13 +34,15 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             DrawTrees(trees, R.GetModel("shadowQuad"), camera);
             DrawBushes(bushes, R.GetModel("shadowQuad"));
             DrawDungeonDoorways();
+            
+            DrawOverworldProps();
         } else {
             DrawDungeonFloor();
             DrawDungeonWalls();
             DrawDungeonCeiling();
             DrawDungeonBarrels();
             DrawDungeonChests();
-            DrawDungeonPillars(dt, camera);
+            DrawDungeonPillars(dt);
             DrawDungeonDoorways();
         }
 
@@ -83,6 +87,7 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             DrawManaBar(player);
             if (player.activeWeapon == WeaponType::MagicStaff) DrawMagicIcon();
             DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD);
+           
             if (debugInfo) {
                 DrawTimer(ElapsedTime);
                 DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);

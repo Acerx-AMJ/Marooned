@@ -28,13 +28,6 @@ int main() {
 
     CameraSystem::Get().Init(startPosition);
     
-    Vector3 terrainPosition = { //center the terrain around 0, 0, 0
-            -terrainScale.x / 2.0f,
-            0.0f,
-            -terrainScale.z / 2.0f
-    }; 
-    
-    
     //main game loop
     while (!WindowShouldClose()) {
         ElapsedTime += GetFrameTime();
@@ -59,9 +52,8 @@ int main() {
 
         UpdateMusicStream(SoundManager::GetInstance().GetMusic(isDungeon ? "dungeonAir" : "jungleAmbience"));
      
-        //UpdateInputMode(); //handle both gamepad and keyboard/mouse
+        //update context
         debugControls(camera); 
-
         R.UpdateShaders(camera);
         UpdateFade(deltaTime, camera); //triggers init level on fadeout
         UpdateEnemies(deltaTime);
@@ -70,11 +62,11 @@ int main() {
         UpdateDecals(deltaTime);
         UpdateMuzzleFlashes(deltaTime);
         UpdateBoat(player_boat, deltaTime);
-        UpdateCollectables(camera, deltaTime); 
+        UpdateCollectables(deltaTime); 
         UpdateDungeonChests();
+        HandleWaves();
 
         //collisions
-
         CheckBulletHits(camera); //bullet collision
         TreeCollision(camera); //player and raptor vs tree
         WallCollision();
@@ -85,12 +77,13 @@ int main() {
         HandleEnemyPlayerCollision(&player);
         pillarCollision();
         HandleMeleeHitboxCollision(camera);
-        HandleWaves();
+
         HandleDoorInteraction(camera);
+
         if (isDungeon){
             //only handle lighting in dungeons. Oustide we don't touch the tint. 
             ApplyBakedLighting();
-            HandleDungeonTints(deltaTime);
+            HandleDungeonTints();
         }
 
         //gather up everything 2d and put it into a vector of struct drawRequests, then sort and draw every billboard/quad in the game.
@@ -101,12 +94,8 @@ int main() {
         controlPlayer = CameraSystem::Get().IsPlayerMode();
 
         // Update camera based on player
-
         UpdateWorldFrame(deltaTime, player);
-
         UpdatePlayer(player, deltaTime, camera);
-
-
         RenderFrame(camera, player, deltaTime);
 
     }

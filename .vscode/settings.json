@@ -87,6 +87,15 @@
         "sstream": "cpp",
         "stdfloat": "cpp",
         "syncstream": "cpp",
-        "complex": "cpp"
+        "complex": "cpp",
+        "barrier": "cpp",
+        "codecvt": "cpp",
+        "coroutine": "cpp",
+        "cstring": "cpp",
+        "expected": "cpp",
+        "spanstream": "cpp",
+        "stop_token": "cpp",
+        "typeindex": "cpp",
+        "valarray": "cpp"
     }
 }

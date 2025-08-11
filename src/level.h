@@ -5,6 +5,15 @@
 #include "raylib.h"
 #include <optional>
 
+enum class PropType { Barrel, FirePit};
+
+struct PropSpawn {
+    PropType type;
+    float x, z;        // author in XZ; we'll resolve Y from heightmap
+    float yawDeg = 0;  // rotation around Y
+    float scale  = 1.f;
+};
+
 struct DungeonEntrance {
     Vector3 position;
     int linkedLevelIndex;
@@ -28,6 +37,8 @@ struct LevelData {
     std::vector<DungeonEntrance> entrances;
     int levelIndex; //current LevelIndex
     int nextLevel; //next level index
+
+    std::vector<PropSpawn> overworldProps;   // authored list
     
     
 };

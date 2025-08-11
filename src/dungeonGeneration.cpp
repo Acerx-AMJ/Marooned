@@ -449,10 +449,23 @@ void GenerateDoorsFromArchways() {
         if (dw.isOpen) continue; // skip if this archway should remain open
 
         // Match position/rotation of archway
-        Door door;
+        Door door{};
         door.position = dw.position;
         door.rotationY = dw.rotationY + DEG2RAD * 90.0f;
-        door.isOpen = false;
+        door.isOpen = false;struct DoorwayInstance {
+    Vector3 position;
+    float rotationY;
+    bool isOpen = false;
+    bool isLocked = false;
+    Color tint = GRAY;
+    Color bakedTint;
+    float bakedBrightness;
+    int tileX;
+    int tileY;
+    int linkedLevelIndex = -1;
+    std::vector<BoundingBox> sideColliders;
+
+};
         door.isLocked = dw.isLocked;
         door.doorTexture = R.GetTexture("doorTexture");
         door.scale = {300, 365, 1}; //stretch it taller
@@ -1007,7 +1020,7 @@ void DrawDungeonCeiling() {
 
 
 
-void DrawDungeonPillars(float deltaTime, Camera3D camera) {
+void DrawDungeonPillars(float deltaTime) {
     //Pillars means Pedestal fire light sources. Light sources are generated separatly and spawn at pillar positions. 
     for (size_t i = 0; i < pillars.size(); ++i) {
         const PillarInstance& pillar = pillars[i];
@@ -1019,9 +1032,7 @@ void DrawDungeonPillars(float deltaTime, Camera3D camera) {
     }
 }
 
-void HandleDungeonTints(float deltaTime) {
-    //if (isLoadingLevel) return;
-    //if (!isDungeon) return
+void HandleDungeonTints() {
      //Model Color Lighting
     // === Update tints ===
 
@@ -1154,7 +1165,7 @@ void BakeStaticLighting() {
     if (floorTiles.size() != ceilingTiles.size()) {
         TraceLog(LOG_WARNING, "BakeStaticLighting: floorTiles and ceilingTiles size mismatch! Skipping ceiling bake.");
     } else {
-        for (int i = 0; i < floorTiles.size(); ++i) {
+        for (size_t i = 0; i < floorTiles.size(); ++i) {
             ceilingTiles[i].bakedTint = floorTiles[i].bakedTint;
         }
     }

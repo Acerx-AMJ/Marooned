@@ -2,6 +2,7 @@
 #include "raymath.h"
 #include "input.h" 
 #include "world.h"
+#include "rlgl.h"
 
 CameraSystem& CameraSystem::Get() {
     static CameraSystem instance;
@@ -139,4 +140,20 @@ void CameraSystem::UpdateFreeCam(float dt) {
     };
     freeRig.cam.target = Vector3Add(freeRig.cam.position, dir);
     freeRig.cam.fovy   = freeRig.fov;
+}
+
+void CameraSystem::BeginCustom3D(const Camera3D& cam, float nearClip, float farClip) {
+    rlDrawRenderBatchActive();
+
+    rlMatrixMode(RL_PROJECTION);
+    rlLoadIdentity();
+    Matrix proj = MatrixPerspective(DEG2RAD * cam.fovy,
+                                (float)GetScreenWidth()/(float)GetScreenHeight(),
+                                nearClip, farClip);
+    rlMultMatrixf(MatrixToFloat(proj));
+
+    rlMatrixMode(RL_MODELVIEW);
+    rlLoadIdentity();
+    Matrix view = MatrixLookAt(cam.position, cam.target, cam.up);
+    rlMultMatrixf(MatrixToFloat(view));
 }

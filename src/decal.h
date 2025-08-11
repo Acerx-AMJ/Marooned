@@ -13,18 +13,16 @@ enum class DecalType {
 
 struct Decal {
     Vector3 position;
-    float timer = 0.0f;
+    DecalType type;
+    Texture2D texture;
+    int maxFrames = 1;
     float lifetime = 1.0f;
     float frameTime = 0.1f;
-    int currentFrame = 0;
-    int maxFrames = 1;
     float size = 1.0f;
-
+    float timer = 0.0f;
+    int currentFrame = 0;
     bool alive = true;
-    DecalType type;
-
-    Texture2D texture;
-
+    
     Decal(Vector3 pos, DecalType t, Texture2D tex, int frameCount, float life, float frameDuration, float scale = 1.0f)
         : position(pos), type(t), texture(tex), maxFrames(frameCount),
           lifetime(life), frameTime(frameDuration), size(scale)
@@ -42,7 +40,7 @@ struct Decal {
         if (currentFrame >= maxFrames) currentFrame = maxFrames - 1;
     }
 
-void Draw(Camera3D camera) {
+void Draw() {
     if (!alive) return;
 
     Rectangle sourceRec;
@@ -63,7 +61,7 @@ void Draw(Camera3D camera) {
         };
     }
 
-    Vector2 drawSize = { size, size };
+    //Vector2 drawSize = { size, size };
     //DrawBillboardRec(camera, *texture, sourceRec, position, drawSize, WHITE);
 }
 

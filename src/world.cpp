@@ -7,7 +7,7 @@
 #include "boat.h"
 #include "algorithm"
 #include "sound_manager.h"
-#include "rlgl.h"
+#include <iostream>
 #include "pathfinding.h"
 #include "camera_system.h"
 
@@ -66,21 +66,21 @@ std::vector<Character*> enemyPtrs;
 std::vector<DungeonEntrance> dungeonEntrances;
 
 
-void BeginCustom3D(Camera3D camera, float farClip) {
-    rlDrawRenderBatchActive();
-    rlMatrixMode(RL_PROJECTION);
-    rlLoadIdentity();
-    float nearClip = 60.0f; //20 wider than the capsule. to 50k outside, 10k in dungeons
+// void BeginCustom3D(Camera3D camera, float farClip) {
+//     rlDrawRenderBatchActive();
+//     rlMatrixMode(RL_PROJECTION);
+//     rlLoadIdentity();
+//     float nearClip = 60.0f; //20 wider than the capsule. to 50k outside, 10k in dungeons
 
-    float testFOV = 45.0f; // 45 is default 
-    Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), nearClip, farClip);
+//     float testFOV = 45.0f; // 45 is default 
+//     Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), nearClip, farClip);
 
-    rlMultMatrixf(MatrixToFloat(proj));
-    rlMatrixMode(RL_MODELVIEW);
-    rlLoadIdentity();
-    Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
-    rlMultMatrixf(MatrixToFloat(view));
-}
+//     rlMultMatrixf(MatrixToFloat(proj));
+//     rlMatrixMode(RL_MODELVIEW);
+//     rlLoadIdentity();
+//     Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
+//     rlMultMatrixf(MatrixToFloat(view));
+// }
 
 
 void InitLevel(const LevelData& level, Camera camera) {
@@ -108,8 +108,6 @@ void InitLevel(const LevelData& level, Camera camera) {
     GenerateEntrances();
     generateVegetation(); 
     if (!level.isDungeon) InitBoat(player_boat, boatPosition);
-    
-
    
     if (level.isDungeon){
         isDungeon = true;
@@ -138,21 +136,19 @@ void InitLevel(const LevelData& level, Camera camera) {
         GeneratePiratesFromImage(dungeonEnemyHeight);
         GenerateSpiderFromImage(dungeonEnemyHeight);
 
-
-
         if (levelIndex == 4) levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
         
-      
     }
-    isLoadingLevel = false;
 
+    isLoadingLevel = false;
+    //bake lighting after isLoadingLevel is false to it can access world LOS 
     ResetAllBakedTints(); 
     BakeStaticLighting(); 
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
 
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
 
-    CameraSystem::Get().SnapAllToPlayer(); 
+    CameraSystem::Get().SnapAllToPlayer(); //put freecam at player pos
 
     //start with blunderbus and sword in that order
     player.collectedWeapons = {WeaponType::Blunderbuss, WeaponType::Sword};
@@ -210,7 +206,7 @@ void removeAllCharacters(){
 
 void GenerateEntrances(){
     for (const DungeonEntrance& e : dungeonEntrances) {
-        Door d;
+        Door d{};
         d.position = e.position;
         d.rotationY = 0.0f; 
         d.doorTexture = R.GetTexture("doorTexture");
@@ -231,7 +227,7 @@ void GenerateEntrances(){
 
         doors.push_back(d);
 
-        DoorwayInstance dw;
+        DoorwayInstance dw{};
         dw.position = e.position;
         dw.rotationY = 90.0f * DEG2RAD; //rotate to match door 0 rotation, we could rotate door to match arch instead.
         dw.isOpen = false;
@@ -322,8 +318,8 @@ void UpdateBullets(Camera& camera, float deltaTime) {
 
 }
 
-void UpdateCollectables(Camera& camera, float deltaTime) { 
-    for (int i = 0; i < collectables.size(); i++) {
+void UpdateCollectables(float deltaTime) { 
+    for (size_t i = 0; i < collectables.size(); i++) {
         collectables[i].Update(deltaTime);
 
         // Pickup logic
@@ -417,6 +413,23 @@ void DrawBullets(Camera& camera) {
 
 }
 
+void DrawOverworldProps() {
+    for (const auto& p : levels[levelIndex].overworldProps) {
+        
+        const char* modelKey =
+            (p.type == PropType::Barrel) ? "barrelModel" :
+            (p.type == PropType::FirePit)? "campFire": "barrelModel";
+
+        //std::cout << modelKey << "\n";
+        Vector3 propPos = {p.x, 300, p.z};
+        float propY = GetHeightAtWorldPosition(propPos, heightmap, terrainScale);
+        propPos.y = propY;
+        DrawModelEx(R.GetModel(modelKey), propPos,
+                    {0,1,0}, p.yawDeg, {p.scale,p.scale,p.scale}, WHITE);
+    }
+}
+
+
 
 Vector3 ResolveSpawnPoint(const LevelData& level, bool isDungeon, bool first, float floorHeight) 
 {
@@ -476,13 +489,12 @@ void UpdateWorldFrame(float dt, Player& player) {
         player.onBoard,
         player_boat.position
     };
-    CameraSystem::Get().SyncFromPlayer(pv); //synce to players rotation, weapons also rely on players rot. 
+    CameraSystem::Get().SyncFromPlayer(pv); //synce to players rotation
 
     // Update camera (handles free vs player internally)
     CameraSystem::Get().Update(dt);
 
 }
-
 
 void ClearLevel() {
     billboardRequests.clear();

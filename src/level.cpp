@@ -2,6 +2,8 @@
 #include "dungeonGeneration.h"
 #include <vector>
 
+std::vector<PropSpawn> overworldProps;
+
 DungeonEntrance entranceToDungeon1 = {
     {0, 200, 0}, // position
     2, // linkedLevelIndex
@@ -34,7 +36,12 @@ std::vector<LevelData> levels = {
         {entranceToDungeon1, entranceToDungeon3, entranceToDungeon4}, //add entrance struct to level's vector of entrances. 
         0, //current level
         2, //next level, index 2
-
+        {
+            { PropType::FirePit,  5200.f, -5600.f,  0.f, 100.0f }, // camp fire
+            { PropType::Barrel,   5020.f, -5930.f, 30.f, 350.0f },
+            { PropType::Barrel,   5100.f, -5810.f, -15.f, 100.0f },
+        
+        },
        
     },
     {
@@ -48,7 +55,8 @@ std::vector<LevelData> levels = {
         false,
         {},
         1, 
-        -1, 
+        -1,
+        {} 
    
     },
     {
@@ -63,6 +71,7 @@ std::vector<LevelData> levels = {
         {}, //dungeons don't have level entrances
         2, 
         3, //next level index 3
+        {}
         
        
 
@@ -79,6 +88,7 @@ std::vector<LevelData> levels = {
         {},
         3, 
         4,
+        {}
        
 
     },
@@ -95,6 +105,7 @@ std::vector<LevelData> levels = {
         {},
         4, 
         0,
+        {}
     },
     {
         "Dungeon4",
@@ -108,6 +119,7 @@ std::vector<LevelData> levels = {
         {},
         5, 
         6,
+        {}
     },
         {
         "Dungeon5",
@@ -121,6 +133,7 @@ std::vector<LevelData> levels = {
         {},
         6, 
         7,
+        {}
     },
         {
         "Dungeon6",
@@ -134,6 +147,7 @@ std::vector<LevelData> levels = {
         {},
         7, 
         8,
+        {}
     },
         {
         "Dungeon7",
@@ -147,6 +161,7 @@ std::vector<LevelData> levels = {
         {},
         8, 
         9,
+        {}
     }
 };
 

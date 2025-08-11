@@ -153,6 +153,25 @@ Improved bullet light code.
 
 Character has rotationY var that gets set when moving. We never use this. Why would we need rotationY on character? bullet gets direction from player.position - position. billboards always face camera. Could we use it for something in the future? 
 
+make skeletons attach slightly faster so they actually hit each swing not every other. -feels much better should have fixed this ages ago. They attack slightly faster but way more consistent. Attack anim was 4 frames, 0.2 frame time = 0.8 attack cool down. 
+
+
+added magic icon for fire and ice. T switches between magic spells when holding the magic staff. 
+
+Refactored Resources.h/cpp to ResourceManager.h/cpp. We no longer have a global variable for every resource. We just look up the resource in a map, by string key when we need it. This allows us to unload all resources automatically, and makes adding a new resource one line of code instead of like 3 in 3 different places. It replaces about 100 global vars. 
+
+Refactored main.cpp. Moved everything out of main.cpp into world. Things in world.cpp control the overWorld map, and some global functions that need to get called. DungeonGeneration.h handles all things dungeon. 
+
+Consider moving your render pipeline out of main and into it's own file. x
+
+Fireball traps. Iceball traps
+
+make a controls menu page. 
+
+Moved all the rendering code to render_pipline.cpp. It's getting harder to remember where I put things. 
+
+Made camera_system.h/cpp. changed camera to a singelton camera = CameraSystem::Get().Active()
+
 
 
 
