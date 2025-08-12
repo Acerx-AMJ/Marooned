@@ -39,31 +39,7 @@ struct Decal {
         currentFrame = static_cast<int>(timer / frameTime);
         if (currentFrame >= maxFrames) currentFrame = maxFrames - 1;
     }
-
-void Draw() {
-    if (!alive) return;
-
-    Rectangle sourceRec;
-
-    if (type == DecalType::Explosion) {
-        sourceRec = {
-            static_cast<float>(currentFrame * 196),
-            0,
-            196,
-            190
-        };
-    } else {
-        sourceRec = {
-            static_cast<float>(currentFrame * 64),
-            0,
-            64,
-            64
-        };
-    }
-
-    //Vector2 drawSize = { size, size };
-    //DrawBillboardRec(camera, *texture, sourceRec, position, drawSize, WHITE);
-}
+    //decals are drawn in transparentDraw
 
 
 };

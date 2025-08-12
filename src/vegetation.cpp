@@ -52,10 +52,12 @@ std::vector<TreeInstance> GenerateTrees(Image& heightmap, unsigned char* pixels,
                                         float treeSpacing, float minTreeSpacing, float treeHeightThreshold) {
     std::vector<TreeInstance> trees;
     Vector3 ePos = dungeonEntrances[0].position; 
+    float startClearRadiusSq = 700.0f;
     for (int z = 0; z < heightmap.height; z += (int)treeSpacing) {
         for (int x = 0; x < heightmap.width; x += (int)treeSpacing) {
             int i = z * heightmap.width + x;
             float height = ((float)pixels[i] / 255.0f) * terrainScale.y;
+
 
             if (height > treeHeightThreshold) {
                 Vector3 pos = {
@@ -63,6 +65,7 @@ std::vector<TreeInstance> GenerateTrees(Image& heightmap, unsigned char* pixels,
                     height-5, //sink the tree into the ground a little. 
                     (float)z / heightmap.height * terrainScale.z - terrainScale.z / 2
                 };
+                
 
                 // Check distance from other trees
                 bool tooClose = false;
@@ -71,6 +74,8 @@ std::vector<TreeInstance> GenerateTrees(Image& heightmap, unsigned char* pixels,
                         tooClose = true;
                         break;
                     }
+
+                    if (Vector3Distance(pos, startPosition) < startClearRadiusSq) tooClose = true;
 
                     for (DungeonEntrance& d : dungeonEntrances){//dont spawn trees ontop of entrances
                         
@@ -131,7 +136,7 @@ std::vector<TreeInstance> FilterTreesAboveHeightThreshold(const std::vector<Tree
 std::vector<BushInstance> GenerateBushes(Image& heightmap, unsigned char* pixels, Vector3 terrainScale,
                                          float bushSpacing, float heightThreshold) {
     std::vector<BushInstance> bushes;
-
+    float startClearRadiusSq = 700.0f;  
     for (int z = 0; z < heightmap.height; z += (int)bushSpacing) {
         for (int x = 0; x < heightmap.width; x += (int)bushSpacing) {
             int i = z * heightmap.width + x;
@@ -144,6 +149,8 @@ std::vector<BushInstance> GenerateBushes(Image& heightmap, unsigned char* pixels
                     (float)z / heightmap.height * terrainScale.z - terrainScale.z / 2
                 };
 
+                if (Vector3Distance(pos, startPosition) < startClearRadiusSq) continue;
+            
                 BushInstance bush;
                 bush.position = pos;
                 bush.scale = 100.0f + ((float)GetRandomValue(0, 1000) / 100.0f);
@@ -194,7 +201,7 @@ void RemoveAllVegetation() {
 
 
 void DrawTrees(const std::vector<TreeInstance>& trees, Model& shadowQuad, Camera& camera){
-    sortTrees(camera); //sort trees by distance to camera
+    //sortTrees(camera); //sort trees by distance to camera
     for (const TreeInstance* tree : sortedTrees) {
         Vector3 pos = tree->position;
         pos.y += tree->yOffset;

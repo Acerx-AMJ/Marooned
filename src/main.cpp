@@ -89,7 +89,7 @@ int main() {
         //gather up everything 2d and put it into a vector of struct drawRequests, then sort and draw every billboard/quad in the game.
         //Draw in order of furthest fisrt, closest last.  
         GatherTransparentDrawRequests(camera, deltaTime);
-        DrawTransparentDrawRequests(camera);
+        //DrawTransparentDrawRequests(camera);
 
         controlPlayer = CameraSystem::Get().IsPlayerMode();
 

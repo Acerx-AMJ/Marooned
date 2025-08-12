@@ -136,7 +136,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadShader("skyShader",     "assets/shaders/skybox.vs",       "assets/shaders/skybox.fs");
     R.LoadShader("waterShader",   "assets/shaders/water.vs",        "assets/shaders/water.fs");
     R.LoadShader("bloomShader",   /*vsPath=*/"",                    "assets/shaders/bloom.fs");
-
+    R.LoadShader("cutoutShader",                        "",         "assets/shaders/leaf_cutout.fs");
 }
 
 
@@ -174,6 +174,19 @@ void ResourceManager::SetShaderValues(){
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomColor"), bloomColor, SHADER_UNIFORM_VEC3);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "aaStrength"), &aaStrengthValue, SHADER_UNIFORM_FLOAT);
+
+    
+    int locCutoff = GetShaderLocation(R.GetShader("cutoutShader"), "alphaCutoff");
+    float cutoff = 0.5f;
+    SetShaderValue(R.GetShader("cutoutShader"), locCutoff, &cutoff, SHADER_UNIFORM_FLOAT);
+    Model& palm = R.GetModel("palmTree");
+    Model& palm2 = R.GetModel("palm2");
+    // Apply to a specific material (e.g., your palm leaf submesh)
+    for (int m = 0; m < palm.materialCount; ++m) {
+        // If you can detect the leaf material by name/index, do that; otherwise set it for all
+        palm.materials[m].shader = R.GetShader("cutoutShader");
+        palm2.materials[m].shader = R.GetShader("cutoutShader");  
+    }
 
 }
 

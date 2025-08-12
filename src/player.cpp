@@ -364,12 +364,9 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
         player.isSwimming = false;
     }
 
-    // === Camera Look ===
-    if (currentInputMode == InputMode::Gamepad) {
-        HandleStickLook(deltaTime);
-    } else {
-        HandleMouseLook(deltaTime);
-    }
+
+    HandleMouseLook(deltaTime);
+    
 
     // === Skip Movement if On Boat ===
     if (player.onBoard) {

@@ -31,7 +31,9 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             DrawModel(R.GetModel("waterModel"), {0, waterPos.y + (float)sin(GetTime()*0.9f)*0.9f, 0}, 1.0f, WHITE);
             DrawModel(R.GetModel("bottomPlane"), {0, waterHeightY - 100, 0}, 1.0f, DARKBLUE);
             DrawBoat(player_boat);
+            BeginShaderMode(R.GetShader("cutoutShader"));
             DrawTrees(trees, R.GetModel("shadowQuad"), camera);
+            EndShaderMode();
             DrawBushes(bushes, R.GetModel("shadowQuad"));
             DrawDungeonDoorways();
             
@@ -77,7 +79,7 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
                 {0,0,(float)GetScreenWidth(),-(float)GetScreenHeight()}, {0,0}, WHITE);
         EndShaderMode();
 
-        // UI (keep the fade/loading guard if you want)
+        
         if (pendingLevelIndex != -1) {
             DrawText("Loading...", GetScreenWidth()/2 - MeasureText("Loading...", 20)/2,
                      GetScreenHeight()/2, 20, WHITE);
@@ -91,7 +93,6 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             if (debugInfo) {
                 DrawTimer(ElapsedTime);
                 DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
-                DrawText(currentInputMode == InputMode::Gamepad ? "Gamepad" : "Keyboard", 10, 30, 20, LIGHTGRAY);
                 DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 280, 30, 20, WHITE);
             }
             player.inventory.DrawInventoryUIWithIcons(itemTextures, slotOrder, 20, GetScreenHeight() - 80, 64);

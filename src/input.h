@@ -9,10 +9,8 @@ enum class InputMode {
 extern InputMode currentInputMode;
 
 
-void UpdateInputMode();
+//void UpdateInputMode();
 void debugControls(Camera& camera);
 
-
-void HandleKeyboardInput(float deltaTime);
 void HandleMouseLook(float deltaTime);
-void HandleStickLook(float deltaTime);
+
