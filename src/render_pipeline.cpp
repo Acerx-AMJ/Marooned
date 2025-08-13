@@ -44,7 +44,7 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             DrawDungeonCeiling();
             DrawDungeonBarrels();
             DrawDungeonChests();
-            DrawDungeonPillars(dt);
+            DrawDungeonPillars();
             DrawDungeonDoorways();
         }
 

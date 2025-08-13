@@ -192,7 +192,7 @@ void DrawDungeonFloor();
 void DrawDungeonBarrels();
 //void DrawSpiderWebs(Camera& camera);
 void DrawDungeonChests(); 
-void DrawDungeonPillars(float deltaTime);
+void DrawDungeonPillars();
 void DrawDungeonDoorways();
 void DrawFlatDoor(Texture2D tex, Vector3 pos, float width, float height, float rotY, Color tint);
 void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height, float rotationY, Color tint);

@@ -198,7 +198,7 @@ void Bullet::kill(Camera& camera){
 
 
 
-void Bullet::Blood(Camera camera){
+void Bullet::Blood(Camera& camera){
     //spawn blood decals at bullet position, if it's not a skeleton.
     Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
     Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));

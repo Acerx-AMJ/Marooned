@@ -83,7 +83,7 @@ std::vector<DungeonEntrance> dungeonEntrances;
 // }
 
 
-void InitLevel(const LevelData& level, Camera camera) {
+void InitLevel(const LevelData& level, Camera& camera) {
     isLoadingLevel = true;
     //Called when starting game and changing level. init the level you pass it. the level is chosen by menu or door's linkedLevelIndex. 
     ClearLevel();//clears everything. 
@@ -182,7 +182,7 @@ void UpdateFade(float deltaTime, Camera& camera){
                 isFading = false;
             }
         }
-        Shader fogShader = R.GetShader("fogShader");
+        Shader& fogShader = R.GetShader("fogShader");
         SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
     }
 
@@ -289,7 +289,7 @@ void generateRaptors(int amount, Vector3 centerPos, float radius) {
 void UpdateEnemies(float deltaTime) {
     if (isLoadingLevel) return;
     for (Character& e : enemies){
-        e.Update(deltaTime, player, heightmap, terrainScale);
+        e.Update(deltaTime, player);
     }
 }
 
@@ -450,7 +450,7 @@ Vector3 ResolveSpawnPoint(const LevelData& level, bool isDungeon, bool first, fl
 }
 
 
-float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale) {
+float GetHeightAtWorldPosition(Vector3 position, Image& heightmap, Vector3 terrainScale) {
     //read heightmap pixels and return the height in world space. 
     int width = heightmap.width;
     int height = heightmap.height;

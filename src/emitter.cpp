@@ -150,7 +150,7 @@ void Emitter::CreateParticle(Particle& p) {
 
 
 
-void Emitter::Draw(Camera3D camera) const{
+void Emitter::Draw(Camera3D& camera) const{
     for (const auto& p : particles) {
         p.Draw(camera);
         

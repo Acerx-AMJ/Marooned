@@ -26,7 +26,7 @@ public:
     bool IsEnemy() const;
     bool isFireball() const;
     bool isExploded() const;
-    void Blood(Camera camera);
+    void Blood(Camera& camera);
     void Explode(Camera& camera);
     //void SetRadius(float r) { radius = r; } //inline, dont need to define in cpp
     float GetRadius() const { return radius; }

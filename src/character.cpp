@@ -23,10 +23,10 @@ Character::Character(Vector3 pos, Texture2D& tex, int fw, int fh, int frames, fl
       type(t) {}
 
 
-void Character::UpdateAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale) {
+void Character::UpdateAI(float deltaTime, Player& player) {
     switch (type) {
         case CharacterType::Raptor:
-            UpdateRaptorAI(deltaTime, player, heightmap, terrainScale);
+            UpdateRaptorAI(deltaTime, player);
             break;
         case CharacterType::Skeleton:
             UpdateSkeletonAI(deltaTime, player);
@@ -95,7 +95,7 @@ bool FindRepositionTarget(const Player& player, const Vector3& selfPos, Vector3&
 
 
 
-void Character::UpdateRaptorAI(float deltaTime, Player& player,const Image& heightmap, Vector3 terrainScale) {
+void Character::UpdateRaptorAI(float deltaTime, Player& player) {
     if (isLoadingLevel) return;
     float distance = Vector3Distance(position, player.position);
     playerVisible = false;
@@ -1083,7 +1083,7 @@ void Character::eraseCharacters() {
 
 
 
-void Character::Update(float deltaTime, Player& player,const  Image& heightmap, Vector3 terrainScale ) {
+void Character::Update(float deltaTime, Player& player ) {
     if (isLoadingLevel) return;
     bloodEmitter.UpdateBlood(deltaTime);
     animationTimer += deltaTime;
@@ -1108,7 +1108,7 @@ void Character::Update(float deltaTime, Player& player,const  Image& heightmap, 
     }
     
    
-    UpdateAI(deltaTime,player, heightmap, terrainScale);
+    UpdateAI(deltaTime,player);
 
 
 

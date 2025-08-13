@@ -75,7 +75,7 @@ extern std::vector<Character> enemies;
 extern std::vector<Character*> enemyPtrs;
 
 void ClearLevel();
-void InitLevel(const LevelData& level, Camera camera) ;
+void InitLevel(const LevelData& level, Camera& camera) ;
 void UpdateFade(float deltaTime, Camera& camera);
 void removeAllCharacters();
 void generateRaptors(int amount, Vector3 centerPos, float radius);
@@ -92,6 +92,6 @@ void DrawBullets(Camera& camera);
 void DrawBloodParticles(Camera& camera);
 void DrawOverworldProps();
 Vector3 ResolveSpawnPoint(const LevelData& level, bool isDungeon, bool first, float floorHeight);
-float GetHeightAtWorldPosition(Vector3 position, Image heightmap, Vector3 terrainScale);
+float GetHeightAtWorldPosition(Vector3 position, Image& heightmap, Vector3 terrainScale);
 
 void UpdateWorldFrame(float dt, Player& player);

@@ -22,7 +22,7 @@ public:
     void EmitBlood(Vector3 pos, int count, Color color);
     void UpdateBlood(float dt);
     void Update(float dt); //update smoke and fire
-    void Draw(Camera3D camera) const;
+    void Draw(Camera3D& camera) const;
     void SetPosition(Vector3 newPos);
     
     void SetParticleType(ParticleType type) { particleType = type; }

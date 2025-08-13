@@ -15,7 +15,7 @@ void Particle::Update(float dt) {
     if (life <= 0.0f) active = false;
 }
 
-void Particle::Draw(Camera3D camera) const {
+void Particle::Draw(Camera3D& camera) const {
     if (!active) return;
 
     Vector2 screenPos = GetWorldToScreen(position, camera);
