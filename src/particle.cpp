@@ -10,7 +10,7 @@ void Particle::Update(float dt) {
     life -= dt;
 
     float t = life / maxLife;
-    color.a = (unsigned char)(255 * t); //fadeout
+    color.a = (unsigned char)(255 * t); //fadeout alpha over time. 
 
     if (life <= 0.0f) active = false;
 }

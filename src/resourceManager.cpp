@@ -166,7 +166,7 @@ void ResourceManager::SetShaderValues(){
 
     //bloom post process. 
     bloomStrengthValue = 0.0f;
-    float bloomColor[3] = { 0.8f, 0.0f, 0.9f }; //purple tint mixes better than red. impossible to get orange 
+    float bloomColor[3] = { 0.2f, 0.0f, 0.9f }; //purple tint mixes better than red. impossible to get orange 
     float aaStrengthValue = 0.01f; //fake antialiasing strength, makes it grayer
 
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
@@ -181,9 +181,9 @@ void ResourceManager::SetShaderValues(){
     SetShaderValue(R.GetShader("cutoutShader"), locCutoff, &cutoff, SHADER_UNIFORM_FLOAT);
     Model& palm = R.GetModel("palmTree");
     Model& palm2 = R.GetModel("palm2");
-    // Apply to a specific material (e.g., your palm leaf submesh)
+   
     for (int m = 0; m < palm.materialCount; ++m) {
-        // If you can detect the leaf material by name/index, do that; otherwise set it for all
+        
         palm.materials[m].shader = R.GetShader("cutoutShader");
         palm2.materials[m].shader = R.GetShader("cutoutShader");  
     }
@@ -222,8 +222,8 @@ void ResourceManager::UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
     //dungeonDarkness
-    float dungeonDarkness = 0.0f;//it darkens the gun model as well, so go easy. negative number brightens it. 
-    float dungeonContrast = 1.25f; //makes darks darker. 
+    float dungeonDarkness = -0.2f;//it darkens the gun model as well, so go easy. negative number brightens it. 
+    float dungeonContrast = 1.2f; //makes darks darker. 
 
 
     int isDungeonVal = isDungeon ? 1 : 0;

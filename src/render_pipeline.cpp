@@ -84,9 +84,10 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             DrawText("Loading...", GetScreenWidth()/2 - MeasureText("Loading...", 20)/2,
                      GetScreenHeight()/2, 20, WHITE);
         } else {
-            DrawHealthBar(player);
-            DrawStaminaBar(player);
-            DrawManaBar(player);
+            //DrawTrapezoidHUD(player);
+            //DrawStaminaBar(player);
+            //DrawManaBar(player);
+            DrawHUDBars(player, player.stamina, player.maxStamina, player.currentMana, player.maxMana);
             if (player.activeWeapon == WeaponType::MagicStaff) DrawMagicIcon();
             DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD);
            

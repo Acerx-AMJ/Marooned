@@ -19,6 +19,7 @@ Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, BulletTyp
       enemy(en),
       type(t),
       fireEmitter(startPos),
+      sparkEmitter(startPos),
       radius(r)
 {}
 
@@ -29,6 +30,7 @@ void Bullet::UpdateMagicBall(Camera& camera, float deltaTime) {
     // Gravity-based arc
     gravity = 980;
     fireEmitter.SetPosition(position);
+    sparkEmitter.SetPosition(position);
     //fireEmitter.Update(deltaTime);
     velocity.y -= gravity * deltaTime;
 
@@ -85,6 +87,8 @@ void Bullet::Update(Camera& camera, float deltaTime) {
     if (type == BulletType::Fireball) {
         fireEmitter.SetParticleType(ParticleType::Smoke);
         fireEmitter.Update(deltaTime);
+        sparkEmitter.SetParticleType(ParticleType::FireTrail);
+        sparkEmitter.Update(deltaTime);
         UpdateMagicBall(camera, deltaTime);
         if (!exploded && explosionTriggered) {
             exploded = true;
@@ -146,6 +150,7 @@ void Bullet::Draw(Camera& camera) const {
     if (!alive) return;
     if (type == BulletType::Fireball){
         fireEmitter.Draw(camera);
+        sparkEmitter.Draw(camera);
         DrawModelEx(R.GetModel("fireballModel"), position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
         
     }else if (type == BulletType::Iceball){

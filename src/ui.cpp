@@ -6,8 +6,10 @@
 #include "resourceManager.h"
 #include "weapon.h"
 #include "world.h"
+#include "utilities.h"
 
 void DrawMagicIcon(){
+    //magic staff selected spell icon. 
     Texture2D currentTexture;
 
     if (magicStaff.magicType == MagicType::Fireball) {
@@ -35,61 +37,168 @@ void DrawMagicIcon(){
     DrawTexturePro(currentTexture, src, dest, origin, 0.0f, WHITE);
 }
 
+// Fills a trapezoid up to t (0..1) with a slanted side preserved.
+// TL,TR,BR,BL define the full bar polygon in screen space.
+void DrawTrapezoidFill(Vector2 TL, Vector2 TR, Vector2 BR, Vector2 BL, float t, Color colFill, Color colBack) {
+    // back
+    DrawTriangle(TL, TR, BR, colBack);
+    DrawTriangle(TL, BR, BL, colBack);
 
+    // current right edge obtained by interpolating along top/bottom edges
+    Vector2 CUR_TOP = LerpV2(TL, TR, t);
+    Vector2 CUR_BOT = LerpV2(BL, BR, t);
 
-void DrawHealthBar(const Player& player) {
-    float healthPercent = (float)player.currentHealth / player.maxHealth;
-    healthPercent = Clamp(healthPercent, 0.0f, 1.0f);
+    // filled quad: TL -> CUR_TOP -> CUR_BOT -> BL
+    DrawTriangle(TL, CUR_TOP, CUR_BOT, colFill);
+    DrawTriangle(TL, CUR_BOT, BL,     colFill);
+}
 
-    int barWidth = 300;
-    int barHeight = 30;
-    int barX = GetScreenWidth() / 3 - barWidth / 2;
-    int barY = GetScreenHeight() - 80;
+// ---------- main reusable function ----------
+void DrawTrapezoidBar(float x, float y, float value, float maxValue, const BarStyle& style) {
+    float t = (maxValue > 0.0f) ? Clamp01(value / maxValue) : 0.0f;
 
-    Rectangle healthBarCurrent = { (float)barX, (float)barY, (float)(barWidth * healthPercent), (float)barHeight };
-
-    DrawRectangleLines(barX - 1, barY - 1, barWidth + 2, barHeight + 2, WHITE);
-
-    Color barColor = WHITE;
-    if (healthPercent < 0.25f) {
-        float pulse = sin(GetTime() * 10.0f) * 0.5f + 0.5f;
-        barColor = ColorLerp(WHITE, RED, pulse);
+    // Build trapezoid corners (vertical on one side, slanted on the other)
+    Vector2 TL, TR, BR, BL;
+    if (style.slantSide == SlantSide::Right) {
+        TL = { x,               y };
+        BL = { x,               y + style.height };
+        TR = { x + style.width, y };
+        BR = { x + style.width - style.slant, y + style.height };
+    } else { // left slanted
+        TL = { x + style.slant, y };
+        BL = { x,               y + style.height };
+        TR = { x + style.width, y };
+        BR = { x + style.width, y + style.height };
     }
 
-    DrawRectangleRec(healthBarCurrent, barColor);
+    // Drop shadow (simple offset re-draw)
+    if (style.shadow) {
+        Vector2 sTL = {TL.x + style.shadowOffset.x, TL.y + style.shadowOffset.y};
+        Vector2 sTR = {TR.x + style.shadowOffset.x, TR.y + style.shadowOffset.y};
+        Vector2 sBR = {BR.x + style.shadowOffset.x, BR.y + style.shadowOffset.y};
+        Vector2 sBL = {BL.x + style.shadowOffset.x, BL.y + style.shadowOffset.y};
+        DrawTrapezoidFill(sTL, sTR, sBR, sBL, 1.0f, ColorAlpha(BLACK, style.shadowAlpha), BLANK);
+    }
+
+    // Base fill color from low→high gradient
+    Color fill = ColorLerpFast(style.lowColor, style.highColor, t);
+
+    // Optional low-HP (or low resource) pulse
+    if (style.pulseWhenLow && t < style.pulseThreshold) {
+        float p = sinf(GetTime()*style.pulseRate)*0.5f + 0.5f; // 0..1
+        fill = ColorLerpFast(fill, style.pulseTarget, p*0.6f);
+    }
+
+    // Draw bar (back + filled portion)
+    DrawTrapezoidFill(TL, TR, BR, BL, t, fill, style.back);
+
+    // Optional gloss (top band)
+    if (style.gloss) {
+        float gh = style.height * 0.45f;
+        // a simple rounded rect gloss looks good enough on top
+        Rectangle gloss = { fminf(TL.x, BL.x), y, style.width, gh };
+        DrawRectangleRounded(gloss, 0.35f, 8, ColorAlpha(WHITE, 0.12f));
+    }
+
+    // Outline
+    DrawLineEx(TL, TR, style.outlineThickness, style.outline);
+    DrawLineEx(TR, BR, style.outlineThickness, style.outline);
+    DrawLineEx(BR, BL, style.outlineThickness, style.outline);
+    DrawLineEx(BL, TL, style.outlineThickness, style.outline);
 }
 
-void DrawStaminaBar(const Player& player) {
-    float percent = player.stamina / player.maxStamina;
-    percent = Clamp(percent, 0.0f, 1.0f);
+void DrawHUDBars(const Player& player, float stamina, float staminaMax, float mana, float manaMax) {
+    // Layout
+    float baseY   = GetScreenHeight() - 80.0f; // top of the stack
+    float xCenter = GetScreenWidth() * 0.33f;   // center anchor (adjust as you like)
 
-    int width = 300;
-    int height = 10;
-    int x = GetScreenWidth() / 3 - width / 2;
-    int y = GetScreenHeight() - 40;
+    // ---------- persistent display values ----------
+    static bool  init = true;
+    static float hpDisp   = 0.0f;
+    static float manaDisp = 0.0f;
+    static float stamDisp = 0.0f;
 
-    Rectangle barCurrent = { (float)x, (float)y, (float)(width * percent), (float)height };
+    float dt = GetFrameTime();
 
-    DrawRectangleLines(x - 1, y - 1, width + 2, height + 2, DARKGRAY);
-    Color color = ColorLerp((Color){50, 50, 150, 255}, BLUE, percent);
-    DrawRectangleRec(barCurrent, color);
+    if (init) {
+        hpDisp   = (float)player.currentHealth;
+        manaDisp = mana;
+        stamDisp = stamina;
+        init = false;
+    }
+
+    float flash = Clamp01(player.hitTimer / 0.15f);   // assumes hitTimer counts down from 0.15 → 0
+
+    // Clamp targets in case something goes out of range
+    float hpTarget   = (float)player.currentHealth;
+    hpTarget   = fminf(hpTarget, (float)player.maxHealth);
+    float manaTarget = fminf(mana,    manaMax);
+    float stamTarget = fminf(stamina, staminaMax);
+
+    // ---------- smoothing ----------
+    // Pick lambdas per bar (feel tuning):
+    hpDisp   = LerpExp(hpDisp,   hpTarget,   12.0f,  dt);   
+    manaDisp = LerpExp(manaDisp, manaTarget, 12.0f, dt);   
+    stamDisp = LerpExp(stamDisp, stamTarget, 18.0f, dt);   
+
+    //snap when super close to kill shimmer
+    auto snapClose = [](float &v, float t, float eps){ if (fabsf(v - t) < eps) v = t; };
+    snapClose(hpDisp,   hpTarget,   0.1f);
+    snapClose(manaDisp, manaTarget, 0.1f);
+    snapClose(stamDisp, stamTarget, 0.1f);
+
+    // Health (full height)
+    BarStyle hp;
+    hp.width   = 300.0f;
+    hp.height  = 15.0f;         
+    hp.slant   = 14.0f;
+    hp.slantSide = SlantSide::Right;
+    hp.lowColor  = (Color){220,40,40,255};
+    hp.highColor = (Color){50,220,90,255};
+    hp.pulseWhenLow = true;
+    hp.outlineThickness = 2.0f;
+    hp.outline = hp.highColor;
+
+    // Mana (half height)
+    BarStyle manaBar = hp;
+    manaBar.height  = hp.height;     
+    manaBar.slant   = hp.slant;       
+    manaBar.lowColor  = (Color){40,80,220,255};
+    manaBar.highColor = (Color){60,220,255,255};
+    manaBar.pulseWhenLow = false;
+    manaBar.outlineThickness = 1.5f;         
+    manaBar.outline = manaBar.highColor;
+
+    // Stamina (half height)
+    BarStyle stam = hp;
+    stam.height  = hp.height;      // half height
+    stam.slant   = hp.slant;
+    stam.lowColor  = (Color){255,255,255, 120};
+    stam.highColor = (Color){255,255,255,255};
+    stam.pulseWhenLow = false;
+    stam.outlineThickness = 1.5f;
+    stam.outline = stam.highColor;
+
+    // Vertical spacing between bars (use the tallest bar for spacing)
+    float gap = 8.0f;
+
+    // Compute left x so bars are centered around xCenter
+    auto leftX = [&](float width){ return xCenter - width * 0.5f; };
+
+    // Order: Health (top) → Mana (middle) → Stamina (bottom), all slanted RIGHT
+    float yHP     = baseY;
+    float yMana   = yHP   + hp.height   + gap;
+    float yStam   = yMana + manaBar.height + gap;
+
+    // Shift the whole gradient toward red for the flash duration
+    hp.lowColor  = ColorLerpFast(hp.lowColor,  RED, flash);
+    hp.highColor = ColorLerpFast(hp.highColor, RED, flash);
+
+    DrawTrapezoidBar(leftX(hp.width),   yHP,   hpDisp,   (float)player.maxHealth, hp);
+    DrawTrapezoidBar(leftX(manaBar.width), yMana, manaDisp, manaMax,manaBar);
+    DrawTrapezoidBar(leftX(stam.width), yStam, stamDisp, staminaMax,stam);
 }
 
-void DrawManaBar(const Player& player) {
-    float percent = (float)player.currentMana / player.maxMana;
-    percent = Clamp(percent, 0.0f, 1.0f);
-
-    int width = 300;
-    int height = 10;
-    int x = GetScreenWidth() / 3 - width / 2;
-    int y = GetScreenHeight() - 25;
-
-    Rectangle barCurrent = { (float)x, (float)y, (float)(width * percent), (float)height };
-
-    DrawRectangleLines(x - 1, y - 1, width + 2, height + 2, DARKBLUE);
-    Color color = ColorLerp((Color){30, 30, 60, 255}, (Color){100, 100, 255, 255}, percent);
-    DrawRectangleRec(barCurrent, color);
-}
 
 void DrawMenu(int selectedOption, int levelIndex) {
     ClearBackground(BLACK);
@@ -148,4 +257,11 @@ void DrawTimer(float ElapsedTime){
     sprintf(buffer, "Time: %02d:%02d", minutes, seconds);
 
     DrawText(buffer, GetScreenWidth()-150, 30, 20, WHITE); 
+}
+
+// lambda: how quickly it catches up (per second). 12–20 is snappy, 5–8 is slow.
+float LerpExp(float current, float target, float lambda, float dt) {
+    if (lambda <= 0.0f) return target;
+    float a = 1.0f - expf(-lambda * dt);
+    return current + (target - current) * a;
 }

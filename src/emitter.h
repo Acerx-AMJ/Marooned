@@ -9,6 +9,7 @@ enum class ParticleType {
     Blood,
     IceMist,
     IceBlast,
+    FireTrail,
 
 };
 

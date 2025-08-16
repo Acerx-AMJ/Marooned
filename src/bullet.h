@@ -40,7 +40,7 @@ public:
 
 private:
     Emitter fireEmitter;
-
+    Emitter sparkEmitter;
     Vector3 position;
     Vector3 velocity;   // replaces direction and speed
     bool alive;

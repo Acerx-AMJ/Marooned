@@ -218,10 +218,6 @@ void GatherMuzzleFlashes(Camera& camera, const std::vector<MuzzleFlash>& flashes
     }
 }
 
-
-
-
-
 void GatherTransparentDrawRequests(Camera& camera, float deltaTime) {
     billboardRequests.clear();
 
@@ -230,12 +226,7 @@ void GatherTransparentDrawRequests(Camera& camera, float deltaTime) {
     GatherWebs(camera);
     GatherDoors(camera);
     GatherDecals(camera, decals);
-
     GatherMuzzleFlashes(camera, activeMuzzleFlashes);
-    
-
-
-    //if (player.activeWeapon == WeaponType::MagicStaff) GatherStaffMuzzleFlashes(camera, magicStaff);
     GatherCollectables(camera, collectables);
 }
 

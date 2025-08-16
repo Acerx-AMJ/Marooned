@@ -104,6 +104,16 @@ void Emitter::CreateParticle(Particle& p) {
             };
             break;
 
+        case ParticleType::FireTrail:
+            p.color = ORANGE;
+            p.gavity = 100.0f;
+            p.velocity = {
+                RandomFloat(-30, 30),
+                RandomFloat(30, 100),
+                RandomFloat(-30, 30)
+            };
+            break;
+
         case ParticleType::Smoke:
             p.color = DARKGRAY;
             p.gavity = -100.0f;
