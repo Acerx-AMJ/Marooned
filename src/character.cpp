@@ -39,6 +39,10 @@ void Character::UpdateAI(float deltaTime, Player& player) {
         case CharacterType::Spider:
             UpdateSkeletonAI(deltaTime, player); //spider uses same code as skeleton
             break;
+
+        case CharacterType::Ghost:
+            UpdateSkeletonAI(deltaTime, player);
+            break;
     }
 }
 
@@ -702,6 +706,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 AlertNearbySkeletons(position, 3000.0f);
                 state = CharacterState::Chase;
                 SetAnimation(1, 4, 0.2f);
+                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
                 stateTimer = 0.0f;
                 //build the path before chasing
                 SetPath(start);
@@ -715,6 +720,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                     if (TrySetRandomPatrolPath(start, this, currentWorldPath)) {
                         state = CharacterState::Patrol;
                         SetAnimation(1, 4, 0.2f); // walk anim
+                        if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
                     }
                 }
             }
@@ -730,12 +736,15 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             if (distance < 300.0f && playerVisible) {
                 state = CharacterState::Attack;
                 SetAnimation(2, 4, 0.2f); //0.8 seconds total, this should match attack cooldown
+                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
                 stateTimer = 0.0f;
                 attackCooldown = 0.0f;
 
             } else if (distance > 4000.0f) {
                 state = CharacterState::Idle;
+                
                 SetAnimation(0, 1, 1.0f);
+                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
                 stateTimer = 0.0f;
 
             } else {
@@ -779,6 +788,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 if (this > occupier) {
                     state = CharacterState::Reposition;
                     SetAnimation(1, 4, 0.2f);
+                   if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
                     stateTimer = 0.0f;
                     break;
                 } else {
@@ -790,6 +800,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             if (distance > 350.0f) { 
                 state = CharacterState::Chase;
                 SetAnimation(1, 4, 0.2f);
+                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
                 stateTimer = 0.0;
             }
 
@@ -851,10 +862,12 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 if (dist < 350.0f && stateTimer > 1.0f) {
                     state = CharacterState::Attack;
                     SetAnimation(2, 5, 0.2f);
+                    if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.5, true);
                     stateTimer = 0.0f;
                 } else if (dist > 350.0f && stateTimer > 1.0f) {
                     state = CharacterState::Chase;
                     SetAnimation(1, 4, 0.2f);
+                    if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.5, true);
                     stateTimer = 0.0f;
                 }
             }
@@ -870,6 +883,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             if (distance < 4000.0f && playerVisible){
                 state = CharacterState::Chase;
                 SetAnimation(1, 4, 0.2f);
+                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.5, true);
                 AlertNearbySkeletons(position, 3000.0f);
                 stateTimer = 0.0f;
             }
@@ -889,6 +903,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             else {
                 state = CharacterState::Idle;
                 SetAnimation(0, 1, 1.0f);
+                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
                 stateTimer = 0.0f;
             }
 
@@ -902,6 +917,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             if (stateTimer > 5.0f){
                 state = CharacterState::Idle;
                 SetAnimation(0, 1, 1.0f);
+                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
                 stateTimer = 0;
             }
             break;
@@ -917,6 +933,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 canBleed = true; //for spiders
                 state = CharacterState::Chase;
                 SetAnimation(1, 4, 0.25f);
+                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
                 stateTimer = 0.0f;
                 
             }
@@ -925,7 +942,8 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
         case CharacterState::Death:
             if (!isDead) {
-                SetAnimation(4, 3, 0.5f, false);  
+                SetAnimation(4, 3, 0.5f, false); 
+                if (type == CharacterType::Ghost) SetAnimation(1, 7, 0.2); 
                 isDead = true;
                 deathTimer = 0.0f;         // Start counting
             }
@@ -983,11 +1001,11 @@ void Character::TakeDamage(int amount) {
         isDead = true;
         deathTimer = 0.0f;
         state = CharacterState::Death;
-
-        if (type != CharacterType::Skeleton){
+        if (type == CharacterType::Ghost) SetAnimation(1, 7, 0.2);
+        if (type == CharacterType::Skeleton || type == CharacterType::Ghost) {
+            bloodEmitter.EmitBlood(position, 20, WHITE);
+        } else {
             bloodEmitter.EmitBlood(position, 20, RED);
-        }else{
-            bloodEmitter.EmitBlood(position, 20, WHITE); //white blood for skeletons. chunks of bones flying off maybe. 
         }
         if (type == CharacterType::Raptor) SetAnimation(4, 5, 0.12f, false);
         if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f, false); //less frames for skele death.
@@ -1003,14 +1021,15 @@ void Character::TakeDamage(int amount) {
         state = CharacterState::Stagger;
         if (canBleed){
             canBleed = false;
-            if (type != CharacterType::Skeleton){
+            if (type == CharacterType::Skeleton || type == CharacterType::Ghost) {
+                bloodEmitter.EmitBlood(position, 20, WHITE);
+            } else {
                 bloodEmitter.EmitBlood(position, 20, RED);
-            }else{
-                bloodEmitter.EmitBlood(position, 10, WHITE);
             }
        
         }
         SetAnimation(4, 1, 1.0f); // Use first frame of death anim for 1 second. for all enemies
+        
         currentFrame = 0;         // Always start at first frame
         stateTimer = 0.0f;
         AlertNearbySkeletons(position, 3000.0f);

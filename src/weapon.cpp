@@ -303,7 +303,7 @@ void MagicStaff::Fire(const Camera& camera) {
 
     if (GetTime() - lastFired < fireCooldown) return;
 
-    if (player.currentMana > 10){
+    if (player.currentMana >= 10){
         player.currentMana -= 10;
     }else{
         return;

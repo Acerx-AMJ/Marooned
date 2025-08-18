@@ -105,9 +105,9 @@ struct PillarInstance {
 
 struct LightSource {
     Vector3 position;
-    float intensity = 0.5f;  // maybe 1.0 = full bright, 0.5 = dim, etc.
+    float intensity = 0.75f;  // maybe 1.0 = full bright, 0.5 = dim, etc.
     float fireballIntensity = 0.1f;
-    float range = 1000.0f;
+    float range = 1600.0f;
     float lifeTime = 1.0f;
     float age;
     float fireballRange = 400.0f;
@@ -221,6 +221,7 @@ Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, flo
 void GenerateSkeletonsFromImage(float baseY);
 void GeneratePiratesFromImage(float baseY);
 void GenerateSpiderFromImage(float baseY);
+void GenerateGhostsFromImage(float baseY);
 
 Vector3 ColorToNormalized(Color color);
 float ColorAverage(Color c);

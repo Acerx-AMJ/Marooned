@@ -41,13 +41,12 @@ void debugControls(Camera& camera){
 }
 
 void HandleMouseLook(float deltaTime){
-    //maybe this should be  inside player. 
     Vector2 mouseDelta = GetMouseDelta();
     float mouseSensitivity = 0.05f;
     player.rotation.y -= mouseDelta.x * mouseSensitivity;
     player.rotation.x -= mouseDelta.y * mouseSensitivity;
-    player.rotation.x = Clamp(player.rotation.x, -89.0f, 89.0f);
-
+    player.rotation.x = Clamp(player.rotation.x, -30.0f, 30.0f);
+    
 }
 
 

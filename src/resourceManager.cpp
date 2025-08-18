@@ -102,6 +102,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadTexture("fireIcon",         "assets/sprites/fireIcon.png");
     R.LoadTexture("iceIcon",          "assets/sprites/iceIcon.png");
     R.LoadTexture("shadowTex",        "assets/textures/shadow_decal.png");
+    R.LoadTexture("ghostSheet",       "assets/sprites/ghostSheet.png");
 
 
     // Models (registering with string keys)
@@ -166,8 +167,12 @@ void ResourceManager::SetShaderValues(){
 
     //bloom post process. 
     bloomStrengthValue = 0.0f;
-    float bloomColor[3] = { 0.2f, 0.0f, 0.9f }; //purple tint mixes better than red. impossible to get orange 
-    float aaStrengthValue = 0.01f; //fake antialiasing strength, makes it grayer
+    float bloomColor[3] = { 0.9f, 0.0f, 0.9f }; //purple tint mixes better than red. impossible to get orange 
+    float aaStrengthValue = 0.15f; //fake antialiasing strength, makes it grayer
+
+    int locSat = GetShaderLocation(bloomShader, "uSaturation");
+    float sat = 1.0f; // try 1.05–1.25
+    SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
 
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
@@ -223,7 +228,7 @@ void ResourceManager::UpdateShaders(Camera& camera){
 
     //dungeonDarkness
     float dungeonDarkness = -0.2f;//it darkens the gun model as well, so go easy. negative number brightens it. 
-    float dungeonContrast = 1.2f; //makes darks darker. 
+    float dungeonContrast = 1.3f; //makes darks darker. 
 
 
     int isDungeonVal = isDungeon ? 1 : 0;

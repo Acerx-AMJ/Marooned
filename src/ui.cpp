@@ -53,8 +53,9 @@ void DrawTrapezoidFill(Vector2 TL, Vector2 TR, Vector2 BR, Vector2 BL, float t, 
     DrawTriangle(TL, CUR_BOT, BL,     colFill);
 }
 
-// ---------- main reusable function ----------
+
 void DrawTrapezoidBar(float x, float y, float value, float maxValue, const BarStyle& style) {
+    //reusable function for making trapezoid health/mana/stamina bars. 
     float t = (maxValue > 0.0f) ? Clamp01(value / maxValue) : 0.0f;
 
     // Build trapezoid corners (vertical on one side, slanted on the other)
@@ -107,10 +108,12 @@ void DrawTrapezoidBar(float x, float y, float value, float maxValue, const BarSt
     DrawLineEx(BL, TL, style.outlineThickness, style.outline);
 }
 
-void DrawHUDBars(const Player& player, float stamina, float staminaMax, float mana, float manaMax) {
-    // Layout
-    float baseY   = GetScreenHeight() - 80.0f; // top of the stack
-    float xCenter = GetScreenWidth() * 0.33f;   // center anchor (adjust as you like)
+void DrawHUDBars(const Player& player) {
+
+    float stamina = player.stamina;
+    float staminaMax = player.maxStamina;
+    float mana = player.currentMana;
+    float manaMax = player.maxMana;
 
     // ---------- persistent display values ----------
     static bool  init = true;
@@ -120,14 +123,12 @@ void DrawHUDBars(const Player& player, float stamina, float staminaMax, float ma
 
     float dt = GetFrameTime();
 
-    if (init) {
+    if (init) { //Start the game with bars filled
         hpDisp   = (float)player.currentHealth;
         manaDisp = mana;
         stamDisp = stamina;
-        init = false;
+        init = false; //now lerp the bars if the values change. 
     }
-
-    float flash = Clamp01(player.hitTimer / 0.15f);   // assumes hitTimer counts down from 0.15 → 0
 
     // Clamp targets in case something goes out of range
     float hpTarget   = (float)player.currentHealth;
@@ -159,19 +160,19 @@ void DrawHUDBars(const Player& player, float stamina, float staminaMax, float ma
     hp.outlineThickness = 2.0f;
     hp.outline = hp.highColor;
 
-    // Mana (half height)
+    // Mana 
     BarStyle manaBar = hp;
     manaBar.height  = hp.height;     
     manaBar.slant   = hp.slant;       
-    manaBar.lowColor  = (Color){40,80,220,255};
-    manaBar.highColor = (Color){60,220,255,255};
+    manaBar.lowColor  = (Color){0,150,255,120};
+    manaBar.highColor = (Color){0,150,255,255};
     manaBar.pulseWhenLow = false;
     manaBar.outlineThickness = 1.5f;         
     manaBar.outline = manaBar.highColor;
 
-    // Stamina (half height)
+    // Stamina 
     BarStyle stam = hp;
-    stam.height  = hp.height;      // half height
+    stam.height  = hp.height;
     stam.slant   = hp.slant;
     stam.lowColor  = (Color){255,255,255, 120};
     stam.highColor = (Color){255,255,255,255};
@@ -179,7 +180,12 @@ void DrawHUDBars(const Player& player, float stamina, float staminaMax, float ma
     stam.outlineThickness = 1.5f;
     stam.outline = stam.highColor;
 
-    // Vertical spacing between bars (use the tallest bar for spacing)
+    //Position the bars on screen
+    float baseY   = GetScreenHeight() - 80.0f; // top of the stack, aligned with inventory
+    //float xCenter = GetScreenWidth() * 0.33f;   // center anchor 
+    float aspect = (float)GetScreenWidth() / (float)GetScreenHeight();
+    float xCenter = GetScreenWidth() * 0.33f + ((aspect <= 1.0f) ? 225.0f : 0.0f); //adaptive for square resolution. 
+    // Vertical spacing between bars 
     float gap = 8.0f;
 
     // Compute left x so bars are centered around xCenter
@@ -190,7 +196,8 @@ void DrawHUDBars(const Player& player, float stamina, float staminaMax, float ma
     float yMana   = yHP   + hp.height   + gap;
     float yStam   = yMana + manaBar.height + gap;
 
-    // Shift the whole gradient toward red for the flash duration
+    float flash = Clamp01(player.hitTimer / 0.15f);   
+    // Shift the whole gradient toward red for the flash duration, when taking damage
     hp.lowColor  = ColorLerpFast(hp.lowColor,  RED, flash);
     hp.highColor = ColorLerpFast(hp.highColor, RED, flash);
 
@@ -259,9 +266,3 @@ void DrawTimer(float ElapsedTime){
     DrawText(buffer, GetScreenWidth()-150, 30, 20, WHITE); 
 }
 
-// lambda: how quickly it catches up (per second). 12–20 is snappy, 5–8 is slow.
-float LerpExp(float current, float target, float lambda, float dt) {
-    if (lambda <= 0.0f) return target;
-    float a = 1.0f - expf(-lambda * dt);
-    return current + (target - current) * a;
-}

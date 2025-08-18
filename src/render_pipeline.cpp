@@ -18,7 +18,7 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
     BeginTextureMode(R.GetRenderTexture("sceneTexture"));
         ClearBackground(SKYBLUE);
         float farClip = isDungeon ? 10000.0f : 50000.0f;
-        float nearclip = 60.0f;
+        float nearclip = 30.0f;
         CameraSystem::Get().BeginCustom3D(camera, nearclip, farClip);
 
         rlDisableBackfaceCulling(); rlDisableDepthMask(); rlDisableDepthTest();
@@ -84,10 +84,8 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             DrawText("Loading...", GetScreenWidth()/2 - MeasureText("Loading...", 20)/2,
                      GetScreenHeight()/2, 20, WHITE);
         } else {
-            //DrawTrapezoidHUD(player);
-            //DrawStaminaBar(player);
-            //DrawManaBar(player);
-            DrawHUDBars(player, player.stamina, player.maxStamina, player.currentMana, player.maxMana);
+            //health mana stam bars
+            DrawHUDBars(player);
             if (player.activeWeapon == WeaponType::MagicStaff) DrawMagicIcon();
             DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD);
            

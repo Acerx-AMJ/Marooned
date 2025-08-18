@@ -1,7 +1,7 @@
 // ui.h
 #pragma once
 #include "raylib.h"
-#include "player.h" // assuming you need access to player's stats
+#include "player.h" 
 
 enum class SlantSide { Right, Left };
 
@@ -30,7 +30,7 @@ struct BarStyle {
     bool  pulseWhenLow     = true;
     float pulseThreshold   = 0.25f;       // start pulsing below this fraction
     float pulseRate        = 8.0f;        // Hz-ish
-    Color pulseTarget      = RED;         // lerp toward this when pulsing
+    Color pulseTarget      = BLACK;         // lerp toward this when pulsing
 
     bool  shadow           = true;
     Vector2 shadowOffset   = {2,4};
@@ -44,9 +44,7 @@ void DrawMagicIcon();
 void DrawMenu(int selectedOption, int levelIndex); 
 void DrawTimer(float ElapsedTime);
 void UpdateMenu(Camera& camera);
-float LerpExp(float current, float target, float lambda, float dt);
-
 
 void DrawTrapezoidFill(Vector2 TL, Vector2 TR, Vector2 BR, Vector2 BL, float t, Color colFill, Color colBack);
 void DrawTrapezoidBar(float x, float y, float value, float maxValue, const BarStyle& style);
-void DrawHUDBars(const Player& player, float stamina, float staminaMax, float mana, float manaMax);
+void DrawHUDBars(const Player& player);

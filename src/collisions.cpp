@@ -230,9 +230,9 @@ void HandleMeleeHitboxCollision(Camera& camera) {
         if (enemy->isDead) continue;
         if (enemy->hitTimer > 0.0f) continue;
 
-        if (CheckCollisionBoxes(enemy->GetBoundingBox(), player.meleeHitbox) && enemy->hitTimer <= 0){
+        if (CheckCollisionBoxes(enemy->GetBoundingBox(), player.meleeHitbox)){
             enemy->TakeDamage(50);
-            if (enemy->type != CharacterType::Skeleton){ //if raptor or pirate, bloody sword on death. 
+            if (enemy->type != CharacterType::Skeleton && enemy->type != CharacterType::Ghost){ //skeles and ghosts dont bleed.  
                 if (enemy->currentHealth <= 0){
                     meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordBloody");
                     //spawning decals here doesn't work for whatever reason
@@ -280,12 +280,17 @@ void CheckBulletHits(Camera& camera) {
         for (Character* enemy : enemyPtrs) {
             if (enemy->isDead) continue;
             bool isSkeleton = (enemy->type == CharacterType::Skeleton);
+            bool isGhost = (enemy->type == CharacterType::Ghost);
             if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), b.GetPosition(), b.GetRadius())) {
                 if (!b.IsEnemy() && (b.type == BulletType::Default)) {
                     enemy->TakeDamage(25);
 
                     if (enemy->isDead) {
-                        if (!isSkeleton) b.Blood(camera);  // blood decals on death
+                        if (isSkeleton || isGhost){
+                            //nothing
+                        }else{
+                             b.Blood(camera);  // blood decals on death
+                        }
                         b.kill(camera);
                     } else {
                         b.kill(camera);

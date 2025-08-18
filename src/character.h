@@ -10,6 +10,7 @@ enum class CharacterType {
     Skeleton,
     Pirate,
     Spider,
+    Ghost,
    
 };
 
@@ -24,7 +25,7 @@ enum class CharacterState {
     Reposition,
     Patrol,
     MeleeAttack,
-    Death
+    Death,
 };
 
 
