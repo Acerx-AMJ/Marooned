@@ -49,6 +49,7 @@ public:
     bool isDead = false;
     bool hasFired = false;
     bool animationLoop;
+    bool canSee;
     float deathTimer = 0.0f;
     float attackCooldown = 0.0f;
     float chaseDuration = 0.0f;
@@ -89,12 +90,14 @@ public:
     void UpdateAI(float deltaTime, Player& player); 
     void UpdateSkeletonAI(float deltaTime, Player& player);
     void UpdatePirateAI(float deltaTime, Player& player);
-
+    void UpdatePlayerVisibility(const Vector3& playerPos, float dt, float epsilon);
+    bool FindRepositionTarget(const Player& player, const Vector3& selfPos, Vector3& outTarget);
     void AlertNearbySkeletons(Vector3 alertOrigin, float radius);
     void SetPath(Vector2 start);
     void eraseCharacters();
     void TakeDamage(int amount);
     void SetAnimation(int row, int frames, float speed, bool loop=true);
     void playRaptorSounds();
+    bool MoveAlongPath(std::vector<Vector3>& path, Vector3& pos, float& yawDeg,float speed, float dt, float arriveEps = 100.0f);
 };
 

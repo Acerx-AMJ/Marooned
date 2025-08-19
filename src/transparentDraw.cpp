@@ -179,6 +179,7 @@ void GatherDecals(Camera& camera, const std::vector<Decal>& decals) {
                 196,
                 190
             };
+        
         } else {
             sourceRect = {
                 static_cast<float>(decal.currentFrame * 64),

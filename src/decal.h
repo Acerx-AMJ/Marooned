@@ -8,7 +8,8 @@ enum class DecalType {
     Smoke,
     Blood,
     Explosion,
-    // Add more types later
+    MagicAttack,
+    NewBlood,
 };
 
 struct Decal {

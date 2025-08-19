@@ -103,6 +103,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadTexture("iceIcon",          "assets/sprites/iceIcon.png");
     R.LoadTexture("shadowTex",        "assets/textures/shadow_decal.png");
     R.LoadTexture("ghostSheet",       "assets/sprites/ghostSheet.png");
+    R.LoadTexture("magicAttackSheet", "assets/sprites/magicAttackSheet.png");
 
 
     // Models (registering with string keys)
@@ -167,11 +168,11 @@ void ResourceManager::SetShaderValues(){
 
     //bloom post process. 
     bloomStrengthValue = 0.0f;
-    float bloomColor[3] = { 0.9f, 0.0f, 0.9f }; //purple tint mixes better than red. impossible to get orange 
+    float bloomColor[3] = { 0.5f, 0.0f, 0.9f }; //purple tint mixes better than red. impossible to get orange 
     float aaStrengthValue = 0.15f; //fake antialiasing strength, makes it grayer
 
     int locSat = GetShaderLocation(bloomShader, "uSaturation");
-    float sat = 1.0f; // try 1.05–1.25
+    float sat = 1.35f; // try 1.05–1.25
     SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
 
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
