@@ -35,6 +35,7 @@ void Character::UpdatePlayerVisibility(const Vector3& playerPos, float dt, float
     canSee = HasWorldLineOfSight(position, playerPos, epsilon);
 
     if (canSee) {
+        lastKnownPlayerPos = playerPos;
         playerVisible = true;
         timeSinceLastSeen = 0.0f;
     } else {
@@ -66,10 +67,12 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             // Transition to chase if player detected
             if (distance < 4000.0f && stateTimer > 1.0f && playerVisible) {
                 AlertNearbySkeletons(position, 3000.0f);
-                state = CharacterState::Chase;
-                SetAnimation(1, 4, 0.2f);
-                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Chase);
+                currentWorldPath.clear();
+                // state = CharacterState::Chase;
+                // SetAnimation(1, 4, 0.2f);
+                // if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
+                // stateTimer = 0.0f;
                 //build the path before chasing
                 SetPath(start);
             }
@@ -96,18 +99,21 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             pathCooldownTimer = std::max(0.0f, pathCooldownTimer - deltaTime);
 
             if (distance < 300.0f && canSee) {
-                state = CharacterState::Attack;
-                SetAnimation(2, 4, 0.2f);
-                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2f, true);
-                stateTimer = 0.0f;
-                attackCooldown = 0.0f;
+                ChangeState(CharacterState::Attack);
+
+                // state = CharacterState::Attack;
+                // SetAnimation(2, 4, 0.2f);
+                // if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2f, true);
+                // stateTimer = 0.0f;
+                // attackCooldown = 0.0f;
                 currentWorldPath.clear();
             }
             else if (distance > 4000.0f) {
-                state = CharacterState::Idle;
-                SetAnimation(0, 1, 1.0f);
-                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2f, true);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Idle);
+                // state = CharacterState::Idle;
+                // SetAnimation(0, 1, 1.0f);
+                // if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2f, true);
+                // stateTimer = 0.0f;
                 currentWorldPath.clear();
             }
             else {
@@ -136,10 +142,11 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             if (occupier && occupier != this) {
                 // Only the one with the "greater" pointer backs off
                 if (this > occupier) {
-                    state = CharacterState::Reposition;
-                    SetAnimation(1, 4, 0.2f);
-                   if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
-                    stateTimer = 0.0f;
+                    ChangeState(CharacterState::Reposition);
+                    // state = CharacterState::Reposition;
+                    // SetAnimation(1, 4, 0.2f);
+                    // if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
+                    // stateTimer = 0.0f;
                     break;
                 } else {
                     // Let the other one reposition — wait
@@ -148,10 +155,11 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             }
 
             if (distance > 350.0f) { 
-                state = CharacterState::Chase;
-                SetAnimation(1, 4, 0.2f);
-                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
-                stateTimer = 0.0;
+                ChangeState(CharacterState::Chase);
+                // state = CharacterState::Chase;
+                // SetAnimation(1, 4, 0.2f);
+                // if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
+                // stateTimer = 0.0;
             }
 
 
@@ -220,15 +228,9 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 float dist = Vector3Distance(position, target);
 
                 if (dist < 350.0f && stateTimer > 1.0f) {
-                    state = CharacterState::Attack;
-                    SetAnimation(2, 5, 0.2f);
-                    if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.5, true);
-                    stateTimer = 0.0f;
+                    ChangeState(CharacterState::Attack);
                 } else if (dist > 350.0f && stateTimer > 1.0f) {
-                    state = CharacterState::Chase;
-                    SetAnimation(1, 4, 0.2f);
-                    if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.5, true);
-                    stateTimer = 0.0f;
+                    ChangeState(CharacterState::Chase);
                 }
             }
 
@@ -241,11 +243,9 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             stateTimer += deltaTime;
 
             if (distance < 4000.0f && playerVisible){
-                state = CharacterState::Chase;
-                SetAnimation(1, 4, 0.2f);
-                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.5, true);
+                ChangeState(CharacterState::Chase);
                 AlertNearbySkeletons(position, 3000.0f);
-                stateTimer = 0.0f;
+
             }
 
             if (!currentWorldPath.empty()) { 
@@ -261,10 +261,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 }
             }
             else {
-                state = CharacterState::Idle;
-                SetAnimation(0, 1, 1.0f);
-                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Idle);
             }
 
             break;
@@ -275,10 +272,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             //do nothing
 
             if (stateTimer > 5.0f){
-                state = CharacterState::Idle;
-                SetAnimation(0, 1, 1.0f);
-                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
-                stateTimer = 0;
+                ChangeState(CharacterState::Idle);
             }
             break;
 
@@ -291,10 +285,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
             if (stateTimer >= 1.0f) {
                 canBleed = true; //for spiders
-                state = CharacterState::Chase;
-                SetAnimation(1, 4, 0.25f);
-                if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Chase);
                 
             }
             break;
@@ -323,16 +314,12 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player) {
         playerVisible = true; //player is always visible to raptors within range. 
     }
 
-    //idle, chase, attack, runaway, stagger, death
-    //Raptors: roam around in the jungle untill they encounter player, chase player for 3-7 seconds, then run away, if close attack, if to far away roam.
-    //raptors are afraid of water. If they are cornered by water, they will attack. 
     switch (state) {
         case CharacterState::Idle:
             if (stateTimer > idleThreshold){ //if idle for 10 seconds run to a new spot. 
-                state = CharacterState::RunAway;
+                ChangeState(CharacterState::RunAway);
                 randomTime = GetRandomValue(5,15);
-                SetAnimation(3, 4, 0.1f);//row 3, 4 frames, 0.1 frametime
-                stateTimer = 0.0f;
+
                 runawayAngleOffset = DEG2RAD * GetRandomValue(-180, 180);
                 hasRunawayAngle = true;
                 //playRaptorSounds(); //make noises while they run around
@@ -341,9 +328,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player) {
             if (distance < 4000.0f && stateTimer > 1.0f) { 
 
                 //if (isDungeon) setPath();
-                state = CharacterState::Chase; //switch to chase
-                SetAnimation(1, 5, 0.12f);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Chase);
                 chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
                 hasRunawayAngle = false;
 
@@ -358,21 +343,14 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player) {
 
             if (distance < 150.0f) {
                 //Gun is 100 away from player center, don't clip the gun. 
-                state = CharacterState::Attack;
-                SetAnimation(2, 5, 0.1f);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Attack);
                 randomTime = GetRandomValue(5,15);
             } else if (distance > 4000.0f) {
-                state = CharacterState::Idle;
-                SetAnimation(0, 1, 1.0f);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Idle);
                 idleThreshold = (float)GetRandomValue(5,15);
             } else if (stateTimer >= chaseDuration && !isDungeon) {
                 // Give up and run away
-                
-                state = CharacterState::RunAway;
-                SetAnimation(3, 4, 0.1f);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::RunAway);
                 runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50); //run in a random direction
                 randomDistance = GetRandomValue(1000, 2000); //set distance to run 
                 if (isDungeon) randomDistance = GetRandomValue(500, 1000);
@@ -416,9 +394,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player) {
         }
         case CharacterState::Attack:
             if (distance > 200.0f) { //maybe this should be like 160, player would get bit more. 
-                state = CharacterState::Chase;
-                SetAnimation(1, 5, 0.12f);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Chase);
             }
 
             attackCooldown -= deltaTime;
@@ -445,11 +421,9 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player) {
             }
 
             if (stateTimer >= randomTime) {
-                state = CharacterState::RunAway;
                 runawayAngleOffset = DEG2RAD * GetRandomValue(-60, 60);
                 hasRunawayAngle = true;
-                SetAnimation(3, 4, 0.1f); // run away animation
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::RunAway);
                 randomDistance = GetRandomValue(1000, 2000);
             }
             break;
@@ -488,15 +462,11 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player) {
 
             
             if (distance > randomDistance && stateTimer > 1.0f && currentTerrainHeight > 60.0f) {
-                state = CharacterState::Idle;
-                SetAnimation(0, 1, 1.0f);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Idle);
                 idleThreshold = (float)GetRandomValue(1, 5);
             }
             if (currentTerrainHeight <= 65.0f) {
-                state = CharacterState::Chase;
-                SetAnimation(1, 5, 0.12f);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Chase);
                 hasRunawayAngle = false;
                 //break; // exit RunAway logic
             }
@@ -508,9 +478,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player) {
             //do nothing
 
             if (stateTimer > 5.0f){
-                state = CharacterState::Idle;
-                SetAnimation(0, 1, 1.0f);
-                stateTimer = 0;
+                ChangeState(CharacterState::Idle);
             }
             break;
 
@@ -521,16 +489,14 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player) {
             stateTimer += deltaTime;
             if (stateTimer >= 0.6f) {
                 canBleed = true;
-                state = CharacterState::Chase;
-                SetAnimation(1, 5, 0.12f);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Chase);
                 chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
             }
             break;
         }
         case CharacterState::Death: {
             if (!isDead) {
-                SetAnimation(4, 5, 0.15f, false);  
+                
                 isDead = true;
                 deathTimer = 0.0f;         // Start counting
             }
@@ -543,6 +509,10 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player) {
 
 void Character::UpdatePirateAI(float deltaTime, Player& player) {
     if (isLoadingLevel) return;
+    constexpr float PIRATE_ATTACK_ENTER = 800.0f; // start attacking when closer than this
+    constexpr float PIRATE_ATTACK_EXIT  = 900.0f; // stop attacking when farther than this
+    // (EXIT must be > ENTER)
+
     
     float distance = Vector3Distance(position, player.position);
     float pirateHeight = 160;
@@ -562,104 +532,66 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             // Transition to chase if player detected
             if (distance < 4000.0f && stateTimer > 1.0f && (playerVisible)) {
                 AlertNearbySkeletons(position, 3000.0f);
-                state = CharacterState::Chase;
-                SetAnimation(1, 4, 0.2f);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Chase);
                 SetPath(start);
 
             }
             // Wander if idle too long
             else if (stateTimer > 10.0f) {
                 if (TrySetRandomPatrolPath(start, this, currentWorldPath)) {
-                    state = CharacterState::Patrol;
-                    SetAnimation(1, 4, 0.2f); // walk anim
+                    ChangeState(CharacterState::Patrol);
                 }
             }
 
             break;
         }
         
-        case CharacterState::Chase:
+        case CharacterState::Chase: {
             stateTimer += deltaTime;
-            pathCooldownTimer -= deltaTime;
+            pathCooldownTimer = std::max(0.0f, pathCooldownTimer - deltaTime);
 
-            if (distance < 800.0f && canSee) { 
-                state = CharacterState::Attack;
-                SetAnimation(2, 4, 0.2f);
-                stateTimer = 0.0f;
-                attackCooldown = 0.0f;
+            // 1) Try to attack when close AND we have instant LOS
+            if (distance < PIRATE_ATTACK_ENTER && canSee) {
+                ChangeState(CharacterState::Attack);
+                break;
+            }
 
-            } 
+            // 2) Leash out if too far
+            if (distance > 4000.0f) {
+                ChangeState(CharacterState::Idle);
+                playerVisible = false;         // drop memory when giving up
+                currentWorldPath.clear();
+                break;
+            }
 
-            else if (!canSee && hasLastKnownPlayerPos) {
-                // Plan path to last known position if needed
-                if (pathCooldownTimer <= 0.0f) {
-                    Vector2 start = WorldToImageCoords(position);
-                    Vector2 goal = WorldToImageCoords(lastKnownPlayerPos);
-                    std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
-
-                    currentWorldPath.clear();
-                    for (const Vector2& tile : tilePath) {
-                        Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
-                        worldPos.y = pirateHeight;
-                        currentWorldPath.push_back(worldPos);
-                    }
-
+            // 3) Plan path toward current target when cooldown allows
+            if (pathCooldownTimer <= 0.0f) {
+                if (canSee) {
+                    SetPathTo(player.position);
+                    pathCooldownTimer = 0.4f;
+                } else if (playerVisible) {       // still within memory window
+                    SetPathTo(lastKnownPlayerPos);
                     pathCooldownTimer = 0.4f;
                 }
             }
-            else if (distance > 4000.0f) {
-                state = CharacterState::Idle;
-                hasLastKnownPlayerPos = false;
-            }
-            else {
-                Vector2 currentPlayerTile = WorldToImageCoords(player.position);
-                if (((int)currentPlayerTile.x != (int)lastPlayerTile.x || (int)currentPlayerTile.y != (int)lastPlayerTile.y)
-                    && pathCooldownTimer <= 0.0f) {
 
-                    lastPlayerTile = currentPlayerTile; //save the last player tile so we aren't recalculating if the player hasn't moved. 
-                    pathCooldownTimer = 0.4f;
 
-                    Vector2 start = WorldToImageCoords(position);
-                    SetPath(start);
-                }
+            // 4) Advance along path (with repulsion)
+            if (!currentWorldPath.empty() && state != CharacterState::Stagger) {
+                Vector3 repel = ComputeRepulsionForce(enemyPtrs, 50, 500); // your existing call
+                MoveAlongPath(currentWorldPath, position, rotationY, skeleSpeed, deltaTime, 100.0f, repel);
 
-                // Move along current path
-                if (!currentWorldPath.empty() && state != CharacterState::Stagger) {
-                    Vector3 targetPos = currentWorldPath[0];
-                    Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
-                    Vector3 move = Vector3Scale(dir, skeleSpeed * deltaTime);
-
-                                    // Add repulsion from other pirates
-                    Vector3 repulsion = ComputeRepulsionForce(enemyPtrs, 50, 500);
-                    Vector3 moveWithRepulsion = Vector3Add(move, Vector3Scale(repulsion, deltaTime));
-                    position = Vector3Add(position, moveWithRepulsion);
-                    rotationY = RAD2DEG * atan2f(dir.x, dir.z);
-                    position.y = pirateHeight;
-
-                    if (Vector3Distance(position, targetPos) < 100.0f) { 
-                        currentWorldPath.erase(currentWorldPath.begin()); //erase point on arrival, your always chasing the first point on the list. 
-                        
-                    }
-
-                    if (currentWorldPath.empty() && !canSee) {
-                        hasLastKnownPlayerPos = false;
-                        state = CharacterState::Idle;
-                        SetAnimation(0, 1, 1.0f);
-                    }                   
+                // Reached the end but still no LOS? stop chasing
+                if (currentWorldPath.empty() && !canSee) {
+                    playerVisible = false;          // memory expires now that we arrived
+                    ChangeState(CharacterState::Idle);
                 }
             }
-            break;
-
+        } break;
 
 
         case CharacterState::Attack: { //Pirate attack with gun
-        
             stateTimer += deltaTime;
-            if (stateTimer == 0.0f) {
-                SetAnimation(2, 4, 0.2f); // only when entering attack, shoot anim is all the same frame. Try animating it again.
-                
-            }
             
             Vector2 myTile = WorldToImageCoords(position);
             Character* occupier = GetTileOccupier(myTile.x, myTile.y, enemyPtrs, this);
@@ -667,9 +599,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             if (occupier && occupier != this) {
                 // Only the one with the "greater" pointer backs off
                 if (this > occupier) {
-                    state = CharacterState::Reposition;
-                    SetAnimation(1, 4, 0.2f);
-                    stateTimer = 0.0f;
+                    ChangeState(CharacterState::Reposition);
                     break;
                 } else {
                     // Let the other one reposition — wait
@@ -677,11 +607,12 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 }
             }
 
-            if (distance > 800.0f) { 
-                state = CharacterState::Chase;
-                SetAnimation(1, 4, 0.2f);
-                stateTimer = 0.0;
+            // Hysteresis: only leave attack if we're clearly out of range or lost LOS
+            if (distance > PIRATE_ATTACK_EXIT || !canSee) {
+                ChangeState(CharacterState::Chase);
+                break;
             }
+            
             attackCooldown -= deltaTime;
             if (distance < 800 && distance > 350){
                 
@@ -694,9 +625,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 }
 
             }else if (distance < 350){
-                state = CharacterState::MeleeAttack;
-                SetAnimation(3, 5, 0.12);
-                stateTimer = 0;
+                ChangeState(CharacterState::MeleeAttack);
             }
 
             // Wait for next attack opportunity
@@ -707,13 +636,9 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 stateTimer = 0;
 
                 if (TrySetRandomPatrolPath(start, this, currentWorldPath) && canSee) { //shoot then move to a random tile and shoot again.
-                    state = CharacterState::Patrol; 
-                    SetAnimation(1, 4, 0.2f); // walk anim
+                    ChangeState(CharacterState::Patrol);
                 }else{
-                    state = CharacterState::Attack;
-                    //SetAnimation(1, 4, 0.2f);
-                    stateTimer = 0;
-                    currentFrame = 0;
+                    ChangeState(CharacterState::Attack);
                 }
                
             }
@@ -748,22 +673,14 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 if (distance > 350.0f) {
                     Vector2 start = WorldToImageCoords(position);
                     if (TrySetRandomPatrolPath(start, this, currentWorldPath)){
-                        state = CharacterState::Patrol;
-                        currentFrame = 0;
-                        SetAnimation(1, 5, 0.12f); // walk anim
+                        ChangeState(CharacterState::Patrol);
                     }else{
-                        state = CharacterState::Idle;
-                        currentFrame = 0;
-                        SetAnimation(3, 5, 0.12f); // idle anim
+                        ChangeState(CharacterState::Idle);
 
                     }
 
                 } else {
-                    
-                    // Maybe prepare another melee attack?
-                    state = CharacterState::MeleeAttack; // or re-enter melee logic
-                    currentFrame = 0;
-                    SetAnimation(3, 5, 0.12f); // idle anim
+                    ChangeState(CharacterState::MeleeAttack);
                 }
                 hasFired= false;
                 stateTimer = 0.0f;
@@ -795,13 +712,9 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 float dist = Vector3Distance(position, target);
 
                 if (dist < 350.0f && stateTimer > 2.0f) {
-                    state = CharacterState::MeleeAttack;
-                    SetAnimation(2, 5, 0.2f);
-                    stateTimer = 0.0f;
+                    ChangeState(CharacterState::MeleeAttack);
                 } else if (dist > 350.0f && stateTimer > 2.0f) {
-                    state = CharacterState::Chase;
-                    SetAnimation(1, 4, 0.2f);
-                    stateTimer = 0.0f;
+                    ChangeState(CharacterState::Chase);
                 }
             }
 
@@ -827,9 +740,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 }
             }
             else {
-                state = CharacterState::Idle;
-                SetAnimation(0, 1, 1.0f);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Idle);
             }
 
             break;
@@ -840,9 +751,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             //do nothing
 
             if (stateTimer > 5.0f){
-                state = CharacterState::Idle;
-                SetAnimation(0, 1, 1.0f);
-                stateTimer = 0;
+                ChangeState(CharacterState::Idle);
             }
             break;
 
@@ -855,9 +764,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
            
             if (stateTimer >= 1.0f) {
                 canBleed = true;
-                state = CharacterState::Chase;
-                SetAnimation(1, 4, 0.25f);
-                stateTimer = 0.0f;
+                ChangeState(CharacterState::Chase);
                 
             }
             break;
@@ -865,8 +772,6 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
         case CharacterState::Death:
             if (!isDead) {
-                SetAnimation(4, 3, 0.5f, false);
-              
                 isDead = true;
                 deathTimer = 0.0f;         // Start counting
             }
@@ -961,10 +866,13 @@ void Character::SetPath(Vector2 start){
 
 }
 
+// Optional repulsion: pass a small lateral force in world units/sec (e.g., from ComputeRepulsionForce).
+// Leave default {} to behave exactly like before.
 bool Character::MoveAlongPath(std::vector<Vector3>& path,
-                          Vector3& pos, float& yawDeg,
-                          float speed, float dt,
-                          float arriveEps)
+                              Vector3& pos, float& yawDeg,
+                              float speed, float dt,
+                              float arriveEps,
+                              Vector3 repulsion)   // <-- new, optional
 {
     if (path.empty()) return false;
 
@@ -979,12 +887,48 @@ bool Character::MoveAlongPath(std::vector<Vector3>& path,
     const float step = fminf(speed * dt, dist);
     Vector3 dir = { delta.x / dist, delta.y / dist, delta.z / dist };
 
-    pos = Vector3Add(pos, Vector3Scale(dir, step));
+    // Forward move toward waypoint
+    Vector3 moveFwd = Vector3Scale(dir, step);
 
-    yawDeg = RAD2DEG * atan2f(dir.x, dir.z);
+    // Optional repulsion (scaled by dt so it's “units per second”)
+    Vector3 moveRep = Vector3Scale(repulsion, dt);
 
+    // Apply both
+    Vector3 move = Vector3Add(moveFwd, moveRep);
+    pos = Vector3Add(pos, move);
+
+    // Yaw from actual motion if we had any; fallback to forward dir
+    const float mxz2 = move.x*move.x + move.z*move.z;
+    if (mxz2 > 1e-4f) {
+        yawDeg = RAD2DEG * atan2f(move.x, move.z);
+    } else {
+        yawDeg = RAD2DEG * atan2f(dir.x, dir.z);
+    }
+
+    // Snap feet to path height (keep your existing behavior)
     pos.y = target.y;
 
     return false;
 }
+
+
+// Character.cpp
+void Character::SetPathTo(const Vector3& goalWorld) {
+    Vector2 start = WorldToImageCoords(position);
+    Vector2 goal  = WorldToImageCoords(goalWorld);
+
+    std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
+
+    currentWorldPath.clear();
+    currentWorldPath.reserve(tilePath.size());
+
+    float feetY = (type == CharacterType::Pirate) ? 160.0f : 180.0f; // keep your heights
+
+    for (const Vector2& tile : tilePath) {
+        Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
+        worldPos.y = feetY;
+        currentWorldPath.push_back(worldPos);
+    }
+}
+
 

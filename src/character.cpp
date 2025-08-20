@@ -57,7 +57,7 @@ void Character::TakeDamage(int amount) {
         currentHealth = 0;
         isDead = true;
         deathTimer = 0.0f;
-        state = CharacterState::Death;
+        //state = CharacterState::Death;
         if (type == CharacterType::Ghost) SetAnimation(1, 7, 0.2);
         if (type == CharacterType::Skeleton || type == CharacterType::Ghost) {
             bloodEmitter.EmitBlood(position, 20, WHITE);
@@ -65,9 +65,10 @@ void Character::TakeDamage(int amount) {
             bloodEmitter.EmitBlood(position, 20, RED);
         }
         if (type == CharacterType::Raptor) SetAnimation(4, 5, 0.12f, false);
-        if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f, false); //less frames for skele death.
-        if (type == CharacterType::Pirate) SetAnimation(4, 2, 1, false);
-        if (type == CharacterType::Spider) SetAnimation(4, 3, 0.5f, false);
+        ChangeState(CharacterState::Death);
+        // if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f, false); //less frames for skele death.
+        // if (type == CharacterType::Pirate) SetAnimation(4, 2, 1, false);
+        // if (type == CharacterType::Spider) SetAnimation(4, 3, 0.5f, false);
         
         if (type != CharacterType::Spider)  SoundManager::GetInstance().Play("dinoDeath");
         if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play("bones");
@@ -75,7 +76,7 @@ void Character::TakeDamage(int amount) {
      
     } else {
         hitTimer = 0.5f; //tint red
-        state = CharacterState::Stagger;
+        ChangeState(CharacterState::Stagger);
         if (canBleed){
             canBleed = false;
             if (type == CharacterType::Skeleton || type == CharacterType::Ghost) {
@@ -172,6 +173,103 @@ void Character::Update(float deltaTime, Player& player ) {
     eraseCharacters(); //clean up dead rators and skeletons
 
 }
+
+static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
+    switch (type) {
+
+        case CharacterType::Raptor:
+            switch (state) {
+                case CharacterState::Chase: return  {1, 5, 0.12f, true}; // walk
+                case CharacterState::RunAway: return {3, 4, 0.1f, true};
+                case CharacterState::Idle:   return {0, 1, 1.0f, true};
+                case CharacterState::Attack: return {2, 5, 0.1f, false};  // 4 * 0.2 = 0.8s
+                case CharacterState::Stagger: return {4, 1, 1.0f, false}; // Use first frame of death anim for 1 second. for all enemies
+                case CharacterState::Death:  return {4, 5, 0.15f, false};
+                
+                default:                     return {0, 1, 1.0f, true};
+            }
+
+        case CharacterType::Skeleton:
+            switch (state) {
+                case CharacterState::Chase:
+                case CharacterState::Patrol:
+                case CharacterState::Reposition:
+                    return AnimDesc{1, 4, 0.2f, true}; // walk
+                    
+                case CharacterState::Idle:   return {0, 1, 1.0f, true};
+                case CharacterState::Attack: return {2, 4, 0.2f, false};  // 4 * 0.2 = 0.8s
+                case CharacterState::Stagger: return {4, 1, 1.0f, false}; // Use first frame of death anim for 1 second. for all enemies
+                case CharacterState::Death:  return {4, 3, 0.5f, false};
+                
+                default:                     return {0, 1, 1.0f, true};
+            }
+
+        case CharacterType::Ghost:
+            // fill with whatever you want the ghost to show per state
+            switch (state) {
+                case CharacterState::Chase:
+                case CharacterState::Patrol:
+                case CharacterState::Reposition:
+                    return AnimDesc{0, 7, 0.12f, true}; // walk
+                case CharacterState::Idle:   return {0, 7, 0.2f, true};
+                case CharacterState::Attack: return {0, 7, 0.12f, false}; // example: faster burst
+                case CharacterState::Stagger: return {0, 1, 1.0f, false};
+                case CharacterState::Death:  return {1, 7, 0.2, false };
+                default:                     return {0, 7, 0.2f, true};
+            }
+
+        case CharacterType::Pirate:
+          
+            switch (state) {
+                case CharacterState::Chase:
+                case CharacterState::Patrol:
+                case CharacterState::Reposition:
+                    return AnimDesc{1, 4, 0.2f, true}; // walk
+                case CharacterState::Idle:   return     {0, 1, 1.0f, true};
+                case CharacterState::Attack: return     {2, 4, 0.2f, false}; // ranged attack = attack
+                case CharacterState::MeleeAttack: return{3, 5, 0.12f, false};
+                case CharacterState::Stagger: return    {4, 1, 1.0f, false};
+                case CharacterState::Death:  return     {4, 3, 0.5f, false };
+                default:                     return     {0, 7, 0.2f, true};
+            }
+
+        
+        default:
+            return {0, 1, 1.0f, true};
+    }
+}
+
+// Which states actually use a nav path?
+static inline bool StateUsesPath(CharacterState s) {
+    switch (s) {
+        case CharacterState::Chase:
+        case CharacterState::Patrol:
+        case CharacterState::Reposition:
+            return true;
+        default:
+            return false;
+    }
+}
+
+void Character::ChangeState(CharacterState next) {
+    if (state == next) return;  // no spam
+
+    state = next;
+    stateTimer = 0.0f;
+
+    // Auto-flush path when transitioning from a path-using state to a non-path state
+    if (StateUsesPath(state) && !StateUsesPath(next)) {
+        currentWorldPath.clear();
+    }
+
+    // If you only want to reset cooldowns on specific states, do that here.
+    if (state == CharacterState::Attack) attackCooldown = 0.0f;
+
+    const AnimDesc a = GetAnimFor(type, state);
+    SetAnimation(a.row, a.frames, a.frameTime, a.loop);
+}
+
+
 
 
 void Character::SetAnimation(int row, int frames, float speed, bool loop) {

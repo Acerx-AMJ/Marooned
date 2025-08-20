@@ -722,7 +722,7 @@ void GenerateKeys(float baseY) {
             Color current = dungeonPixels[y * dungeonWidth + x];
 
             if (current.r == 255 && current.g == 200 && current.b == 0) { // Gold for keys
-                Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 60); // raised slightly off floor
+                Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 80); // raised slightly off floor
                 Collectable key = {CollectableType::Key, pos, R.GetTexture("keyTexture"), 100.0f};
                 collectables.push_back(key);
             }

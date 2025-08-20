@@ -28,6 +28,13 @@ enum class CharacterState {
     Death,
 };
 
+struct AnimDesc {
+    int row;
+    int frames;
+    float frameTime;
+    bool loop;
+};
+
 
 
 class Character {
@@ -94,10 +101,14 @@ public:
     bool FindRepositionTarget(const Player& player, const Vector3& selfPos, Vector3& outTarget);
     void AlertNearbySkeletons(Vector3 alertOrigin, float radius);
     void SetPath(Vector2 start);
+
+    void SetPathTo(const Vector3& goalWorld);
+
     void eraseCharacters();
     void TakeDamage(int amount);
     void SetAnimation(int row, int frames, float speed, bool loop=true);
     void playRaptorSounds();
-    bool MoveAlongPath(std::vector<Vector3>& path, Vector3& pos, float& yawDeg,float speed, float dt, float arriveEps = 100.0f);
+    void ChangeState(CharacterState next);
+    bool MoveAlongPath(std::vector<Vector3>& path, Vector3& pos, float& yawDeg,float speed, float dt, float arriveEps = 100.0f, Vector3 repulsion = {});
 };
 
