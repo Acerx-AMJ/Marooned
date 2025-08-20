@@ -64,11 +64,9 @@ void Character::TakeDamage(int amount) {
         } else {
             bloodEmitter.EmitBlood(position, 20, RED);
         }
-        if (type == CharacterType::Raptor) SetAnimation(4, 5, 0.12f, false);
+
         ChangeState(CharacterState::Death);
-        // if (type == CharacterType::Skeleton) SetAnimation(4, 3, 0.5f, false); //less frames for skele death.
-        // if (type == CharacterType::Pirate) SetAnimation(4, 2, 1, false);
-        // if (type == CharacterType::Spider) SetAnimation(4, 3, 0.5f, false);
+
         
         if (type != CharacterType::Spider)  SoundManager::GetInstance().Play("dinoDeath");
         if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play("bones");
@@ -77,6 +75,7 @@ void Character::TakeDamage(int amount) {
     } else {
         hitTimer = 0.5f; //tint red
         ChangeState(CharacterState::Stagger);
+    
         if (canBleed){
             canBleed = false;
             if (type == CharacterType::Skeleton || type == CharacterType::Ghost) {
@@ -86,10 +85,9 @@ void Character::TakeDamage(int amount) {
             }
        
         }
-        SetAnimation(4, 1, 1.0f); // Use first frame of death anim for 1 second. for all enemies
+        //SetAnimation(4, 1, 1.0f); // Use first frame of death anim for 1 second. for all enemies
         
-        currentFrame = 0;         // Always start at first frame
-        stateTimer = 0.0f;
+
         AlertNearbySkeletons(position, 3000.0f);
 
         if (type == CharacterType::Pirate){
@@ -170,7 +168,7 @@ void Character::Update(float deltaTime, Player& player ) {
     }
 
 
-    eraseCharacters(); //clean up dead rators and skeletons
+    eraseCharacters(); //clean up dead enemies
 
 }
 
@@ -179,7 +177,12 @@ static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
 
         case CharacterType::Raptor:
             switch (state) {
-                case CharacterState::Chase: return  {1, 5, 0.12f, true}; // walk
+
+                case CharacterState::Chase:
+                case CharacterState::Patrol:
+                case CharacterState::Reposition:
+                    return AnimDesc{1, 5, 0.12f, true}; // walk
+                
                 case CharacterState::RunAway: return {3, 4, 0.1f, true};
                 case CharacterState::Idle:   return {0, 1, 1.0f, true};
                 case CharacterState::Attack: return {2, 5, 0.1f, false};  // 4 * 0.2 = 0.8s
@@ -212,7 +215,7 @@ static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
                 case CharacterState::Reposition:
                     return AnimDesc{0, 7, 0.12f, true}; // walk
                 case CharacterState::Idle:   return {0, 7, 0.2f, true};
-                case CharacterState::Attack: return {0, 7, 0.12f, false}; // example: faster burst
+                case CharacterState::Attack: return {0, 7, 0.12f, false}; //faster
                 case CharacterState::Stagger: return {0, 1, 1.0f, false};
                 case CharacterState::Death:  return {1, 7, 0.2, false };
                 default:                     return {0, 7, 0.2f, true};
@@ -262,7 +265,7 @@ void Character::ChangeState(CharacterState next) {
         currentWorldPath.clear();
     }
 
-    // If you only want to reset cooldowns on specific states, do that here.
+   
     if (state == CharacterState::Attack) attackCooldown = 0.0f;
 
     const AnimDesc a = GetAnimFor(type, state);

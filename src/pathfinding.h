@@ -17,3 +17,12 @@ Vector2 GetRandomReachableTile(const Vector2& start, const Character* self, int 
 bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<Vector3>& outPath);
 std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& dungeonMap);
 std::vector<Vector2> FindPath(Vector2 start, Vector2 goal);
+//raptor steering
+Vector3 ArriveXZ(const Vector3& pos, const Vector3& target, float maxSpeed, float slowRadius);
+Vector3 SeekXZ(const Vector3& pos, const Vector3& target, float maxSpeed);
+Vector3 FleeXZ(const Vector3& pos, const Vector3& threat, float maxSpeed);
+Vector3 WanderXZ(float& wanderAngle, float wanderTurnRate, float wanderSpeed, float dt);
+Vector3 OrbitXZ(const Vector3& pos, const Vector3& target,
+                       float orbitRadius, int clockwise,
+                       float tangentGain, float radialGain,
+                       float maxSpeed);

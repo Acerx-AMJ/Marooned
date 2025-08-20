@@ -53,6 +53,11 @@ public:
     float scale;
     float rotationY = 0.0f; // in degrees
     float stateTimer = 0.0f;
+
+    float raptorSpeed = 700.0f;
+    Vector3 patrolTarget{0,0,0};
+    bool hasPatrolTarget = false;
+    float wanderAngle = 0.0f;    
     bool isDead = false;
     bool hasFired = false;
     bool animationLoop;

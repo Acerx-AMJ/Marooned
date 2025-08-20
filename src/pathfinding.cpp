@@ -6,6 +6,7 @@
 #include "dungeonGeneration.h"
 #include "world.h"
 #include "character.h"
+#include "utilities.h"
 
 std::vector<std::vector<bool>> walkable;
 
@@ -357,6 +358,68 @@ std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& d
     }
 
     return result;
+}
+
+// Fast “point at it”
+Vector3 SeekXZ(const Vector3& pos, const Vector3& target, float maxSpeed) {
+    Vector3 dir = NormalizeXZ(Vector3Subtract(target, pos));
+    return Vector3Scale(dir, maxSpeed);
+}
+
+// Ease in within slowRadius
+Vector3 ArriveXZ(const Vector3& pos, const Vector3& target,
+                        float maxSpeed, float slowRadius)
+{
+    Vector3 toT = Vector3Subtract(target, pos); toT.y = 0.0f;
+    float d = sqrtf(toT.x*toT.x + toT.z*toT.z);
+    if (d < 1e-4f) return {0,0,0};
+    float t = fminf(1.0f, d / slowRadius);             // 0..1
+    float speed = fmaxf(0.0f, maxSpeed * t);           // ramp down near target
+    return Vector3Scale({toT.x/d, 0.0f, toT.z/d}, speed);
+}
+
+Vector3 FleeXZ(const Vector3& pos, const Vector3& threat, float maxSpeed) {
+    Vector3 dir = NormalizeXZ(Vector3Subtract(pos, threat));
+    return Vector3Scale(dir, maxSpeed);
+}
+
+// orbitRadius: desired ring distance from target
+// clockwise: +1 for CW, -1 for CCW
+// tangentGain: how strongly to circle (0..1 usually)
+// radialGain: how strongly to correct toward the ring
+Vector3 OrbitXZ(const Vector3& pos, const Vector3& target,
+                       float orbitRadius, int clockwise,
+                       float tangentGain, float radialGain,
+                       float maxSpeed)
+{
+    // Radial from raptor -> target
+    Vector3 r = Vector3Subtract(target, pos); r.y = 0.0f;
+    float d = sqrtf(r.x*r.x + r.z*r.z);
+    if (d < 1e-4f) return {0,0,0};
+    Vector3 rN = { r.x/d, 0.0f, r.z/d };
+
+    // Tangent: rotate radial ±90° in XZ
+    Vector3 tN = (clockwise >= 0) ? Vector3{ rN.z, 0.0f, -rN.x }
+                                  : Vector3{ -rN.z, 0.0f,  rN.x };
+
+    // Radial correction pushes toward the ring (out if too close, in if too far)
+    float radialErr = (d - orbitRadius);           // positive if too far
+    Vector3 radialVel = Vector3Scale(rN, -radialErr * radialGain); // pull toward ring
+
+    // Tangential circling velocity
+    Vector3 tangentialVel = Vector3Scale(tN, tangentGain * maxSpeed);
+
+    // Blend and clamp
+    Vector3 v = Vector3Add(tangentialVel, radialVel);
+    return Limit(v, maxSpeed);
+}
+
+// Keep a wanderAngle per-raptor; call each frame.
+Vector3 WanderXZ(float& wanderAngle, float wanderTurnRate, float wanderSpeed, float dt) {
+    // nudge angle
+    wanderAngle += ((float)GetRandomValue(-1000,1000) / 1000.0f) * wanderTurnRate * dt;
+    float s = sinf(wanderAngle), c = cosf(wanderAngle);
+    return { s * wanderSpeed, 0.0f, c * wanderSpeed };
 }
 
 

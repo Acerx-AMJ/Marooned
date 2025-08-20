@@ -6,6 +6,7 @@
 #include "pathfinding.h"
 #include "sound_manager.h"
 #include "resourceManager.h"
+#include "utilities.h"
 
 void Character::UpdateAI(float deltaTime, Player& player) {
     switch (type) {
@@ -69,11 +70,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 AlertNearbySkeletons(position, 3000.0f);
                 ChangeState(CharacterState::Chase);
                 currentWorldPath.clear();
-                // state = CharacterState::Chase;
-                // SetAnimation(1, 4, 0.2f);
-                // if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
-                // stateTimer = 0.0f;
-                //build the path before chasing
+
                 SetPath(start);
             }
 
@@ -101,20 +98,10 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             if (distance < 300.0f && canSee) {
                 ChangeState(CharacterState::Attack);
 
-                // state = CharacterState::Attack;
-                // SetAnimation(2, 4, 0.2f);
-                // if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2f, true);
-                // stateTimer = 0.0f;
-                // attackCooldown = 0.0f;
-                currentWorldPath.clear();
             }
             else if (distance > 4000.0f) {
                 ChangeState(CharacterState::Idle);
-                // state = CharacterState::Idle;
-                // SetAnimation(0, 1, 1.0f);
-                // if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2f, true);
-                // stateTimer = 0.0f;
-                currentWorldPath.clear();
+
             }
             else {
                 const Vector2 curTile = WorldToImageCoords(player.position);
@@ -143,10 +130,6 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 // Only the one with the "greater" pointer backs off
                 if (this > occupier) {
                     ChangeState(CharacterState::Reposition);
-                    // state = CharacterState::Reposition;
-                    // SetAnimation(1, 4, 0.2f);
-                    // if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
-                    // stateTimer = 0.0f;
                     break;
                 } else {
                     // Let the other one reposition — wait
@@ -156,13 +139,8 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
             if (distance > 350.0f) { 
                 ChangeState(CharacterState::Chase);
-                // state = CharacterState::Chase;
-                // SetAnimation(1, 4, 0.2f);
-                // if (type == CharacterType::Ghost) SetAnimation(0, 7, 0.2, true);
-                // stateTimer = 0.0;
+
             }
-
-
 
             attackCooldown -= deltaTime;
             if (attackCooldown <= 0.0f && currentFrame == 1 && playerVisible) { // make sure you can see what your attacking. 
@@ -179,10 +157,9 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                     
                 } 
                 
-
-                // Damage the player
-                if (CheckCollisionBoxes(GetBoundingBox(), player.blockHitbox) && player.blocking) {
                     // Blocked!
+                if (CheckCollisionBoxes(GetBoundingBox(), player.blockHitbox) && player.blocking) {
+
                     if (rand()%2 == 0){
                         SoundManager::GetInstance().Play("swordBlock");
                     } else{
@@ -305,99 +282,118 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
        
 }
 
-void Character::UpdateRaptorAI(float deltaTime, Player& player) {
-    if (isLoadingLevel) return;
-    float distance = Vector3Distance(position, player.position);
-    playerVisible = false;
+// Raptor = overworld, no grid pathing.
+// Skeleton only (structure + thresholds). Fill TODOs as you add steering.
 
-    if (!isDungeon && distance < 4000){
-        playerVisible = true; //player is always visible to raptors within range. 
-    }
+void Character::UpdateRaptorAI(float dt, Player& player)
+{
+    // --- Perception & timers ---
+    stateTimer     += dt;
+    attackCooldown  = std::max(0.0f, attackCooldown - dt);
 
-    switch (state) {
+    const float distance = Vector3Distance(position, player.position);
+   
+
+    // --- Simple deadbands (tweak per type) ---
+    const float STALK_ENTER   = 2000.0f;  // engage if closer than this
+    const float STALK_EXIT    = 2400.0f;  // drop back to idle if beyond and no memory
+    const float ATTACK_ENTER  = 200.0f;   // start attack if closer than this (+ LOS)
+    const float ATTACK_EXIT   = 300.0f;   // leave attack if beyond this or LOS lost
+    const float FLEE_ENTER    = 100.0f;   // too close -> run away
+    const float FLEE_EXIT     = 1000.0f;   // far enough -> stop fleeing
+    const float VISION_ENTER = 4000.0f;
+
+    playerVisible = distance < VISION_ENTER;
+
+    // --- Placeholder for steering output (fill later) ---
+    Vector3 desiredVel = {0,0,0};   // compute with Seek/Arrive/Orbit/Flee later
+
+    switch (state)
+    {
+
         case CharacterState::Idle:
-            if (stateTimer > idleThreshold){ //if idle for 10 seconds run to a new spot. 
-                ChangeState(CharacterState::RunAway);
-                randomTime = GetRandomValue(5,15);
+        {
+            const float IDLE_TO_PATROL_TIME = 10.0f; // tweak
+            if (stateTimer >= IDLE_TO_PATROL_TIME) {
+                // seed a patrol target around the current position
+                patrolTarget = RandomPointOnRingXZ(position, /*minR*/800.0f, /*maxR*/2200.0f);
 
-                runawayAngleOffset = DEG2RAD * GetRandomValue(-180, 180);
-                hasRunawayAngle = true;
-                //playRaptorSounds(); //make noises while they run around
+                hasPatrolTarget  = true;
+                ChangeState(CharacterState::Patrol);
+                break;
             }
 
-            if (distance < 4000.0f && stateTimer > 1.0f) { 
-
-                //if (isDungeon) setPath();
+            if (distance < STALK_ENTER && playerVisible) {
                 ChangeState(CharacterState::Chase);
-                chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
-                hasRunawayAngle = false;
-
-                //int number = GetRandomValue(1, 3);
-                playRaptorSounds();
-
+                chaseDuration = GetRandomValue(5, 8);
+                break;
             }
-            break;
+        } break;
 
-        case CharacterState::Chase: {
-            stateTimer += deltaTime;
+        case CharacterState::Patrol:
+        {
+            // If we somehow lost the target, pick a new one quickly
+            if (!hasPatrolTarget) {
+                patrolTarget    = RandomPointOnRingXZ(position, 800.0f, 2200.0f);
+                
+                hasPatrolTarget = true;
+            }
 
-            if (distance < 150.0f) {
-                //Gun is 100 away from player center, don't clip the gun. 
-                ChangeState(CharacterState::Attack);
-                randomTime = GetRandomValue(5,15);
-            } else if (distance > 4000.0f) {
+            // Move straight toward target (ease-in near the point)
+            const float PATROL_SPEED      = raptorSpeed * 0.6f; // slower than chase
+            const float PATROL_SLOW_RAD   = 400.0f;
+            const float ARRIVE_EPS_XZ     = 150.0f;
+
+            Vector3 vel = ArriveXZ(position, patrolTarget, PATROL_SPEED, PATROL_SLOW_RAD);
+            position = Vector3Add(position, Vector3Scale(vel, dt));
+           
+
+            if (vel.x*vel.x + vel.z*vel.z > 1e-4f) {
+                rotationY = RAD2DEG * atan2f(vel.x, vel.z);
+            }
+
+            // Arrived? go Idle and reset
+            if (DistXZ(position, patrolTarget) <= ARRIVE_EPS_XZ) {
+                hasPatrolTarget = false;
                 ChangeState(CharacterState::Idle);
-                idleThreshold = (float)GetRandomValue(5,15);
-            } else if (stateTimer >= chaseDuration && !isDungeon) {
-                // Give up and run away
-                ChangeState(CharacterState::RunAway);
-                runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50); //run in a random direction
-                randomDistance = GetRandomValue(1000, 2000); //set distance to run 
-                if (isDungeon) randomDistance = GetRandomValue(500, 1000);
-                hasRunawayAngle = true;
-            } else {
-
-                // Chase logic with repulsion
-                Vector3 dir = Vector3Normalize(Vector3Subtract(player.position, position));
-                Vector3 horizontalMove = { dir.x, 0, dir.z };
-
-                // Add repulsion from other raptors
-                Vector3 repulsion = ComputeRepulsionForce(enemyPtrs, 50, 500);
-                Vector3 moveWithRepulsion = Vector3Add(horizontalMove, Vector3Scale(repulsion, deltaTime));
-
-                Vector3 proposedPosition = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f)); //one step ahead. 
-
-                float proposedTerrainHeight = GetHeightAtWorldPosition(proposedPosition, heightmap, terrainScale); //see if the next step is water. 
-                float currentTerrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
-                //float spriteHeight = frameHeight * scale;
-                if (isDungeon) proposedTerrainHeight = dungeonPlayerHeight;
-                if (isDungeon) currentTerrainHeight = dungeonPlayerHeight;
-                //run away if near water. X Raptor now stops at waters edge, he no longer gets stuck though.
-                if (currentTerrainHeight <= 65.0f && stateTimer > 1.0f) {
-                    state = CharacterState::RunAway;
-                    SetAnimation(3, 4, 0.1f);
-                    stateTimer = 0.0f;
-                    randomDistance = GetRandomValue(1000, 2000); //set distance to run 
-                    runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50); //run in a random direction
-                    stateTimer = 0;
-
-                } else if (proposedTerrainHeight > 60.0f) {
-                    position = proposedPosition;
-                    rotationY = RAD2DEG * atan2f(dir.x, dir.z);
-                    //dont recalculate height if in a dungeon. dungeon height stays the same. 
-                    if (!isDungeon) position.y = GetHeightAtWorldPosition(position, heightmap, terrainScale) + (frameHeight * scale) / 2.0f; //recalculate height
-                }
-
+                break;
             }
 
-            break;
-        }
-        case CharacterState::Attack:
-            if (distance > 200.0f) { //maybe this should be like 160, player would get bit more. 
+            // If player shows up while patrolling, escalate to Chase
+            const float STALK_ENTER = 2000.0f;
+            if (playerVisible && Vector3Distance(position, player.position) < STALK_ENTER) {
+                hasPatrolTarget = false; // drop current patrol
                 ChangeState(CharacterState::Chase);
+                chaseDuration = GetRandomValue(5, 8); // 3–7 seconds of chasing
+                break;
+            }
+        } break;
+
+        case CharacterState::Chase:
+        {
+            if (stateTimer > chaseDuration) { ChangeState(CharacterState::RunAway); break;}
+                    // (keep your existing enter/exit checks above or below as you like)
+            if (distance < ATTACK_ENTER) { ChangeState(CharacterState::Attack); break; }
+            if (distance > VISION_ENTER) { ChangeState(CharacterState::Idle); break; }
+
+            const float MAX_SPEED   = raptorSpeed;  // per-type speed
+            const float SLOW_RADIUS = 400.0f;       // ease-in so we don’t overshoot
+
+            // Move straight toward the player (XZ only), easing inside SLOW_RADIUS
+            Vector3 vel = ArriveXZ(position, player.position, MAX_SPEED, SLOW_RADIUS);
+            position = Vector3Add(position, Vector3Scale(vel, dt));
+            //ClampToTerrain(position, /*footOffset*/0.0f);
+
+            if (vel.x*vel.x + vel.z*vel.z > 1e-4f) {
+                rotationY = RAD2DEG * atan2f(vel.x, vel.z);
             }
 
-            attackCooldown -= deltaTime;
+          
+        } break;
+
+        case CharacterState::Attack:
+        {
+            if (distance < FLEE_ENTER) { ChangeState(CharacterState::RunAway); break;}
             if (attackCooldown <= 0.0f) {
                 attackCooldown = 1.0f; // seconds between attacks
 
@@ -411,101 +407,319 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player) {
                     } else{
                         SoundManager::GetInstance().Play("swordBlock2");
                     }
-      
+        
                 } else  {
                     // Player takes damage
-                   
+                    
                     player.TakeDamage(10);
                 }
-  
+
+
+
             }
 
-            if (stateTimer >= randomTime) {
-                runawayAngleOffset = DEG2RAD * GetRandomValue(-60, 60);
-                hasRunawayAngle = true;
-                ChangeState(CharacterState::RunAway);
-                randomDistance = GetRandomValue(1000, 2000);
+            if (distance > ATTACK_EXIT) {
+                ChangeState(CharacterState::Chase);
+                chaseDuration = GetRandomValue(5, 8); // 3–7 seconds of chasing
+                break;
             }
-            break;
 
 
-        case CharacterState::RunAway: {
-            Vector3 awayDir = Vector3Normalize(Vector3Subtract(position, player.position)); // direction away from player
+        } break;
 
-            if (!hasRunawayAngle) {
-                runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50);
-                hasRunawayAngle = true;
-            }
-            float baseAngle = atan2f(position.z - player.position.z, position.x - player.position.x);
-            float finalAngle = baseAngle + runawayAngleOffset;
+        case CharacterState::RunAway:
+        {
+            // --- simple knobs ---
+            const float MAX_SPEED     = raptorSpeed;   // same as chase or a bit higher
+            const float FLEE_MIN_TIME = 0.7f;          // don’t instantly flip back
+            const float FLEE_MAX_TIME = 2.0f;          // optional: cap flee bursts
+            const float FLEE_EXIT     = 400.0f;        // you already defined this earlier
+            const float SEP_CAP       = 200.0f;        // limit separation shove
 
-            Vector3 veerDir = { cosf(finalAngle), 0.0f, sinf(finalAngle) };
+            // Steering: flee + a touch of separation + tiny wander so it’s not laser-straight
+            Vector3 vFlee   = FleeXZ(position, player.position, MAX_SPEED);
 
-            Vector3 horizontalMove = { veerDir.x, 0, veerDir.z };
-
-            // Add repulsion
-            Vector3 repulsion = ComputeRepulsionForce(enemyPtrs, 50, 500);
-            Vector3 moveWithRepulsion = Vector3Add(horizontalMove, Vector3Scale(repulsion, deltaTime));
-
-            Vector3 proposedPos = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f));
-            float currentTerrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
-            float proposedTerrainHeight = GetHeightAtWorldPosition(proposedPos, heightmap, terrainScale);
-            if (isDungeon) proposedTerrainHeight = dungeonPlayerHeight;
-            if (isDungeon) currentTerrainHeight = dungeonPlayerHeight;
-            // If the current terrain is near water, force runaway state to continue,
-            // but only move if the proposed position is on solid ground.
-            if (proposedTerrainHeight > 60.0f) {
-                position = proposedPos;
-                position.y = proposedTerrainHeight + (frameHeight * scale) / 2.0f;
-                rotationY = RAD2DEG * atan2f(awayDir.x, awayDir.z);
-            }
+            // If you have a raptor list handy; otherwise set to {0,0,0}
+            Vector3 vSep    = ComputeRepulsionForce(enemyPtrs, /*radius*/120, /*falloff*/600);
+            vSep            = Limit(vSep, SEP_CAP);
 
             
-            if (distance > randomDistance && stateTimer > 1.0f && currentTerrainHeight > 60.0f) {
-                ChangeState(CharacterState::Idle);
-                idleThreshold = (float)GetRandomValue(1, 5);
+            Vector3 vWander = WanderXZ(wanderAngle, /*turn*/4.0f, /*speed*/80.0f, dt);
+
+            Vector3 desired = Vector3Add(vFlee, Vector3Add(vSep, vWander));
+            desired         = Limit(desired, MAX_SPEED);
+
+            // Integrate + face motion
+            position = Vector3Add(position, Vector3Scale(desired, dt));
+            if (desired.x*desired.x + desired.z*desired.z > 1e-4f) {
+                rotationY = RAD2DEG * atan2f(desired.x, desired.z);
             }
-            if (currentTerrainHeight <= 65.0f) {
+
+            // Exit conditions: far enough OR time window expired
+            if ((distance > FLEE_EXIT && stateTimer >= FLEE_MIN_TIME) || stateTimer >= FLEE_MAX_TIME) {
                 ChangeState(CharacterState::Chase);
-                hasRunawayAngle = false;
-                //break; // exit RunAway logic
+                break;
             }
-            break;
-        }
+        } break;
 
-        case CharacterState::Freeze: {
-            stateTimer += deltaTime;
-            //do nothing
 
-            if (stateTimer > 5.0f){
-                ChangeState(CharacterState::Idle);
+        case CharacterState::Reposition:
+        {
+            // (Optional for raptors) quick side-step if crowded
+            // TODO: short timer, then back to Chase
+            if (stateTimer > 0.5f) {
+                ChangeState(CharacterState::Chase);
+                break;
             }
-            break;
+        } break;
 
-        }
+        case CharacterState::MeleeAttack:
+        {
+            // (If you separate melee from generic Attack later)
+            // TODO: same pattern as Attack with its own timings
+        } break;
 
-        case CharacterState::Stagger: {
+        case CharacterState::Freeze:
+        {
+            // TODO: do nothing; exit after freezeDuration or on event
+            // if (stateTimer >= freezeDuration) ChangeState(CharacterState::Chase);
+        } break;
+
+        case CharacterState::Stagger:
+        {
+
+            desiredVel = {0,0,0};
+            
             //do nothing
-            stateTimer += deltaTime;
-            if (stateTimer >= 0.6f) {
+ 
+            if (stateTimer >= 1.0f) {
                 canBleed = true;
                 ChangeState(CharacterState::Chase);
-                chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
-            }
-            break;
-        }
-        case CharacterState::Death: {
-            if (!isDead) {
                 
+                chaseDuration = GetRandomValue(4, 8); 
+            }
+        } break;
+
+        case CharacterState::Death:
+        {
+            if (!isDead) {
                 isDead = true;
-                deathTimer = 0.0f;         // Start counting
+                deathTimer = 0.0f;// Start counting
             }
 
-            deathTimer += deltaTime;
-            break;
-        }
+            deathTimer += dt;
+        } break;
     }
+
+    // --- Integrate movement (fill once steering is in) ---
+    // position = Vector3Add(position, Vector3Scale(desiredVel, dt));
+    // ClampToTerrain(position, /*footOffset*/0.0f);
+    // if (desiredVel.x*desiredVel.x + desiredVel.z*desiredVel.z > 1e-4f)
+    //     rotationY = RAD2DEG * atan2f(desiredVel.x, desiredVel.z);
 }
+
+
+// void Character::UpdateRaptorAI(float deltaTime, Player& player) {
+//     if (isLoadingLevel) return;
+//     float distance = Vector3Distance(position, player.position);
+//     playerVisible = false;
+
+//     if (!isDungeon && distance < 4000){
+//         playerVisible = true; //player is always visible to raptors within range. 
+//     }
+
+//     switch (state) {
+//         case CharacterState::Idle:
+//             if (stateTimer > idleThreshold){ //if idle for 10 seconds run to a new spot. 
+//                 ChangeState(CharacterState::RunAway);
+//                 randomTime = GetRandomValue(5,15);
+
+//                 runawayAngleOffset = DEG2RAD * GetRandomValue(-180, 180);
+//                 hasRunawayAngle = true;
+//                 //playRaptorSounds(); //make noises while they run around
+//             }
+
+//             if (distance < 4000.0f && stateTimer > 1.0f) { 
+
+//                 //if (isDungeon) setPath();
+//                 ChangeState(CharacterState::Chase);
+//                 chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
+//                 hasRunawayAngle = false;
+
+//                 //int number = GetRandomValue(1, 3);
+//                 playRaptorSounds();
+
+//             }
+//             break;
+
+//         case CharacterState::Chase: {
+//             stateTimer += deltaTime;
+
+//             if (distance < 150.0f) {
+//                 //Gun is 100 away from player center, don't clip the gun. 
+//                 ChangeState(CharacterState::Attack);
+//                 randomTime = GetRandomValue(5,15);
+//             } else if (distance > 4000.0f) {
+//                 ChangeState(CharacterState::Idle);
+//                 idleThreshold = (float)GetRandomValue(5,15);
+//             } else if (stateTimer >= chaseDuration && !isDungeon) {
+//                 // Give up and run away
+//                 ChangeState(CharacterState::RunAway);
+//                 runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50); //run in a random direction
+//                 randomDistance = GetRandomValue(1000, 2000); //set distance to run 
+//                 if (isDungeon) randomDistance = GetRandomValue(500, 1000);
+//                 hasRunawayAngle = true;
+//             } else {
+
+//                 // Chase logic with repulsion
+//                 Vector3 dir = Vector3Normalize(Vector3Subtract(player.position, position));
+//                 Vector3 horizontalMove = { dir.x, 0, dir.z };
+
+//                 // Add repulsion from other raptors
+//                 Vector3 repulsion = ComputeRepulsionForce(enemyPtrs, 50, 500);
+//                 Vector3 moveWithRepulsion = Vector3Add(horizontalMove, Vector3Scale(repulsion, deltaTime));
+
+//                 Vector3 proposedPosition = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f)); //one step ahead. 
+
+//                 float proposedTerrainHeight = GetHeightAtWorldPosition(proposedPosition, heightmap, terrainScale); //see if the next step is water. 
+//                 float currentTerrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
+//                 //float spriteHeight = frameHeight * scale;
+//                 if (isDungeon) proposedTerrainHeight = dungeonPlayerHeight;
+//                 if (isDungeon) currentTerrainHeight = dungeonPlayerHeight;
+//                 //run away if near water. X Raptor now stops at waters edge, he no longer gets stuck though.
+//                 if (currentTerrainHeight <= 65.0f && stateTimer > 1.0f) {
+//                     state = CharacterState::RunAway;
+//                     SetAnimation(3, 4, 0.1f);
+//                     stateTimer = 0.0f;
+//                     randomDistance = GetRandomValue(1000, 2000); //set distance to run 
+//                     runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50); //run in a random direction
+//                     stateTimer = 0;
+
+//                 } else if (proposedTerrainHeight > 60.0f) {
+//                     position = proposedPosition;
+//                     rotationY = RAD2DEG * atan2f(dir.x, dir.z);
+//                     //dont recalculate height if in a dungeon. dungeon height stays the same. 
+//                     if (!isDungeon) position.y = GetHeightAtWorldPosition(position, heightmap, terrainScale) + (frameHeight * scale) / 2.0f; //recalculate height
+//                 }
+
+//             }
+
+//             break;
+//         }
+//         case CharacterState::Attack:
+//             if (distance > 200.0f) { //maybe this should be like 160, player would get bit more. 
+//                 ChangeState(CharacterState::Chase);
+//             }
+
+//             attackCooldown -= deltaTime;
+//             if (attackCooldown <= 0.0f) {
+//                 attackCooldown = 1.0f; // seconds between attacks
+
+//                 // Play attack sound
+//                 SoundManager::GetInstance().Play("dinoBite");
+//                 // Damage the player
+//                 if (CheckCollisionBoxes(GetBoundingBox(), player.blockHitbox) && player.blocking) {
+//                     // Blocked!
+//                     if (rand()%2 == 0){
+//                         SoundManager::GetInstance().Play("swordBlock");
+//                     } else{
+//                         SoundManager::GetInstance().Play("swordBlock2");
+//                     }
+      
+//                 } else  {
+//                     // Player takes damage
+                   
+//                     player.TakeDamage(10);
+//                 }
+  
+//             }
+
+//             if (stateTimer >= randomTime) {
+//                 runawayAngleOffset = DEG2RAD * GetRandomValue(-60, 60);
+//                 hasRunawayAngle = true;
+//                 ChangeState(CharacterState::RunAway);
+//                 randomDistance = GetRandomValue(1000, 2000);
+//             }
+//             break;
+
+
+//         case CharacterState::RunAway: {
+//             Vector3 awayDir = Vector3Normalize(Vector3Subtract(position, player.position)); // direction away from player
+
+//             if (!hasRunawayAngle) {
+//                 runawayAngleOffset = DEG2RAD * GetRandomValue(-50, 50);
+//                 hasRunawayAngle = true;
+//             }
+//             float baseAngle = atan2f(position.z - player.position.z, position.x - player.position.x);
+//             float finalAngle = baseAngle + runawayAngleOffset;
+
+//             Vector3 veerDir = { cosf(finalAngle), 0.0f, sinf(finalAngle) };
+
+//             Vector3 horizontalMove = { veerDir.x, 0, veerDir.z };
+
+//             // Add repulsion
+//             Vector3 repulsion = ComputeRepulsionForce(enemyPtrs, 50, 500);
+//             Vector3 moveWithRepulsion = Vector3Add(horizontalMove, Vector3Scale(repulsion, deltaTime));
+
+//             Vector3 proposedPos = Vector3Add(position, Vector3Scale(moveWithRepulsion, deltaTime * 700.0f));
+//             float currentTerrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
+//             float proposedTerrainHeight = GetHeightAtWorldPosition(proposedPos, heightmap, terrainScale);
+//             if (isDungeon) proposedTerrainHeight = dungeonPlayerHeight;
+//             if (isDungeon) currentTerrainHeight = dungeonPlayerHeight;
+//             // If the current terrain is near water, force runaway state to continue,
+//             // but only move if the proposed position is on solid ground.
+//             if (proposedTerrainHeight > 60.0f) {
+//                 position = proposedPos;
+//                 position.y = proposedTerrainHeight + (frameHeight * scale) / 2.0f;
+//                 rotationY = RAD2DEG * atan2f(awayDir.x, awayDir.z);
+//             }
+
+            
+//             if (distance > randomDistance && stateTimer > 1.0f && currentTerrainHeight > 60.0f) {
+//                 ChangeState(CharacterState::Idle);
+//                 idleThreshold = (float)GetRandomValue(1, 5);
+//             }
+//             if (currentTerrainHeight <= 65.0f) {
+//                 ChangeState(CharacterState::Chase);
+//                 hasRunawayAngle = false;
+//                 //break; // exit RunAway logic
+//             }
+//             break;
+//         }
+
+//         case CharacterState::Freeze: {
+//             stateTimer += deltaTime;
+//             //do nothing
+
+//             if (stateTimer > 5.0f){
+//                 ChangeState(CharacterState::Idle);
+//             }
+//             break;
+
+//         }
+
+//         case CharacterState::Stagger: {
+//             //do nothing
+//             stateTimer += deltaTime;
+//             if (stateTimer >= 0.6f) {
+//                 canBleed = true;
+//                 ChangeState(CharacterState::Chase);
+//                 chaseDuration = GetRandomValue(3, 7); // 3–7 seconds of chasing
+//             }
+//             break;
+//         }
+//         case CharacterState::Death: {
+//             if (!isDead) {
+                
+//                 isDead = true;
+//                 deathTimer = 0.0f;         // Start counting
+//             }
+
+//             deathTimer += deltaTime;
+//             break;
+//         }
+//     }
+// }
 
 void Character::UpdatePirateAI(float deltaTime, Player& player) {
     if (isLoadingLevel) return;
@@ -612,7 +826,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 ChangeState(CharacterState::Chase);
                 break;
             }
-            
+
             attackCooldown -= deltaTime;
             if (distance < 800 && distance > 350){
                 

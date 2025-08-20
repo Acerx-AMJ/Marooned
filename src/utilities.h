@@ -16,3 +16,10 @@ void DebugPrintVector(const Vector3& v);
 //color
 Color ColorLerpFast(Color a, Color b, float t);
 Color LerpColor(Color a, Color b, float t);
+Vector3 Limit(Vector3 v, float maxLen);
+
+//xz steering
+Vector3 NormalizeXZ(Vector3 v);
+Vector3 RandomPointOnRingXZ(const Vector3& center, float minR, float maxR);
+float DistXZ(const Vector3& a, const Vector3& b);
+inline float Rand01() { return (float)GetRandomValue(0, 1000) / 1000.0f; }

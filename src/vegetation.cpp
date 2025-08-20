@@ -232,8 +232,8 @@ void DrawBushes(const std::vector<BushInstance>& bushes, Model& shadowQuad) {
         pos.x += bush.xOffset;
         pos.y += bush.yOffset-10;
         pos.z += bush.zOffset;
-
-        DrawModel(bush.model, pos, bush.scale, WHITE);
+        Color customGreen = { 0, 160, 0, 255 };
+        DrawModel(bush.model, pos, bush.scale, customGreen);
 
             //draw shadow decal under bushes. 
         // Vector3 shadowPos = {
