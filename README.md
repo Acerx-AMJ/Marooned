@@ -22,7 +22,7 @@
 
 - ⚔️ **Combat System**  
   - Melee weapons (sword)  
-  - Firearms and special weapons (ray gun)  
+  - Firearms and special weapons 
   - Enemies with different AI behaviors (chase, flee, wander)  
 
 - 🎮 **Player Controller**  
@@ -32,7 +32,6 @@
 ## Tech Notes  
 
 - Built with **C++17** and **Raylib 5.5**  
-- Uses modular code structure (`player.cpp`, `world.cpp`, `dungeonGeneration.cpp`, etc.)  
-- Shader-based effects (fog, AO, foliage alpha, fullscreen distortion)  
+- Shader-based effects (bloom, AO, foliage alpha)  
 - Development in **VS Code** with Makefile builds  
 
