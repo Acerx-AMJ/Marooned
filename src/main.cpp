@@ -12,7 +12,7 @@
 #include "camera_system.h"
 
 int main() { 
-    InitWindow(1600, 900, "Marooned");
+    InitWindow(1024, 1024, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
     ResourceManager::Get().LoadAllResources();
@@ -25,8 +25,13 @@ int main() {
     SetExitKey(KEY_NULL); //Escape brings up menu, not quit
 
     controlPlayer = true; //start as player //hit tab for free camera
+    float aspect = ((float)GetScreenWidth()/ (float)GetScreenHeight());
 
+    float fovy = (aspect <= 1.0f) ? 55 : 45; //is the aspect ratio is square, bump up the FOV
     CameraSystem::Get().Init(startPosition);
+    CameraSystem::Get().SetFOV(fovy);
+
+    
     
     //main game loop
     while (!WindowShouldClose()) {
@@ -86,10 +91,8 @@ int main() {
             HandleDungeonTints();
         }
 
-        //gather up everything 2d and put it into a vector of struct drawRequests, then sort and draw every billboard/quad in the game.
-        //Draw in order of furthest fisrt, closest last.  
+        //gather up everything 2d and put it into a vector of struct drawRequests, then we sort and draw every billboard/quad in the game.
         GatherTransparentDrawRequests(camera, deltaTime);
-        //DrawTransparentDrawRequests(camera);
 
         controlPlayer = CameraSystem::Get().IsPlayerMode();
 

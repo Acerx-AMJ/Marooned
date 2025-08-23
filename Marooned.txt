@@ -170,7 +170,47 @@ make a controls menu page.
 
 Moved all the rendering code to render_pipline.cpp. It's getting harder to remember where I put things. 
 
-Made camera_system.h/cpp. changed camera to a singelton camera = CameraSystem::Get().Active()
+Made camera_system.h/cpp. changed camera to a singelton camera = CameraSystem::Get().Active(), we could have a cinematic camera in addition to player/freecam. Imagine cut scenes where we animate the camera flying over the terrain and focusing on an objective or something. 
+
+NPC: friendly Character. An old hermit again? A friendly skeleton. Friendly pirate. Talking animal, like a parrot, or monkey. 
+
+dont generate trees around starting area. x
+
+Go through each function and erase parameters we no longer need to pass. 
+
+
+sharks in the water. 
+
+enemy ghost. x -Uses skeletonAI. maybe it should shoot projectiles. or at least some kind of animation when it attacks, a decal? 
+-maybe it could siphon health to regain it's own health, it slowly turn more and more invisible when it's moving and not attacking. On take damage it would become fully opaque and when attacking it would be fully visible when not doing these things it would fade out alpha. 
+
+Added trapezoid UI bars for health, mana, and stamina. We lerp the values to smoothly animate them. Health bar color lerps toward red when player is hit. -another idea was pill shaped health bars. Maybe that would fit the theme better, it would be less code than constructing trapezoids. 
+
+Made many changes to lighting. Shortened lightsource range for floors and lengthened the wall range. looks better. added a "saturation" variable. Fixed light.intensity to actually reflect changes to the struct. It was stuck at 1.0f when I thought I was changing it. 
+
+skeleton
+SetAnimation(0, 1, 1.0f); //idle
+SetAnimation(1, 4, 0.2f); //walk
+SetAnimation(2, 4, 0.2f); //attack
+SetAnimation(4, 3, 0.5f); //death
+
+void Character::SetAnimation(int row, int frames, float speed, bool loop) {
+    rowIndex = row;
+    maxFrames = frames;
+    animationSpeed = speed;
+    currentFrame = 0;
+    animationTimer = 0;
+    animationLoop = loop;
+}
+
+SetAnimation(1, 4, 0.2f); //walk
+SetAnimation(2, 4, 0.2f);//ranged attack
+SetAnimation(3, 5, 0.12); //melee attack
+SetAnimation(4, 3, 0.5f); //death
+SetAnimation(4, 1, 1.0f); // stagger
+
+Enemy stamina? 
+
 
 
 

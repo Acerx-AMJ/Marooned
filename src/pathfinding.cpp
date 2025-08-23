@@ -422,6 +422,42 @@ Vector3 WanderXZ(float& wanderAngle, float wanderTurnRate, float wanderSpeed, fl
     return { s * wanderSpeed, 0.0f, c * wanderSpeed };
 }
 
+// returns true if movement was blocked by water this frame
+bool StopAtWaterEdge(const Vector3& pos,
+                            Vector3& desiredVel,     // in/out
+                            float waterLevel,
+                            float dt)
+{
+    // if we’re not moving, nothing to do
+    float v2 = desiredVel.x*desiredVel.x + desiredVel.z*desiredVel.z;
+    if (v2 < 1e-4f) return false;
+
+    // Look a short distance ahead in the movement direction (XZ only)
+    Vector3 dir = { desiredVel.x, 0.0f, desiredVel.z };
+    float  speed = sqrtf(v2);
+    float  look  = fmaxf(80.0f, speed * 0.4f); // small peek ahead; tweak
+
+    Vector3 ahead = { pos.x + dir.x / speed * look,
+                      pos.y,
+                      pos.z + dir.z / speed * look };
+
+    // Sample terrain height at the ahead point
+    float hAhead = GetHeightAtWorldPosition(ahead, heightmap, terrainScale);
+
+    if (hAhead <= waterLevel) {
+        // hard stop at the shoreline
+        desiredVel.x = desiredVel.z = 0.0f;
+        return true;
+    }
+    return false;
+}
+
+bool IsWaterAtXZ(float x, float z, float waterLevel) {
+    Vector3 waterPos = {x, waterLevel, z};
+    return GetHeightAtWorldPosition(waterPos, heightmap, terrainScale) <= waterLevel;
+}
+
+
 
 
 

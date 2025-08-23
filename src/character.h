@@ -25,6 +25,7 @@ enum class CharacterState {
     Reposition,
     Patrol,
     MeleeAttack,
+    Orbit,
     Death,
 };
 
@@ -65,6 +66,8 @@ public:
     float deathTimer = 0.0f;
     float attackCooldown = 0.0f;
     float chaseDuration = 0.0f;
+    float orbitDuration = 6.0f;
+    int orbitDirCW;
     float hitTimer = 0.0f;
     float freezeTimer = 0.0f;
     float runawayAngleOffset = 0.0f;
@@ -105,6 +108,7 @@ public:
     void UpdatePlayerVisibility(const Vector3& playerPos, float dt, float epsilon);
     bool FindRepositionTarget(const Player& player, const Vector3& selfPos, Vector3& outTarget);
     void AlertNearbySkeletons(Vector3 alertOrigin, float radius);
+    void UpdateRaptorVisibility(const Player& player, float dt);
     void SetPath(Vector2 start);
 
     void SetPathTo(const Vector3& goalWorld);

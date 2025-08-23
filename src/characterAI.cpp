@@ -12,6 +12,7 @@ void Character::UpdateAI(float deltaTime, Player& player) {
     switch (type) {
         case CharacterType::Raptor:
             UpdateRaptorAI(deltaTime, player);
+            
             break;
         case CharacterType::Skeleton:
             UpdateSkeletonAI(deltaTime, player);
@@ -32,7 +33,7 @@ void Character::UpdateAI(float deltaTime, Player& player) {
     }
 }
 
-void Character::UpdatePlayerVisibility(const Vector3& playerPos, float dt, float epsilon) {
+void Character::UpdatePlayerVisibility(const Vector3& playerPos, float deltaTime, float epsilon) {
     canSee = HasWorldLineOfSight(position, playerPos, epsilon);
 
     if (canSee) {
@@ -40,7 +41,7 @@ void Character::UpdatePlayerVisibility(const Vector3& playerPos, float dt, float
         playerVisible = true;
         timeSinceLastSeen = 0.0f;
     } else {
-        timeSinceLastSeen += dt;
+        timeSinceLastSeen += deltaTime;
         if (timeSinceLastSeen > forgetTime) {
             playerVisible = false;
         }
@@ -285,25 +286,27 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 // Raptor = overworld, no grid pathing.
 // Skeleton only (structure + thresholds). Fill TODOs as you add steering.
 
-void Character::UpdateRaptorAI(float dt, Player& player)
+void Character::UpdateRaptorAI(float deltaTime, Player& player)
 {
+
+    
     // --- Perception & timers ---
-    stateTimer     += dt;
-    attackCooldown  = std::max(0.0f, attackCooldown - dt);
+    stateTimer     += deltaTime;
+    attackCooldown  = std::max(0.0f, attackCooldown - deltaTime);
 
     const float distance = Vector3Distance(position, player.position);
-   
+    UpdateRaptorVisibility(player, deltaTime);
 
     // --- Simple deadbands (tweak per type) ---
     const float STALK_ENTER   = 2000.0f;  // engage if closer than this
-    const float STALK_EXIT    = 2400.0f;  // drop back to idle if beyond and no memory
-    const float ATTACK_ENTER  = 200.0f;   // start attack if closer than this (+ LOS)
-    const float ATTACK_EXIT   = 300.0f;   // leave attack if beyond this or LOS lost
+    const float STALK_EXIT    = 2400.0f;  // drop back to idle 
+    const float ATTACK_ENTER  = 200.0f;   // start attack if closer than this
+    const float ATTACK_EXIT   = 300.0f;   // leave attack if beyond this 
     const float FLEE_ENTER    = 100.0f;   // too close -> run away
     const float FLEE_EXIT     = 1000.0f;   // far enough -> stop fleeing
     const float VISION_ENTER = 4000.0f;
 
-    playerVisible = distance < VISION_ENTER;
+    //playerVisible = distance < VISION_ENTER;
 
     // --- Placeholder for steering output (fill later) ---
     Vector3 desiredVel = {0,0,0};   // compute with Seek/Arrive/Orbit/Flee later
@@ -313,6 +316,7 @@ void Character::UpdateRaptorAI(float dt, Player& player)
 
         case CharacterState::Idle:
         {
+
             const float IDLE_TO_PATROL_TIME = 10.0f; // tweak
             if (stateTimer >= IDLE_TO_PATROL_TIME) {
                 // seed a patrol target around the current position
@@ -324,14 +328,15 @@ void Character::UpdateRaptorAI(float dt, Player& player)
             }
 
             if (distance < STALK_ENTER && playerVisible) {
-                ChangeState(CharacterState::Chase);
-                chaseDuration = GetRandomValue(5, 8);
+                if (canSee) ChangeState(CharacterState::Chase);
+                
                 break;
             }
         } break;
 
         case CharacterState::Patrol:
         {
+            
             // If we somehow lost the target, pick a new one quickly
             if (!hasPatrolTarget) {
                 patrolTarget    = RandomPointOnRingXZ(position, 800.0f, 2200.0f);
@@ -345,8 +350,9 @@ void Character::UpdateRaptorAI(float dt, Player& player)
             const float ARRIVE_EPS_XZ     = 150.0f;
 
             Vector3 vel = ArriveXZ(position, patrolTarget, PATROL_SPEED, PATROL_SLOW_RAD);
-            position = Vector3Add(position, Vector3Scale(vel, dt));
-           
+            position = Vector3Add(position, Vector3Scale(vel, deltaTime));
+            bool blocked = StopAtWaterEdge(position, vel, 65 , deltaTime);
+            if (blocked) ChangeState(CharacterState::RunAway);
 
             if (vel.x*vel.x + vel.z*vel.z > 1e-4f) {
                 rotationY = RAD2DEG * atan2f(vel.x, vel.z);
@@ -363,14 +369,16 @@ void Character::UpdateRaptorAI(float dt, Player& player)
             const float STALK_ENTER = 2000.0f;
             if (playerVisible && Vector3Distance(position, player.position) < STALK_ENTER) {
                 hasPatrolTarget = false; // drop current patrol
-                ChangeState(CharacterState::Chase);
-                chaseDuration = GetRandomValue(5, 8); // 3–7 seconds of chasing
+                if (canSee) ChangeState(CharacterState::Chase);
+                
                 break;
             }
         } break;
 
         case CharacterState::Chase:
         {
+            
+            if (!canSee) {ChangeState(CharacterState::Idle); break; }
             if (stateTimer > chaseDuration) { ChangeState(CharacterState::RunAway); break;}
                     // (keep your existing enter/exit checks above or below as you like)
             if (distance < ATTACK_ENTER) { ChangeState(CharacterState::Attack); break; }
@@ -381,8 +389,11 @@ void Character::UpdateRaptorAI(float dt, Player& player)
 
             // Move straight toward the player (XZ only), easing inside SLOW_RADIUS
             Vector3 vel = ArriveXZ(position, player.position, MAX_SPEED, SLOW_RADIUS);
-            position = Vector3Add(position, Vector3Scale(vel, dt));
+            position = Vector3Add(position, Vector3Scale(vel, deltaTime));
             //ClampToTerrain(position, /*footOffset*/0.0f);
+
+            bool blocked = StopAtWaterEdge(position, vel, 65, deltaTime);
+            if (blocked) ChangeState(CharacterState::Idle);
 
             if (vel.x*vel.x + vel.z*vel.z > 1e-4f) {
                 rotationY = RAD2DEG * atan2f(vel.x, vel.z);
@@ -390,6 +401,57 @@ void Character::UpdateRaptorAI(float dt, Player& player)
 
           
         } break;
+
+        case CharacterState::Orbit:
+{
+            // Seed once on entry (stateTimer is reset by ChangeState)
+            if (stateTimer == 0.0f) {
+                orbitDirCW    = (GetRandomValue(0, 1) == 0) ? +1 : -1; // clockwise or CCW
+                orbitDuration = GetRandomValue(2, 5);                  // seconds to orbit before doing something else
+            }
+
+            // Usual exits first (keep these consistent with your other states)
+            if (distance < FLEE_ENTER) {                 // too close → bail out
+                ChangeState(CharacterState::RunAway);
+                break;
+            }
+            if (canSee && distance < ATTACK_ENTER && attackCooldown <= 0.0f) { // clear shot
+                ChangeState(CharacterState::Attack);
+                break;
+            }
+            if (distance > STALK_EXIT && !playerVisible) { // lost interest
+                ChangeState(CharacterState::Idle);
+                break;
+            }
+
+            // --- Steering: circle the player at a ring ---
+            const float ORBIT_RADIUS = 1500.0f;  // tweak to taste
+            const float TANGENT_GAIN = 0.7f;     // how strongly to circle
+            const float RADIAL_GAIN  = 2.0f;     // how tightly to hold the ring
+            const float MAX_SPEED    = raptorSpeed;
+
+            Vector3 vel = OrbitXZ(position, player.position,
+                                ORBIT_RADIUS, orbitDirCW,
+                                TANGENT_GAIN, RADIAL_GAIN, MAX_SPEED);
+
+            // Integrate + face motion
+            position = Vector3Add(position, Vector3Scale(vel, deltaTime));
+
+            if (vel.x*vel.x + vel.z*vel.z > 1e-4f) {
+                rotationY = RAD2DEG * atan2f(vel.x, vel.z);
+            }
+
+            // End the orbit burst after a bit (then you’ll fall back to Chase again)
+            if (stateTimer >= orbitDuration) {
+                ChangeState(CharacterState::Chase);
+                break;
+            }
+
+            // Optional spice later:
+            // - Flip direction occasionally (timer-based) for variety
+            // - Add a tiny WanderXZ to vel if it looks too robotic
+        } break;
+
 
         case CharacterState::Attack:
         {
@@ -419,8 +481,8 @@ void Character::UpdateRaptorAI(float dt, Player& player)
             }
 
             if (distance > ATTACK_EXIT) {
-                ChangeState(CharacterState::Chase);
-                chaseDuration = GetRandomValue(5, 8); // 3–7 seconds of chasing
+                if (canSee) ChangeState(CharacterState::Chase);
+                
                 break;
             }
 
@@ -439,50 +501,41 @@ void Character::UpdateRaptorAI(float dt, Player& player)
             // Steering: flee + a touch of separation + tiny wander so it’s not laser-straight
             Vector3 vFlee   = FleeXZ(position, player.position, MAX_SPEED);
 
-            // If you have a raptor list handy; otherwise set to {0,0,0}
-            Vector3 vSep    = ComputeRepulsionForce(enemyPtrs, /*radius*/120, /*falloff*/600);
+            
+            Vector3 vSep    = ComputeRepulsionForce(enemyPtrs, /*radius*/200, /*strength*/600);
             vSep            = Limit(vSep, SEP_CAP);
 
             
-            Vector3 vWander = WanderXZ(wanderAngle, /*turn*/4.0f, /*speed*/80.0f, dt);
+            Vector3 vWander = WanderXZ(wanderAngle, /*turn*/4.0f, /*speed*/80.0f, deltaTime);
 
             Vector3 desired = Vector3Add(vFlee, Vector3Add(vSep, vWander));
             desired         = Limit(desired, MAX_SPEED);
 
+            bool blocked = StopAtWaterEdge(position, desired, 65, deltaTime);
+            if (blocked) ChangeState(CharacterState::Idle);
+
             // Integrate + face motion
-            position = Vector3Add(position, Vector3Scale(desired, dt));
+            position = Vector3Add(position, Vector3Scale(desired, deltaTime));
             if (desired.x*desired.x + desired.z*desired.z > 1e-4f) {
                 rotationY = RAD2DEG * atan2f(desired.x, desired.z);
             }
 
             // Exit conditions: far enough OR time window expired
             if ((distance > FLEE_EXIT && stateTimer >= FLEE_MIN_TIME) || stateTimer >= FLEE_MAX_TIME) {
-                ChangeState(CharacterState::Chase);
-                break;
+                if (canSee){
+                    ChangeState(CharacterState::Chase);
+                    break;
+                } 
+                
             }
         } break;
 
-
-        case CharacterState::Reposition:
-        {
-            // (Optional for raptors) quick side-step if crowded
-            // TODO: short timer, then back to Chase
-            if (stateTimer > 0.5f) {
-                ChangeState(CharacterState::Chase);
-                break;
-            }
-        } break;
-
-        case CharacterState::MeleeAttack:
-        {
-            // (If you separate melee from generic Attack later)
-            // TODO: same pattern as Attack with its own timings
-        } break;
 
         case CharacterState::Freeze:
         {
             // TODO: do nothing; exit after freezeDuration or on event
-            // if (stateTimer >= freezeDuration) ChangeState(CharacterState::Chase);
+            
+            if (stateTimer >= 5.0f && canSee) ChangeState(CharacterState::Chase);
         } break;
 
         case CharacterState::Stagger:
@@ -507,15 +560,10 @@ void Character::UpdateRaptorAI(float dt, Player& player)
                 deathTimer = 0.0f;// Start counting
             }
 
-            deathTimer += dt;
+            deathTimer += deltaTime;
         } break;
     }
 
-    // --- Integrate movement (fill once steering is in) ---
-    // position = Vector3Add(position, Vector3Scale(desiredVel, dt));
-    // ClampToTerrain(position, /*footOffset*/0.0f);
-    // if (desiredVel.x*desiredVel.x + desiredVel.z*desiredVel.z > 1e-4f)
-    //     rotationY = RAD2DEG * atan2f(desiredVel.x, desiredVel.z);
 }
 
 
@@ -1084,7 +1132,7 @@ void Character::SetPath(Vector2 start){
 // Leave default {} to behave exactly like before.
 bool Character::MoveAlongPath(std::vector<Vector3>& path,
                               Vector3& pos, float& yawDeg,
-                              float speed, float dt,
+                              float speed, float deltaTime,
                               float arriveEps,
                               Vector3 repulsion)   // <-- new, optional
 {
@@ -1098,14 +1146,14 @@ bool Character::MoveAlongPath(std::vector<Vector3>& path,
         return path.empty();
     }
 
-    const float step = fminf(speed * dt, dist);
+    const float step = fminf(speed * deltaTime, dist);
     Vector3 dir = { delta.x / dist, delta.y / dist, delta.z / dist };
 
     // Forward move toward waypoint
     Vector3 moveFwd = Vector3Scale(dir, step);
 
     // Optional repulsion (scaled by dt so it's “units per second”)
-    Vector3 moveRep = Vector3Scale(repulsion, dt);
+    Vector3 moveRep = Vector3Scale(repulsion, deltaTime);
 
     // Apply both
     Vector3 move = Vector3Add(moveFwd, moveRep);
@@ -1144,5 +1192,29 @@ void Character::SetPathTo(const Vector3& goalWorld) {
         currentWorldPath.push_back(worldPos);
     }
 }
+
+// Call this for raptors (overworld)
+void Character::UpdateRaptorVisibility(const Player& player, float deltaTime) {
+    const float VISION_ENTER = 4000.0f; 
+    const float VISION_EXIT  = 4200.0f;  // deadband so it doesn’t flicker at the edge
+    const float WATER_LEVEL  = 65.0f;
+
+    const float d = Vector3Distance(position, player.position);
+    const bool playerInWater = IsWaterAtXZ(player.position.x, player.position.z, WATER_LEVEL);
+    
+    // Engageable == in range AND not in water
+    bool inRange = (playerVisible ? d < VISION_EXIT : d < VISION_ENTER);
+    canSee = inRange && !playerInWater;   // instantaneous gate for actions
+
+    if (canSee) {
+        playerVisible = true;
+        lastKnownPlayerPos = player.position;
+        timeSinceLastSeen = 0.0f;
+    } else {
+        timeSinceLastSeen += deltaTime;
+        if (timeSinceLastSeen > forgetTime) playerVisible = false;
+    }
+}
+
 
 

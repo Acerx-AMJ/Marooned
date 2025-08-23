@@ -18,6 +18,7 @@ void CameraSystem::Init(const Vector3& startPos) {
     playerRig.cam.target   = Vector3Add(startPos, {0,0,1});
     playerRig.cam.up       = {0,1,0};
     playerRig.cam.fovy     = playerRig.fov;
+
     playerRig.cam.projection = CAMERA_PERSPECTIVE;
 
     freeRig = playerRig; // start free cam matching player

@@ -12,6 +12,7 @@ struct PlayerView {
     bool isSwimming;
     bool onBoard;
     Vector3 boatPos;   // only used if onBoard
+
 };
 
 struct CameraRig {
@@ -42,7 +43,7 @@ public:
     void Shake(float magnitude, float duration);
 
     bool IsPlayerMode() const { return GetMode() == CamMode::Player; }
-
+    bool aspectSquare = false;
     // read-only access for rendering
     Camera3D& Active();
     const Camera3D& Active() const;
@@ -59,9 +60,10 @@ private:
     void UpdatePlayerCam(float dt);
     void UpdateFreeCam(float dt);
     void ApplyShake(float dt);
-
     CamMode mode = CamMode::Player;
     CameraRig playerRig{};
     CameraRig freeRig{};
+
+
     float shakeTime = 0.f, shakeMag = 0.f;
 };

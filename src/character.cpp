@@ -122,6 +122,7 @@ void Character::eraseCharacters() {
 void Character::Update(float deltaTime, Player& player ) {
     if (isLoadingLevel) return;
     bloodEmitter.UpdateBlood(deltaTime);
+ 
     animationTimer += deltaTime;
     stateTimer += deltaTime;
     previousPosition = position;
@@ -181,9 +182,11 @@ static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
                 case CharacterState::Chase:
                 case CharacterState::Patrol:
                 case CharacterState::Reposition:
+                case CharacterState::Orbit:
                     return AnimDesc{1, 5, 0.12f, true}; // walk
                 
                 case CharacterState::RunAway: return {3, 4, 0.1f, true};
+                
                 case CharacterState::Idle:   return {0, 1, 1.0f, true};
                 case CharacterState::Attack: return {2, 5, 0.1f, false};  // 4 * 0.2 = 0.8s
                 case CharacterState::Stagger: return {4, 1, 1.0f, false}; // Use first frame of death anim for 1 second. for all enemies
@@ -265,8 +268,13 @@ void Character::ChangeState(CharacterState next) {
         currentWorldPath.clear();
     }
 
-   
+    if (type == CharacterType::Raptor && state == CharacterState::Chase){
+        chaseDuration = GetRandomValue(5, 8);
+        playRaptorSounds(); //play a random tweet when switching to chase. 
+    } 
+
     if (state == CharacterState::Attack) attackCooldown = 0.0f;
+    
 
     const AnimDesc a = GetAnimFor(type, state);
     SetAnimation(a.row, a.frames, a.frameTime, a.loop);
