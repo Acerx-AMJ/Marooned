@@ -7,7 +7,6 @@
 Boat player_boat{};
 
 void InitBoat(Boat& boat, Vector3 startPos) {
-    std::cout << "initializing boat\n";
     boat.position = startPos;
     boat.velocity = { 0.0f, 0.0f, 0.0f };
     boat.rotationY = 0.0f;

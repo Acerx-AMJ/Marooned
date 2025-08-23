@@ -1096,11 +1096,11 @@ void ResetAllBakedTints() {
 
 
 void BakeStaticLighting() {
-    Vector3 warmTint = {0.7f, 0.7f, 0.7f};
+    Vector3 warmTint = {0.7f, 0.7f, 0.7f}; //Light Gray 
     float brightnessScale = 1.25f; // Try values between 0.1 and 0.5
     
     float ambientBrightness = 0.3f;
-    const float ambientFloorBrightness = 0.35;
+    const float ambientFloorBrightness = 0.3;
     float epsilon = 0.25f;
     if (!isDungeon) ambientBrightness = 1.0f;
 
@@ -1243,7 +1243,7 @@ void UpdateDoorwayTints(Vector3 playerPos) {
         float distToPlayer = Vector3Distance(playerPos, wall.position);
         float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
         float playerLight = playerContribution * playerLightIntensity;
-        finalColor = Vector3Add(finalColor, Vector3Scale({0.7f, 0.7f, 0.7f}, playerLight));  // same warm tint
+        finalColor = Vector3Add(finalColor, Vector3Scale({0.7f, 0.7f, 0.7f}, playerLight)); 
 
         // 3️⃣ Bullet lights (fireball or iceball, etc.)
         for (const LightSource& light : bulletLights) {

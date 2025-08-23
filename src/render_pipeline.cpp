@@ -85,16 +85,16 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
                      GetScreenHeight()/2, 20, WHITE);
         } else {
             //health mana stam bars
-            DrawHUDBars(player);
-            if (player.activeWeapon == WeaponType::MagicStaff) DrawMagicIcon();
-            DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD);
+            // DrawHUDBars(player);
+            // if (player.activeWeapon == WeaponType::MagicStaff) DrawMagicIcon();
+            // DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD);
            
-            if (debugInfo) {
-                DrawTimer(ElapsedTime);
-                DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
-                DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 280, 30, 20, WHITE);
-            }
-            player.inventory.DrawInventoryUIWithIcons(itemTextures, slotOrder, 20, GetScreenHeight() - 80, 64);
+            // if (debugInfo) {
+            //     DrawTimer(ElapsedTime);
+            //     DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
+            //     DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 280, 30, 20, WHITE);
+            // }
+            // player.inventory.DrawInventoryUIWithIcons(itemTextures, slotOrder, 20, GetScreenHeight() - 80, 64);
         }
     EndDrawing();
 }

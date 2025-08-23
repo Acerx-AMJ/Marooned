@@ -3,7 +3,9 @@
 **Marooned** is a first-person adventure/shooter set in pirate times on a chain of Caribbean islands. The game combines open-world exploration with dungeon crawling, built in **C++** using **Raylib 5.5**. 
 
 ![Gameplay Screenshot](assets/screenshots/dinoFrame.png)
-![Gameplay Screenshot](assets/screenshots/dungeonFrame.png)
+<p align="center">
+  <img src="assets/sceenshots/demo.gif" alt="Gameplay demo" width="800"/>
+</p>
 
 ## Features  
 
