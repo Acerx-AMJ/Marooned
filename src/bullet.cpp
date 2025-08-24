@@ -31,7 +31,7 @@ void Bullet::UpdateMagicBall(Camera& camera, float deltaTime) {
     gravity = 980;
     fireEmitter.SetPosition(position);
     sparkEmitter.SetPosition(position);
-    //fireEmitter.Update(deltaTime);
+    
     velocity.y -= gravity * deltaTime;
 
     // Move
@@ -105,8 +105,10 @@ void Bullet::Update(Camera& camera, float deltaTime) {
         return; //skip normal bullet logic
     }
     else if (type == BulletType::Iceball){
+        sparkEmitter.SetParticleType(ParticleType::IceMist);
         fireEmitter.SetParticleType(ParticleType::IceMist);
         fireEmitter.Update(deltaTime);
+        sparkEmitter.Update(deltaTime); 
         UpdateMagicBall(camera, deltaTime);
         if (!exploded && explosionTriggered) {
             exploded = true;
@@ -149,13 +151,23 @@ void Bullet::Update(Camera& camera, float deltaTime) {
 void Bullet::Draw(Camera& camera) const {
     if (!alive) return;
     if (type == BulletType::Fireball){
-        fireEmitter.Draw(camera);
-        sparkEmitter.Draw(camera);
-        DrawModelEx(R.GetModel("fireballModel"), position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
+        fireEmitter.Draw(camera); //explosion particles 
+        //bullet remains alive until timeSinceExplosion = 2.0f, always draw explosion particles.  
+        
+        if (!exploded){
+            //dont draw the ball or firetrail if it's exploded. 
+            DrawModelEx(R.GetModel("fireballModel"), position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
+            sparkEmitter.Draw(camera); //firetrail
+        } 
         
     }else if (type == BulletType::Iceball){
         fireEmitter.Draw(camera);
-        DrawModelEx(R.GetModel("iceballModel"), position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
+
+        if (!exploded){
+            DrawModelEx(R.GetModel("iceballModel"), position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
+            sparkEmitter.Draw(camera);
+            
+        } 
     } else{
         DrawSphere(position, 1.5f, WHITE); 
     }
@@ -217,10 +229,12 @@ void Bullet::Blood(Camera& camera){
 
 void Bullet::Explode(Camera& camera) {
     if (!alive) return; 
-    if (type == BulletType::Default) return; //we were calling explode on default bullets some how. 
+    if (type == BulletType::Default) return; //we were calling explode on default bullets some how. likely recycled bullets didn't get reset to defaults
 
     if (!explosionTriggered){
-        explosionTriggered = true;  
+        explosionTriggered = true;
+        velocity.x = 0; //stop bullets velocity when exploding but keep gravity. could bullet apply damage more than once if it remains alive?
+        velocity.z = 0;
         SoundManager::GetInstance().PlaySoundAtPosition("explosion", position, player.position, player.rotation.y, 3000.0f);
         
         Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
@@ -230,6 +244,7 @@ void Bullet::Explode(Camera& camera) {
             fireEmitter.EmitBurst(position, 200, ParticleType::Sparks);
 
         }else if (type == BulletType::Iceball){
+            
             fireEmitter.EmitBurst(position, 200, ParticleType::IceBlast);
         }
 
@@ -259,9 +274,10 @@ void Bullet::Explode(Camera& camera) {
                 float dist = Vector3Distance(position, enemy->position);
                 if (dist < explosionRadius) {
                     float dmg =  Lerp(maxDamage, minDamage, dist / explosionRadius);
-                    enemy->state = CharacterState::Freeze;
-                    enemy->stateTimer = 0; 
-                    enemy->SetAnimation(0, 1, 1.0f);
+                    enemy->ChangeState(CharacterState::Freeze);
+                    // enemy->state = CharacterState::Freeze;
+                    // enemy->stateTimer = 0; 
+                    // enemy->SetAnimation(0, 1, 1.0f); //shouldn't we call changeState(CharacterState::Freeze)?
                     enemy->currentHealth -= dmg; //dont call take damage, it triggers stagger which over rides freeze. 
 
                     
@@ -270,6 +286,8 @@ void Bullet::Explode(Camera& camera) {
             }
 
         }
+
+        
 
 
     }

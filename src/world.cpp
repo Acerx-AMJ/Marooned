@@ -66,23 +66,6 @@ std::vector<Character*> enemyPtrs;
 std::vector<DungeonEntrance> dungeonEntrances;
 
 
-// void BeginCustom3D(Camera3D camera, float farClip) {
-//     rlDrawRenderBatchActive();
-//     rlMatrixMode(RL_PROJECTION);
-//     rlLoadIdentity();
-//     float nearClip = 60.0f; //20 wider than the capsule. to 50k outside, 10k in dungeons
-
-//     float testFOV = 45.0f; // 45 is default 
-//     Matrix proj = MatrixPerspective(DEG2RAD * camera.fovy, (float)GetScreenWidth() / (float)GetScreenHeight(), nearClip, farClip);
-
-//     rlMultMatrixf(MatrixToFloat(proj));
-//     rlMatrixMode(RL_MODELVIEW);
-//     rlLoadIdentity();
-//     Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
-//     rlMultMatrixf(MatrixToFloat(view));
-// }
-
-
 void InitLevel(const LevelData& level, Camera& camera) {
     isLoadingLevel = true;
     //Called when starting game and changing level. init the level you pass it. the level is chosen by menu or door's linkedLevelIndex. 
@@ -124,6 +107,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
         GenerateWallTiles(wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
         GenerateCeilingTiles(ceilingHeight);//400
         GenerateBarrels(floorHeight);
+        GenerateLaunchers(floorHeight);
         GenerateSpiderWebs(floorHeight);
         GenerateChests(floorHeight);
         GeneratePotions(floorHeight);

@@ -19,6 +19,12 @@ enum class LightType {
     Other // fallback or future expansion
 };
 
+enum class TrapType {
+    fireball,
+    iceball,
+
+};
+
 
 struct Fire {
     int fireFrame = 0;
@@ -103,6 +109,14 @@ struct PillarInstance {
     BoundingBox bounds;
 };
 
+struct LauncherTrap {
+    TrapType type;
+    Vector3 position;
+    float rotation;
+    float fireIntervalSec;
+    BoundingBox bounds;
+};
+
 struct LightSource {
     Vector3 position;
     float intensity = 0.75f;  // 1.0 = full bright, 0.5 = dim, etc.
@@ -150,7 +164,7 @@ struct CeilingTile {
     float bakedBrightness;
 };
 
-
+extern std::vector<LauncherTrap> launchers;
 extern std::vector<PillarInstance> pillars;
 extern std::vector<Fire> fires;
 extern std::vector<LightSource> dungeonLights;
@@ -181,6 +195,7 @@ void GenerateCeilingTiles(float ceilingOffsetY);
 void GenerateBarrels(float baseY);
 void GenerateSpiderWebs(float baseY);
 void GenerateChests(float baseY); 
+void GenerateLaunchers(float baseY);
 void GenerateLightSources(float baseY);
 void GenerateDoorways( float baseY, int currentLevelIndex);
 void GenerateDoorsFromArchways();
@@ -190,6 +205,8 @@ void DrawDungeonFloor();
 void DrawDungeonWalls();
 void DrawDungeonFloor();
 void DrawDungeonBarrels();
+void DrawLaunchers();
+
 //void DrawSpiderWebs(Camera& camera);
 void DrawDungeonChests(); 
 void DrawDungeonPillars();

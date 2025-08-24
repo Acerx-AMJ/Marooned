@@ -124,6 +124,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadModel("fireballModel",  "assets/models/fireball.glb");
     R.LoadModel("iceballModel",   "assets/models/iceBall.glb");
     R.LoadModel("campFire",       "assets/models/campFire.glb");
+    R.LoadModel("stonePillar",    "assets/models/stonePillar.glb");
 
     //generated models
     R.LoadModelFromMesh("skyModel", GenMeshCube(1.0f, 1.0f, 1.0f));

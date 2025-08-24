@@ -98,8 +98,8 @@ void DrawTrapezoidBar(float x, float y, float value, float maxValue, const BarSt
     if (style.gloss) {
         float gh = style.height * 0.45f;
         // a simple rounded rect gloss looks good enough on top
-        Rectangle gloss = { fminf(TL.x, BL.x), y, style.width, gh };
-        DrawRectangleRounded(gloss, 0.35f, 8, ColorAlpha(WHITE, 0.12f));
+        Rectangle gloss = { fminf(TL.x, BL.x), y, style.width - 2, gh };
+        DrawRectangleRounded(gloss, 0.85f, 8, ColorAlpha(WHITE, 0.25f));
     }
 
     // Outline
@@ -175,8 +175,8 @@ void DrawHUDBars(const Player& player) {
     BarStyle stam = hp;
     stam.height  = hp.height;
     stam.slant   = hp.slant;
-    stam.lowColor  = (Color){255,255,255, 120};
-    stam.highColor = (Color){255,255,255,255};
+    stam.lowColor  = (Color){200,200,200, 120};
+    stam.highColor = (Color){200,200,200,255};
     stam.pulseWhenLow = false;
     stam.outlineThickness = 1.5f;
     stam.outline = stam.highColor;

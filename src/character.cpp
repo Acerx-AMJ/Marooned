@@ -182,11 +182,11 @@ static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
                 case CharacterState::Chase:
                 case CharacterState::Patrol:
                 case CharacterState::Reposition:
-                case CharacterState::Orbit:
+                case CharacterState::Orbit: 
                     return AnimDesc{1, 5, 0.12f, true}; // walk
                 
                 case CharacterState::RunAway: return {3, 4, 0.1f, true};
-                
+                case CharacterState::Freeze: return {0, 1, 1.0f, true};
                 case CharacterState::Idle:   return {0, 1, 1.0f, true};
                 case CharacterState::Attack: return {2, 5, 0.1f, false};  // 4 * 0.2 = 0.8s
                 case CharacterState::Stagger: return {4, 1, 1.0f, false}; // Use first frame of death anim for 1 second. for all enemies
@@ -201,7 +201,8 @@ static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
                 case CharacterState::Patrol:
                 case CharacterState::Reposition:
                     return AnimDesc{1, 4, 0.2f, true}; // walk
-                    
+
+                case CharacterState::Freeze: return {0, 1, 1.0f, true};
                 case CharacterState::Idle:   return {0, 1, 1.0f, true};
                 case CharacterState::Attack: return {2, 4, 0.2f, false};  // 4 * 0.2 = 0.8s
                 case CharacterState::Stagger: return {4, 1, 1.0f, false}; // Use first frame of death anim for 1 second. for all enemies
@@ -217,6 +218,7 @@ static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
                 case CharacterState::Patrol:
                 case CharacterState::Reposition:
                     return AnimDesc{0, 7, 0.12f, true}; // walk
+                case CharacterState::Freeze: return {0, 1, 1.0f, true};
                 case CharacterState::Idle:   return {0, 7, 0.2f, true};
                 case CharacterState::Attack: return {0, 7, 0.12f, false}; //faster
                 case CharacterState::Stagger: return {0, 1, 1.0f, false};
@@ -231,6 +233,8 @@ static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
                 case CharacterState::Patrol:
                 case CharacterState::Reposition:
                     return AnimDesc{1, 4, 0.2f, true}; // walk
+
+                case CharacterState::Freeze: return {0, 1, 1.0f, true};
                 case CharacterState::Idle:   return     {0, 1, 1.0f, true};
                 case CharacterState::Attack: return     {2, 4, 0.2f, false}; // ranged attack = attack
                 case CharacterState::MeleeAttack: return{3, 5, 0.12f, false};

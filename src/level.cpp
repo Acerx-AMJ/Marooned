@@ -64,14 +64,14 @@ std::vector<LevelData> levels = {
         "assets/heightmaps/blank.png", //big blank heightmap incase we want water underneath the dungeon. 
         "assets/maps/map4.png",
         {0.0f, 300.0f, 0.0f}, //overwritten by green pixel 
-        -90.0f,
-        {0.0f, 0.0f, 0.0f},
-        0, 
+        -90.0f, //starting look direction
+        {0.0f, 0.0f, 0.0f}, //raptor spawn center
+        0, //raptor count
         true, //isDungeon is true
         {}, //dungeons don't have level entrances
-        2, 
-        3, //next level index 3
-        {}
+        2, //current level index
+        3, //next level index 
+        {} //outdoor props
         
        
 

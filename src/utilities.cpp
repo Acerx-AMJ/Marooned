@@ -16,6 +16,7 @@ float LerpExp(float current, float target, float lambda, float dt) {
     return current + (target - current) * a;
 }
 
+ //a + (b-a) * t
 Vector2 LerpV2(Vector2 a, Vector2 b, float t) {
     return { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t };
 }

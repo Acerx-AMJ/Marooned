@@ -12,7 +12,7 @@
 #include "camera_system.h"
 
 int main() { 
-    InitWindow(854, 480, "Marooned");
+    InitWindow(1600, 900, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
     ResourceManager::Get().LoadAllResources();

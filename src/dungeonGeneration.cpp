@@ -11,7 +11,7 @@
 #include "resourceManager.h"
 #include "utilities.h"
 
-
+std::vector<LauncherTrap> launchers;
 std::vector<FloorTile> floorTiles;
 std::vector<WallInstance> wallInstances;
 std::vector<CeilingTile> ceilingTiles;
@@ -75,6 +75,12 @@ float playerLightIntensity = 0.5f;
 //    Dark Red = magicStaff (128, 0, 0)
 
 //    very light grey = ghost (200, 200, 200)
+
+//    Vermillion = launcherTrap (255, 66, 52)
+
+//    yellowish = direction pixel (200, 200, 0)
+
+//    medium yellow = timing pixel (200, 50, 0)/ (200, 100, 0)/ (200, 150, 0)
 
 
 
@@ -592,6 +598,83 @@ void GenerateSpiderWebs(float baseY)
     }
 }
 
+inline bool IsDirPixel(Color c) {
+    return c.r == 200 && c.g == 200 && c.b == 0;      // direction (yellow-ish)
+}
+
+inline bool IsTimingPixel(Color c) {
+    if (c.r != 200 || c.b != 0) return false;
+    return (c.g == 50 || c.g == 100 || c.g == 150);
+}
+
+inline float TimingFromPixel(Color c) {
+    // 50 -> 1s, 100 -> 2s, 150 -> 3s
+    return c.g / 50.0f;
+}
+
+void GenerateLaunchers(float baseY) {
+    launchers.clear();
+
+    const int dx[4] = { -1, 1, 0, 0 };
+    const int dy[4] = {  0, 0,-1, 1 };
+
+    for (int y = 0; y < dungeonHeight; ++y) {
+        for (int x = 0; x < dungeonWidth; ++x) {
+            Color current = dungeonPixels[y * dungeonWidth + x];
+
+            // Vermilion trap pixel
+            if (!(current.r == 255 && current.g == 66 && current.b == 52)) continue;
+
+            float rotDeg = 0.0f;
+            float fireIntervalSec = 1.0f; // sensible default
+            bool found = false;
+
+            // Find the yellow direction pixel among the 4 neighbors
+            for (int i = 0; i < 4; ++i) {
+                int nx = x + dx[i], ny = y + dy[i];
+                if (nx < 0 || nx >= dungeonWidth || ny < 0 || ny >= dungeonHeight) continue;
+
+                Color neighbor = dungeonPixels[ny * dungeonWidth + nx];
+                if (!IsDirPixel(neighbor)) continue;
+
+                // Map neighbor offset -> yaw
+                if      (dx[i] == 0  && dy[i] == -1) rotDeg =   0.0f;  // up    -> +Z
+                else if (dx[i] == 1  && dy[i] ==  0) rotDeg =  90.0f;  // right -> +X
+                else if (dx[i] == 0  && dy[i] ==  1) rotDeg = 180.0f;  // down  -> -Z
+                else if (dx[i] == -1 && dy[i] ==  0) rotDeg = 270.0f;  // left  -> -X
+
+                // Timing pixel should be on the *opposite* side: (x - dx[i], y - dy[i])
+                int tx = x - dx[i], ty = y - dy[i];
+                if (tx >= 0 && tx < dungeonWidth && ty >= 0 && ty < dungeonHeight) {
+                    Color timing = dungeonPixels[ty * dungeonWidth + tx];
+                    if (IsTimingPixel(timing)) {
+                        fireIntervalSec = TimingFromPixel(timing);
+                    }
+                }
+
+                found = true;
+                break;
+            }
+
+            // Build trap
+            Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
+
+            float halfSize = 50.0f;
+            BoundingBox box;
+            box.min = { pos.x - halfSize, pos.y,          pos.z - halfSize };
+            box.max = { pos.x + halfSize, pos.y + 100.0f, pos.z + halfSize };
+
+            std::cout << "Launcher at (" << x << ", " << y << ") "
+                    << "rotDeg=" << rotDeg << " "
+                    << "interval=" << fireIntervalSec << "s"
+                    << std::endl;
+
+            launchers.push_back({ TrapType::fireball, pos, rotDeg, fireIntervalSec, box });
+        }
+    }
+}
+
+
 
 void GenerateBarrels(float baseY) {
     barrelInstances.clear();
@@ -948,12 +1031,16 @@ void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height,
     rlSetTexture(0);
 }
 
-// void DrawSpiderWebs(Camera& camera) {
-//     for (const SpiderWebInstance& web : spiderWebs) {
-//         Texture2D webTexture = web.destroyed ? brokeWebTexture : spiderWebTexture;
-//         DrawFlatWeb(webTexture, web.position, 300.0f, 300.0f, web.rotationY, web.tint);
-//     }
-// }
+
+
+void DrawLaunchers() {
+    for (const LauncherTrap& launcher : launchers) {
+
+        Vector3 offsetPos = {launcher.position.x, launcher.position.y + 20, launcher.position.z}; 
+        DrawModelEx(R.GetModel("stonePillar"), offsetPos, Vector3{0,1,0}, launcher.rotation, Vector3{100, 100, 100}, WHITE);
+    }
+
+}
 
 
 
