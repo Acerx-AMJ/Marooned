@@ -14,7 +14,7 @@ enum class BulletType {
 
 class Bullet {
 public:
-    Bullet(Vector3 position, Vector3 velocity, float lifetime, bool enemy,  BulletType t = BulletType::Default, float radius = 1.0f);
+    Bullet(Vector3 position, Vector3 velocity, float lifetime, bool enemy,  BulletType t = BulletType::Default, float radius = 1.0f, bool launcher = false);
 
     void Update(Camera& camera, float deltaTime);
     void UpdateMagicBall(Camera& camera, float deltaTime);
@@ -28,15 +28,13 @@ public:
     bool isExploded() const;
     void Blood(Camera& camera);
     void Explode(Camera& camera);
-    //void SetRadius(float r) { radius = r; } //inline, dont need to define in cpp
+
     float GetRadius() const { return radius; }
     bool pendingExplosion = false;
     float explosionTimer = 0.0f;
+    bool launcher = false;
     BulletType type = BulletType::Default;
     Vector3 GetPosition() const;
-
-
-    
 
 private:
     Emitter fireEmitter;
@@ -46,7 +44,6 @@ private:
     bool alive;
     bool enemy;
     bool fireball;
-    
     float age;
     float maxLifetime;
     float timer;
@@ -56,14 +53,9 @@ private:
     bool exploded = false;
     float timeSinceExploded = 0.0f;
     bool explosionTriggered = false;
-
-
-
-    
 };
-
 
 void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int pelletCount, float speed, float lifetime, bool enemy);
 void FireBullet(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy);
-void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy);
+void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy, bool launcher);
 void FireIceball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy);

@@ -68,7 +68,9 @@ int main() {
         UpdateMuzzleFlashes(deltaTime);
         UpdateBoat(player_boat, deltaTime);
         UpdateCollectables(deltaTime); 
+        UpdateLauncherTraps(deltaTime);
         UpdateDungeonChests();
+ 
         HandleWaves();
 
         //collisions

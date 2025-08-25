@@ -10,6 +10,7 @@
 #include "level.h"
 #include "collectable.h"
 #include "collectableWeapon.h"
+#include "list"
 
 enum class GameState {
     Menu,
@@ -64,7 +65,8 @@ extern bool isLoadingLevel;
 extern GameState currentGameState;
 
 extern std::vector<DungeonEntrance> dungeonEntrances;
-extern std::vector<Bullet> activeBullets;
+//extern std::vector<Bullet> activeBullets;
+extern std::list<Bullet> activeBullets; // instead of std::vector
 extern std::vector<Decal> decals;
 extern std::vector<Collectable> collectables;
 extern std::vector<MuzzleFlash> activeMuzzleFlashes;

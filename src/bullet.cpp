@@ -7,10 +7,11 @@
 #include "decal.h"
 #include "sound_manager.h"
 #include "utilities.h"
+#include "dungeonGeneration.h"
 
 
 // New constructor matching velocity-based logic
-Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, BulletType t, float r)
+Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, BulletType t, float r, bool launch)
     : position(startPos),
       velocity(vel),
       alive(true),
@@ -20,7 +21,8 @@ Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, BulletTyp
       type(t),
       fireEmitter(startPos),
       sparkEmitter(startPos),
-      radius(r)
+      radius(r),
+      launcher(launch)
 {}
 
 
@@ -28,7 +30,8 @@ void Bullet::UpdateMagicBall(Camera& camera, float deltaTime) {
     if (!alive) return;
 
     // Gravity-based arc
-    gravity = 980;
+    
+    gravity = launcher ? 0 : 980; //fireballs fired from traps have no gravity
     fireEmitter.SetPosition(position);
     sparkEmitter.SetPosition(position);
     
@@ -71,9 +74,11 @@ void Bullet::UpdateMagicBall(Camera& camera, float deltaTime) {
 
     // Lifetime kill
     age += deltaTime;
-    if (age >= maxLifetime) {
+    if (age >= maxLifetime && type == BulletType::Default) {
         kill(camera);
     }
+
+
 
 }
 
@@ -90,18 +95,22 @@ void Bullet::Update(Camera& camera, float deltaTime) {
         sparkEmitter.SetParticleType(ParticleType::FireTrail);
         sparkEmitter.Update(deltaTime);
         UpdateMagicBall(camera, deltaTime);
+
         if (!exploded && explosionTriggered) {
             exploded = true;
+     
+        }
+        
+        if (exploded){
             timeSinceExploded += deltaTime;
 
             if (timeSinceExploded >= 2.0f) { //wait for particles to act. 
-
-                
                 alive = false;
-                
-            }
-        }
+                return;
 
+            }
+
+        }
         return; //skip normal bullet logic
     }
     else if (type == BulletType::Iceball){
@@ -110,17 +119,23 @@ void Bullet::Update(Camera& camera, float deltaTime) {
         fireEmitter.Update(deltaTime);
         sparkEmitter.Update(deltaTime); 
         UpdateMagicBall(camera, deltaTime);
+
         if (!exploded && explosionTriggered) {
             exploded = true;
+     
+        }
+        
+        if (exploded){
             timeSinceExploded += deltaTime;
 
             if (timeSinceExploded >= 2.0f) { //wait for particles to act. 
                 alive = false;
-                
-            }
-        }
+                return;
 
-        return;
+            }
+
+        }
+        return; //skip normal bullet logic
     }
 
 
@@ -329,18 +344,28 @@ void FireBullet(Vector3 origin, Vector3 target, float speed, float lifetime, boo
     activeBullets.emplace_back(origin, velocity, lifetime, enemy);
 }
 
-void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy) {
+void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy, bool launcher) {
     Vector3 direction = Vector3Normalize(Vector3Subtract(target, origin));
     Vector3 velocity = Vector3Scale(direction, speed);
-    activeBullets.emplace_back(origin, velocity, lifetime, enemy, BulletType::Fireball, 20.0f);
 
-
+    Bullet& b = activeBullets.emplace_back(origin, velocity, lifetime, enemy, BulletType::Fireball, 20.0f, launcher);
+    std::cout << "creating bullets and attaching light\n";
+    LightSource L{};
+    L.owner   = &b;
+    L.position= origin;
+    L.range   = 400.0f;
+    L.lifeTime = lifetime;
+    L.type    = (b.type==BulletType::Fireball)? LightType::Fireball : LightType::Iceball;
+    L.colorTint = (b.type==BulletType::Fireball)? Vector3{1.0f,0.15f,0.0f} : Vector3{0.0f,0.7f,0.9f};
+    bulletLights.push_back(L);
+    
     if (rand() % 2 == 0){
-        SoundManager::GetInstance().Play("flame1");
+        //SoundManager::GetInstance().Play("flame1");
+        SoundManager::GetInstance().PlaySoundAtPosition("flame1", origin, player.position, 0.0, 3000);
 
     }else{
-        SoundManager::GetInstance().Play("flame2");
-
+        //SoundManager::GetInstance().Play("flame2");
+        SoundManager::GetInstance().PlaySoundAtPosition("flame2", origin, player.position, 0.0, 3000);
     }
 
 }

@@ -10,6 +10,8 @@
 #include <iostream>
 #include "pathfinding.h"
 #include "camera_system.h"
+#include "list"
+#include "assert.h"
 
 
 
@@ -56,7 +58,8 @@ float ElapsedTime = 0.0f;
 bool debugInfo = false;
 bool isLoadingLevel = false;
 
-std::vector<Bullet> activeBullets;
+//std::vector<Bullet> activeBullets;
+std::list<Bullet> activeBullets; // instead of std::vector
 std::vector<Decal> decals;
 std::vector<MuzzleFlash> activeMuzzleFlashes;
 std::vector<Collectable> collectables;
@@ -344,43 +347,61 @@ void UpdateDecals(float deltaTime){
                 decals.end());
 }
 
-void lightBullets(float deltaTime){
-    //Fireball/iceball light
+void lightBullets(float dt) {
+    for (int i = (int)bulletLights.size() - 1; i >= 0; --i) {
+        auto& L = bulletLights[i];
+        if (!L.owner) {
+            // handle detached explosion glows (optional fade)
+            L.age += dt;
+            if (L.age >= L.lifeTime) bulletLights.erase(bulletLights.begin()+i);
+            continue;
+        }
 
-   // === Clean up expired bullet lights ===
-    for (int i = bulletLights.size() - 1; i >= 0; --i) {
-        bulletLights[i].age += deltaTime;
-        if (bulletLights[i].age >= bulletLights[i].lifeTime) {
+        if (L.owner->type == BulletType::Default){
             bulletLights.erase(bulletLights.begin() + i);
-        }
-    }
-
-   // === Collect new lights to add after cleanup ===
-    std::vector<LightSource> newBulletLights;
-    for (const Bullet& bullet : activeBullets) {
-        if (bullet.type == BulletType::Default) continue;
-        LightSource bulletLight;
-        bulletLight.position = bullet.GetPosition();
-        bulletLight.range = 300.0f;
-        //bulletLight.intensity = 1.2f;
-        bulletLight.lifeTime = 0.5f;
-        bulletLight.age = 0.0f;
-        if (bullet.type == BulletType::Iceball) {
-            bulletLight.colorTint = {0.0f, 0.7f, 0.9f};
-            bulletLight.type = LightType::Iceball;
-        } else if (bullet.type == BulletType::Fireball) {
-            bulletLight.colorTint = {1.0f, 0.15f, 0.0f};
-            bulletLight.type = LightType::Fireball;
-        } else {
-            bulletLight.type = LightType::Other;
+            continue;
         }
 
-        newBulletLights.push_back(bulletLight);
-    }
+        // stop following the moment the bullet starts exploding
+        if (!L.owner->IsAlive()) {
+            // Optional: convert to a short-lived glow at current pos
+            L.position = L.owner->GetPosition();
+            
+            L.age = 0.0f;
+            L.lifeTime = 0.25f;
+            L.owner = nullptr;   // detach; now it will fade out
+            continue;
+        }
 
-    //=== Now safely append them ===
-    bulletLights.insert(bulletLights.end(), newBulletLights.begin(), newBulletLights.end());
+        // still flying -> follow
+        L.position = L.owner->GetPosition();
+
+    }
 }
+
+// void lightBullets(float dt) {
+//     // Update & prune bullet-follow lights
+//     for (int i = (int)bulletLights.size() - 1; i >= 0; --i) {
+//         LightSource& L = bulletLights[i];
+
+//         // If this light isn’t attached to a bullet, skip (or keep your old aging for non-bullet lights)
+//         if (!L.owner) {
+//             // optional: keep your old age/lifetime logic for other light types here
+//             continue;
+//         }
+        
+//         // If bullet is gone or exploded, remove the light
+//         if (L.owner->isExploded()) {
+//             bulletLights.erase(bulletLights.begin() + i);
+//             continue;
+//         }
+
+//         // Follow the bullet
+//         L.position = L.owner->GetPosition();
+//     }
+
+
+// }
 
 
 void DrawBloodParticles(Camera& camera){

@@ -608,9 +608,14 @@ inline bool IsTimingPixel(Color c) {
 }
 
 inline float TimingFromPixel(Color c) {
-    // 50 -> 1s, 100 -> 2s, 150 -> 3s
-    return c.g / 50.0f;
+    switch (c.g) {
+        case 50:  return 2.0f; // dark orange
+        case 100: return 4.0f; // medium orange
+        case 150: return 6.0f; // bright orange
+        default:  return 5.0f; // safe default if miscolored
+    }
 }
+
 
 void GenerateLaunchers(float baseY) {
     launchers.clear();
@@ -625,8 +630,8 @@ void GenerateLaunchers(float baseY) {
             // Vermilion trap pixel
             if (!(current.r == 255 && current.g == 66 && current.b == 52)) continue;
 
-            float rotDeg = 0.0f;
-            float fireIntervalSec = 1.0f; // sensible default
+            float fireIntervalSec = 3.0f; // sensible default (matches your new scheme)
+            Vector3 fireDir = {0, 0, 1}; // default forward
             bool found = false;
 
             // Find the yellow direction pixel among the 4 neighbors
@@ -637,13 +642,16 @@ void GenerateLaunchers(float baseY) {
                 Color neighbor = dungeonPixels[ny * dungeonWidth + nx];
                 if (!IsDirPixel(neighbor)) continue;
 
-                // Map neighbor offset -> yaw
-                if      (dx[i] == 0  && dy[i] == -1) rotDeg =   0.0f;  // up    -> +Z
-                else if (dx[i] == 1  && dy[i] ==  0) rotDeg =  90.0f;  // right -> +X
-                else if (dx[i] == 0  && dy[i] ==  1) rotDeg = 180.0f;  // down  -> -Z
-                else if (dx[i] == -1 && dy[i] ==  0) rotDeg = 270.0f;  // left  -> -X
+                // Compute direction in world space directly
+                Vector3 trapWorld = GetDungeonWorldPos(x,  y,  tileSize, baseY);
+                Vector3 dirWorld  = GetDungeonWorldPos(nx, ny, tileSize, baseY);
+                fireDir = Vector3Normalize({
+                    dirWorld.x - trapWorld.x,
+                    0.0f,  // ignore vertical difference
+                    dirWorld.z - trapWorld.z
+                });
 
-                // Timing pixel should be on the *opposite* side: (x - dx[i], y - dy[i])
+                // Timing pixel is on the *opposite* side: (x - dx[i], y - dy[i])
                 int tx = x - dx[i], ty = y - dy[i];
                 if (tx >= 0 && tx < dungeonWidth && ty >= 0 && ty < dungeonHeight) {
                     Color timing = dungeonPixels[ty * dungeonWidth + tx];
@@ -659,20 +667,19 @@ void GenerateLaunchers(float baseY) {
             // Build trap
             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
 
-            float halfSize = 50.0f;
+            float halfSize = 100.0f;
             BoundingBox box;
             box.min = { pos.x - halfSize, pos.y,          pos.z - halfSize };
             box.max = { pos.x + halfSize, pos.y + 100.0f, pos.z + halfSize };
 
-            std::cout << "Launcher at (" << x << ", " << y << ") "
-                    << "rotDeg=" << rotDeg << " "
-                    << "interval=" << fireIntervalSec << "s"
-                    << std::endl;
-
-            launchers.push_back({ TrapType::fireball, pos, rotDeg, fireIntervalSec, box });
+            // Assuming your struct looks like:
+            // struct LauncherTrap { TrapType type; Vector3 position; Vector3 direction;
+            //                       float intervalSec; float cooldown; BoundingBox bounds; };
+            launchers.push_back({ TrapType::fireball, pos, fireDir, fireIntervalSec, 0.0f, box });
         }
     }
 }
+
 
 
 
@@ -992,7 +999,27 @@ int GetDungeonImageY(float worldZ, float tileSize, int dungeonHeight) {
     return dungeonHeight - 1 - (int)(worldZ / tileSize);
 }
 
+inline Vector3 DirFromYawDeg(float yawDeg) {
+    float r = yawDeg * PI / 180.0f;
+    return { sinf(r), 0.0f, cosf(r) }; // 0° -> +Z, 90° -> +X
+}
 
+void UpdateLauncherTraps(float dt){
+    const float SPEED    = 900.0f;
+    const float LIFE     = 60.0f;
+    const float AHEAD    = 1500.0f;
+
+    for (LauncherTrap& L : launchers){
+        L.cooldown -= dt;
+        if (L.cooldown > 0.0f) continue;
+
+        Vector3 origin = { L.position.x, L.position.y + 100.0f, L.position.z };
+        Vector3 target = Vector3Add(origin, Vector3Scale(L.direction, AHEAD));
+
+        FireFireball(origin, target, SPEED, LIFE, /*enemy=*/true, /*launcher=*/true);
+        L.cooldown = std::max(0.01f, L.fireIntervalSec);
+    }
+}
 
 void DrawFlatWeb(Texture2D texture, Vector3 position, float width, float height, float rotationY, Color tint)
 {
@@ -1037,7 +1064,7 @@ void DrawLaunchers() {
     for (const LauncherTrap& launcher : launchers) {
 
         Vector3 offsetPos = {launcher.position.x, launcher.position.y + 20, launcher.position.z}; 
-        DrawModelEx(R.GetModel("stonePillar"), offsetPos, Vector3{0,1,0}, launcher.rotation, Vector3{100, 100, 100}, WHITE);
+        DrawModelEx(R.GetModel("stonePillar"), offsetPos, Vector3{0,1,0}, 0.0f, Vector3{100, 100, 100}, WHITE);
     }
 
 }

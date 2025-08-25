@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "transparentDraw.h"
+#include "bullet.h"
 
 
 enum class DoorType {
@@ -112,22 +113,24 @@ struct PillarInstance {
 struct LauncherTrap {
     TrapType type;
     Vector3 position;
-    float rotation;
+    Vector3  direction;   // world-space unit vector on XZ
     float fireIntervalSec;
+    float   cooldown;     // time until next shot
     BoundingBox bounds;
 };
 
 struct LightSource {
     Vector3 position;
     float intensity = 0.75f;  // 1.0 = full bright, 0.5 = dim, etc.
-    float fireballIntensity = 0.1f;
+    float fireballIntensity = 0.75f;
     float range = 1600.0f;
     float lifeTime = 1.0f;
     float age;
-    float fireballRange = 400.0f;
+    float fireballRange = 600.0f;
     
     Vector3 colorTint = {1.0f, 0.85f, 0.7f}; // default warm
     LightType type = LightType::Other;
+    Bullet* owner = nullptr; // <- pointer to bullet
 };
 
 
@@ -227,6 +230,8 @@ void UpdateBarrelTints(Vector3 playerPos);
 void UpdateChestTints(Vector3 playerPos);
 void UpdateDoorTints(Vector3 playerPos);
 void UpdateDoorwayTints(Vector3 playerPos);
+
+void UpdateLauncherTraps(float deltaTime);
 bool IsDoorOpenAt(int x, int y);
 BoundingBox MakeDoorBoundingBox(Vector3 position, float rotationY, float halfWidth, float height, float depth); 
 int GetDungeonImageX(float worldX, float tileSize, int dungeonWidth);
