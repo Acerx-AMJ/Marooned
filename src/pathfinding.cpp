@@ -8,8 +8,7 @@
 #include "character.h"
 #include "utilities.h"
 
-std::vector<std::vector<bool>> walkable;
-
+std::vector<std::vector<bool>> walkable; //grid of bools that mark walkabe/unwalkable tiles. 
 
 std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
     int width = walkable.size();
@@ -18,7 +17,7 @@ std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
     std::queue<Vector2> frontier;
     frontier.push(start);
 
-    // Use a map from tile to where we came from //used to reconstruct the path
+    // Use a map to save the tiles we came from. used to reconstuct path
     std::unordered_map<int, Vector2> cameFrom;
 
     auto toIndex = [&](int x, int y) {
@@ -36,7 +35,7 @@ std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
         frontier.pop();
 
         if ((int)current.x == (int)goal.x && (int)current.y == (int)goal.y) {
-            break; //reached the goal, return path. 
+            break; //reached the goal, break then reconstruct
         }
 
         for (int i = 0; i < 4; ++i) {
@@ -99,7 +98,7 @@ void ConvertImageToWalkableGrid(const Image& dungeonMap) {
             bool yellow  = (c.r == 255 && c.g == 255 && c.b == 0);   // light pedestals
             bool skyBlue = (c.r == 0 && c.g == 128 && c.b == 255);   // chests
             bool purple  = (c.r == 128 && c.g == 0 && c.b == 128);   // closed doors
-            bool aqua    = (c.r == 0 && c.g == 255 && c.b == 255);   //Aqua
+            bool aqua    = (c.r == 0 && c.g == 255 && c.b == 255);   // locked doors
 
             walkable[x][y] = !(black || blue || yellow || skyBlue || purple || aqua);
         }
@@ -138,7 +137,7 @@ bool IsWalkable(int x, int y, const Image& dungeonMap) {
     bool yellow   = (c.r == 255 && c.g == 255 && c.b == 0);   // light pedestals
     bool skyBlue  = (c.r == 0 && c.g == 128 && c.b == 255);   // chests 
     bool purple   = (c.r == 128 && c.g == 0 && c.b == 128);   // closed doors
-    bool aqua     = (c.r == 0 && c.g == 255 && c.b == 255);   //Aqua
+    bool aqua     = (c.r == 0 && c.g == 255 && c.b == 255);   // locked doors
 
     return !(black || blue || yellow || skyBlue || purple || aqua);
 }
@@ -215,14 +214,14 @@ bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<V
 }
 
 
-bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction) {
+bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction) {  
     if (isLoadingLevel) return false;
     Ray ray = { from, Vector3Normalize(Vector3Subtract(to, from)) };
     float maxDistance = Vector3Distance(from, to);
     float epsilon = epsilonFraction * maxDistance;
 
     for (const WallRun& wall : wallRunColliders) {
-        RayCollision hit = GetRayCollisionBox(ray, wall.bounds);
+        RayCollision hit = GetRayCollisionBox(ray, wall.bounds); //ray stops at the collider, epsilon pushes it further to the actual wall. 
         if (hit.hit && hit.distance + epsilon < maxDistance) {
             return false;
         }
@@ -249,8 +248,6 @@ Vector2 TileToWorldCenter(Vector2 tile) {
         tile.y + 0.5f * tileSize
     };
 }
-
-
 
 
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon) {
@@ -360,8 +357,9 @@ std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& d
     return result;
 }
 
-// Fast “point at it”
+//Raptor steering
 Vector3 SeekXZ(const Vector3& pos, const Vector3& target, float maxSpeed) {
+    // Fast “point at it”
     Vector3 dir = NormalizeXZ(Vector3Subtract(target, pos));
     return Vector3Scale(dir, maxSpeed);
 }

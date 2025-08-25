@@ -94,8 +94,42 @@ Vector3 RandomPointOnRingXZ(const Vector3& center, float minR, float maxR) {
     return p;
 }
 
+Vector3 DirFromYawDeg(float yawDeg) {
+    float r = yawDeg * PI / 180.0f;
+    return { sinf(r), 0.0f, cosf(r) }; // 0° -> +Z, 90° -> +X
+}
+
+Vector3 AddLightHeadroom(Vector3 base, Vector3 lightColor, float intensity) {
+    //stops over tinting floor tiles that was making them muddy green. 
+    Vector3 c = Vector3Scale(lightColor, intensity); // per-channel contribution
+    return {
+        base.x + (1.0f - base.x) * c.x,
+        base.y + (1.0f - base.y) * c.y,
+        base.z + (1.0f - base.z) * c.z
+    };
+}
+
 
 
 void DebugPrintVector(const Vector3& v) {
     std::cout << "Vector3(" << v.x << ", " << v.y << ", " << v.z << ")" << std::endl;
+}
+
+
+bool IsDirPixel(Color c) {
+    return c.r == 200 && c.g == 200 && c.b == 0;      // direction (yellow-ish)
+}
+
+bool IsTimingPixel(Color c) {
+    if (c.r != 200 || c.b != 0) return false;
+    return (c.g == 50 || c.g == 100 || c.g == 150);
+}
+
+float TimingFromPixel(Color c) {
+    switch (c.g) {
+        case 50:  return 2.0f; // dark orange
+        case 100: return 4.0f; // medium orange
+        case 150: return 6.0f; // bright orange
+        default:  return 5.0f; // safe default if miscolored
+    }
 }

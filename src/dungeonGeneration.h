@@ -122,7 +122,7 @@ struct LauncherTrap {
 struct LightSource {
     Vector3 position;
     float intensity = 0.75f;  // 1.0 = full bright, 0.5 = dim, etc.
-    float fireballIntensity = 0.75f;
+    float fireballIntensity = 0.5f;
     float range = 1600.0f;
     float lifeTime = 1.0f;
     float age;

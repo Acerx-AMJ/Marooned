@@ -10,6 +10,7 @@
 #include "pathfinding.h"
 #include "resourceManager.h"
 #include "utilities.h"
+#include "dungeonColors.h"
 
 std::vector<LauncherTrap> launchers;
 std::vector<FloorTile> floorTiles;
@@ -35,6 +36,8 @@ int dungeonHeight = 0;
 
 float playerLightRange = 800.0f;
 float playerLightIntensity = 0.5f;
+
+using namespace dungeon;
 
 //Dungeon Legend
 
@@ -103,7 +106,7 @@ void GenerateWeapons(float Height){
         for (int x = 0; x < dungeonWidth; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
 
-            if (current.r == 128 && current.g == 0 && current.b == 0) { // Dark red staff
+            if (EqualsRGB(current,ColorOf(Code::MagicStaffDarkRed))) { // Dark red staff
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, Height);
                 worldWeapons.push_back(CollectableWeapon(WeaponType::MagicStaff, pos, R.GetModel("staffModel")));
 
@@ -197,7 +200,7 @@ Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, flo
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             Color current = pixels[y * width + x];
-            if (current.r == 0 && current.g == 255 && current.b == 0) { //pure green
+            if (EqualsRGB(current, ColorOf(Code::PlayerStart))) { //pure green
                 return GetDungeonWorldPos(x, y, tileSize, baseY);
             }
         }
@@ -239,27 +242,6 @@ void GenerateFloorTiles(float baseY) {
 
 
 
-
-// === Helper Functions ===
-inline bool ColorsEqual(Color a, Color b) {
-    return a.r == b.r && a.g == b.g && a.b == b.b;
-}
-
-inline bool IsWallColor(Color c) {
-    return ColorsEqual(c, { 0, 0, 0, 255 });
-}
-
-inline bool IsBarrelColor(Color c) {
-    return ColorsEqual(c, { 0, 0, 255, 255 });
-}
-
-inline bool IsEnemyColor(Color c) {
-    return ColorsEqual(c, { 255, 0, 0, 255 });
-}
-
-
-
-
 void GenerateWallTiles(float baseY) {
     //and create bounding boxes
     wallInstances.clear();
@@ -267,6 +249,14 @@ void GenerateWallTiles(float baseY) {
 
     float wallThickness = 50.0f;
     float wallHeight = 200.0f;
+
+    // auto isBarrelColor = [](const Color& c) {
+    //     return (c.r == 0 && c.g == 0 && c.b == 255); // pure blue
+    // };
+
+    // auto isWallColor = [](const Color& c) {
+    //     return (c.r == 0 && c.g == 0 && c.b == 0);   // pure black
+    // };
 
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
@@ -598,23 +588,6 @@ void GenerateSpiderWebs(float baseY)
     }
 }
 
-inline bool IsDirPixel(Color c) {
-    return c.r == 200 && c.g == 200 && c.b == 0;      // direction (yellow-ish)
-}
-
-inline bool IsTimingPixel(Color c) {
-    if (c.r != 200 || c.b != 0) return false;
-    return (c.g == 50 || c.g == 100 || c.g == 150);
-}
-
-inline float TimingFromPixel(Color c) {
-    switch (c.g) {
-        case 50:  return 2.0f; // dark orange
-        case 100: return 4.0f; // medium orange
-        case 150: return 6.0f; // bright orange
-        default:  return 5.0f; // safe default if miscolored
-    }
-}
 
 
 void GenerateLaunchers(float baseY) {
@@ -999,10 +972,7 @@ int GetDungeonImageY(float worldZ, float tileSize, int dungeonHeight) {
     return dungeonHeight - 1 - (int)(worldZ / tileSize);
 }
 
-inline Vector3 DirFromYawDeg(float yawDeg) {
-    float r = yawDeg * PI / 180.0f;
-    return { sinf(r), 0.0f, cosf(r) }; // 0° -> +Z, 90° -> +X
-}
+
 
 void UpdateLauncherTraps(float dt){
     const float SPEED    = 900.0f;
@@ -1433,14 +1403,12 @@ void UpdateFloorTints(Vector3 playerPos) {
 
         // Dynamic lights
         for (const LightSource& light : bulletLights) {
-            float distToLight = Vector3Distance(light.position, tile.position);
-            if (distToLight > light.range) continue;
+            float dist = Vector3Distance(light.position, tile.position);
+            if (dist > light.fireballRange) continue;
 
-            float lightContribution = Clamp(1.0f - (distToLight / light.fireballRange), 0.0f, 1.0f);
-            float lightBrightness = lightContribution * light.fireballIntensity;
-
-            // Add this light’s color scaled by brightness
-            finalColor = Vector3Add(finalColor, Vector3Scale(light.colorTint, lightBrightness));
+            float t = Clamp(1.0f - (dist / light.fireballRange), 0.0f, 1.0f);
+            float I = t * light.fireballIntensity;
+            finalColor = AddLightHeadroom(finalColor, light.colorTint, I);
         }
 
         // Clamp color channels
