@@ -293,17 +293,66 @@ void UpdateMuzzleFlashes(float deltaTime) {
         activeMuzzleFlashes.end());
 }
 
-
-void UpdateBullets(Camera& camera, float deltaTime) {
+void UpdateBullets(Camera& camera, float dt) {
     for (Bullet& b : activeBullets) {
-        b.Update(camera, deltaTime);
+        if (b.IsAlive()) {
+            b.Update(camera, dt);
+            // (optional) animate b.light.intensity/b.light.range while flying
+        } else {
+            // First frame of death: convert to glow if requested
+            if (b.light.active && b.light.detachOnDeath && !b.light.detached) {
+                b.light.detached = true;
+                b.light.age = 0.f;
+                b.light.posWhenDetached = b.GetPosition();  // freeze at death position
+            }
+            if (b.light.detached) {
+                b.light.age += dt;
+                float t = 1.0f - (b.light.age / b.light.lifeTime);
+                if (t <= 0.f) {
+                    b.light.active = false;      // glow ended
+                } else {
+                    // optional: b.light.intensity = baseIntensity * t;
+                }
+            }
+        }
     }
+    // Don’t erase bullets here—do it after lighting if you need to.
+}
 
+
+// void UpdateBullets(Camera& camera, float deltaTime) {
+//     for (Bullet& b : activeBullets) {
+//         b.Update(camera, deltaTime);
+
+//         if (b.light.active && b.light.detachOnDeath && !b.light.detached) {
+//             // convert to a short-lived glow
+//             b.light.detached = true;
+//             b.light.age = 0.f;
+//             b.light.posWhenDetached = b.GetPosition();
+//         } else if (b.light.detached) {
+//             b.light.age += deltaTime;
+//             float t = 1.0f - (b.light.age / b.light.lifeTime);
+//             if (t <= 0.f) {
+//                 b.light.active = false; // glow ended
+
+//             }
+//         }
+//     }
+
+
+
+//     activeBullets.erase( //erase dead bullets. 
+//         std::remove_if(activeBullets.begin(), activeBullets.end(),
+//                     [](const Bullet& b) { return !b.IsAlive(); }),
+//         activeBullets.end());
+
+// }
+
+void EraseBullets(){
     activeBullets.erase( //erase dead bullets. 
         std::remove_if(activeBullets.begin(), activeBullets.end(),
                     [](const Bullet& b) { return !b.IsAlive(); }),
         activeBullets.end());
-
 }
 
 void UpdateCollectables(float deltaTime) { 

@@ -90,6 +90,7 @@ void Bullet::Update(Camera& camera, float deltaTime) {
 
     // Fireball logic
     if (type == BulletType::Fireball) {
+        
         fireEmitter.SetParticleType(ParticleType::Smoke);
         fireEmitter.Update(deltaTime);
         sparkEmitter.SetParticleType(ParticleType::FireTrail);
@@ -349,15 +350,23 @@ void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, b
     Vector3 velocity = Vector3Scale(direction, speed);
 
     Bullet& b = activeBullets.emplace_back(origin, velocity, lifetime, enemy, BulletType::Fireball, 20.0f, launcher);
-    std::cout << "creating bullets and attaching light\n";
-    LightSource L{};
-    L.owner   = &b;
-    L.position= origin;
-    L.range   = 400.0f;
-    L.lifeTime = lifetime;
-    L.type    = (b.type==BulletType::Fireball)? LightType::Fireball : LightType::Iceball;
-    L.colorTint = (b.type==BulletType::Fireball)? Vector3{1.0f,0.15f,0.0f} : Vector3{0.0f,0.7f,0.9f};
-    bulletLights.push_back(L);
+
+    b.light.active     = true;
+    b.light.color      = (b.type==BulletType::Fireball)? Vector3{1.0f,0.15f,0.0f} : Vector3{0.0f,0.7f,0.9f};
+    b.light.range      = 500.0f;
+    b.light.intensity  = 0.75;
+    b.light.detachOnDeath = true;
+    b.light.lifeTime   = 0.25f; // short glow after death
+
+    // std::cout << "creating bullets and attaching light\n";
+    // LightSource L{};
+    // L.owner   = &b;
+    // L.position= origin;
+    // L.range   = 400.0f;
+    // L.lifeTime = lifetime;
+    // L.type    = (b.type==BulletType::Fireball)? LightType::Fireball : LightType::Iceball;
+    // L.colorTint = (b.type==BulletType::Fireball)? Vector3{1.0f,0.15f,0.0f} : Vector3{0.0f,0.7f,0.9f};
+    // bulletLights.push_back(L);
     
     if (rand() % 2 == 0){
         //SoundManager::GetInstance().Play("flame1");

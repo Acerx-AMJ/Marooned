@@ -33,6 +33,13 @@ struct Fire {
     const float fireFrameDuration = 1.0f / 16.0f; // 16 slightly slower fps to match the bootleg aesthetic
 };
 
+struct LightSample {
+    Vector3 pos;
+    Vector3 color;   // 0..1
+    float   range;
+    float   intensity;
+};
+
 
 struct DoorwayInstance {
     Vector3 position;
@@ -167,6 +174,7 @@ struct CeilingTile {
     float bakedBrightness;
 };
 
+extern std::vector<LightSample> frameLights;
 extern std::vector<LauncherTrap> launchers;
 extern std::vector<PillarInstance> pillars;
 extern std::vector<Fire> fires;
@@ -247,5 +255,5 @@ void GenerateGhostsFromImage(float baseY);
 
 Vector3 ColorToNormalized(Color color);
 float ColorAverage(Color c);
-
+void GatherFrameLights();
 void ClearDungeon();

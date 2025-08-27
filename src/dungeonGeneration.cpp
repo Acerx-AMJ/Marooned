@@ -12,6 +12,7 @@
 #include "utilities.h"
 #include "dungeonColors.h"
 
+std::vector<LightSample> frameLights;
 std::vector<LauncherTrap> launchers;
 std::vector<FloorTile> floorTiles;
 std::vector<WallInstance> wallInstances;
@@ -592,7 +593,9 @@ void GenerateSpiderWebs(float baseY)
 
 void GenerateLaunchers(float baseY) {
     launchers.clear();
-
+    //fireball launchers are a 3 pixel line. A launcher pixel (vermilion) a direction pixel (yellowish) and a timing pixel (one of 3 medium oranges)
+    //The launcher pixel is in the middle, the direction pixel faces the direction the launcher fires, the timing pixel is always opposit the direction.
+    //create the launcher and determine the timing and the direction. 
     const int dx[4] = { -1, 1, 0, 0 };
     const int dy[4] = {  0, 0,-1, 1 };
 
@@ -603,7 +606,7 @@ void GenerateLaunchers(float baseY) {
             // Vermilion trap pixel
             if (!(current.r == 255 && current.g == 66 && current.b == 52)) continue;
 
-            float fireIntervalSec = 3.0f; // sensible default (matches your new scheme)
+            float fireIntervalSec = 3.0f; // default interval
             Vector3 fireDir = {0, 0, 1}; // default forward
             bool found = false;
 
@@ -645,9 +648,6 @@ void GenerateLaunchers(float baseY) {
             box.min = { pos.x - halfSize, pos.y,          pos.z - halfSize };
             box.max = { pos.x + halfSize, pos.y + 100.0f, pos.z + halfSize };
 
-            // Assuming your struct looks like:
-            // struct LauncherTrap { TrapType type; Vector3 position; Vector3 direction;
-            //                       float intervalSec; float cooldown; BoundingBox bounds; };
             launchers.push_back({ TrapType::fireball, pos, fireDir, fireIntervalSec, 0.0f, box });
         }
     }
@@ -1329,15 +1329,14 @@ void UpdateDoorwayTints(Vector3 playerPos) {
         float playerLight = playerContribution * playerLightIntensity;
         finalColor = Vector3Add(finalColor, Vector3Scale({0.7f, 0.7f, 0.7f}, playerLight)); 
 
-        // 3️⃣ Bullet lights (fireball or iceball, etc.)
-        for (const LightSource& light : bulletLights) {
-            float distToLight = Vector3Distance(light.position, wall.position);
-            if (distToLight > light.range) continue;
+        // Dynamic lights
+        for (const LightSample& light : frameLights) {
+            float dist = Vector3Distance(light.pos, wall.position);
+            if (dist > light.range) continue;
 
-            float contribution = Clamp(1.0f - (distToLight / light.range), 0.0f, 1.0f);
-            float brightnessFromLight = contribution * light.fireballIntensity;
-
-            finalColor = Vector3Add(finalColor, Vector3Scale(light.colorTint, brightnessFromLight));
+            float t = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
+            float I = t * light.intensity;
+            finalColor = AddLightHeadroom(finalColor, light.color, I);
         }
 
         // 4️⃣ Clamp final color to avoid overbright
@@ -1364,16 +1363,15 @@ void UpdateWallTints(Vector3 playerPos) {
         float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
         float playerLight = playerContribution * playerLightIntensity;
         finalColor = Vector3Add(finalColor, Vector3Scale({0.7f, 0.7f, 0.7f}, playerLight));  // same warm tint
+        
+        // Dynamic lights
+        for (const LightSample& light : frameLights) {
+            float dist = Vector3Distance(light.pos, wall.position);
+            if (dist > light.range) continue;
 
-        // 3️⃣ Bullet lights (fireball or iceball, etc.)
-        for (const LightSource& light : bulletLights) {
-            float distToLight = Vector3Distance(light.position, wall.position);
-            if (distToLight > light.range) continue;
-
-            float contribution = Clamp(1.0f - (distToLight / light.fireballRange), 0.0f, 1.0f);
-            float brightnessFromLight = contribution * light.fireballIntensity;
-
-            finalColor = Vector3Add(finalColor, Vector3Scale(light.colorTint, brightnessFromLight));
+            float t = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
+            float I = t * light.intensity;
+            finalColor = AddLightHeadroom(finalColor, light.color, I);
         }
 
         // 4️⃣ Clamp final color to avoid overbright
@@ -1402,14 +1400,15 @@ void UpdateFloorTints(Vector3 playerPos) {
         finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); // assume player light is warm
 
         // Dynamic lights
-        for (const LightSource& light : bulletLights) {
-            float dist = Vector3Distance(light.position, tile.position);
-            if (dist > light.fireballRange) continue;
+        for (const LightSample& light : frameLights) {
+            float dist = Vector3Distance(light.pos, tile.position);
+            if (dist > light.range) continue;
 
-            float t = Clamp(1.0f - (dist / light.fireballRange), 0.0f, 1.0f);
-            float I = t * light.fireballIntensity;
-            finalColor = AddLightHeadroom(finalColor, light.colorTint, I);
+            float t = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
+            float I = t * light.intensity;
+            finalColor = AddLightHeadroom(finalColor, light.color, I);
         }
+
 
         // Clamp color channels
         finalColor.x = Clamp(finalColor.x, 0.0f, 1.0f);
@@ -1438,15 +1437,14 @@ void UpdateCeilingTints(Vector3 playerPos) {
         finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); // assume player light is warm
 
         // Dynamic lights
-        for (const LightSource& light : bulletLights) {
-            float distToLight = Vector3Distance(light.position, tile.position);
-            if (distToLight > light.range) continue;
 
-            float lightContribution = Clamp(1.0f - (distToLight / light.fireballRange), 0.0f, 1.0f);
-            float lightBrightness = lightContribution * light.fireballIntensity;
+        for (const LightSample& light : frameLights) {
+            float dist = Vector3Distance(light.pos, tile.position);
+            if (dist > light.range) continue;
 
-            // Add this light’s color scaled by brightness
-            finalColor = Vector3Add(finalColor, Vector3Scale(light.colorTint, lightBrightness));
+            float t = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
+            float I = t * light.intensity;
+            finalColor = AddLightHeadroom(finalColor, light.color, I);
         }
 
         // Clamp color channels
@@ -1538,6 +1536,29 @@ BoundingBox MakeDoorBoundingBox(Vector3 position, float rotationY, float halfWid
     };
 
     return { boxMin, boxMax };
+}
+
+void GatherFrameLights() {
+    frameLights.clear();
+    frameLights.reserve(activeBullets.size()); // upper bound
+
+    for (const Bullet& b : activeBullets) {
+        if (!b.light.active) continue;
+
+        LightSample s;
+        s.color     = b.light.color;
+        s.range     = b.light.range;
+        s.intensity = b.light.intensity;
+
+        s.pos = b.light.detached ? b.light.posWhenDetached
+                                 : b.GetPosition();
+
+        // sanity checks (avoid NaN/zero range)
+        if (s.range > 0.f && isfinite(s.range) &&
+            isfinite(s.pos.x) && isfinite(s.pos.y) && isfinite(s.pos.z)) {
+            frameLights.push_back(s);
+        }
+    }
 }
 
 

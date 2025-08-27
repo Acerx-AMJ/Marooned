@@ -11,11 +11,25 @@ enum class BulletType {
    
 };
 
+struct BulletLight {
+    bool   active = false;        // has light?
+    Vector3 color = {1,1,1};      // 0..1
+    float  range = 0.f;           // > 0
+    float  intensity = 0.f;       // >= 0
+
+    // Optional post-explosion glow
+    bool   detachOnDeath = true;
+    bool   detached = false;      // became a glow after bullet died
+    float  age = 0.f;
+    float  lifeTime = 0.f;        // e.g. 0.25s
+    Vector3 posWhenDetached{};    // freeze final position
+};
+
 
 class Bullet {
 public:
     Bullet(Vector3 position, Vector3 velocity, float lifetime, bool enemy,  BulletType t = BulletType::Default, float radius = 1.0f, bool launcher = false);
-
+    BulletLight light;
     void Update(Camera& camera, float deltaTime);
     void UpdateMagicBall(Camera& camera, float deltaTime);
     void Erase();

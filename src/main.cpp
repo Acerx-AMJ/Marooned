@@ -62,15 +62,18 @@ int main() {
         R.UpdateShaders(camera);
         UpdateFade(deltaTime, camera); //triggers init level on fadeout
         UpdateEnemies(deltaTime);
+       
         UpdateBullets(camera, deltaTime);
-        lightBullets(deltaTime);
+        GatherFrameLights();
+        //lightBullets(deltaTime);
+        EraseBullets();
         UpdateDecals(deltaTime);
         UpdateMuzzleFlashes(deltaTime);
         UpdateBoat(player_boat, deltaTime);
         UpdateCollectables(deltaTime); 
         UpdateLauncherTraps(deltaTime);
         UpdateDungeonChests();
- 
+        
         HandleWaves();
 
         //collisions
