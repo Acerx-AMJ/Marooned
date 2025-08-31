@@ -88,7 +88,7 @@ void UpdateEnemies(float deltaTime);
 void UpdateMuzzleFlashes(float deltaTime);
 void UpdateBullets(Camera& camera, float deltaTime);
 void EraseBullets();
-void lightBullets(float deltaTime);
+
 void UpdateDecals(float deltaTime);
 void UpdateCollectables(float deltaTime);
 void DrawBullets(Camera& camera);

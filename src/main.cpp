@@ -65,7 +65,6 @@ int main() {
        
         UpdateBullets(camera, deltaTime);
         GatherFrameLights();
-        //lightBullets(deltaTime);
         EraseBullets();
         UpdateDecals(deltaTime);
         UpdateMuzzleFlashes(deltaTime);

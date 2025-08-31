@@ -358,24 +358,8 @@ void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, b
     b.light.detachOnDeath = true;
     b.light.lifeTime   = 0.25f; // short glow after death
 
-    // std::cout << "creating bullets and attaching light\n";
-    // LightSource L{};
-    // L.owner   = &b;
-    // L.position= origin;
-    // L.range   = 400.0f;
-    // L.lifeTime = lifetime;
-    // L.type    = (b.type==BulletType::Fireball)? LightType::Fireball : LightType::Iceball;
-    // L.colorTint = (b.type==BulletType::Fireball)? Vector3{1.0f,0.15f,0.0f} : Vector3{0.0f,0.7f,0.9f};
-    // bulletLights.push_back(L);
-    
-    if (rand() % 2 == 0){
-        //SoundManager::GetInstance().Play("flame1");
-        SoundManager::GetInstance().PlaySoundAtPosition("flame1", origin, player.position, 0.0, 3000);
+    SoundManager::GetInstance().PlaySoundAtPosition((rand() % 2 == 0 ? "flame1" : "flame2"), origin, player.position, 0.0f, 3000.0f);
 
-    }else{
-        //SoundManager::GetInstance().Play("flame2");
-        SoundManager::GetInstance().PlaySoundAtPosition("flame2", origin, player.position, 0.0, 3000);
-    }
 
 }
 
@@ -383,7 +367,14 @@ void FireIceball(Vector3 origin, Vector3 target, float speed, float lifetime, bo
     Vector3 direction = Vector3Normalize(Vector3Subtract(target, origin));
     Vector3 velocity = Vector3Scale(direction, speed);
 
-    activeBullets.emplace_back(origin, velocity, lifetime, enemy, BulletType::Iceball, 20.0f);
+    Bullet& b = activeBullets.emplace_back(origin, velocity, lifetime, enemy, BulletType::Iceball, 20.0f);
+
+    b.light.active     = true;
+    b.light.color      = (b.type==BulletType::Fireball)? Vector3{1.0f,0.15f,0.0f} : Vector3{0.0f,0.7f,0.9f};
+    b.light.range      = 500.0f;
+    b.light.intensity  = 0.75;
+    b.light.detachOnDeath = true;
+    b.light.lifeTime   = 0.25f; // short glow after death
 
     SoundManager::GetInstance().Play("iceMagic");
 }

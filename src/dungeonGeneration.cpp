@@ -225,15 +225,7 @@ void GenerateFloorTiles(float baseY) {
 
             FloorTile tile;
             tile.position = pos;
-            tile.tint = WHITE; // Or tint based on pixel.r/g/b if you want variety
-            // int rn = GetRandomValue(1, 2);
-            // switch (rn){
-            //     case 1:tile.floorTile = floorTile; break; 
-            //     case 2:tile.floorTile = floorTile2; break;
-            //     ///case 3:tile.floorTile = floorTile3; break; I broke the other tile models in blender. 
-            // }
-            //tile.floorTile = &floorTile;
-
+            tile.tint = WHITE; 
 
             floorTiles.push_back(tile);
         }
@@ -1060,21 +1052,88 @@ void DrawDungeonChests() {
     }
 }
 
+void DrawDungeonCeiling(){
+    for (CeilingTile& tile : ceilingTiles){
+        DrawModelEx(R.GetModel("floorTileGray"), tile.position, {1,0,0}, 180.0f, Vector3{700, 700, 700}, tile.tint);
+    }
+}
 
+// void DrawDungeonCeiling() {
+//     Model& floorModel = R.GetModel("floorTileGray");
+
+//     // base scale you already use
+//     const Vector3 baseScale   = {700, 700, 700};
+//     // half XZ only, keep Y as-is (so height/thickness stays the same)
+//     const Vector3 miniScale   = {baseScale.x * 0.5f, baseScale.y, baseScale.z * 0.5f};
+
+//     // centers for the 4 mini-tiles relative to the big tile's center
+//     const float quarter = tileSize * 0.25f; // = 50 if tile is 200
+//     const Vector3 offsets[4] = {
+//         {-quarter, 0.0f, -quarter},
+//         {+quarter, 0.0f, -quarter},
+//         {-quarter, 0.0f, +quarter},
+//         {+quarter, 0.0f, +quarter},
+//     };
+
+//     for (const CeilingTile& tile : ceilingTiles) {
+//         for (int i = 0; i < 4; ++i) {
+//             Vector3 p = { tile.position.x + offsets[i].x,
+//                           tile.position.y + offsets[i].y,
+//                           tile.position.z + offsets[i].z };
+
+//             // rotation axis/angle are 0 here; keep same as your original
+//             DrawModelEx(floorModel, p, {1,0,0}, 180.0f, miniScale, tile.tint);
+//         }
+//     }
+// }
+
+
+// void DrawDungeonFloor() {
+//     for (const FloorTile& tile : floorTiles) {
+//         DrawModelEx(R.GetModel("floorTileGray"), tile.position, Vector3{0,1,0}, 0.0f, Vector3{700,700,700}, tile.tint);
+//     }
+// }
+
+// constants you already imply
 
 
 void DrawDungeonFloor() {
+    //draw four tiles for every 1 floor tile. 
+    Model& floorModel = R.GetModel("floorTileGray");
+
+    // base scale you already use
+    const Vector3 baseScale   = {700, 700, 700};
+    // half XZ only, keep Y as-is (so height/thickness stays the same)
+    const Vector3 miniScale   = {baseScale.x * 0.5f, baseScale.y, baseScale.z * 0.5f};
+
+    // centers for the 4 mini-tiles relative to the big tile's center
+    const float quarter = tileSize * 0.25f; // = 50 if tile is 200
+    const Vector3 offsets[4] = {
+        {-quarter, 0.0f, -quarter},
+        {+quarter, 0.0f, -quarter},
+        {-quarter, 0.0f, +quarter},
+        {+quarter, 0.0f, +quarter},
+    };
+
     for (const FloorTile& tile : floorTiles) {
-        DrawModelEx(R.GetModel("floorTile"), tile.position, Vector3{0,1,0}, 0.0f, Vector3{700,700,700}, tile.tint);
+        for (int i = 0; i < 4; ++i) {
+            Vector3 p = { tile.position.x + offsets[i].x,
+                          tile.position.y + offsets[i].y,
+                          tile.position.z + offsets[i].z };
+
+            // rotation axis/angle are 0 here; keep same as your original
+            DrawModelEx(floorModel, p, {0,1,0}, 0.0f, miniScale, tile.tint);
+        }
     }
 }
+
 
 
 void DrawDungeonWalls() {
 
     for (const WallInstance& _wall : wallInstances) {
-        
-        DrawModelEx(R.GetModel("wall"), _wall.position, Vector3{0, 1, 0}, _wall.rotationY, Vector3{700, 700, 700}, _wall.tint);
+        // "wall"
+        DrawModelEx(R.GetModel("wallSegment"), _wall.position, Vector3{0, 1, 0}, _wall.rotationY, Vector3{700, 700, 700}, _wall.tint);
 
     }
 }
@@ -1083,7 +1142,7 @@ void DrawDungeonDoorways(){
 
     for (const DoorwayInstance& d : doorways) {
         Vector3 dPos = {d.position.x, d.position.y + 100, d.position.z};
-        DrawModelEx(R.GetModel("doorWay"), dPos, {0, 1, 0}, d.rotationY * RAD2DEG, {490, 595, 476}, d.tint);
+        DrawModelEx(R.GetModel("doorWayGray"), dPos, {0, 1, 0}, d.rotationY * RAD2DEG, {490, 595, 476}, d.tint);
     }
 
     // for (const Door& door : doors){
@@ -1123,19 +1182,6 @@ void DrawFlatDoor(Texture2D tex, Vector3 pos, float width, float height, float r
     rlColor4ub(255, 255, 255, 255);
 }
 
-
-void DrawDungeonCeiling() {
-    for (const CeilingTile& ceiling : ceilingTiles) {
-        DrawModelEx(
-            R.GetModel("floorTile"),
-            ceiling.position,
-            Vector3{1, 0, 0}, // Flip to face downward
-            180.0f,
-            Vector3{700, 700, 700},
-            ceiling.tint
-        );
-    }
-}
 
 
 
@@ -1324,10 +1370,10 @@ void UpdateDoorwayTints(Vector3 playerPos) {
         Vector3 finalColor = Vector3Scale({1.0f, 0.85f, 0.7f}, brightness);  // base warm tint
 
         // 2️⃣ Player light contribution
-        float distToPlayer = Vector3Distance(playerPos, wall.position);
-        float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        float playerLight = playerContribution * playerLightIntensity;
-        finalColor = Vector3Add(finalColor, Vector3Scale({0.7f, 0.7f, 0.7f}, playerLight)); 
+        // float distToPlayer = Vector3Distance(playerPos, wall.position);
+        // float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+        // float playerLight = playerContribution * playerLightIntensity;
+        // finalColor = Vector3Add(finalColor, Vector3Scale({0.7f, 0.7f, 0.7f}, playerLight)); 
 
         // Dynamic lights
         for (const LightSample& light : frameLights) {
@@ -1359,10 +1405,10 @@ void UpdateWallTints(Vector3 playerPos) {
         Vector3 finalColor = Vector3Scale({1.0f, 0.85f, 0.7f}, brightness);  // base warm tint
 
         // 2️⃣ Player light contribution
-        float distToPlayer = Vector3Distance(playerPos, wall.position);
-        float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        float playerLight = playerContribution * playerLightIntensity;
-        finalColor = Vector3Add(finalColor, Vector3Scale({0.7f, 0.7f, 0.7f}, playerLight));  // same warm tint
+        // float distToPlayer = Vector3Distance(playerPos, wall.position);
+        // float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+        // float playerLight = playerContribution * playerLightIntensity;
+        // finalColor = Vector3Add(finalColor, Vector3Scale({0.7f, 0.7f, 0.7f}, playerLight));  // same warm tint
         
         // Dynamic lights
         for (const LightSample& light : frameLights) {
@@ -1389,15 +1435,15 @@ void UpdateWallTints(Vector3 playerPos) {
 void UpdateFloorTints(Vector3 playerPos) {
     for (FloorTile& tile : floorTiles) {
         float brightness = ColorAverage(tile.bakedTint);
-
+        Vector3 warmTint = {0.7f, 0.7f, 0.7f}; //Light Gray 
         // Accumulate final color contribution per tile
-        Vector3 finalColor = Vector3Scale({1.0f, .85f, 0.7f}, brightness); // baked tint as base
+        Vector3 finalColor = Vector3Scale({1.0f, 0.95f, 0.7f}, brightness); // baked tint as base
 
         // Player light
-        float distToPlayer = Vector3Distance(playerPos, tile.position);
-        float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        float playerLight = playerContribution * playerLightIntensity;
-        finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); // assume player light is warm
+        // float distToPlayer = Vector3Distance(playerPos, tile.position);
+        // float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+        // float playerLight = playerContribution * playerLightIntensity;
+        // finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); // assume player light is warm
 
         // Dynamic lights
         for (const LightSample& light : frameLights) {
@@ -1428,13 +1474,13 @@ void UpdateCeilingTints(Vector3 playerPos) {
         float brightness = ColorAverage(tile.bakedTint);
 
         // Accumulate final color contribution per tile
-        Vector3 finalColor = Vector3Scale({1.0f, 0.85f, 0.7f}, brightness); // baked tint as base
+        Vector3 finalColor = Vector3Scale({1.0f, 0.95f, 0.7f}, brightness); // baked tint as base
 
         // Player light
-        float distToPlayer = Vector3Distance(playerPos, tile.position);
-        float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        float playerLight = playerContribution * playerLightIntensity;
-        finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); // assume player light is warm
+        // float distToPlayer = Vector3Distance(playerPos, tile.position);
+        // float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+        // float playerLight = playerContribution * playerLightIntensity;
+        // finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); // assume player light is warm
 
         // Dynamic lights
 

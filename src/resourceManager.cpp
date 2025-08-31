@@ -125,6 +125,9 @@ void ResourceManager::LoadAllResources() {
     R.LoadModel("iceballModel",   "assets/models/iceBall.glb");
     R.LoadModel("campFire",       "assets/models/campFire.glb");
     R.LoadModel("stonePillar",    "assets/models/stonePillar.glb");
+    R.LoadModel("wallSegment",    "assets/models/wallSegment.glb");
+    R.LoadModel("floorTileGray",  "assets/models/floorTileGray.glb");
+    R.LoadModel("doorWayGray",    "assets/models/doorWayGray.glb");
 
     //generated models
     R.LoadModelFromMesh("skyModel", GenMeshCube(1.0f, 1.0f, 1.0f));
@@ -169,11 +172,11 @@ void ResourceManager::SetShaderValues(){
 
     //bloom post process. 
     bloomStrengthValue = 0.0f;
-    float bloomColor[3] = { 0.5f, 0.0f, 0.9f }; //purple tint mixes better than red. impossible to get orange 
-    float aaStrengthValue = 0.15f; //fake antialiasing strength, makes it grayer
+    float bloomColor[3] = { 0.1f, 0.0f, 0.9f }; //purple tint mixes better than red. impossible to get orange 
+    float aaStrengthValue = 0.0f; //fake antialiasing strength, makes it grayer
 
     int locSat = GetShaderLocation(bloomShader, "uSaturation");
-    float sat = 1.35f; // try 1.05–1.25
+    float sat = 1.0f; // try 1.05–1.25
     SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
 
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
@@ -230,7 +233,7 @@ void ResourceManager::UpdateShaders(Camera& camera){
 
     //dungeonDarkness
     float dungeonDarkness = -0.2f;//it darkens the gun model as well, so go easy. negative number brightens it. 
-    float dungeonContrast = 1.3f; //makes darks darker. 
+    float dungeonContrast = 1.25f; //makes darks darker. 
 
 
     int isDungeonVal = isDungeon ? 1 : 0;

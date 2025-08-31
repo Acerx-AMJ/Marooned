@@ -320,34 +320,6 @@ void UpdateBullets(Camera& camera, float dt) {
 }
 
 
-// void UpdateBullets(Camera& camera, float deltaTime) {
-//     for (Bullet& b : activeBullets) {
-//         b.Update(camera, deltaTime);
-
-//         if (b.light.active && b.light.detachOnDeath && !b.light.detached) {
-//             // convert to a short-lived glow
-//             b.light.detached = true;
-//             b.light.age = 0.f;
-//             b.light.posWhenDetached = b.GetPosition();
-//         } else if (b.light.detached) {
-//             b.light.age += deltaTime;
-//             float t = 1.0f - (b.light.age / b.light.lifeTime);
-//             if (t <= 0.f) {
-//                 b.light.active = false; // glow ended
-
-//             }
-//         }
-//     }
-
-
-
-//     activeBullets.erase( //erase dead bullets. 
-//         std::remove_if(activeBullets.begin(), activeBullets.end(),
-//                     [](const Bullet& b) { return !b.IsAlive(); }),
-//         activeBullets.end());
-
-// }
-
 void EraseBullets(){
     activeBullets.erase( //erase dead bullets. 
         std::remove_if(activeBullets.begin(), activeBullets.end(),
@@ -395,62 +367,6 @@ void UpdateDecals(float deltaTime){
                 [](const Decal& d) { return !d.alive; }),
                 decals.end());
 }
-
-void lightBullets(float dt) {
-    for (int i = (int)bulletLights.size() - 1; i >= 0; --i) {
-        auto& L = bulletLights[i];
-        if (!L.owner) {
-            // handle detached explosion glows (optional fade)
-            L.age += dt;
-            if (L.age >= L.lifeTime) bulletLights.erase(bulletLights.begin()+i);
-            continue;
-        }
-
-        if (L.owner->type == BulletType::Default){
-            bulletLights.erase(bulletLights.begin() + i);
-            continue;
-        }
-
-        // stop following the moment the bullet starts exploding
-        if (!L.owner->IsAlive()) {
-            // Optional: convert to a short-lived glow at current pos
-            L.position = L.owner->GetPosition();
-            
-            L.age = 0.0f;
-            L.lifeTime = 0.25f;
-            L.owner = nullptr;   // detach; now it will fade out
-            continue;
-        }
-
-        // still flying -> follow
-        L.position = L.owner->GetPosition();
-
-    }
-}
-
-// void lightBullets(float dt) {
-//     // Update & prune bullet-follow lights
-//     for (int i = (int)bulletLights.size() - 1; i >= 0; --i) {
-//         LightSource& L = bulletLights[i];
-
-//         // If this light isn’t attached to a bullet, skip (or keep your old aging for non-bullet lights)
-//         if (!L.owner) {
-//             // optional: keep your old age/lifetime logic for other light types here
-//             continue;
-//         }
-        
-//         // If bullet is gone or exploded, remove the light
-//         if (L.owner->isExploded()) {
-//             bulletLights.erase(bulletLights.begin() + i);
-//             continue;
-//         }
-
-//         // Follow the bullet
-//         L.position = L.owner->GetPosition();
-//     }
-
-
-// }
 
 
 void DrawBloodParticles(Camera& camera){
