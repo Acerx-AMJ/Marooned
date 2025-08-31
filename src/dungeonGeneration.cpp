@@ -1339,6 +1339,7 @@ void BakeStaticLighting() {
 
 
 void ApplyBakedLighting() {
+    //we need to do this every frame to set them back to default baked light. 
     for (WallInstance& wall : wallInstances) {
         wall.tint = wall.bakedTint;
     }
@@ -1357,8 +1358,14 @@ void ApplyBakedLighting() {
     }
 }
 
+Vector3 playerLight(Vector3 playerPos, Vector3 tilePos, Vector3 finalColor){
+    float distToPlayer = Vector3Distance(playerPos, tilePos);
+    float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+    float playerLight = playerContribution * playerLightIntensity;
+    return Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); 
+    
 
-
+}
 
 void UpdateDoorwayTints(Vector3 playerPos) {
     if (!isDungeon) return; //dont tint outside doorways
@@ -1370,10 +1377,7 @@ void UpdateDoorwayTints(Vector3 playerPos) {
         Vector3 finalColor = Vector3Scale({1.0f, 0.85f, 0.7f}, brightness);  // base warm tint
 
         // 2️⃣ Player light contribution
-        // float distToPlayer = Vector3Distance(playerPos, wall.position);
-        // float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        // float playerLight = playerContribution * playerLightIntensity;
-        // finalColor = Vector3Add(finalColor, Vector3Scale({0.7f, 0.7f, 0.7f}, playerLight)); 
+        finalColor = playerLight(player.position, wall.position, finalColor);
 
         // Dynamic lights
         for (const LightSample& light : frameLights) {
@@ -1405,10 +1409,7 @@ void UpdateWallTints(Vector3 playerPos) {
         Vector3 finalColor = Vector3Scale({1.0f, 0.85f, 0.7f}, brightness);  // base warm tint
 
         // 2️⃣ Player light contribution
-        // float distToPlayer = Vector3Distance(playerPos, wall.position);
-        // float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        // float playerLight = playerContribution * playerLightIntensity;
-        // finalColor = Vector3Add(finalColor, Vector3Scale({0.7f, 0.7f, 0.7f}, playerLight));  // same warm tint
+        //finalColor = playerLight(player.position, wall.position, finalColor);
         
         // Dynamic lights
         for (const LightSample& light : frameLights) {
@@ -1440,10 +1441,7 @@ void UpdateFloorTints(Vector3 playerPos) {
         Vector3 finalColor = Vector3Scale({1.0f, 0.95f, 0.7f}, brightness); // baked tint as base
 
         // Player light
-        // float distToPlayer = Vector3Distance(playerPos, tile.position);
-        // float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        // float playerLight = playerContribution * playerLightIntensity;
-        // finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); // assume player light is warm
+        //finalColor = playerLight(player.position, tile.position, finalColor);
 
         // Dynamic lights
         for (const LightSample& light : frameLights) {
@@ -1477,10 +1475,7 @@ void UpdateCeilingTints(Vector3 playerPos) {
         Vector3 finalColor = Vector3Scale({1.0f, 0.95f, 0.7f}, brightness); // baked tint as base
 
         // Player light
-        // float distToPlayer = Vector3Distance(playerPos, tile.position);
-        // float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-        // float playerLight = playerContribution * playerLightIntensity;
-        // finalColor = Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); // assume player light is warm
+        //finalColor = playerLight(player.position, tile.position, finalColor);
 
         // Dynamic lights
 
@@ -1585,6 +1580,7 @@ BoundingBox MakeDoorBoundingBox(Vector3 position, float rotationY, float halfWid
 }
 
 void GatherFrameLights() {
+    //each bullet has a struct called light. Check bullet lights and add info to LightSample struct and add to framelight vector.
     frameLights.clear();
     frameLights.reserve(activeBullets.size()); // upper bound
 

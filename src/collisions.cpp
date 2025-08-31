@@ -268,7 +268,7 @@ void CheckBulletHits(Camera& camera) {
         Vector3 pos = b.GetPosition();
 
         // 🔹 1. Hit player
-        if (CheckCollisionPointBox(pos, player.GetBoundingBox())) {
+        if (CheckCollisionBoxSphere(player.GetBoundingBox(), b.GetPosition(), b.GetRadius())) { //use CollisionBoxSphere and use bullet radius
             if (b.IsEnemy()) {
                 b.kill(camera);
                 player.TakeDamage(25);
@@ -369,7 +369,7 @@ void CheckBulletHits(Camera& camera) {
         for (BarrelInstance& barrel : barrelInstances) {
             int tileX = GetDungeonImageX(barrel.position.x, tileSize, dungeonWidth);
             int tileY = GetDungeonImageY(barrel.position.z, tileSize, dungeonHeight);
-            if (!barrel.destroyed && CheckCollisionPointBox(pos, barrel.bounds)) {
+            if (!barrel.destroyed && CheckCollisionBoxSphere(barrel.bounds, b.GetPosition(), b.GetRadius())) {
                 barrel.destroyed = true;
                 walkable[tileX][tileY] = true; //tile is now walkable for enemies. 
                 if (b.type == BulletType::Fireball || b.type == BulletType::Iceball){

@@ -211,6 +211,22 @@ static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
                 default:                     return {0, 1, 1.0f, true};
             }
 
+        case CharacterType::Spider:
+            switch (state) {
+                case CharacterState::Chase:
+                case CharacterState::Patrol:
+                case CharacterState::Reposition:
+                    return AnimDesc{1, 4, 0.2f, true}; // walk
+
+                case CharacterState::Freeze: return {0, 1, 1.0f, true};
+                case CharacterState::Idle:   return {0, 1, 1.0f, true};
+                case CharacterState::Attack: return {2, 4, 0.2f, false};  // 4 * 0.2 = 0.8s
+                case CharacterState::Stagger: return {4, 1, 1.0f, false}; // Use first frame of death anim for 1 second. for all enemies
+                case CharacterState::Death:  return {4, 3, 0.5f, false};
+                
+                default:                     return {0, 1, 1.0f, true};
+            }
+
         case CharacterType::Ghost:
             // fill with whatever you want the ghost to show per state
             switch (state) {

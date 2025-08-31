@@ -188,28 +188,16 @@ Added trapezoid UI bars for health, mana, and stamina. We lerp the values to smo
 
 Made many changes to lighting. Shortened lightsource range for floors and lengthened the wall range. looks better. added a "saturation" variable. Fixed light.intensity to actually reflect changes to the struct. It was stuck at 1.0f when I thought I was changing it. 
 
-skeleton
-SetAnimation(0, 1, 1.0f); //idle
-SetAnimation(1, 4, 0.2f); //walk
-SetAnimation(2, 4, 0.2f); //attack
-SetAnimation(4, 3, 0.5f); //death
-
-void Character::SetAnimation(int row, int frames, float speed, bool loop) {
-    rowIndex = row;
-    maxFrames = frames;
-    animationSpeed = speed;
-    currentFrame = 0;
-    animationTimer = 0;
-    animationLoop = loop;
-}
-
-SetAnimation(1, 4, 0.2f); //walk
-SetAnimation(2, 4, 0.2f);//ranged attack
-SetAnimation(3, 5, 0.12); //melee attack
-SetAnimation(4, 3, 0.5f); //death
-SetAnimation(4, 1, 1.0f); // stagger
-
 Enemy stamina? 
+
+Added fireball launcher model and got it spawning on vermilion colored pixels. Mark down vermilion color on legend. How will it work? Make a new map. One with lots firball traps. Long hallways with launchers set to different timings between launches. Already have a LauncherTrap struct. Needs timing vars on creation. How would we set timings on creation? 
+void GenerateLauncherTraps, takes level data? Because what if we want multiple firetrap levels, it would have to be level data. 
+
+Me and chat GPT came up with a ingenious encoding method for fireball traps. There is a vermilion colored pixel which is the trap itself. A yellow direction pixel that is an orthogonal neighbor to the trap that marks the direction the trap shoots, and a darker yellow timing pixel that can be one of 3 different shades of yellow. darkest yellow = 3 second delay, then 2 second and brightest is 1 second delay. The timing pixel is always on the opposite side of the direction pixel, that way it is easier to look up and it looks like a 3x1 line of red and yellow pixels that look like little launchers on the map. it took 2 attempts to make it work but LauncherTrap struct now contains all the info needed to launch fireballs. - Consider a blueish pixel for ice traps. use the same direction and timing colors. 
+
+spider death animation not running. 
+
+
 
 
 
