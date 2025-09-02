@@ -129,9 +129,20 @@ void InitLevel(const LevelData& level, Camera& camera) {
     }
 
     isLoadingLevel = false;
+   
     //bake lighting after isLoadingLevel is false to it can access world LOS 
     ResetAllBakedTints(); 
-    BakeStaticLighting(); 
+
+ 
+    BakeStaticLighting();
+    ResourceManager::Get().SetShaderValues();
+
+    // Shader& lightingShader = R.GetShader("lightingShader");
+    // Model& ceilModel = R.GetModel("floorTileGray");
+    // for (int i = 0; i < ceilModel.materialCount; ++i)
+    //     ceilModel.materials[i].shader = lightingShader;
+
+       
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
 
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
@@ -447,7 +458,7 @@ float GetHeightAtWorldPosition(Vector3 position, Image& heightmap, Vector3 terra
 
 void UpdateWorldFrame(float dt, Player& player) {
     // Toggle mode
-    if (IsKeyPressed(KEY_TAB)) {
+    if (IsKeyPressed(KEY_TAB) && debugInfo) {
         auto m = CameraSystem::Get().GetMode();
         CameraSystem::Get().SetMode(m == CamMode::Player ? CamMode::Free : CamMode::Player);
     }

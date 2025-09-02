@@ -16,7 +16,7 @@ int main() {
     InitAudioDevice();
     SetTargetFPS(60);
     ResourceManager::Get().LoadAllResources();
-    ResourceManager::Get().SetShaderValues();
+   
     SoundManager::GetInstance().LoadSounds();
     SoundManager::GetInstance().PlayMusic("dungeonAir");
     SoundManager::GetInstance().PlayMusic("jungleAmbience");

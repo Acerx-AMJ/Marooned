@@ -185,7 +185,7 @@ Vector2 GetRandomReachableTile(const Vector2& start, const Character* self, int 
 
         Vector2 target = {(float)rx, (float)ry};
         if (!LineOfSightRaycast(start, target, dungeonImg, 100, 0.0f)) continue;
-
+        
         return target;
     }
 
@@ -197,7 +197,7 @@ bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<V
     if (isLoadingLevel) return false;
     Vector2 randomTile = GetRandomReachableTile(start, self);
 
-    if (IsWalkable(randomTile.x, randomTile.y, dungeonImg)) return false;
+    if (!IsWalkable(randomTile.x, randomTile.y, dungeonImg)) return false;
 
     std::vector<Vector2> tilePath = FindPath(start, randomTile);
     if (tilePath.empty()) return false;

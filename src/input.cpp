@@ -22,7 +22,7 @@ void debugControls(Camera& camera){
 
 
     //debug fireball
-    if (IsKeyPressed(KEY_F)) {
+    if (IsKeyPressed(KEY_F) && debugInfo) {
         Vector3 camForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
         Vector3 targetPoint = Vector3Add(camera.position, Vector3Scale(camForward, 1000.0f));
         FireFireball(player.position, targetPoint, 5000, 10, false, true);

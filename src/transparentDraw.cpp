@@ -22,8 +22,10 @@ float GetAdjustedBillboardSize(float baseSize, float distance) {
 
 
 void GatherEnemies(Camera& camera) {
-    //all billboards in the game including decals and spider webs are drawn in a single draw pass. first we need to gather all the billboards
-    //and decals and flat quads. Then we sort them by distance to camera and draw them in that order. This prevents textures occluding eachother. 
+    //gather functions replace character.draw()
+    //Everything 2d is saved to a vector of struct drawRequests. We save all the info needed to draw the billboard or quad to the drawRequest struct.
+    //and push to the vector. Then sort the drawRequests based on distance and draw in that order. This prevents billboards occluding each other. 
+
     for (Character* enemy : enemyPtrs) {
         if (enemy->isDead && enemy->deathTimer <= 0.0f) continue;
 
@@ -51,8 +53,8 @@ void GatherEnemies(Camera& camera) {
         }
 
         billboardRequests.push_back({
-            Billboard_FacingCamera,
-            offsetPos,
+            Billboard_FacingCamera,//BillboardType
+            offsetPos, //billboard position + z fighting offset
             enemy->texture,
             sourceRect,
             billboardSize,
@@ -70,7 +72,7 @@ void GatherCollectables(Camera& camera, const std::vector<Collectable>& collecta
         float dist = Vector3Distance(camera.position, c.position);
 
         billboardRequests.push_back({
-            Billboard_FacingCamera,
+            Billboard_FacingCamera, 
             c.position,
             c.icon,
             Rectangle{0, 0, (float)c.icon.width, (float)c.icon.height},
@@ -232,13 +234,16 @@ void GatherTransparentDrawRequests(Camera& camera, float deltaTime) {
 }
 
 void DrawTransparentDrawRequests(Camera& camera) {
+    //sort and draw the drawRequest structs. 
     std::sort(billboardRequests.begin(), billboardRequests.end(),
         [](const BillboardDrawRequest& a, const BillboardDrawRequest& b) {
             return a.distanceToCamera > b.distanceToCamera;
         });
 
     for (const BillboardDrawRequest& req : billboardRequests) {
-        rlDisableDepthMask();
+        rlDisableDepthMask(); // we manually get depth by sorting by distance. //with alpha discard shader we could use depthMask to automatically sort.
+        //and we would discard any transparent border pixels. This has it's own limitations however. Like alpha blending wouldn't work.
+        //Means no soft edges. So we sort manually.
         
         switch (req.type) {
             case Billboard_FacingCamera: //use draw billboard for both decals, and enemies. 

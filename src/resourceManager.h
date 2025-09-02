@@ -26,6 +26,7 @@ public:
     RenderTexture2D& LoadRenderTexture(const std::string& name, int width, int height);
     RenderTexture2D& GetRenderTexture(const std::string& name) const;
 
+    //should these be ResourceManager::LoadAllResources ect..? functions are not part of the class. 
     void LoadAllResources();
     void UpdateShaders(Camera& camera);
 

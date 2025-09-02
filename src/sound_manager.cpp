@@ -145,6 +145,7 @@ void SoundManager::LoadSounds() {
     SoundManager::GetInstance().LoadSound("explosion", "assets/sounds/explosion.ogg");
     SoundManager::GetInstance().LoadSound("staffHit", "assets/sounds/staffHit.ogg");
     SoundManager::GetInstance().LoadSound("iceMagic", "assets/sounds/iceMagic.ogg");
+    
     //music (ambience)
     SoundManager::GetInstance().LoadMusic("dungeonAir", "assets/sounds/dungeonAir.ogg");
     SoundManager::GetInstance().LoadMusic("jungleAmbience", "assets/sounds/jungleSounds.ogg");

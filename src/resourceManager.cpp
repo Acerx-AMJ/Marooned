@@ -1,6 +1,7 @@
 
 #include "resourceManager.h"
 #include "world.h"
+#include "lighting.h"
 
 ResourceManager* ResourceManager::_instance = nullptr;
 
@@ -143,6 +144,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadShader("waterShader",   "assets/shaders/water.vs",        "assets/shaders/water.fs");
     R.LoadShader("bloomShader",   /*vsPath=*/"",                    "assets/shaders/bloom.fs");
     R.LoadShader("cutoutShader",                        "",         "assets/shaders/leaf_cutout.fs");
+    R.LoadShader("lightingShader", "assets/shaders/lighting_baked_xz.vs", "assets/shaders/lighting_baked_xz.fs");
 }
 
 
@@ -172,11 +174,11 @@ void ResourceManager::SetShaderValues(){
 
     //bloom post process. 
     bloomStrengthValue = 0.0f;
-    float bloomColor[3] = { 0.1f, 0.0f, 0.9f }; //purple tint mixes better than red. impossible to get orange 
+    float bloomColor[3] = { 1.0f, 0.0f, 1.0f };  
     float aaStrengthValue = 0.0f; //fake antialiasing strength, makes it grayer
 
     int locSat = GetShaderLocation(bloomShader, "uSaturation");
-    float sat = 1.0f; // try 1.05–1.25
+    float sat = 1.1f; // try 1.05–1.25
     SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
 
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
@@ -197,6 +199,38 @@ void ResourceManager::SetShaderValues(){
         palm.materials[m].shader = R.GetShader("cutoutShader");
         palm2.materials[m].shader = R.GetShader("cutoutShader");  
     }
+
+    Shader lightingShader = R.GetShader("lightingShader");
+    // Locations
+    int locGrid   = GetShaderLocation(lightingShader, "gridBounds");
+    int locTex    = GetShaderLocation(lightingShader, "lightGridTex");
+    int locStr    = GetShaderLocation(lightingShader, "bakedStrength");
+    int locAmb    = GetShaderLocation(lightingShader, "ambientBoost");
+
+    // Set constant-ish uniforms
+    float gridBounds[4] = {
+        gBaked.minX,
+        gBaked.minZ,
+        (gBaked.sizeX != 0.0f) ? 1.0f / gBaked.sizeX : 0.0f,
+        (gBaked.sizeZ != 0.0f) ? 1.0f / gBaked.sizeZ : 0.0f
+    };
+    SetShaderValue(lightingShader, locGrid, gridBounds, SHADER_UNIFORM_VEC4);
+
+    // Strength knobs (tune live if you want)
+    float bakedStrength = 0.6f;
+    float ambientBoost  = 0.15f;
+    SetShaderValue(lightingShader, locStr, &bakedStrength, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(lightingShader, locAmb, &ambientBoost,  SHADER_UNIFORM_FLOAT);
+
+
+
+    // Bind the baked lightmap texture
+    SetShaderValueTexture(lightingShader, locTex, gBaked.tex);
+
+    Model& floorModel = R.GetModel("floorTileGray");
+
+    for (int i=0;i<floorModel.materialCount;++i) floorModel.materials[i].shader = lightingShader;
+
 
 }
 
