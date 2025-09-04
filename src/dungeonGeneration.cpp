@@ -1199,12 +1199,17 @@ void ResetAllBakedTints() {
 
 
 void BakeStaticLighting() {
+    Model& floorModel = R.GetModel("floorTileGray");
+    for (int i = 0; i < floorModel.materialCount; ++i)
+        floorModel.materials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
 
     // once per level load:
     InitBakedLightmap128(dungeonWidth, dungeonHeight, tileSize, floorHeight);
-
+    InitDynamicLightmapMatchBaked();
     // then bake:
     BakeStaticLightmapFromLights(dungeonLights);
+
+
 
 
 

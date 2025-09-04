@@ -98,10 +98,9 @@ void InitLevel(const LevelData& level, Camera& camera) {
     if (level.isDungeon){
         isDungeon = true;
         vignetteStrengthValue = 0.5f; //darker vignette in dungeons
-        bloomStrengthValue = 0.3f; //turn on bloom in dungeons
+        bloomStrengthValue = 0.0f; //turn on bloom in dungeons
         SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
         SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
-
 
         LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);

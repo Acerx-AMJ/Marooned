@@ -6,6 +6,7 @@
 #include "cfloat"
 
 BakedLightmap gBaked;
+BakedLightmap gDynamic; 
 // Compute world-space bounds from your dungeon indices & tile size.
 // Assumes GetDungeonWorldPos(x,y, tileSize, baseY) returns the *center* of the tile.
 static void ComputeDungeonXZBounds(int dungeonWidth, int dungeonHeight, float tileSize,
@@ -46,6 +47,23 @@ void InitBakedLightmap128(int dungeonWidth, int dungeonHeight, float tileSize, f
     SetTextureFilter(gBaked.tex, TEXTURE_FILTER_BILINEAR);
     SetTextureWrap(gBaked.tex, TEXTURE_WRAP_CLAMP);
 }
+void InitDynamicLightmapMatchBaked() {
+    gDynamic.w = gBaked.w;
+    gDynamic.h = gBaked.h;
+    gDynamic.minX  = gBaked.minX;
+    gDynamic.minZ  = gBaked.minZ;
+    gDynamic.sizeX = gBaked.sizeX;
+    gDynamic.sizeZ = gBaked.sizeZ;
+
+    gDynamic.pixels.assign(gDynamic.w * gDynamic.h, BLACK);
+
+    Image img = GenImageColor(gDynamic.w, gDynamic.h, BLACK);
+    gDynamic.tex = LoadTextureFromImage(img);
+    UnloadImage(img);
+
+    SetTextureFilter(gDynamic.tex, TEXTURE_FILTER_BILINEAR);
+    SetTextureWrap(gDynamic.tex, TEXTURE_WRAP_CLAMP);
+}
 
 // Simple smooth falloff (1 at center -> 0 at radius)
 static inline float SmoothFalloff(float d, float radius)
@@ -55,6 +73,8 @@ static inline float SmoothFalloff(float d, float radius)
     // smootherstep style
     return t * t * (3.0f - 2.0f * t);
 }
+
+
 
 // Stamp a single light as a soft colored blob into the CPU lightmap buffer.
 static void StampLightAdditive(const Vector3& lightPos, float radius, Color color)
@@ -142,3 +162,81 @@ XZBounds ComputeXZFromTiles(const std::vector<FloorTile>& tiles, float tileSize)
     b.minZ -= half; b.maxZ += half;
     return b;
 }
+
+
+
+static void StampDynamicLight(const Vector3& lightPos, float radius, Color color) {
+    // Map world XZ -> texture space
+    float u = (lightPos.x - gDynamic.minX) / gDynamic.sizeX; // 0..1
+    float v = (lightPos.z - gDynamic.minZ) / gDynamic.sizeZ; // 0..1
+
+    int cx = (int)(u * gDynamic.w);
+    int cy = (int)(v * gDynamic.h);
+
+    int rx = (int)ceilf((radius / gDynamic.sizeX) * gDynamic.w);
+    int ry = (int)ceilf((radius / gDynamic.sizeZ) * gDynamic.h);
+
+    int x0 = std::max(0, cx - rx), x1 = std::min(gDynamic.w - 1, cx + rx);
+    int y0 = std::max(0, cy - ry), y1 = std::min(gDynamic.h - 1, cy + ry);
+
+    for (int y = y0; y <= y1; ++y) {
+        for (int x = x0; x <= x1; ++x) {
+            float texU = (x + 0.5f) / gDynamic.w;
+            float texV = (y + 0.5f) / gDynamic.h;
+            float wx = gDynamic.minX + texU * gDynamic.sizeX;
+            float wz = gDynamic.minZ + texV * gDynamic.sizeZ;
+
+            float dx = wx - lightPos.x;
+            float dz = wz - lightPos.z;
+            float d  = sqrtf(dx*dx + dz*dz);
+
+            float w = SmoothFalloff(d, radius);
+            if (w <= 0.0f) continue;
+
+            Color& p = gDynamic.pixels[y * gDynamic.w + x];
+
+            // Additive (clamped); dynamic map stores 0..255 color
+            int r = p.r + (int)(color.r * w);
+            int g = p.g + (int)(color.g * w);
+            int b = p.b + (int)(color.b * w);
+            p.r = (unsigned char)std::min(r, 255);
+            p.g = (unsigned char)std::min(g, 255);
+            p.b = (unsigned char)std::min(b, 255);
+            // alpha unused; keep 255
+        }
+    }
+}
+
+void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLights) {
+    // 1) Clear to black
+    std::fill(gDynamic.pixels.begin(), gDynamic.pixels.end(), (Color){0,0,0,255});
+
+    // 2) Stamp only truly dynamic sources (fireballs, moving torches, etc.)
+    for (const LightSample& L : frameLights) {
+        // If you have a flag, use it; otherwise filter by type/range/intensity
+
+        Color c = {
+            (unsigned char)Clamp(L.color.x * 255.0f * L.intensity, 0.0f, 255.0f),
+            (unsigned char)Clamp(L.color.y * 255.0f * L.intensity, 0.0f, 255.0f),
+            (unsigned char)Clamp(L.color.z * 255.0f * L.intensity, 0.0f, 255.0f),
+            255
+        };
+        StampDynamicLight(L.pos, L.range, c);
+
+    }
+
+    for (const LightSource& L : dungeonLights){
+
+        Color c = {
+            (unsigned char)Clamp(L.colorTint.x * 255.0f * L.intensity, 0.0f, 255.0f),
+            (unsigned char)Clamp(L.colorTint.y * 255.0f * L.intensity, 0.0f, 255.0f),
+            (unsigned char)Clamp(L.colorTint.z * 255.0f * L.intensity, 0.0f, 255.0f),
+            255
+        };
+        StampDynamicLight(L.position, L.range, c);
+    }
+
+    // 3) Upload to GPU
+    UpdateTexture(gDynamic.tex, gDynamic.pixels.data());
+}
+

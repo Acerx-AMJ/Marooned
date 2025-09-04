@@ -15,6 +15,9 @@ struct BakedLightmap {
 };
 
 extern BakedLightmap gBaked;   // define once in a .cpp
+extern BakedLightmap gDynamic;   
 
 void InitBakedLightmap128(int dungeonWidth, int dungeonHeight, float tileSize, float baseY);
 void BakeStaticLightmapFromLights(const std::vector<LightSource>& lights);
+void InitDynamicLightmapMatchBaked();
+void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLights);

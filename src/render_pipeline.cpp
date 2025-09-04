@@ -10,6 +10,7 @@
 #include "player.h"
 #include "input.h"
 #include "camera_system.h"
+#include "lighting.h"
 
 
 
@@ -39,6 +40,8 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             
             DrawOverworldProps();
         } else {
+            
+
             DrawDungeonFloor();
             DrawDungeonWalls();
             DrawDungeonCeiling();
@@ -51,6 +54,7 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
 
         DrawPlayer(player, camera);
         DrawBullets(camera);
+
         DrawBloodParticles(camera);
         DrawCollectableWeapons(player, dt);
         HandleWaves();

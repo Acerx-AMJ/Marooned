@@ -199,37 +199,63 @@ void ResourceManager::SetShaderValues(){
         palm.materials[m].shader = R.GetShader("cutoutShader");
         palm2.materials[m].shader = R.GetShader("cutoutShader");  
     }
-
+    ////////////BAKED STATIC LIGHTING SHADER//////////////
     Shader lightingShader = R.GetShader("lightingShader");
-    // Locations
-    int locGrid   = GetShaderLocation(lightingShader, "gridBounds");
-    int locTex    = GetShaderLocation(lightingShader, "lightGridTex");
-    int locStr    = GetShaderLocation(lightingShader, "bakedStrength");
-    int locAmb    = GetShaderLocation(lightingShader, "ambientBoost");
-
-    // Set constant-ish uniforms
-    float gridBounds[4] = {
-        gBaked.minX,
-        gBaked.minZ,
-        (gBaked.sizeX != 0.0f) ? 1.0f / gBaked.sizeX : 0.0f,
-        (gBaked.sizeZ != 0.0f) ? 1.0f / gBaked.sizeZ : 0.0f
-    };
-    SetShaderValue(lightingShader, locGrid, gridBounds, SHADER_UNIFORM_VEC4);
-
-    // Strength knobs (tune live if you want)
-    float bakedStrength = 0.6f;
-    float ambientBoost  = 0.15f;
-    SetShaderValue(lightingShader, locStr, &bakedStrength, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(lightingShader, locAmb, &ambientBoost,  SHADER_UNIFORM_FLOAT);
-
-
-
-    // Bind the baked lightmap texture
-    SetShaderValueTexture(lightingShader, locTex, gBaked.tex);
-
     Model& floorModel = R.GetModel("floorTileGray");
 
-    for (int i=0;i<floorModel.materialCount;++i) floorModel.materials[i].shader = lightingShader;
+    for (int i=0; i<floorModel.materialCount; ++i)
+        floorModel.materials[i].shader = lightingShader;
+
+    int locGrid   = GetShaderLocation(lightingShader, "gridBounds");
+    int locDynTex = GetShaderLocation(lightingShader, "dynamicGridTex");
+    int locDynStr = GetShaderLocation(lightingShader, "dynStrength");
+    int locAmb    = GetShaderLocation(lightingShader, "ambientBoost");
+
+    float grid[4] = { gDynamic.minX, gDynamic.minZ,
+                    gDynamic.sizeX ? 1.0f/gDynamic.sizeX : 0.0f,
+                    gDynamic.sizeZ ? 1.0f/gDynamic.sizeZ : 0.0f };
+    if (locGrid   >= 0) SetShaderValue(lightingShader, locGrid, grid, SHADER_UNIFORM_VEC4);
+
+    float dynStrength = 1.0f;
+    float ambientBoost = 0.04f;
+    if (locDynStr >= 0) SetShaderValue(lightingShader, locDynStr, &dynStrength, SHADER_UNIFORM_FLOAT);
+    if (locAmb    >= 0) SetShaderValue(lightingShader, locAmb,    &ambientBoost, SHADER_UNIFORM_FLOAT);
+
+    if (locDynTex >= 0) SetShaderValueTexture(lightingShader, locDynTex, gDynamic.tex);
+
+    // for (int i=0; i<floorModel.materialCount; ++i) {
+    //     floorModel.materials[i].shader = lightingShader;
+    // }
+
+    // int locGrid   = GetShaderLocation(lightingShader, "gridBounds");
+    // int locBaked  = GetShaderLocation(lightingShader, "lightGridTex");
+    // int locDynTex = GetShaderLocation(lightingShader, "dynamicGridTex");
+    // int locStr    = GetShaderLocation(lightingShader, "bakedStrength");
+    // int locAmb    = GetShaderLocation(lightingShader, "ambientBoost");
+    // //int locDynStr = GetShaderLocation(lightingShader, "dynStrength");
+
+    // float grid[4] = { gBaked.minX, gBaked.minZ,
+    //                 gBaked.sizeX ? 1.0f/gBaked.sizeX : 0.0f,
+    //                 gBaked.sizeZ ? 1.0f/gBaked.sizeZ : 0.0f };
+    // if (locGrid >= 0) SetShaderValue(lightingShader, locGrid, grid, SHADER_UNIFORM_VEC4);
+
+    // float bakedStrength = 0.6f;
+    // float ambientBoost  = 0.15f;
+    // //float dynStrength   = 0.0f;   // start neutral
+    // int locDynGain = GetShaderLocation(lightingShader, "dynGain");
+    // float dynGain = 0.01f; // try 0.8–1.2 first
+    // if (locDynGain >= 0) SetShaderValue(lightingShader, locDynGain, &dynGain, SHADER_UNIFORM_FLOAT);
+
+
+    // if (locStr    >= 0) SetShaderValue(lightingShader, locStr,    &bakedStrength, SHADER_UNIFORM_FLOAT);
+    // if (locAmb    >= 0) SetShaderValue(lightingShader, locAmb,    &ambientBoost,  SHADER_UNIFORM_FLOAT);
+    // //if (locDynStr >= 0) SetShaderValue(lightingShader, locDynStr, &dynStrength,   SHADER_UNIFORM_FLOAT);
+
+    // if (locBaked  >= 0) SetShaderValueTexture(lightingShader, locBaked,  gBaked.tex);
+    // if (locDynTex >= 0) SetShaderValueTexture(lightingShader, locDynTex, gDynamic.tex);
+
+
+
 
 
 }

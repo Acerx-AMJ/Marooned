@@ -10,6 +10,7 @@
 #include "resourceManager.h"
 #include "render_pipeline.h"
 #include "camera_system.h"
+#include "lighting.h"
 
 int main() { 
     InitWindow(1600, 900, "Marooned");
@@ -103,6 +104,7 @@ int main() {
         // Update camera based on player
         UpdateWorldFrame(deltaTime, player);
         UpdatePlayer(player, deltaTime, camera);
+        BuildDynamicLightmapFromFrameLights(frameLights);
         RenderFrame(camera, player, deltaTime);
 
     }
