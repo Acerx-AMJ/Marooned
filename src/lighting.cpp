@@ -4,9 +4,14 @@
 #include "dungeonGeneration.h"
 #include "raymath.h"
 #include "cfloat"
+#include "stdint.h"
+#include "world.h"
 
 BakedLightmap gBaked;
 BakedLightmap gDynamic; 
+static std::vector<Color> gStaticBase;
+
+
 // Compute world-space bounds from your dungeon indices & tile size.
 // Assumes GetDungeonWorldPos(x,y, tileSize, baseY) returns the *center* of the tile.
 static void ComputeDungeonXZBounds(int dungeonWidth, int dungeonHeight, float tileSize,
@@ -29,34 +34,23 @@ static void ComputeDungeonXZBounds(int dungeonWidth, int dungeonHeight, float ti
     outSizeZ = (maxZ - minZ);
 }
 
-void InitBakedLightmap128(int dungeonWidth, int dungeonHeight, float tileSize, float baseY)
+void InitDynamicLightmap(int res)
 {
-    gBaked.w = 128;
-    gBaked.h = 128;
-    gBaked.pixels.assign(gBaked.w * gBaked.h, WHITE);
+    // If re-initting, free the old GPU texture to avoid leaks
+    if (gDynamic.tex.id != 0) UnloadTexture(gDynamic.tex);
 
-    // Compute world-space mapping once
-    ComputeDungeonXZBounds(dungeonWidth, dungeonHeight, tileSize, baseY,
-                           gBaked.minX, gBaked.minZ, gBaked.sizeX, gBaked.sizeZ);
+    // Resolution
+    gDynamic.w = res;
+    gDynamic.h = res;
 
-    // Create the GPU texture
-    Image img = GenImageColor(gBaked.w, gBaked.h, WHITE);
-    gBaked.tex = LoadTextureFromImage(img);
-    UnloadImage(img);
+    // World-space mapping for this level (XZ bounds)
+    ComputeDungeonXZBounds(dungeonWidth, dungeonHeight, tileSize, floorHeight,
+                           gDynamic.minX, gDynamic.minZ, gDynamic.sizeX, gDynamic.sizeZ);
 
-    SetTextureFilter(gBaked.tex, TEXTURE_FILTER_BILINEAR);
-    SetTextureWrap(gBaked.tex, TEXTURE_WRAP_CLAMP);
-}
-void InitDynamicLightmapMatchBaked() {
-    gDynamic.w = gBaked.w;
-    gDynamic.h = gBaked.h;
-    gDynamic.minX  = gBaked.minX;
-    gDynamic.minZ  = gBaked.minZ;
-    gDynamic.sizeX = gBaked.sizeX;
-    gDynamic.sizeZ = gBaked.sizeZ;
+    // CPU buffer (black = no light)
+    gDynamic.pixels.assign(gDynamic.w * gDynamic.h, (Color){0,0,0,255});
 
-    gDynamic.pixels.assign(gDynamic.w * gDynamic.h, BLACK);
-
+    // GPU texture
     Image img = GenImageColor(gDynamic.w, gDynamic.h, BLACK);
     gDynamic.tex = LoadTextureFromImage(img);
     UnloadImage(img);
@@ -65,8 +59,9 @@ void InitDynamicLightmapMatchBaked() {
     SetTextureWrap(gDynamic.tex, TEXTURE_WRAP_CLAMP);
 }
 
+
 // Simple smooth falloff (1 at center -> 0 at radius)
-static inline float SmoothFalloff(float d, float radius)
+float SmoothFalloff(float d, float radius)
 {
     if (d >= radius) return 0.0f;
     float t = 1.0f - (d / radius);   // 1..0
@@ -77,74 +72,56 @@ static inline float SmoothFalloff(float d, float radius)
 
 
 // Stamp a single light as a soft colored blob into the CPU lightmap buffer.
-static void StampLightAdditive(const Vector3& lightPos, float radius, Color color)
-{
-    // Convert light world XZ to grid indices
-    float u = (lightPos.x - gBaked.minX) / gBaked.sizeX; // 0..1
-    float v = (lightPos.z - gBaked.minZ) / gBaked.sizeZ; // 0..1
+// static void StampLightAdditive(const Vector3& lightPos, float radius, Color color)
+// {
+//     // Convert light world XZ to grid indices
+//     float u = (lightPos.x - gBaked.minX) / gBaked.sizeX; // 0..1
+//     float v = (lightPos.z - gBaked.minZ) / gBaked.sizeZ; // 0..1
 
-    int cx = (int)(u * gBaked.w);
-    int cy = (int)(v * gBaked.h);
+//     int cx = (int)(u * gBaked.w);
+//     int cy = (int)(v * gBaked.h);
 
-    // Project radius (world) into texel radius along X
-    int rx = (int)ceilf((radius / gBaked.sizeX) * gBaked.w);
-    int ry = (int)ceilf((radius / gBaked.sizeZ) * gBaked.h);
+//     // Project radius (world) into texel radius along X
+//     int rx = (int)ceilf((radius / gBaked.sizeX) * gBaked.w);
+//     int ry = (int)ceilf((radius / gBaked.sizeZ) * gBaked.h);
 
-    int x0 = std::max(0, cx - rx), x1 = std::min(gBaked.w - 1, cx + rx);
-    int y0 = std::max(0, cy - ry), y1 = std::min(gBaked.h - 1, cy + ry);
+//     int x0 = std::max(0, cx - rx), x1 = std::min(gBaked.w - 1, cx + rx);
+//     int y0 = std::max(0, cy - ry), y1 = std::min(gBaked.h - 1, cy + ry);
 
-    for (int y = y0; y <= y1; ++y) {
-        for (int x = x0; x <= x1; ++x) {
-            // texel center in world, distance in world units
-            float texU = (x + 0.5f) / gBaked.w;
-            float texV = (y + 0.5f) / gBaked.h;
-            float wx = gBaked.minX + texU * gBaked.sizeX;
-            float wz = gBaked.minZ + texV * gBaked.sizeZ;
+//     for (int y = y0; y <= y1; ++y) {
+//         for (int x = x0; x <= x1; ++x) {
+//             // texel center in world, distance in world units
+//             float texU = (x + 0.5f) / gBaked.w;
+//             float texV = (y + 0.5f) / gBaked.h;
+//             float wx = gBaked.minX + texU * gBaked.sizeX;
+//             float wz = gBaked.minZ + texV * gBaked.sizeZ;
 
-            float dx = wx - lightPos.x;
-            float dz = wz - lightPos.z;
-            float d  = sqrtf(dx*dx + dz*dz);
+//             float dx = wx - lightPos.x;
+//             float dz = wz - lightPos.z;
+//             float d  = sqrtf(dx*dx + dz*dz);
 
-            float w = SmoothFalloff(d, radius);
-            if (w <= 0.0f) continue;
+//             float w = SmoothFalloff(d, radius);
+//             if (w <= 0.0f) continue;
 
-            // Additive brighten (clamped)
-            Color& p = gBaked.pixels[y * gBaked.w + x];
-            int r = p.r + (int)(color.r * w);
-            int g = p.g + (int)(color.g * w);
-            int b = p.b + (int)(color.b * w);
-            p.r = (unsigned char)std::min(r, 255);
-            p.g = (unsigned char)std::min(g, 255);
-            p.b = (unsigned char)std::min(b, 255);
+//             // Additive brighten (clamped)
+//             Color& p = gBaked.pixels[y * gBaked.w + x];
+//             int r = p.r + (int)(color.r * w);
+//             int g = p.g + (int)(color.g * w);
+//             int b = p.b + (int)(color.b * w);
+//             p.r = (unsigned char)std::min(r, 255);
+//             p.g = (unsigned char)std::min(g, 255);
+//             p.b = (unsigned char)std::min(b, 255);
 
-            // --- If you prefer multiplicative darkening, comment the 3 lines above and use:
-            // float m = Clamp(1.0f - w, 0.0f, 1.0f);
-            // p.r = (unsigned char)(p.r * m);
-            // p.g = (unsigned char)(p.g * m);
-            // p.b = (unsigned char)(p.b * m);
-        }
-    }
-}
+//             // --- If you prefer multiplicative darkening, comment the 3 lines above and use:
+//             // float m = Clamp(1.0f - w, 0.0f, 1.0f);
+//             // p.r = (unsigned char)(p.r * m);
+//             // p.g = (unsigned char)(p.g * m);
+//             // p.b = (unsigned char)(p.b * m);
+//         }
+//     }
+// }
 
-void BakeStaticLightmapFromLights(const std::vector<LightSource>& lights)
-{
-    // super dark baseline
-    std::fill(gBaked.pixels.begin(), gBaked.pixels.end(), (Color){ 0,0,0,255 });
 
-    for (const LightSource& L : lights) {
-        // scale tint by intensity (and clamp 0..255 later in StampLightAdditive)
-        Color c = {
-            (unsigned char)(Clamp(L.colorTint.x * L.intensity * 255.0f, 0.0f, 255.0f)),
-            (unsigned char)(Clamp(L.colorTint.y * L.intensity * 255.0f, 0.0f, 255.0f)),
-            (unsigned char)(Clamp(L.colorTint.z * L.intensity * 255.0f, 0.0f, 255.0f)),
-            255
-        };
-
-        StampLightAdditive(L.position, L.range, c);
-    }
-
-    UpdateTexture(gBaked.tex, gBaked.pixels.data());
-}
 
 
 
@@ -239,4 +216,5 @@ void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLi
     // 3) Upload to GPU
     UpdateTexture(gDynamic.tex, gDynamic.pixels.data());
 }
+
 

@@ -14,10 +14,12 @@ struct BakedLightmap {
     std::vector<Color> pixels; // CPU buffer (RGB in 0..255)
 };
 
-extern BakedLightmap gBaked;   // define once in a .cpp
-extern BakedLightmap gDynamic;   
+extern BakedLightmap gDynamic;  
 
-void InitBakedLightmap128(int dungeonWidth, int dungeonHeight, float tileSize, float baseY);
-void BakeStaticLightmapFromLights(const std::vector<LightSource>& lights);
-void InitDynamicLightmapMatchBaked();
+
+
+extern BakedLightmap gBaked;   // define once in a .cpp
+float SmoothFalloff(float d, float radius);
+
+void InitDynamicLightmap(int res);
 void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLights);

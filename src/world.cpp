@@ -12,6 +12,7 @@
 #include "camera_system.h"
 #include "list"
 #include "assert.h"
+#include "lighting.h"
 
 
 
@@ -73,6 +74,8 @@ void InitLevel(const LevelData& level, Camera& camera) {
     isLoadingLevel = true;
     //Called when starting game and changing level. init the level you pass it. the level is chosen by menu or door's linkedLevelIndex. 
     ClearLevel();//clears everything. 
+
+
     camera.position = player.position; //start as player, not freecam.
     levelIndex = level.levelIndex; //update current level index to new level. 
 
@@ -132,16 +135,9 @@ void InitLevel(const LevelData& level, Camera& camera) {
     //bake lighting after isLoadingLevel is false to it can access world LOS 
     ResetAllBakedTints(); 
 
- 
     BakeStaticLighting();
     ResourceManager::Get().SetShaderValues();
 
-    // Shader& lightingShader = R.GetShader("lightingShader");
-    // Model& ceilModel = R.GetModel("floorTileGray");
-    // for (int i = 0; i < ceilModel.materialCount; ++i)
-    //     ceilModel.materials[i].shader = lightingShader;
-
-       
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
 
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos

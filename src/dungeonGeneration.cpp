@@ -1071,9 +1071,6 @@ void DrawDungeonFloor() {
 
         // Assign shader to the materials you want lit per-pixel
     Model& floorModel  = R.GetModel("floorTileGray");
-    //Model& ceilModel   = R.GetModel("floorTileGray"); // if you want it on ceilings too
-    //Shader lightingShader = R.GetShader("lightingShader");
-    //floorModel.materials[0].shader = lightingShader;
 
 
     const Vector3 baseScale   = {700, 700, 700};
@@ -1091,6 +1088,8 @@ void DrawDungeonFloor() {
 
     for (const FloorTile& tile : floorTiles) {
         DrawModelEx(floorModel, tile.position, {0,1,0}, 0.0f, baseScale, tile.tint);
+
+        //this is expensive. and doesn't look that much better
         // for (int i = 0; i < 4; ++i) {
         //     Vector3 p = { tile.position.x + offsets[i].x,
         //                   tile.position.y + offsets[i].y,
@@ -1174,18 +1173,19 @@ void HandleDungeonTints() {
      //Model Color Lighting
     // === Update tints ===
 
-    UpdateWallTints(player.position);
+    //UpdateWallTints(player.position);
+    //UpdateDoorwayTints(player.position);
     // UpdateCeilingTints(player.position);
     // UpdateFloorTints(player.position);
     UpdateBarrelTints(player.position);
     UpdateChestTints(player.position);
-    UpdateDoorwayTints(player.position);
+
     UpdateDoorTints(player.position);
 }
 
 void ResetAllBakedTints() {
-    for (auto& wall : wallInstances)
-        wall.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
+    // for (auto& wall : wallInstances)
+    //     wall.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
 
     // for (auto& floor : floorTiles)
     //     floor.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
@@ -1193,25 +1193,30 @@ void ResetAllBakedTints() {
     // for (auto& ceiling : ceilingTiles)
     //     ceiling.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
 
-    for (auto& door : doorways)
-        door.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
+    // for (auto& door : doorways)
+    //     door.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
 }
 
 
 void BakeStaticLighting() {
+    // once per level load:
     Model& floorModel = R.GetModel("floorTileGray");
     for (int i = 0; i < floorModel.materialCount; ++i)
         floorModel.materials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
 
-    // once per level load:
-    InitBakedLightmap128(dungeonWidth, dungeonHeight, tileSize, floorHeight);
-    InitDynamicLightmapMatchBaked();
-    // then bake:
-    BakeStaticLightmapFromLights(dungeonLights);
+    Model& wallModel = R.GetModel("wallSegment");
+    for (int i = 0; i < wallModel.materialCount; i++){
+        wallModel.materials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+    }
+
+    Model& doorwayModel = R.GetModel("doorWay");
+    for (int i = 0; i < doorwayModel.materialCount; i++){
+        doorwayModel.materials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+    }
 
 
-
-
+    InitDynamicLightmap(128); //dynamic lightmapXZ + shader 
+    
 
     Vector3 warmTint = {0.7f, 0.7f, 0.7f}; //Light Gray 
     float brightnessScale = 1.25f; // Try values between 0.1 and 0.5
@@ -1221,13 +1226,13 @@ void BakeStaticLighting() {
     float epsilon = 0.25f;
     if (!isDungeon) ambientBrightness = 1.0f;
 
-    for (WallInstance& wall : wallInstances) {
-        wall.bakedBrightness = ambientBrightness;
-    }
+    // for (WallInstance& wall : wallInstances) {
+    //     wall.bakedBrightness = ambientBrightness;
+    // }
 
-    for (DoorwayInstance& door : doorways){
-        door.bakedBrightness = ambientBrightness;
-    }
+    // for (DoorwayInstance& door : doorways){
+    //     door.bakedBrightness = ambientBrightness;
+    // }
 
     // for (FloorTile& floor : floorTiles){
     //     floor.bakedBrightness = ambientFloorBrightness;
@@ -1237,18 +1242,29 @@ void BakeStaticLighting() {
     //     ceiling.bakedBrightness = ambientFloorBrightness;
     // }
 
-    for (const LightSource& light : dungeonLights) {
-        for (WallInstance& wall : wallInstances) {
-            float dist = Vector3Distance(light.position, wall.position);
-            if (dist > light.range) continue;
-            if (!HasWorldLineOfSight(light.position, wall.position, epsilon)) continue;
-            float t = Clamp(dist / light.range, 0.0f, 1.0f);
-            float contribution = (1.0f - (t * t * (3 - 2 * t))) * light.intensity;
+    // for (const LightSource& light : dungeonLights) {
+    //     for (WallInstance& wall : wallInstances) {
+    //         float dist = Vector3Distance(light.position, wall.position);
+    //         if (dist > light.range) continue;
+    //         if (!HasWorldLineOfSight(light.position, wall.position, epsilon)) continue;
+    //         float t = Clamp(dist / light.range, 0.0f, 1.0f);
+    //         float contribution = (1.0f - (t * t * (3 - 2 * t))) * light.intensity;
             
-            wall.bakedBrightness += contribution * light.intensity;
-        }
+    //         wall.bakedBrightness += contribution * light.intensity;
+    //     }
     
-    //     for (FloorTile& floor : floorTiles){
+
+
+    //     for (DoorwayInstance& door : doorways){
+    //         float dist = Vector3Distance(light.position, door.position);
+    //         if (dist > light.range) continue;
+    //         if (!HasWorldLineOfSight(light.position, door.position, epsilon)) continue;
+
+    //         float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
+    //         door.bakedBrightness += contribution * light.intensity;
+    //     }
+    // }
+        //     for (FloorTile& floor : floorTiles){
             
     //         float dist = Vector3Distance(light.position, floor.position);
     //         if (dist > light.range) continue;
@@ -1258,45 +1274,36 @@ void BakeStaticLighting() {
     //         //float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
     //         floor.bakedBrightness += contribution * light.intensity;
     //     }
-
-        for (DoorwayInstance& door : doorways){
-            float dist = Vector3Distance(light.position, door.position);
-            if (dist > light.range) continue;
-            if (!HasWorldLineOfSight(light.position, door.position, epsilon)) continue;
-
-            float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
-            door.bakedBrightness += contribution * light.intensity;
-        }
-    }
-
+    
+    // }
     // //GAMMA CORRECTION
-    for (WallInstance& wall : wallInstances) {
-        float scaledBrightness = Clamp(wall.bakedBrightness * brightnessScale, 0.0f, 1.0f);
-        Vector3 tinted = Vector3Scale(warmTint, scaledBrightness);
+    // for (WallInstance& wall : wallInstances) {
+    //     float scaledBrightness = Clamp(wall.bakedBrightness * brightnessScale, 0.0f, 1.0f);
+    //     Vector3 tinted = Vector3Scale(warmTint, scaledBrightness);
 
-        float gamma = 1.25f;
-        Vector3 gammaCorrected = {
-            powf(tinted.x, 1.0f / gamma),
-            powf(tinted.y, 1.0f / gamma),
-            powf(tinted.z, 1.0f / gamma)
-        };
+    //     float gamma = 1.25f;
+    //     Vector3 gammaCorrected = {
+    //         powf(tinted.x, 1.0f / gamma),
+    //         powf(tinted.y, 1.0f / gamma),
+    //         powf(tinted.z, 1.0f / gamma)
+    //     };
 
-        wall.bakedTint = ColorFromNormalized({ gammaCorrected.x, gammaCorrected.y, gammaCorrected.z, 1.0f });
-    }
+    //     wall.bakedTint = ColorFromNormalized({ gammaCorrected.x, gammaCorrected.y, gammaCorrected.z, 1.0f });
+    // }
 
-    for (DoorwayInstance& door : doorways) {
-        float scaledBrightness = Clamp(door.bakedBrightness * brightnessScale, 0.0f, 1.0f);
-        Vector3 tinted = Vector3Scale(warmTint, scaledBrightness);
+    // for (DoorwayInstance& door : doorways) {
+    //     float scaledBrightness = Clamp(door.bakedBrightness * brightnessScale, 0.0f, 1.0f);
+    //     Vector3 tinted = Vector3Scale(warmTint, scaledBrightness);
 
-        float gamma = 1.25f;
-        Vector3 gammaCorrected = {
-            powf(tinted.x, 1.0f / gamma),
-            powf(tinted.y, 1.0f / gamma),
-            powf(tinted.z, 1.0f / gamma)
-        };
+    //     float gamma = 1.25f;
+    //     Vector3 gammaCorrected = {
+    //         powf(tinted.x, 1.0f / gamma),
+    //         powf(tinted.y, 1.0f / gamma),
+    //         powf(tinted.z, 1.0f / gamma)
+    //     };
 
-        door.bakedTint = ColorFromNormalized({ gammaCorrected.x, gammaCorrected.y, gammaCorrected.z, 1.0f });
-    }
+    //     door.bakedTint = ColorFromNormalized({ gammaCorrected.x, gammaCorrected.y, gammaCorrected.z, 1.0f });
+    // }
 
     
     // for (FloorTile& floor : floorTiles) {
@@ -1327,9 +1334,13 @@ void BakeStaticLighting() {
 
 void ApplyBakedLighting() {
     //we need to do this every frame to set them back to default baked light. 
-    for (WallInstance& wall : wallInstances) {
-        wall.tint = wall.bakedTint;
-    }
+    // for (WallInstance& wall : wallInstances) {
+    //     wall.tint = wall.bakedTint;
+    // }
+
+    // for (DoorwayInstance& door : doorways){
+    //     door.tint = door.bakedTint;
+    // }
 
     // for (FloorTile& floor : floorTiles){
     //     floor.tint = floor.bakedTint;
@@ -1340,9 +1351,7 @@ void ApplyBakedLighting() {
     //     ceiling.tint = ceiling.bakedTint;
     // }
 
-    for (DoorwayInstance& door : doorways){
-        door.tint = door.bakedTint;
-    }
+
 }
 
 Vector3 playerLight(Vector3 playerPos, Vector3 tilePos, Vector3 finalColor){

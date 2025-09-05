@@ -104,7 +104,9 @@ int main() {
         // Update camera based on player
         UpdateWorldFrame(deltaTime, player);
         UpdatePlayer(player, deltaTime, camera);
-        BuildDynamicLightmapFromFrameLights(frameLights);
+
+        if (!isLoadingLevel) BuildDynamicLightmapFromFrameLights(frameLights);
+
         RenderFrame(camera, player, deltaTime);
 
     }

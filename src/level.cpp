@@ -72,8 +72,6 @@ std::vector<LevelData> levels = {
         2, //current level index
         3, //next level index 
         {} //outdoor props
-        
-       
 
     },
     {

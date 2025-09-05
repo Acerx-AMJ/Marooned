@@ -172,7 +172,7 @@ void Bullet::Draw(Camera& camera) const {
         
         if (!exploded){
             //dont draw the ball or firetrail if it's exploded. 
-            DrawModelEx(R.GetModel("fireballModel"), position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
+            DrawModelEx(R.GetModel("fireballModel"), position, { 0, 1, 0 }, spinAngle, { 20.0f, 20.0f, 20.0f }, WHITE);
             sparkEmitter.Draw(camera); //firetrail
         } 
         

@@ -251,7 +251,7 @@ Vector2 TileToWorldCenter(Vector2 tile) {
 
 
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon) {
-    //if (isLoadingLevel) return false;
+
     const int numRays = 5;
     const float spread = 0.1f; // widen fan
 

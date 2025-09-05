@@ -199,9 +199,19 @@ void ResourceManager::SetShaderValues(){
         palm.materials[m].shader = R.GetShader("cutoutShader");
         palm2.materials[m].shader = R.GetShader("cutoutShader");  
     }
-    ////////////BAKED STATIC LIGHTING SHADER//////////////
+
     Shader lightingShader = R.GetShader("lightingShader");
     Model& floorModel = R.GetModel("floorTileGray");
+    Model& wallModel = R.GetModel("wallSegment");
+    Model& doorwayModel = R.GetModel("doorWayGray");
+
+    for (int i=0; i < wallModel.materialCount; i++){
+        wallModel.materials[i].shader = lightingShader;
+    }
+
+    for (int i=0; i < doorwayModel.materialCount; i++){
+        doorwayModel.materials[i].shader = lightingShader;
+    }
 
     for (int i=0; i<floorModel.materialCount; ++i)
         floorModel.materials[i].shader = lightingShader;
@@ -216,48 +226,12 @@ void ResourceManager::SetShaderValues(){
                     gDynamic.sizeZ ? 1.0f/gDynamic.sizeZ : 0.0f };
     if (locGrid   >= 0) SetShaderValue(lightingShader, locGrid, grid, SHADER_UNIFORM_VEC4);
 
-    float dynStrength = 1.0f;
-    float ambientBoost = 0.04f;
+    float dynStrength = 0.8f;
+    float ambientBoost = 0.25f;
     if (locDynStr >= 0) SetShaderValue(lightingShader, locDynStr, &dynStrength, SHADER_UNIFORM_FLOAT);
     if (locAmb    >= 0) SetShaderValue(lightingShader, locAmb,    &ambientBoost, SHADER_UNIFORM_FLOAT);
 
     if (locDynTex >= 0) SetShaderValueTexture(lightingShader, locDynTex, gDynamic.tex);
-
-    // for (int i=0; i<floorModel.materialCount; ++i) {
-    //     floorModel.materials[i].shader = lightingShader;
-    // }
-
-    // int locGrid   = GetShaderLocation(lightingShader, "gridBounds");
-    // int locBaked  = GetShaderLocation(lightingShader, "lightGridTex");
-    // int locDynTex = GetShaderLocation(lightingShader, "dynamicGridTex");
-    // int locStr    = GetShaderLocation(lightingShader, "bakedStrength");
-    // int locAmb    = GetShaderLocation(lightingShader, "ambientBoost");
-    // //int locDynStr = GetShaderLocation(lightingShader, "dynStrength");
-
-    // float grid[4] = { gBaked.minX, gBaked.minZ,
-    //                 gBaked.sizeX ? 1.0f/gBaked.sizeX : 0.0f,
-    //                 gBaked.sizeZ ? 1.0f/gBaked.sizeZ : 0.0f };
-    // if (locGrid >= 0) SetShaderValue(lightingShader, locGrid, grid, SHADER_UNIFORM_VEC4);
-
-    // float bakedStrength = 0.6f;
-    // float ambientBoost  = 0.15f;
-    // //float dynStrength   = 0.0f;   // start neutral
-    // int locDynGain = GetShaderLocation(lightingShader, "dynGain");
-    // float dynGain = 0.01f; // try 0.8–1.2 first
-    // if (locDynGain >= 0) SetShaderValue(lightingShader, locDynGain, &dynGain, SHADER_UNIFORM_FLOAT);
-
-
-    // if (locStr    >= 0) SetShaderValue(lightingShader, locStr,    &bakedStrength, SHADER_UNIFORM_FLOAT);
-    // if (locAmb    >= 0) SetShaderValue(lightingShader, locAmb,    &ambientBoost,  SHADER_UNIFORM_FLOAT);
-    // //if (locDynStr >= 0) SetShaderValue(lightingShader, locDynStr, &dynStrength,   SHADER_UNIFORM_FLOAT);
-
-    // if (locBaked  >= 0) SetShaderValueTexture(lightingShader, locBaked,  gBaked.tex);
-    // if (locDynTex >= 0) SetShaderValueTexture(lightingShader, locDynTex, gDynamic.tex);
-
-
-
-
-
 }
 
 void ResourceManager::UpdateShaders(Camera& camera){
@@ -292,7 +266,7 @@ void ResourceManager::UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
     //dungeonDarkness
-    float dungeonDarkness = -0.2f;//it darkens the gun model as well, so go easy. negative number brightens it. 
+    float dungeonDarkness = -0.1f;//it darkens the gun model as well, so go easy. negative number brightens it. 
     float dungeonContrast = 1.25f; //makes darks darker. 
 
 
