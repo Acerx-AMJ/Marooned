@@ -4,7 +4,8 @@
 #include <iostream>
 #include "player.h"
 #include "utilities.h"
-
+#include "lighting.h"
+#include "resourceManager.h"
 InputMode currentInputMode = InputMode::KeyboardMouse;
 
 
@@ -17,6 +18,12 @@ void debugControls(Camera& camera){
     if (IsKeyPressed(KEY_L)) {
         std::cout << "Player Position: ";
         DebugPrintVector(player.position);
+
+        InitDynamicLightmap(128);
+        R.SetShaderValues();
+        BuildDynamicLightmapFromFrameLights(frameLights);
+        
+    
     }
 
 

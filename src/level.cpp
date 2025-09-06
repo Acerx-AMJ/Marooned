@@ -174,7 +174,21 @@ std::vector<LevelData> levels = {
         9, 
         10,
         {}
-    }
-
+    },
+        {
+        "Dungeon9",
+        "assets/heightmaps/blank.png",
+        "assets/maps/map14.png",
+        {0.0f, 300.0f, 0.0f},
+        180.0f,
+        {0.0f, 0.0f, 0.0f},
+        0, 
+        true, //isDungeon is true
+        {},
+        10, 
+        11,
+        {}
+    },
+    
 };
 

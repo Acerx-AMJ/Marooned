@@ -50,7 +50,7 @@ bool isFading = false;
 float fadeSpeed = 1.0f; // units per second
 bool fadeIn = true; 
 float tileSize = 200;
-
+bool switchFromMenu = false;
 int selectedOption = 0;
 float floorHeight = 80;
 float wallHeight = 270;
@@ -72,9 +72,13 @@ std::vector<DungeonEntrance> dungeonEntrances;
 
 void InitLevel(const LevelData& level, Camera& camera) {
     isLoadingLevel = true;
+    Model& wallModel = R.GetModel("wallSegment");
+
+
+
+
     //Called when starting game and changing level. init the level you pass it. the level is chosen by menu or door's linkedLevelIndex. 
     ClearLevel();//clears everything. 
-
 
     camera.position = player.position; //start as player, not freecam.
     levelIndex = level.levelIndex; //update current level index to new level. 
@@ -129,15 +133,26 @@ void InitLevel(const LevelData& level, Camera& camera) {
         if (levelIndex == 4) levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
         
     }
-
-    isLoadingLevel = false;
    
     //bake lighting after isLoadingLevel is false to it can access world LOS 
-    ResetAllBakedTints(); 
+    //ResetAllBakedTints(); 
 
-    BakeStaticLighting();
+    //BakeStaticLighting();
+  
+
+    InitDynamicLightmap(dungeonWidth * 4); //dynamic lightmapXZ + shader 
     ResourceManager::Get().SetShaderValues();
+    //BuildDynamicLightmapFromFrameLights(frameLights);
 
+    Model& floorModel = R.GetModel("floorTileGray");
+    TraceLog(LOG_INFO, "floor shader id=%d (lighting id=%d)",
+            floorModel.materials[0].shader.id, R.GetShader("lightingShader").id);
+
+    //gDynamic.tex.id, gDynamic.w x gDynamic.h
+    std::cout << "tex.id = " << gDynamic.tex.id << " width = " << gDynamic.w << "\n";
+
+
+    isLoadingLevel = false;
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
 
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
@@ -149,20 +164,27 @@ void InitLevel(const LevelData& level, Camera& camera) {
     player.activeWeapon = WeaponType::Blunderbuss;
     player.currentWeaponIndex = 0;
 
+
 }
+
+
 
 void UpdateFade(float deltaTime, Camera& camera){
     //fades out on death, and level transition if pendingLevelIndex != -1
     if (isFading) {
         if (fadeIn) {
             fadeToBlack += fadeSpeed * deltaTime;
+
             if (fadeToBlack >= 1.0f) {
                 fadeToBlack = 1.0f;
                 isFading = false;
 
                 if (pendingLevelIndex != -1) {
-                    InitLevel(levels[pendingLevelIndex], camera); //Start new Level
-                    pendingLevelIndex = -1;
+                    currentGameState = GameState::Menu; //HACK //quickly switch to menu before switching to new level. This fixes lighting bug on level switch.
+                    //Menu gameState stops all other code from running, letting us switch lightmaps cleanly, found no other way. 
+                    switchFromMenu = true;
+                    //InitLevel(levels[pendingLevelIndex], camera); //Start new Level
+                    //pendingLevelIndex = -1;
 
                     // Start fading back in
                     fadeIn = false;
@@ -485,7 +507,7 @@ void ClearLevel() {
 
     if (terrainMesh.vertexCount > 0) UnloadMesh(terrainMesh); //unload mesh and heightmap when switching levels. if they exist
     if (heightmap.data != nullptr) UnloadImage(heightmap); 
-
+    if (gDynamic.tex.id != 0) UnloadTexture(gDynamic.tex);
     isDungeon = false;
 }
 

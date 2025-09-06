@@ -6,10 +6,11 @@
 #include "cfloat"
 #include "stdint.h"
 #include "world.h"
+#include "utilities.h"
 
-BakedLightmap gBaked;
+
 BakedLightmap gDynamic; 
-static std::vector<Color> gStaticBase;
+
 
 
 // Compute world-space bounds from your dungeon indices & tile size.
@@ -37,7 +38,10 @@ static void ComputeDungeonXZBounds(int dungeonWidth, int dungeonHeight, float ti
 void InitDynamicLightmap(int res)
 {
     // If re-initting, free the old GPU texture to avoid leaks
-    if (gDynamic.tex.id != 0) UnloadTexture(gDynamic.tex);
+    if (gDynamic.tex.id != 0){
+        std::cout << gDynamic.tex.id << "previous texture found\n";
+        UnloadTexture(gDynamic.tex);
+    } 
 
     // Resolution
     gDynamic.w = res;
@@ -68,62 +72,6 @@ float SmoothFalloff(float d, float radius)
     // smootherstep style
     return t * t * (3.0f - 2.0f * t);
 }
-
-
-
-// Stamp a single light as a soft colored blob into the CPU lightmap buffer.
-// static void StampLightAdditive(const Vector3& lightPos, float radius, Color color)
-// {
-//     // Convert light world XZ to grid indices
-//     float u = (lightPos.x - gBaked.minX) / gBaked.sizeX; // 0..1
-//     float v = (lightPos.z - gBaked.minZ) / gBaked.sizeZ; // 0..1
-
-//     int cx = (int)(u * gBaked.w);
-//     int cy = (int)(v * gBaked.h);
-
-//     // Project radius (world) into texel radius along X
-//     int rx = (int)ceilf((radius / gBaked.sizeX) * gBaked.w);
-//     int ry = (int)ceilf((radius / gBaked.sizeZ) * gBaked.h);
-
-//     int x0 = std::max(0, cx - rx), x1 = std::min(gBaked.w - 1, cx + rx);
-//     int y0 = std::max(0, cy - ry), y1 = std::min(gBaked.h - 1, cy + ry);
-
-//     for (int y = y0; y <= y1; ++y) {
-//         for (int x = x0; x <= x1; ++x) {
-//             // texel center in world, distance in world units
-//             float texU = (x + 0.5f) / gBaked.w;
-//             float texV = (y + 0.5f) / gBaked.h;
-//             float wx = gBaked.minX + texU * gBaked.sizeX;
-//             float wz = gBaked.minZ + texV * gBaked.sizeZ;
-
-//             float dx = wx - lightPos.x;
-//             float dz = wz - lightPos.z;
-//             float d  = sqrtf(dx*dx + dz*dz);
-
-//             float w = SmoothFalloff(d, radius);
-//             if (w <= 0.0f) continue;
-
-//             // Additive brighten (clamped)
-//             Color& p = gBaked.pixels[y * gBaked.w + x];
-//             int r = p.r + (int)(color.r * w);
-//             int g = p.g + (int)(color.g * w);
-//             int b = p.b + (int)(color.b * w);
-//             p.r = (unsigned char)std::min(r, 255);
-//             p.g = (unsigned char)std::min(g, 255);
-//             p.b = (unsigned char)std::min(b, 255);
-
-//             // --- If you prefer multiplicative darkening, comment the 3 lines above and use:
-//             // float m = Clamp(1.0f - w, 0.0f, 1.0f);
-//             // p.r = (unsigned char)(p.r * m);
-//             // p.g = (unsigned char)(p.g * m);
-//             // p.b = (unsigned char)(p.b * m);
-//         }
-//     }
-// }
-
-
-
-
 
 
 XZBounds ComputeXZFromTiles(const std::vector<FloorTile>& tiles, float tileSize) {
@@ -184,13 +132,29 @@ static void StampDynamicLight(const Vector3& lightPos, float radius, Color color
     }
 }
 
+
+static size_t CountNonBlack(const std::vector<Color>& buf) {
+    size_t n = 0;
+    for (const Color& c : buf) if ( (c.r | c.g | c.b) != 0 ) ++n;
+    return n;
+}
+
+// Call this right before/after UpdateTexture(...)
+void LogDynamicLightmapNonBlack(const char* tag) {
+    size_t nb = CountNonBlack(gDynamic.pixels);
+    TraceLog(LOG_INFO, "[%s] nonBlack=%zu / %zu  texID=%d  res=%dx%d  bounds={minX=%.2f minZ=%.2f sizeX=%.2f sizeZ=%.2f}",
+             tag, nb, gDynamic.pixels.size(),
+             gDynamic.tex.id, gDynamic.w, gDynamic.h,
+             gDynamic.minX, gDynamic.minZ, gDynamic.sizeX, gDynamic.sizeZ);
+}
+
 void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLights) {
+    if (isLoadingLevel) return;
     // 1) Clear to black
     std::fill(gDynamic.pixels.begin(), gDynamic.pixels.end(), (Color){0,0,0,255});
 
-    // 2) Stamp only truly dynamic sources (fireballs, moving torches, etc.)
+
     for (const LightSample& L : frameLights) {
-        // If you have a flag, use it; otherwise filter by type/range/intensity
 
         Color c = {
             (unsigned char)Clamp(L.color.x * 255.0f * L.intensity, 0.0f, 255.0f),
@@ -211,10 +175,15 @@ void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLi
             255
         };
         StampDynamicLight(L.position, L.range, c);
+        
     }
 
     // 3) Upload to GPU
+   
+    //LogDynamicLightmapNonBlack("build pre upload");
     UpdateTexture(gDynamic.tex, gDynamic.pixels.data());
+    //LogDynamicLightmapNonBlack("build post upload");
+    
 }
 
 

@@ -216,22 +216,26 @@ void ResourceManager::SetShaderValues(){
     for (int i=0; i<floorModel.materialCount; ++i)
         floorModel.materials[i].shader = lightingShader;
 
-    int locGrid   = GetShaderLocation(lightingShader, "gridBounds");
-    int locDynTex = GetShaderLocation(lightingShader, "dynamicGridTex");
-    int locDynStr = GetShaderLocation(lightingShader, "dynStrength");
-    int locAmb    = GetShaderLocation(lightingShader, "ambientBoost");
+
+    Shader use = floorModel.materials[0].shader; // guaranteed the one actually used
+    int locGrid   = GetShaderLocation(use, "gridBounds");
+    int locDynTex = GetShaderLocation(use, "dynamicGridTex");
+    int locDynStr = GetShaderLocation(use, "dynStrength");
+    int locAmb    = GetShaderLocation(use, "ambientBoost");
+
 
     float grid[4] = { gDynamic.minX, gDynamic.minZ,
                     gDynamic.sizeX ? 1.0f/gDynamic.sizeX : 0.0f,
                     gDynamic.sizeZ ? 1.0f/gDynamic.sizeZ : 0.0f };
-    if (locGrid   >= 0) SetShaderValue(lightingShader, locGrid, grid, SHADER_UNIFORM_VEC4);
+    if (locGrid   >= 0) SetShaderValue(use, locGrid, grid, SHADER_UNIFORM_VEC4);
 
-    float dynStrength = 0.8f;
-    float ambientBoost = 0.25f;
-    if (locDynStr >= 0) SetShaderValue(lightingShader, locDynStr, &dynStrength, SHADER_UNIFORM_FLOAT);
-    if (locAmb    >= 0) SetShaderValue(lightingShader, locAmb,    &ambientBoost, SHADER_UNIFORM_FLOAT);
+    float dynStrength = 0.8f, ambientBoost = 0.25f;
+    if (locDynStr >= 0) SetShaderValue(use, locDynStr, &dynStrength, SHADER_UNIFORM_FLOAT);
+    if (locAmb    >= 0) SetShaderValue(use, locAmb,    &ambientBoost, SHADER_UNIFORM_FLOAT);
 
-    if (locDynTex >= 0) SetShaderValueTexture(lightingShader, locDynTex, gDynamic.tex);
+    if (locDynTex >= 0) SetShaderValueTexture(use, locDynTex, gDynamic.tex);
+
+
 }
 
 void ResourceManager::UpdateShaders(Camera& camera){

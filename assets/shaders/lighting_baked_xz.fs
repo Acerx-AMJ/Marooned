@@ -37,6 +37,7 @@ void main() {
 
     // Shade
     finalColor = vec4(base * L, alpha);
+    //finalColor = vec4(texture(dynamicGridTex, lmUV).rgb, 1.0);
 }
 
 

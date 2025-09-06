@@ -1090,19 +1090,19 @@ void DrawDungeonFloor() {
         DrawModelEx(floorModel, tile.position, {0,1,0}, 0.0f, baseScale, tile.tint);
 
         //this is expensive. and doesn't look that much better
-        // for (int i = 0; i < 4; ++i) {
-        //     Vector3 p = { tile.position.x + offsets[i].x,
-        //                   tile.position.y + offsets[i].y,
-        //                   tile.position.z + offsets[i].z };
+        for (int i = 0; i < 4; ++i) {
+            Vector3 p = { tile.position.x + offsets[i].x,
+                          tile.position.y + offsets[i].y,
+                          tile.position.z + offsets[i].z };
 
-        //     // rotation axis/angle are 0 here; keep same as your original
-        //     float dist = Vector3Distance(player.position, tile.position);
-        //     if (dist < cull_radius){
-        //         DrawModelEx(floorModel, p, {0,1,0}, 0.0f, miniScale, tile.tint);
-        //     }
+            // rotation axis/angle are 0 here; keep same as your original
+            float dist = Vector3Distance(player.position, tile.position);
+            if (dist < cull_radius){
+                DrawModelEx(floorModel, p, {0,1,0}, 0.0f, miniScale, tile.tint);
+            }
 
          
-        // }
+        }
     }
 }
 
@@ -1199,6 +1199,8 @@ void ResetAllBakedTints() {
 
 
 void BakeStaticLighting() {
+
+    
     // once per level load:
     Model& floorModel = R.GetModel("floorTileGray");
     for (int i = 0; i < floorModel.materialCount; ++i)
@@ -1215,16 +1217,21 @@ void BakeStaticLighting() {
     }
 
 
-    InitDynamicLightmap(128); //dynamic lightmapXZ + shader 
-    
 
-    Vector3 warmTint = {0.7f, 0.7f, 0.7f}; //Light Gray 
-    float brightnessScale = 1.25f; // Try values between 0.1 and 0.5
     
-    float ambientBrightness = 0.3f;
-    const float ambientFloorBrightness = 0.3;
-    float epsilon = 0.25f;
-    if (!isDungeon) ambientBrightness = 1.0f;
+    // if (!isDungeon){
+    //     for (DoorwayInstance& dw : doorways){
+    //         dw.tint = WHITE;
+    //     }
+    // }
+
+    // Vector3 warmTint = {0.7f, 0.7f, 0.7f}; //Light Gray 
+    // float brightnessScale = 1.25f; // Try values between 0.1 and 0.5
+    
+    // float ambientBrightness = 0.3f;
+    // const float ambientFloorBrightness = 0.3;
+    // float epsilon = 0.25f;
+    // if (!isDungeon) ambientBrightness = 1.0f;
 
     // for (WallInstance& wall : wallInstances) {
     //     wall.bakedBrightness = ambientBrightness;

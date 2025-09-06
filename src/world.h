@@ -15,6 +15,7 @@
 enum class GameState {
     Menu,
     Playing,
+    LoadingLevel,
     Quit
 };
 
@@ -50,7 +51,7 @@ extern float vignetteFade;
 extern float boatSpeed;
 extern float waterHeightY;
 extern float ceilingHeight;
-
+extern bool switchFromMenu;
 extern float tileSize;
 extern bool isFading;
 extern float fadeSpeed; // units per second

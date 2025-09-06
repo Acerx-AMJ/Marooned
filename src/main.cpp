@@ -12,12 +12,15 @@
 #include "camera_system.h"
 #include "lighting.h"
 
+float timer = 0;
+
+
 int main() { 
     InitWindow(1600, 900, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
     ResourceManager::Get().LoadAllResources();
-   
+
     SoundManager::GetInstance().LoadSounds();
     SoundManager::GetInstance().PlayMusic("dungeonAir");
     SoundManager::GetInstance().PlayMusic("jungleAmbience");
@@ -41,6 +44,18 @@ int main() {
 
        // Use the active camera everywhere:
         Camera3D& camera = CameraSystem::Get().Active();
+
+
+        if (currentGameState == GameState::LoadingLevel){
+            // if (switchFromMenu){ //HACK////stop gap measure to make lighting work on level load from door. When game state is menu, only menu code runs,
+            // //enabling us to cleanly switch levels and lightmaps. 
+            //     switchFromMenu = false;
+            //     InitLevel(levels[pendingLevelIndex], camera);
+            //     pendingLevelIndex = -1;
+            //     currentGameState = GameState::Playing;
+            // } 
+            // //ontinue;
+        }
         
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
@@ -54,16 +69,21 @@ int main() {
 
             continue; // skip the rest of the game loop
         }
+
+
+
         if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Menu;
+
 
         UpdateMusicStream(SoundManager::GetInstance().GetMusic(isDungeon ? "dungeonAir" : "jungleAmbience"));
      
         //update context
+        
         debugControls(camera); 
         R.UpdateShaders(camera);
-        UpdateFade(deltaTime, camera); //triggers init level on fadeout
+
         UpdateEnemies(deltaTime);
-       
+        UpdateFade(deltaTime, camera); //triggers init level on fadeout
         UpdateBullets(camera, deltaTime);
         GatherFrameLights();
         EraseBullets();
@@ -92,7 +112,7 @@ int main() {
 
         if (isDungeon){
             //only handle lighting in dungeons. Oustide we don't touch the tint. 
-            ApplyBakedLighting();
+            //ApplyBakedLighting();
             HandleDungeonTints();
         }
 
@@ -104,10 +124,11 @@ int main() {
         // Update camera based on player
         UpdateWorldFrame(deltaTime, player);
         UpdatePlayer(player, deltaTime, camera);
-
+        
         if (!isLoadingLevel) BuildDynamicLightmapFromFrameLights(frameLights);
 
         RenderFrame(camera, player, deltaTime);
+        
 
     }
 
