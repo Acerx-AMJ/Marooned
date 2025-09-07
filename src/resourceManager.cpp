@@ -271,7 +271,7 @@ void ResourceManager::UpdateShaders(Camera& camera){
 
     //dungeonDarkness
     float dungeonDarkness = -0.1f;//it darkens the gun model as well, so go easy. negative number brightens it. 
-    float dungeonContrast = 1.25f; //makes darks darker. 
+    float dungeonContrast = 1.2f; //makes darks darker. 
 
 
     int isDungeonVal = isDungeon ? 1 : 0;

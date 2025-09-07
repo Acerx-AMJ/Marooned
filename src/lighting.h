@@ -18,8 +18,11 @@ extern BakedLightmap gDynamic;
 
 
 
+
 extern BakedLightmap gBaked;   // define once in a .cpp
 float SmoothFalloff(float d, float radius);
 
 void InitDynamicLightmap(int res);
 void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLights);
+void BuildStaticLightmapOnce(const std::vector<LightSource>& dungeonLights,
+                             int tilesX, int tilesZ, float tileSize, float floorY);

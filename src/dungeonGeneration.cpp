@@ -1066,44 +1066,40 @@ void DrawDungeonCeiling(){
 void DrawDungeonFloor() {
     //draw four mini tiles for every 1 floor tile. aesthetically better looking, actual floor tile size remains 200x200 for pathfinding purposes.
     //32x32 x 4 tiles is a lot of draw calls. 8 mini tiles makes the frame rate half. We could cull unseen tiles.  
-    //Model& floorModel = R.GetModel("floorTileGray");
+    Model& floorModel = R.GetModel("floorTileGray");
     const float cull_radius = 5400.0f;
 
-        // Assign shader to the materials you want lit per-pixel
-    Model& floorModel  = R.GetModel("floorTileGray");
+     const Vector3 baseScale   = {700, 700, 700};
+    // // half XZ only, keep Y as-is (so height/thickness stays the same)
+    // const Vector3 miniScale   = {baseScale.x * 0.5f, baseScale.y, baseScale.z * 0.5f};
 
-
-    const Vector3 baseScale   = {700, 700, 700};
-    // half XZ only, keep Y as-is (so height/thickness stays the same)
-    const Vector3 miniScale   = {baseScale.x * 0.5f, baseScale.y, baseScale.z * 0.5f};
-
-    // centers for the 4 mini-tiles relative to the big tile's center
-    const float quarter = tileSize * 0.25f; // = 50 if tile is 200
-    const Vector3 offsets[4] = {
-        {-quarter, 0.0f, -quarter},
-        {+quarter, 0.0f, -quarter},
-        {-quarter, 0.0f, +quarter},
-        {+quarter, 0.0f, +quarter},
-    };
+    // // centers for the 4 mini-tiles relative to the big tile's center
+    // const float quarter = tileSize * 0.25f; // = 50 if tile is 200
+    // const Vector3 offsets[4] = {
+    //     {-quarter, 0.0f, -quarter},
+    //     {+quarter, 0.0f, -quarter},
+    //     {-quarter, 0.0f, +quarter},
+    //     {+quarter, 0.0f, +quarter},
+    // };
 
     for (const FloorTile& tile : floorTiles) {
         DrawModelEx(floorModel, tile.position, {0,1,0}, 0.0f, baseScale, tile.tint);
+    }
+    //     //this is expensive. and doesn't look that much better
+    //     for (int i = 0; i < 4; ++i) {
+    //         Vector3 p = { tile.position.x + offsets[i].x,
+    //                       tile.position.y + offsets[i].y,
+    //                       tile.position.z + offsets[i].z };
 
-        //this is expensive. and doesn't look that much better
-        for (int i = 0; i < 4; ++i) {
-            Vector3 p = { tile.position.x + offsets[i].x,
-                          tile.position.y + offsets[i].y,
-                          tile.position.z + offsets[i].z };
-
-            // rotation axis/angle are 0 here; keep same as your original
-            float dist = Vector3Distance(player.position, tile.position);
-            if (dist < cull_radius){
-                DrawModelEx(floorModel, p, {0,1,0}, 0.0f, miniScale, tile.tint);
-            }
+    //         // rotation axis/angle are 0 here; keep same as your original
+    //         float dist = Vector3Distance(player.position, tile.position);
+    //         if (dist < cull_radius){
+    //             DrawModelEx(floorModel, p, {0,1,0}, 0.0f, miniScale, tile.tint);
+    //         }
 
          
-        }
-    }
+    //     }
+    // }
 }
 
 void DrawDungeonWalls() {

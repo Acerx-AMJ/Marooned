@@ -215,7 +215,7 @@ bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<V
 
 
 bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction) {  
-    if (isLoadingLevel) return false;
+
     Ray ray = { from, Vector3Normalize(Vector3Subtract(to, from)) };
     float maxDistance = Vector3Distance(from, to);
     float epsilon = epsilonFraction * maxDistance;
