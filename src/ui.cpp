@@ -240,7 +240,8 @@ void DrawMenu(int selectedOption, int levelIndex) {
 void UpdateMenu(Camera& camera){
     //Main Menu - level select 
     if (currentGameState == GameState::Menu) {
-        if (switchFromMenu){ //HACK////stop gap measure to make lighting work on level load from door. When game state is menu, only menu code runs,
+
+        if (switchFromMenu){ //HACK//// make lighting work on level load from door. When game state is menu, only menu code runs,
         //enabling us to cleanly switch levels and lightmaps. 
             switchFromMenu = false;
             InitLevel(levels[pendingLevelIndex], camera);

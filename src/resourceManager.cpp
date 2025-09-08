@@ -105,6 +105,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadTexture("shadowTex",        "assets/textures/shadow_decal.png");
     R.LoadTexture("ghostSheet",       "assets/sprites/ghostSheet.png");
     R.LoadTexture("magicAttackSheet", "assets/sprites/magicAttackSheet.png");
+    //R.LoadTexture("lavaTexture",      "assets/textures/lavaTexture.png");
 
 
     // Models (registering with string keys)
@@ -129,6 +130,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadModel("wallSegment",    "assets/models/wallSegment.glb");
     R.LoadModel("floorTileGray",  "assets/models/floorTileGray.glb");
     R.LoadModel("doorWayGray",    "assets/models/doorWayGray.glb");
+    R.LoadModel("lavaTile",       "assets/models/lavaTileSquare.glb");
 
     //generated models
     R.LoadModelFromMesh("skyModel", GenMeshCube(1.0f, 1.0f, 1.0f));
@@ -145,6 +147,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadShader("bloomShader",   /*vsPath=*/"",                    "assets/shaders/bloom.fs");
     R.LoadShader("cutoutShader",                        "",         "assets/shaders/leaf_cutout.fs");
     R.LoadShader("lightingShader", "assets/shaders/lighting_baked_xz.vs", "assets/shaders/lighting_baked_xz.fs");
+    R.LoadShader("lavaShader","assets/shaders/lava_world.vs", "assets/shaders/lava_world.fs");
 }
 
 
@@ -174,11 +177,11 @@ void ResourceManager::SetShaderValues(){
 
     //bloom post process. 
     bloomStrengthValue = 0.0f;
-    float bloomColor[3] = { 1.0f, 0.0f, 1.0f };  
-    float aaStrengthValue = 0.0f; //fake antialiasing strength, makes it grayer
+    float bloomColor[3] = { 1.0f, 0.5f, 1.0f };  
+    float aaStrengthValue = 0.1f; //blur
 
     int locSat = GetShaderLocation(bloomShader, "uSaturation");
-    float sat = 1.1f; // try 1.05–1.25
+    float sat = 1.0f; // try 1.05–1.25
     SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
 
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
@@ -199,6 +202,63 @@ void ResourceManager::SetShaderValues(){
         palm.materials[m].shader = R.GetShader("cutoutShader");
         palm2.materials[m].shader = R.GetShader("cutoutShader");  
     }
+
+
+    SetLavaShaderValues();
+}
+
+void ResourceManager::SetLavaShaderValues(){
+    Shader lavaShader = R.GetShader("lavaShader");
+    Model& lavaTile = R.GetModel("lavaTile");
+    // IMPORTANT: set texture wrap to REPEAT so world UVs can tile
+    // Texture2D &mt = lavaTile.materials[0].maps[MATERIAL_MAP_ALBEDO].texture;
+    // SetTextureWrap(mt, TEXTURE_WRAP_REPEAT); // (signature varies by raylib version)
+    // SetTextureFilter(mt, TEXTURE_FILTER_ANISOTROPIC_16X); // or TRILINEAR if you prefer
+    // int locTex0 = GetShaderLocation(lavaShader, "texture0");
+    // SetShaderValueTexture(lavaShader, locTex0, mt);
+
+    for (int i=0; i < lavaTile.materialCount; i++){
+        lavaTile.materials[i].shader = lavaShader;
+    }
+
+    // Hook locations once
+    int locTime   = GetShaderLocation(lavaShader, "uTime");
+    int locDir    = GetShaderLocation(lavaShader, "uScrollDir");
+    int locSpeed  = GetShaderLocation(lavaShader, "uSpeed");
+    int locOff    = GetShaderLocation(lavaShader, "uWorldOffset");
+    int locScale  = GetShaderLocation(lavaShader, "uUVScale");
+    int locFreq   = GetShaderLocation(lavaShader, "uDistortFreq");
+    int locAmp    = GetShaderLocation(lavaShader, "uDistortAmp");
+    int locEmis   = GetShaderLocation(lavaShader, "uEmissive");
+    int locGain   = GetShaderLocation(lavaShader, "uEmissiveGain");
+
+    // Parameters
+    Vector2 scroll = { 0.07f, 0.0f };
+    float speed = 0.5f, freq = 6.0f, amp = 0.02f;
+    float gain = 0.1f;
+    Vector3 emis = { 1.0f, 0.4f, 0.08f };
+
+    // World-to-UV scale:
+    //   If your tile is 'tileSize' world units and you want 1 repeat per *tile*,
+    //   then uUVScale = 1.0f / tileSize.
+    //   If you want 2 repeats per tile: 2.0f / tileSize, etc.
+    float uvsPerWorldUnit = 0.5 / tileSize;
+
+    // Dungeon/world origin 
+    Vector2 worldOffset = {0,0};
+
+    // Set static params once
+    SetShaderValue(lavaShader, locDir,   &scroll,       SHADER_UNIFORM_VEC2);
+    SetShaderValue(lavaShader, locSpeed, &speed,        SHADER_UNIFORM_FLOAT);
+    SetShaderValue(lavaShader, locFreq,  &freq,         SHADER_UNIFORM_FLOAT);
+    SetShaderValue(lavaShader, locAmp,   &amp,          SHADER_UNIFORM_FLOAT);
+    SetShaderValue(lavaShader, locEmis,  &emis,         SHADER_UNIFORM_VEC3);
+    SetShaderValue(lavaShader, locGain,  &gain,         SHADER_UNIFORM_FLOAT);
+    SetShaderValue(lavaShader, locOff,   &worldOffset,  SHADER_UNIFORM_VEC2);
+    SetShaderValue(lavaShader, locScale, &uvsPerWorldUnit, SHADER_UNIFORM_FLOAT);
+}
+
+void ResourceManager::SetLightingShaderValues(){
 
     Shader lightingShader = R.GetShader("lightingShader");
     Model& floorModel = R.GetModel("floorTileGray");
@@ -229,12 +289,18 @@ void ResourceManager::SetShaderValues(){
                     gDynamic.sizeZ ? 1.0f/gDynamic.sizeZ : 0.0f };
     if (locGrid   >= 0) SetShaderValue(use, locGrid, grid, SHADER_UNIFORM_VEC4);
 
-    float dynStrength = 0.8f, ambientBoost = 0.25f;
+    float dynStrength = 0.8f; 
+    float ambientBoost = 0.2f;
+
+    if (!isDungeon){ //dungeon entrances are fully lit
+        dynStrength = 0.0f;
+        ambientBoost = 1.0f;
+    }
+
     if (locDynStr >= 0) SetShaderValue(use, locDynStr, &dynStrength, SHADER_UNIFORM_FLOAT);
     if (locAmb    >= 0) SetShaderValue(use, locAmb,    &ambientBoost, SHADER_UNIFORM_FLOAT);
 
     if (locDynTex >= 0) SetShaderValueTexture(use, locDynTex, gDynamic.tex);
-
 
 }
 
@@ -269,10 +335,9 @@ void ResourceManager::UpdateShaders(Camera& camera){
     //red vignette intensity over time
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
-    //dungeonDarkness
-    float dungeonDarkness = -0.1f;//it darkens the gun model as well, so go easy. negative number brightens it. 
-    float dungeonContrast = 1.2f; //makes darks darker. 
-
+    //dungeonDarkness //is there a reason we need to set these every frame? 
+    float dungeonDarkness = -0.25f;//it darkens the gun model as well, so go easy. negative number brightens it. 
+    float dungeonContrast = 1.25f; //makes darks darker. 
 
     int isDungeonVal = isDungeon ? 1 : 0;
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
@@ -280,6 +345,9 @@ void ResourceManager::UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonDarkness"), &dungeonDarkness, SHADER_UNIFORM_FLOAT);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonContrast"), &dungeonContrast, SHADER_UNIFORM_FLOAT);
 
+    Shader lavaShader = R.GetShader("lavaShader");
+    int locTime        = GetShaderLocation(lavaShader, "uTime");
+    SetShaderValue(R.GetShader("lavaShader"), locTime, &t, SHADER_UNIFORM_FLOAT);
 
 }
 

@@ -11,6 +11,7 @@
 #include "collectable.h"
 #include "collectableWeapon.h"
 #include "list"
+#include "dungeonGeneration.h"
 
 enum class GameState {
     Menu,
@@ -61,6 +62,7 @@ extern float dungeonEnemyHeight;
 extern float ElapsedTime;
 extern bool debugInfo;
 extern bool isLoadingLevel;
+extern float weaponDarkness;
 //extern float muzzleFlashTimer;
 
 extern GameState currentGameState;
@@ -78,7 +80,8 @@ extern std::vector<Character> enemies;
 extern std::vector<Character*> enemyPtrs;
 
 void ClearLevel();
-void InitLevel(const LevelData& level, Camera& camera) ;
+void InitLevel(const LevelData& level, Camera& camera);
+void InitDungeonLights();
 void UpdateFade(float deltaTime, Camera& camera);
 void removeAllCharacters();
 void generateRaptors(int amount, Vector3 centerPos, float radius);
@@ -89,7 +92,9 @@ void UpdateEnemies(float deltaTime);
 void UpdateMuzzleFlashes(float deltaTime);
 void UpdateBullets(Camera& camera, float deltaTime);
 void EraseBullets();
-
+float CalculateDarknessFactor(Vector3 playerPos, const std::vector<LightSource>& lights);
+void ApplyWeaponTint(Model& weapon, float darkness);
+void HandleWeaponTints();
 void UpdateDecals(float deltaTime);
 void UpdateCollectables(float deltaTime);
 void DrawBullets(Camera& camera);

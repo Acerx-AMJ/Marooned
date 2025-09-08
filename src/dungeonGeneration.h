@@ -5,7 +5,12 @@
 #include <vector>
 #include "transparentDraw.h"
 #include "bullet.h"
+#include "player.h"
 
+enum class FloorType {
+    Normal,
+    Lava,
+};
 
 enum class DoorType {
     Normal,
@@ -25,6 +30,8 @@ enum class TrapType {
     iceball,
 
 };
+
+struct GridCoord { int x; int y; }; // image-space coords used for worldToGrid
 
 
 struct Fire {
@@ -128,14 +135,14 @@ struct LauncherTrap {
 
 struct LightSource {
     Vector3 position;
-    float intensity = 0.8f;  // 1.0 = full bright, 0.5 = dim, etc.
+    float intensity = 0.9f;  // 1.0 = full bright, 0.5 = dim, etc.
     float fireballIntensity = 0.8f;
-    float range = 1400.0f;
+    float range = 1500.0f;
     float lifeTime = 1.0f;
     float age;
     float fireballRange = 600.0f;
     
-    Vector3 colorTint = {1.0f, 0.77f, 0.7f}; // default warm
+    Vector3 colorTint = {1.0f, 0.85f, 0.8f}; // default warm
     LightType type = LightType::Other;
 };
 
@@ -160,9 +167,7 @@ struct WallRun {
 struct FloorTile {
     Vector3 position;
     Color tint;
-    //Model* floorTile;
-    Color bakedTint;
-    float bakedBrightness;
+    FloorType floorType;
 
 };
 
@@ -217,6 +222,8 @@ void DrawDungeonFloor();
 void DrawDungeonBarrels();
 void DrawLaunchers();
 
+void ApplyLavaDPS(Player& player, float dt, float lavaDps);
+
 //void DrawSpiderWebs(Camera& camera);
 void DrawDungeonChests(); 
 void DrawDungeonPillars();
@@ -227,16 +234,10 @@ void GenerateWeapons(float Height);
 //void DrawDungeonCeiling(Model ceilingTileModel, float ceilingOffsetY);
 void HandleDungeonTints();
 void DrawDungeonCeiling();
-void ResetAllBakedTints();
-void BakeStaticLighting(); 
-void ApplyBakedLighting();
-void UpdateWallTints(Vector3 playerPos);
-void UpdateFloorTints(Vector3 playerPos);
-void UpdateCeilingTints(Vector3 playerPos);
+
 void UpdateBarrelTints(Vector3 playerPos);
 void UpdateChestTints(Vector3 playerPos);
 void UpdateDoorTints(Vector3 playerPos);
-void UpdateDoorwayTints(Vector3 playerPos);
 
 void UpdateLauncherTraps(float deltaTime);
 bool IsDoorOpenAt(int x, int y);

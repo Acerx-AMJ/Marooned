@@ -12,10 +12,14 @@
 #include "utilities.h"
 #include "dungeonColors.h"
 #include "lighting.h"
+#include <cstdint>
+
+std::vector<uint8_t> lavaMask; // width*height, 1 = lava, 0 = not
 
 std::vector<LightSample> frameLights;
 std::vector<LauncherTrap> launchers;
 std::vector<FloorTile> floorTiles;
+std::vector<FloorTile> lavaTiles;
 std::vector<WallInstance> wallInstances;
 std::vector<CeilingTile> ceilingTiles;
 std::vector<BarrelInstance> barrelInstances;
@@ -35,9 +39,8 @@ Color* dungeonPixels = nullptr;
 int dungeonWidth = 0;
 int dungeonHeight = 0;
 
-
-float playerLightRange = 800.0f;
-float playerLightIntensity = 0.5f;
+float lavaTimer = 0.0f;
+float tickDamage = 0.5;
 
 using namespace dungeon;
 
@@ -211,23 +214,42 @@ Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, flo
 }
 
 
+inline int Idx(int x, int y) { return y * dungeonWidth + x; }
+
+inline bool IsLava(int gx, int gy) {
+    return lavaMask[Idx(gx,gy)] != 0;
+}
 
 void GenerateFloorTiles(float baseY) {
     floorTiles.clear();
+    lavaTiles.clear();
 
+    lavaMask.assign(dungeonWidth * dungeonHeight, 0);
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
             Color pixel = GetImageColor(dungeonImg, x, y);
+            Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
 
             // Only skip transparent pixels
             if (pixel.a == 0) continue;
+            if (pixel.r == 200 && pixel.g == 0 && pixel.b == 0){
+                //generate lava tile instead, add to vector of lava tiles. 
+                FloorTile lavaTile;
+                Vector3 offset = {0, -20, 0};
+                lavaTile.position = pos + offset;
+                lavaTile.tint = WHITE;
+                lavaTile.floorType = FloorType::Lava;
+                lavaTiles.push_back(lavaTile);
+                lavaMask[Idx(x,y)] = 1;  //mark as lava on lava mask
+                continue;
+            }
 
-            Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
+            
 
             FloorTile tile;
             tile.position = pos;
             tile.tint = WHITE; 
-
+            tile.floorType = FloorType::Normal;
             floorTiles.push_back(tile);
         }
     }
@@ -502,14 +524,31 @@ bool IsDoorOpenAt(int x, int y) {
 
 void GenerateCeilingTiles(float ceilingOffsetY) {
     ceilingTiles.clear();
-    //mirror the floor
-    for (const FloorTile& floor : floorTiles) {
-        CeilingTile ceiling;
-        ceiling.position = Vector3Add(floor.position, {0, ceilingOffsetY, 0});
-        ceiling.tint = GRAY; // default tint
 
-        ceilingTiles.push_back(ceiling);
+    for (int y = 0; y < dungeonHeight; y++) {
+        for (int x = 0; x < dungeonWidth; x++) {
+            Color pixel = GetImageColor(dungeonImg, x, y);
+            Vector3 pos = GetDungeonWorldPos(x, y, tileSize, ceilingHeight);
+
+            // Only skip transparent pixels
+            if (pixel.a == 0) continue;
+
+            CeilingTile ceiling;
+            ceiling.position = pos;//Vector3Add(pos, {0, ceilingOffsetY, 0});
+            ceiling.tint = GRAY;
+            ceilingTiles.push_back(ceiling);
+
+        }
+
     }
+    //mirror the floor
+    // for (const FloorTile& floor : floorTiles) {
+    //     CeilingTile ceiling;
+    //     ceiling.position = Vector3Add(floor.position, {0, ceilingOffsetY, 0});
+    //     ceiling.tint = GRAY; // default tint
+
+    //     ceilingTiles.push_back(ceiling);
+    // }
 }
 
 
@@ -910,12 +949,6 @@ void GeneratePiratesFromImage(float baseY) {
 
 }
 
-
-
-
-
-
-
 void GenerateLightSources(float baseY) {
     dungeonLights.clear();
 
@@ -943,7 +976,39 @@ void GenerateLightSources(float baseY) {
 
         }
     }
+
+
 }
+
+
+
+// Returns true if world point is inside the dungeon bounds.
+// world → image grid (with your X/Z flips baked in)
+inline bool WorldToGrid(const Vector3& worldPos,
+                        GridCoord& out,
+                        float tileSize,
+                        int dungeonWidth, int dungeonHeight,
+                        Vector3 dungeonOrigin = {0,0,0})
+{
+    // Convert world to local dungeon space
+    float localX = worldPos.x - dungeonOrigin.x;
+    float localZ = worldPos.z - dungeonOrigin.z;
+
+    // Quick reject (tiny epsilon protects boundary float jitter)
+    const float eps = 1e-5f;
+    if (localX < -eps || localZ < -eps) return false;
+
+    int gx = (int)floorf(localX / tileSize);  // world-grid (unflipped)
+    int gy = (int)floorf(localZ / tileSize);
+
+    if (gx < 0 || gy < 0 || gx >= dungeonWidth || gy >= dungeonHeight) return false;
+
+    // Convert to image-space indices (your Generate uses flippedX/Y)
+    out.x = dungeonWidth  - 1 - gx;
+    out.y = dungeonHeight - 1 - gy;
+    return true;
+}
+
 
 Vector3 GetDungeonWorldPos(int x, int y, float tileSize, float baseY) {
     //returns world position, centered on tile. 
@@ -964,6 +1029,23 @@ int GetDungeonImageX(float worldX, float tileSize, int dungeonWidth) {
 int GetDungeonImageY(float worldZ, float tileSize, int dungeonHeight) {
     return dungeonHeight - 1 - (int)(worldZ / tileSize);
 }
+
+void ApplyLavaDPS(Player& player, float dt, float lavaDps) {
+    GridCoord g;
+    if (!WorldToGrid(player.position, g, tileSize, dungeonWidth, dungeonHeight)) return;
+
+    if (lavaMask[g.y * dungeonWidth + g.x]) {
+        lavaTimer += dt;
+        if (lavaTimer > tickDamage && player.position.y <= 200){
+            player.TakeDamage(10);
+            lavaTimer = 0.0;
+
+        }
+        
+        // sfx/vfx here if you like
+    }
+}
+
 
 
 
@@ -1054,9 +1136,9 @@ void DrawDungeonChests() {
 }
 
 void DrawDungeonCeiling(){
-    //Shader lightingShader = R.GetShader("lightingShader");
+
     Model& ceilingModel = R.GetModel("floorTileGray");
-    //ceilingModel.materials[0].shader = lightingShader;
+
     for (CeilingTile& tile : ceilingTiles){
         DrawModelEx(ceilingModel, tile.position, {1,0,0}, 180.0f, Vector3{700, 700, 700}, tile.tint);
     }
@@ -1064,42 +1146,21 @@ void DrawDungeonCeiling(){
 
 
 void DrawDungeonFloor() {
-    //draw four mini tiles for every 1 floor tile. aesthetically better looking, actual floor tile size remains 200x200 for pathfinding purposes.
-    //32x32 x 4 tiles is a lot of draw calls. 8 mini tiles makes the frame rate half. We could cull unseen tiles.  
+
     Model& floorModel = R.GetModel("floorTileGray");
-    const float cull_radius = 5400.0f;
+    Model& lavaModel = R.GetModel("lavaTile");
+    //const float cull_radius = 5400.0f;
 
      const Vector3 baseScale   = {700, 700, 700};
-    // // half XZ only, keep Y as-is (so height/thickness stays the same)
-    // const Vector3 miniScale   = {baseScale.x * 0.5f, baseScale.y, baseScale.z * 0.5f};
-
-    // // centers for the 4 mini-tiles relative to the big tile's center
-    // const float quarter = tileSize * 0.25f; // = 50 if tile is 200
-    // const Vector3 offsets[4] = {
-    //     {-quarter, 0.0f, -quarter},
-    //     {+quarter, 0.0f, -quarter},
-    //     {-quarter, 0.0f, +quarter},
-    //     {+quarter, 0.0f, +quarter},
-    // };
 
     for (const FloorTile& tile : floorTiles) {
         DrawModelEx(floorModel, tile.position, {0,1,0}, 0.0f, baseScale, tile.tint);
     }
-    //     //this is expensive. and doesn't look that much better
-    //     for (int i = 0; i < 4; ++i) {
-    //         Vector3 p = { tile.position.x + offsets[i].x,
-    //                       tile.position.y + offsets[i].y,
-    //                       tile.position.z + offsets[i].z };
 
-    //         // rotation axis/angle are 0 here; keep same as your original
-    //         float dist = Vector3Distance(player.position, tile.position);
-    //         if (dist < cull_radius){
-    //             DrawModelEx(floorModel, p, {0,1,0}, 0.0f, miniScale, tile.tint);
-    //         }
+    for (const FloorTile& lavaTile : lavaTiles){
+        DrawModelEx(lavaModel, lavaTile.position, {0, 1, 0}, 0.0f, baseScale, lavaTile.tint);
+    }
 
-         
-    //     }
-    // }
 }
 
 void DrawDungeonWalls() {
@@ -1166,450 +1227,23 @@ void DrawDungeonPillars() {
 }
 
 void HandleDungeonTints() {
-     //Model Color Lighting
-    // === Update tints ===
 
-    //UpdateWallTints(player.position);
-    //UpdateDoorwayTints(player.position);
-    // UpdateCeilingTints(player.position);
-    // UpdateFloorTints(player.position);
     UpdateBarrelTints(player.position);
     UpdateChestTints(player.position);
 
     UpdateDoorTints(player.position);
 }
 
-void ResetAllBakedTints() {
-    // for (auto& wall : wallInstances)
-    //     wall.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
-
-    // for (auto& floor : floorTiles)
-    //     floor.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
-
-    // for (auto& ceiling : ceilingTiles)
-    //     ceiling.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
-
-    // for (auto& door : doorways)
-    //     door.bakedTint = ColorFromNormalized({0.0f, 0.0f, 0.0f, 1.0f});
-}
 
 
-void BakeStaticLighting() {
-
-    
-    // once per level load:
-    Model& floorModel = R.GetModel("floorTileGray");
-    for (int i = 0; i < floorModel.materialCount; ++i)
-        floorModel.materials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-
-    Model& wallModel = R.GetModel("wallSegment");
-    for (int i = 0; i < wallModel.materialCount; i++){
-        wallModel.materials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-    }
-
-    Model& doorwayModel = R.GetModel("doorWay");
-    for (int i = 0; i < doorwayModel.materialCount; i++){
-        doorwayModel.materials[i].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-    }
-
-
-
-    
-    // if (!isDungeon){
-    //     for (DoorwayInstance& dw : doorways){
-    //         dw.tint = WHITE;
-    //     }
-    // }
-
-    // Vector3 warmTint = {0.7f, 0.7f, 0.7f}; //Light Gray 
-    // float brightnessScale = 1.25f; // Try values between 0.1 and 0.5
-    
-    // float ambientBrightness = 0.3f;
-    // const float ambientFloorBrightness = 0.3;
-    // float epsilon = 0.25f;
-    // if (!isDungeon) ambientBrightness = 1.0f;
-
-    // for (WallInstance& wall : wallInstances) {
-    //     wall.bakedBrightness = ambientBrightness;
-    // }
-
-    // for (DoorwayInstance& door : doorways){
-    //     door.bakedBrightness = ambientBrightness;
-    // }
-
-    // for (FloorTile& floor : floorTiles){
-    //     floor.bakedBrightness = ambientFloorBrightness;
-    // }
-
-    // for (CeilingTile& ceiling : ceilingTiles){
-    //     ceiling.bakedBrightness = ambientFloorBrightness;
-    // }
-
-    // for (const LightSource& light : dungeonLights) {
-    //     for (WallInstance& wall : wallInstances) {
-    //         float dist = Vector3Distance(light.position, wall.position);
-    //         if (dist > light.range) continue;
-    //         if (!HasWorldLineOfSight(light.position, wall.position, epsilon)) continue;
-    //         float t = Clamp(dist / light.range, 0.0f, 1.0f);
-    //         float contribution = (1.0f - (t * t * (3 - 2 * t))) * light.intensity;
-            
-    //         wall.bakedBrightness += contribution * light.intensity;
-    //     }
+// Vector3 playerLight(Vector3 playerPos, Vector3 tilePos, Vector3 finalColor){
+//     //return player light contribution
+//     float distToPlayer = Vector3Distance(playerPos, tilePos);
+//     float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
+//     float playerLight = playerContribution * playerLightIntensity;
+//     return Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); 
     
 
-
-    //     for (DoorwayInstance& door : doorways){
-    //         float dist = Vector3Distance(light.position, door.position);
-    //         if (dist > light.range) continue;
-    //         if (!HasWorldLineOfSight(light.position, door.position, epsilon)) continue;
-
-    //         float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
-    //         door.bakedBrightness += contribution * light.intensity;
-    //     }
-    // }
-        //     for (FloorTile& floor : floorTiles){
-            
-    //         float dist = Vector3Distance(light.position, floor.position);
-    //         if (dist > light.range) continue;
-    //         if (!HasWorldLineOfSight(light.position, floor.position, epsilon)) continue;
-    //         float t = Clamp(dist / (light.range - 700), 0.0f, 1.0f); //half the range for floors looks better. 
-    //         float contribution = (1.0f - (t * t * (3 - 2 * t))) * light.intensity;
-    //         //float contribution = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
-    //         floor.bakedBrightness += contribution * light.intensity;
-    //     }
-    
-    // }
-    // //GAMMA CORRECTION
-    // for (WallInstance& wall : wallInstances) {
-    //     float scaledBrightness = Clamp(wall.bakedBrightness * brightnessScale, 0.0f, 1.0f);
-    //     Vector3 tinted = Vector3Scale(warmTint, scaledBrightness);
-
-    //     float gamma = 1.25f;
-    //     Vector3 gammaCorrected = {
-    //         powf(tinted.x, 1.0f / gamma),
-    //         powf(tinted.y, 1.0f / gamma),
-    //         powf(tinted.z, 1.0f / gamma)
-    //     };
-
-    //     wall.bakedTint = ColorFromNormalized({ gammaCorrected.x, gammaCorrected.y, gammaCorrected.z, 1.0f });
-    // }
-
-    // for (DoorwayInstance& door : doorways) {
-    //     float scaledBrightness = Clamp(door.bakedBrightness * brightnessScale, 0.0f, 1.0f);
-    //     Vector3 tinted = Vector3Scale(warmTint, scaledBrightness);
-
-    //     float gamma = 1.25f;
-    //     Vector3 gammaCorrected = {
-    //         powf(tinted.x, 1.0f / gamma),
-    //         powf(tinted.y, 1.0f / gamma),
-    //         powf(tinted.z, 1.0f / gamma)
-    //     };
-
-    //     door.bakedTint = ColorFromNormalized({ gammaCorrected.x, gammaCorrected.y, gammaCorrected.z, 1.0f });
-    // }
-
-    
-    // for (FloorTile& floor : floorTiles) {
-    //     float scaledBrightness = Clamp(floor.bakedBrightness * brightnessScale, 0.0f, 1.0f);
-    //     Vector3 tinted = Vector3Scale({ .9f, 0.9f, 0.9f }, scaledBrightness);
-
-    //     float gamma = 0.8f;
-    //     Vector3 gammaCorrected = {
-    //         powf(tinted.x, 1.0f / gamma),
-    //         powf(tinted.y, 1.0f / gamma),
-    //         powf(tinted.z, 1.0f / gamma)
-    //     };
-
-    //     floor.bakedTint = ColorFromNormalized({ gammaCorrected.x, gammaCorrected.y, gammaCorrected.z, 1.0f });
-    // }
-
-    // //copy floor baked light to ceiling. No need to recalculate cause it's the same. 
-    // if (floorTiles.size() != ceilingTiles.size()) {
-    //     TraceLog(LOG_WARNING, "BakeStaticLighting: floorTiles and ceilingTiles size mismatch! Skipping ceiling bake.");
-    // } else {
-    //     for (size_t i = 0; i < floorTiles.size(); ++i) {
-    //         ceilingTiles[i].bakedTint = floorTiles[i].bakedTint;
-    //     }
-    // }
-
-}
-
-
-void ApplyBakedLighting() {
-    //we need to do this every frame to set them back to default baked light. 
-    // for (WallInstance& wall : wallInstances) {
-    //     wall.tint = wall.bakedTint;
-    // }
-
-    // for (DoorwayInstance& door : doorways){
-    //     door.tint = door.bakedTint;
-    // }
-
-    // for (FloorTile& floor : floorTiles){
-    //     floor.tint = floor.bakedTint;
-
-    // }
-
-    // for (CeilingTile& ceiling : ceilingTiles){
-    //     ceiling.tint = ceiling.bakedTint;
-    // }
-
-
-}
-
-Vector3 playerLight(Vector3 playerPos, Vector3 tilePos, Vector3 finalColor){
-    //return player light contribution
-    float distToPlayer = Vector3Distance(playerPos, tilePos);
-    float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-    float playerLight = playerContribution * playerLightIntensity;
-    return Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); 
-    
-
-}
-
-void UpdateDoorwayTints(Vector3 playerPos) {
-    if (!isDungeon) return; //dont tint outside doorways
-    for (DoorwayInstance& wall : doorways) {
-        // 1️⃣ Start with baked brightness
-        float brightness = ColorAverage(wall.bakedTint);
-
-        // Start with baked tint as base color
-        Vector3 finalColor = Vector3Scale({1.0f, 0.85f, 0.7f}, brightness);  // base warm tint
-
-        // 2️⃣ Player light contribution
-        //finalColor = playerLight(player.position, wall.position, finalColor); //looks better without player light. Consider torch item. 
-
-        // Dynamic lights
-        for (const LightSample& light : frameLights) {
-            float dist = Vector3Distance(light.pos, wall.position);
-            if (dist > light.range) continue;
-
-            float t = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
-            float I = t * light.intensity;
-            finalColor = AddLightHeadroom(finalColor, light.color, I);
-        }
-
-        // 4️⃣ Clamp final color to avoid overbright
-        finalColor.x = Clamp(finalColor.x, 0.0f, 1.0f);
-        finalColor.y = Clamp(finalColor.y, 0.0f, 1.0f);
-        finalColor.z = Clamp(finalColor.z, 0.0f, 1.0f);
-
-        // 5️⃣ Store to wall.tint
-        wall.tint = ColorFromNormalized((Vector4){ finalColor.x, finalColor.y, finalColor.z, 1.0f });
-    }
-}
-
-
-void UpdateWallTints(Vector3 playerPos) {
-    for (WallInstance& wall : wallInstances) {
-        // 1️⃣ Start with baked brightness
-        float brightness = ColorAverage(wall.bakedTint);
-
-        // Start with baked tint as base color
-        Vector3 finalColor = Vector3Scale({1.0f, 0.85f, 0.7f}, brightness);  // base warm tint
-
-        // 2️⃣ Player light contribution
-        //finalColor = playerLight(player.position, wall.position, finalColor);
-        
-        // Dynamic lights
-        for (const LightSample& light : frameLights) {
-            float dist = Vector3Distance(light.pos, wall.position);
-            if (dist > light.range) continue;
-
-            float t = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
-            float I = t * light.intensity;
-            finalColor = AddLightHeadroom(finalColor, light.color, I);
-        }
-
-        // 4️⃣ Clamp final color to avoid overbright
-        finalColor.x = Clamp(finalColor.x, 0.0f, 1.0f);
-        finalColor.y = Clamp(finalColor.y, 0.0f, 1.0f);
-        finalColor.z = Clamp(finalColor.z, 0.0f, 1.0f);
-
-        // 5️⃣ Store to wall.tint
-        wall.tint = ColorFromNormalized((Vector4){ finalColor.x, finalColor.y, finalColor.z, 1.0f });
-    }
-}
-
-// Convert between sRGB and linear for lighting math
-static inline float srgb_to_linear(float c) {
-    return (c <= 0.04045f) ? (c / 12.92f) : powf((c + 0.055f) / 1.055f, 2.4f);
-}
-
-static inline float linear_to_srgb(float c) {
-    c = fmaxf(0.0f, fminf(1.0f, c));
-    return (c < 0.0031308f) ? (12.92f * c) : (1.055f * powf(c, 1.0f/2.4f) - 0.055f);
-}
-
-
-
-
-void UpdateFloorTints(Vector3 playerPos)
-{
-    // brightness boost strength and how much hue to keep
-    const float k   = 1.5f;  // brightness gain scale (try 0.3–0.7)
-    const float sat = 0.1f;  // 0 = white-only, 1 = full light color
-
-    for (FloorTile& tile : floorTiles)
-    {
-        Vector3 dyn = {0.3f, 0.3f, 0.3f}; // dynamic-only multiplier (baked comes from shader)
-
-        for (const LightSample& L : frameLights)
-        {
-            float dist = Vector3Distance(L.pos, tile.position);
-            if (dist > L.range) continue;
-
-            float t = 1.0f - (dist / L.range);
-            t = Clamp(t, 0.0f, 1.0f);
-            // smoother falloff
-            float fall = t*t*(3.0f - 2.0f*t);
-            float I = fall * L.intensity; // 0..1-ish
-
-            // Normalize the light color to 0..1 (adjust this if your LightSample stores 0..1 already)
-            Vector3 lightColor = {
-                L.color.x, L.color.y, L.color.z
-            }; // <- if L.color is a raylib Color, convert: { L.color.r/255.0f, ... }
-
-            // Desaturate toward white so color doesn't blow out
-            Vector3 chroma = {
-                1.0f + (lightColor.x - 1.0f) * sat,
-                1.0f + (lightColor.y - 1.0f) * sat,
-                1.0f + (lightColor.z - 1.0f) * sat
-            };
-
-            float boost = 1.0f + I * k; // brightness factor
-            dyn.x *= chroma.x * boost;
-            dyn.y *= chroma.y * boost;
-            dyn.z *= chroma.z * boost;
-        }
-
-        
-        // keep sane headroom
-        dyn.x = Clamp(dyn.x, 0.0f, 1.3f);
-        dyn.y = Clamp(dyn.y, 0.0f, 1.3f);
-        dyn.z = Clamp(dyn.z, 0.0f, 1.3f);
-
-        
-        
-        tile.tint = ColorFromNormalized({ dyn.x, dyn.y, dyn.z, 1.0f });
-    }
-}
-
-
-
-
-// void UpdateFloorTints(Vector3 playerPos) {
-//     for (FloorTile& tile : floorTiles) {
-//         float brightness = ColorAverage(tile.bakedTint);
-//         Vector3 warmTint = {0.7f, 0.7f, 0.7f}; //Light Gray 
-//         // Accumulate final color contribution per tile
-//         Vector3 finalColor = {1.0f, 1.0f, 1.0f};
-
-//         // Player light
-//         //finalColor = playerLight(player.position, tile.position, finalColor);
-
-//         // Dynamic lights
-//         for (const LightSample& light : frameLights) {
-//             float dist = Vector3Distance(light.pos, tile.position);
-//             if (dist > light.range) continue;
-
-//             float t = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
-//             float I = t * light.intensity;
-//             finalColor = AddLightHeadroom(finalColor, light.color, I);
-//         }
-
-
-//         // Clamp color channels
-//         finalColor.x = Clamp(finalColor.x, 0.0f, 1.2f);
-//         finalColor.y = Clamp(finalColor.y, 0.0f, 1.2f);
-//         finalColor.z = Clamp(finalColor.z, 0.0f, 1.2f);
-
-//         tile.tint = ColorFromNormalized({ finalColor.x, finalColor.y, finalColor.z, 1.0f });
-//     }
-// }
-
-void UpdateCeilingTints(Vector3 playerPos)
-{
-    // brightness boost strength and how much hue to keep
-    const float k   = 1.5f;  // brightness gain scale (try 0.3–0.7)
-    const float sat = 0.1f;  // 0 = white-only, 1 = full light color
-
-    for (CeilingTile& tile : ceilingTiles)
-    {
-        Vector3 dyn = {0.4f, 0.4f, 0.4f}; // dynamic-only multiplier (baked comes from shader)
-
-        for (const LightSample& L : frameLights)
-        {
-            float dist = Vector3Distance(L.pos, tile.position);
-            if (dist > L.range) continue;
-
-            float t = 1.0f - (dist / L.range);
-            t = Clamp(t, 0.0f, 1.0f);
-            // smoother falloff
-            float fall = t*t*(3.0f - 2.0f*t);
-            float I = fall * L.intensity; // 0..1-ish
-
-            // Normalize the light color to 0..1 (adjust this if your LightSample stores 0..1 already)
-            Vector3 lightColor = {
-                L.color.x, L.color.y, L.color.z
-            }; // <- if L.color is a raylib Color, convert: { L.color.r/255.0f, ... }
-
-            // Desaturate toward white so color doesn't blow out
-            Vector3 chroma = {
-                1.0f + (lightColor.x - 1.0f) * sat,
-                1.0f + (lightColor.y - 1.0f) * sat,
-                1.0f + (lightColor.z - 1.0f) * sat
-            };
-
-            float boost = 1.0f + I * k; // brightness factor
-            dyn.x *= chroma.x * boost;
-            dyn.y *= chroma.y * boost;
-            dyn.z *= chroma.z * boost;
-        }
-
-        //dyn = AddLightHeadroom(dyn, {1.0f, 1.0f,1.0f}, 0.8f);
-        // keep sane headroom
-        dyn.x = Clamp(dyn.x, 0.0f, 1.3f);
-        dyn.y = Clamp(dyn.y, 0.0f, 1.3f);
-        dyn.z = Clamp(dyn.z, 0.0f, 1.3f);
-
-        
-        
-        tile.tint = ColorFromNormalized({ dyn.x, dyn.y, dyn.z, 1.0f });
-    }
-}
-
-
-
-
-// void UpdateCeilingTints(Vector3 playerPos) {
-//     for (CeilingTile& tile : ceilingTiles) {
-//         float brightness = ColorAverage(tile.bakedTint);
-
-//         // Accumulate final color contribution per tile
-//         Vector3 finalColor = Vector3Scale({1.0f, 0.95f, 0.7f}, brightness); // baked tint as base
-
-//         // Player light
-//         //finalColor = playerLight(player.position, tile.position, finalColor);
-
-//         // Dynamic lights
-
-//         for (const LightSample& light : frameLights) {
-//             float dist = Vector3Distance(light.pos, tile.position);
-//             if (dist > light.range) continue;
-
-//             float t = Clamp(1.0f - (dist / light.range), 0.0f, 1.0f);
-//             float I = t * light.intensity;
-//             finalColor = AddLightHeadroom(finalColor, light.color, I);
-//         }
-
-//         // Clamp color channels
-//         finalColor.x = Clamp(finalColor.x, 0.0f, 1.0f);
-//         finalColor.y = Clamp(finalColor.y, 0.0f, 1.0f);
-//         finalColor.z = Clamp(finalColor.z, 0.0f, 1.0f);
-
-//         tile.tint = ColorFromNormalized({ finalColor.x, finalColor.y, finalColor.z, 1.0f });
-//     }
 // }
 
 

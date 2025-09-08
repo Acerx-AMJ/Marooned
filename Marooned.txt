@@ -195,7 +195,42 @@ void GenerateLauncherTraps, takes level data? Because what if we want multiple f
 
 Me and chat GPT came up with a ingenious encoding method for fireball traps. There is a vermilion colored pixel which is the trap itself. A yellow direction pixel that is an orthogonal neighbor to the trap that marks the direction the trap shoots, and a darker yellow timing pixel that can be one of 3 different shades of yellow. darkest yellow = 3 second delay, then 2 second and brightest is 1 second delay. The timing pixel is always on the opposite side of the direction pixel, that way it is easier to look up and it looks like a 3x1 line of red and yellow pixels that look like little launchers on the map. it took 2 attempts to make it work but LauncherTrap struct now contains all the info needed to launch fireballs. - Consider a blueish pixel for ice traps. use the same direction and timing colors. 
 
-spider death animation not running. 
+spider death animation not running. x - we never implemented a case for spiders. 
+
+only enter free cam if in debug mode. ~ x -debugInfo must be true for tab button to work. 
+
+Character patrol not working -(if !isWalkable) continue; was set to if (isWalkable) continue. So if it found a path it just skipped it. This was effect all characters. Wonder how that ! got erased. 
+
+I tried desaturating the wall model texture and floor model texture. Making it neutral gray and trying to color it with just the tint based lighting. Color would only be applied to models within the light range so unlit tiles would be a flat grey that looked bad. I tried giving the wall textures a blue gray tint, but in the end it looked best with the default wall texture which is slightly reddish purple, almost maroon....marooned. I changed the "warm tint" for floor tiles to be even more yellow which mixes with the default blueish color of the floor tile to make a pretty neutral gray that works and is a slightly different color than the walls so it's not just one uniform color like before with the gray dungeon. I though about making my own wall models. 
+
+Apparently we can do per pixel lighting with a projected light map and a shader. Say a texture twice the size of the the 32x32 pixel image. Would have lighting twice the resolution we have currently. why not a texture 10x as big? The baked lighting pass would "fill up" this texture map with light contribution values. I guess according to the larger light map we would light each pixel based on the light contribution values we saved while baking. Light contribution values come from the 3d raycast from light sources. Would we keep per model lighting for dynamic lights? because raycasting to every tile then calculating the contribution every frame. It would only need to be 400 pixels distance. Wait... we ray cast to each model. This gives 1 value. maybe we wouldn't rely on the raycast. all the info would be baked into the lightmap image. Need to ask some clarifying questions when the internet comes back. Maybe a transparent to white gradiant starting from the center of the yellow pixel. How would you do LOS lighting. actually paint in the lighting pixel by pixel. At a higher resolution to get sub model size lighting.
+Need an example of a projected light map. Need internet...
+
+internet was backup for a minute there. Apparently we generate the light map with code. but it would only work for the XZ plane. we could make a second lightmap for walls ZY plane by doing some math on the first lightmap to generate the second i guess. Lightmap doesn't need to be a texture, just an array that is filled with light values. say a 128x128 array of vec3? would be 4 times better resolution than per model. That means 1 tile would be lit down to 1/4 of the tile. perfect for the mini floor tiles. We would light the pixels of a 200x200 tile. We might need to do something fancy to light the mini tiles. 
+
+Could we make wall tiles occlude the light for floor tiles? iterate the light map and skip anything beyond the range of the light. then iterate the 2nd lightmap for walls. skip tiles without raymarched line of sight? 
+
+Implemented floor and ceiling lighting based on 128x128 generated light map. A shader reads the lightmap and colors the models per pixel. 4x the resolution we had before. Still working on getting dynamic fireball lights to look good. Stil over saturates the tiles and turns them green. Next we can try doing the XY for walls instead of XZ
+
+Tried to make dynamic shader lights. made another light map for dynamic lights that gets checked everyframe. and updates the shader. If we try to combine baked light with dynamic light it fucks itself. 
+
+-Try having only dynamic light map. just add static lights to it then we'd be reading off of 1 map not trying to combine. We were only baking lights because we were doing world LOS checks but we aren't doing that for floors right now anyway. 
+
+-Tried and succeeded so far. For now we use a single dynamic lightmap, we load both dynamic lights and static lights and update it every frame. We aren't doing LOS checks on floors so it's fine and runs fast. LLM was saying we could do dynamic occlusion stamping or some such. We would iterate every light source and do a LOS check for walls and only stamp the light on places that aren't occluded. 
+
+-we now run the lighting with occlusion check once for static lights. We save those values and copy them to the dynamic light map every frame, no need to recalculate every frame for static lights. Dynamic fireball lights just don't have occlusion because it would be too slow. Maybe it would be slow you should try it and see. it might give cool effects. it took 3 days and we tried like 3 different approaches. What worked was first just adding worldLOS checks to the stamplight function. It was super slow, so then we tried to optimize. but it didn't get much better. Then I realized how we could bake the lighting and still use the dynamic map. We run the LOS checks once and save the light values to a seprate GStaticBase vector of colors i think. and then when we run the dynamic lighting we copy gstaticbase to gDynamic so it has all the static lights before stamping the dynamic ones. I also made a lightsample at the players position so we can have shader light on the player. Looks way better than the tint based player light. 
+
+
+
+When traveling to the next level by door, The next level's lighting is completely off, like dark. When you go to the menu and load the level from there it works. 
+
+chests are broken. opening one chest means all other chests are open from then on.
+
+
+
+
+
+
 
 
 

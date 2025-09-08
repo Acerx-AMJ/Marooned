@@ -17,8 +17,8 @@
 
 
 GameState currentGameState = GameState::Menu;
-//global variables, clean these up somehow. 
 
+//global variables, clean these up somehow. 
 Model terrainModel;
 Image heightmap;
 Mesh terrainMesh;
@@ -40,7 +40,7 @@ int pendingLevelIndex = -1; //wait to switch level until faded out. UpdateFade()
 float waterHeightY = 60;
 Vector3 bottomPos = {0, waterHeightY - 100, 0};
 float dungeonPlayerHeight = 100;
-float ceilingHeight = 400;
+float ceilingHeight = 480;
 float fadeToBlack = 0.0f;
 float vignetteIntensity = 0.0f;
 float vignetteFade = 0.0f;
@@ -58,13 +58,15 @@ float dungeonEnemyHeight = 165;
 float ElapsedTime = 0.0f;
 bool debugInfo = false;
 bool isLoadingLevel = false;
+float weaponDarkness = 0.0f;
 
 //std::vector<Bullet> activeBullets;
 std::list<Bullet> activeBullets; // instead of std::vector
+
 std::vector<Decal> decals;
 std::vector<MuzzleFlash> activeMuzzleFlashes;
 std::vector<Collectable> collectables;
-std::vector<CollectableWeapon> worldWeapons;
+std::vector<CollectableWeapon> worldWeapons; //weapon pickups
 std::vector<Character> enemies;  
 std::vector<Character*> enemyPtrs;
 std::vector<DungeonEntrance> dungeonEntrances;
@@ -101,7 +103,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
     if (level.isDungeon){
         isDungeon = true;
         vignetteStrengthValue = 0.5f; //darker vignette in dungeons
-        bloomStrengthValue = 0.0f; //turn on bloom in dungeons
+        bloomStrengthValue = 0.15f; //turn on bloom in dungeons
         SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
         SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
 
@@ -126,29 +128,21 @@ void InitLevel(const LevelData& level, Camera& camera) {
         GenerateSpiderFromImage(dungeonEnemyHeight);
         GenerateGhostsFromImage(dungeonEnemyHeight);
 
-        if (levelIndex == 4) levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position. 
-        
+        if (levelIndex == 4) levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position.
+
+
+ 
     }
-   
-    //bake lighting after isLoadingLevel is false to it can access world LOS 
-    //ResetAllBakedTints(); 
-
-    //BakeStaticLighting();
-  
-
-    InitDynamicLightmap(dungeonWidth * 4); //dynamic lightmapXZ + shader 
-    ResourceManager::Get().SetShaderValues();
 
 
-    
-    BuildStaticLightmapOnce(dungeonLights, dungeonWidth, dungeonHeight, tileSize, floorHeight);
-    BuildDynamicLightmapFromFrameLights(frameLights);
+    //XZ dynamic lightmap + shader lighting with occlusion
+    InitDungeonLights();
+
 
     isLoadingLevel = false;
+
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
-
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
-
     CameraSystem::Get().SnapAllToPlayer(); //put freecam at player pos
 
     //start with blunderbus and sword in that order
@@ -197,6 +191,13 @@ void UpdateFade(float deltaTime, Camera& camera){
 
 }
 
+void InitDungeonLights(){
+    InitDynamicLightmap(dungeonWidth * 4); //128 for 32 pixel map. keep same ratio if bigger map. 
+    ResourceManager::Get().SetLightingShaderValues();
+    BuildStaticLightmapOnce(dungeonLights);
+    BuildDynamicLightmapFromFrameLights(frameLights); // build dynamic light map once for good luck.
+}
+
 void HandleWaves(){
     //water
     float wave = sin(GetTime() * 0.9f) * 0.9f;  // slow, subtle vertical motion
@@ -209,6 +210,29 @@ void HandleWaves(){
 void removeAllCharacters(){
     enemies.clear();
     enemyPtrs.clear();
+
+}
+
+// Darkness factor should be in [0.0, 1.0]
+// 0.0 = fully dark, 1.0 = fully lit
+float CalculateDarknessFactor(Vector3 playerPos, const std::vector<LightSource>& lights) {
+    float maxLight = 0.0f;
+
+    for (const LightSource& l : lights) {
+        float dist = Vector3Distance(playerPos, l.position);
+        float contribution = Clamp(1.0f - dist / l.range, 0.0f, 1.0f) * l.intensity;
+        maxLight = fmax(maxLight, contribution);
+    }
+
+    // Invert to get "darkness"
+    float darkness = 1.0f - Clamp(maxLight, 0.0f, 1.0f);
+    return darkness;
+}
+
+
+
+void HandleWeaponTints(){
+    weaponDarkness = CalculateDarknessFactor(player.position, dungeonLights);
 
 }
 
@@ -240,7 +264,7 @@ void GenerateEntrances(){
         dw.rotationY = 90.0f * DEG2RAD; //rotate to match door 0 rotation, we could rotate door to match arch instead.
         dw.isOpen = false;
         dw.isLocked = false;
-        dw.tint = GRAY;
+        dw.tint = WHITE;
 
         doorways.push_back(dw);
     }

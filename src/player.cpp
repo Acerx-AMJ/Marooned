@@ -475,7 +475,7 @@ void Player::TakeDamage(int amount){
 
 
 void DrawPlayer(const Player& player, Camera& camera) {
-    DrawCapsule(player.position, Vector3 {player.position.x, player.height, player.position.z}, 10, 4, 4, RED);
+    DrawCapsule(player.position, Vector3 {player.position.x, player.height, player.position.z}, 5, 4, 4, RED);
     //DrawBoundingBox(player.GetBoundingBox(), RED);
 
     if (controlPlayer) {

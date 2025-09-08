@@ -12,15 +12,18 @@
 #include "camera_system.h"
 #include "lighting.h"
 
-float timer = 0;
-
+bool squareRes = true; // set true for 1024x1024, false for widescreen
 
 int main() { 
-    InitWindow(1600, 900, "Marooned");
+
+    int screenWidth = squareRes ? 1024 : 1600;
+    int screenHeight = squareRes ? 1024 : 900;
+
+    InitWindow(screenWidth, screenHeight, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
     ResourceManager::Get().LoadAllResources();
-
+    ResourceManager::Get().SetShaderValues();
     SoundManager::GetInstance().LoadSounds();
     SoundManager::GetInstance().PlayMusic("dungeonAir");
     SoundManager::GetInstance().PlayMusic("jungleAmbience");
@@ -44,18 +47,6 @@ int main() {
 
        // Use the active camera everywhere:
         Camera3D& camera = CameraSystem::Get().Active();
-
-
-        if (currentGameState == GameState::LoadingLevel){
-            // if (switchFromMenu){ //HACK////stop gap measure to make lighting work on level load from door. When game state is menu, only menu code runs,
-            // //enabling us to cleanly switch levels and lightmaps. 
-            //     switchFromMenu = false;
-            //     InitLevel(levels[pendingLevelIndex], camera);
-            //     pendingLevelIndex = -1;
-            //     currentGameState = GameState::Playing;
-            // } 
-            // //ontinue;
-        }
         
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
@@ -78,12 +69,12 @@ int main() {
         UpdateMusicStream(SoundManager::GetInstance().GetMusic(isDungeon ? "dungeonAir" : "jungleAmbience"));
      
         //update context
-        
+        UpdateFade(deltaTime, camera); //triggers init level on fadeout
         debugControls(camera); 
         R.UpdateShaders(camera);
 
         UpdateEnemies(deltaTime);
-        UpdateFade(deltaTime, camera); //triggers init level on fadeout
+
         UpdateBullets(camera, deltaTime);
         GatherFrameLights();
         EraseBullets();
@@ -93,7 +84,7 @@ int main() {
         UpdateCollectables(deltaTime); 
         UpdateLauncherTraps(deltaTime);
         UpdateDungeonChests();
-        
+        ApplyLavaDPS(player, deltaTime, 1);
         HandleWaves();
 
         //collisions
@@ -112,7 +103,7 @@ int main() {
 
         if (isDungeon){
             //only handle lighting in dungeons. Oustide we don't touch the tint. 
-            //ApplyBakedLighting();
+            HandleWeaponTints();
             HandleDungeonTints();
         }
 

@@ -99,8 +99,9 @@ void ConvertImageToWalkableGrid(const Image& dungeonMap) {
             bool skyBlue = (c.r == 0 && c.g == 128 && c.b == 255);   // chests
             bool purple  = (c.r == 128 && c.g == 0 && c.b == 128);   // closed doors
             bool aqua    = (c.r == 0 && c.g == 255 && c.b == 255);   // locked doors
+            bool lava     = (c.r == 200 && c.g == 0 && c.b == 0);    // lava
 
-            walkable[x][y] = !(black || blue || yellow || skyBlue || purple || aqua);
+            walkable[x][y] = !(black || blue || yellow || skyBlue || purple || aqua || lava);
         }
     }
 }
@@ -138,8 +139,9 @@ bool IsWalkable(int x, int y, const Image& dungeonMap) {
     bool skyBlue  = (c.r == 0 && c.g == 128 && c.b == 255);   // chests 
     bool purple   = (c.r == 128 && c.g == 0 && c.b == 128);   // closed doors
     bool aqua     = (c.r == 0 && c.g == 255 && c.b == 255);   // locked doors
+    bool lava     = (c.r == 200 && c.g == 0 && c.b == 0);
 
-    return !(black || blue || yellow || skyBlue || purple || aqua);
+    return !(black || blue || yellow || skyBlue || purple || aqua || lava);
 }
 
 

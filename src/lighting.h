@@ -14,15 +14,11 @@ struct BakedLightmap {
     std::vector<Color> pixels; // CPU buffer (RGB in 0..255)
 };
 
-extern BakedLightmap gDynamic;  
+extern BakedLightmap gDynamic;  //is it really a bakedLighmap if it's dynamic? it's a hybrid
 
-
-
-
-extern BakedLightmap gBaked;   // define once in a .cpp
 float SmoothFalloff(float d, float radius);
 
 void InitDynamicLightmap(int res);
+void BuildStaticLightmapOnce(const std::vector<LightSource>& dungeonLights);
 void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLights);
-void BuildStaticLightmapOnce(const std::vector<LightSource>& dungeonLights,
-                             int tilesX, int tilesZ, float tileSize, float floorY);
+
