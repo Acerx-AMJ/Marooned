@@ -16,12 +16,16 @@ void debugControls(Camera& camera){
     }
 
     if (IsKeyPressed(KEY_L)) {
+        isLoadingLevel = true;
         std::cout << "Player Position: ";
         DebugPrintVector(player.position);
 
-        InitDynamicLightmap(128);
-        R.SetShaderValues();
+        InitDynamicLightmap(dungeonWidth * 4);
+        R.SetLightingShaderValues();
+        BuildStaticLightmapOnce(dungeonLights);
         BuildDynamicLightmapFromFrameLights(frameLights);
+        isLoadingLevel = false;
+        LogDynamicLightmapNonBlack("testing: ");
         
     
     }

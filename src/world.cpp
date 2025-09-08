@@ -138,8 +138,8 @@ void InitLevel(const LevelData& level, Camera& camera) {
     //XZ dynamic lightmap + shader lighting with occlusion
     InitDungeonLights();
 
-
     isLoadingLevel = false;
+
 
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
@@ -196,6 +196,8 @@ void InitDungeonLights(){
     ResourceManager::Get().SetLightingShaderValues();
     BuildStaticLightmapOnce(dungeonLights);
     BuildDynamicLightmapFromFrameLights(frameLights); // build dynamic light map once for good luck.
+
+
 }
 
 void HandleWaves(){
@@ -217,11 +219,20 @@ void removeAllCharacters(){
 // 0.0 = fully dark, 1.0 = fully lit
 float CalculateDarknessFactor(Vector3 playerPos, const std::vector<LightSource>& lights) {
     float maxLight = 0.0f;
+    const float lightRange = 700.0f;
+
 
     for (const LightSource& l : lights) {
         float dist = Vector3Distance(playerPos, l.position);
         float contribution = Clamp(1.0f - dist / l.range, 0.0f, 1.0f) * l.intensity;
         maxLight = fmax(maxLight, contribution);
+    }
+
+    for (const LightSample& ls : frameLights){
+        float dist = Vector3Distance(playerPos, ls.pos);
+        float contribution = Clamp(1.0f - dist / lightRange, 0.0f, 1.0);
+        maxLight = fmax(maxLight, contribution);
+        
     }
 
     // Invert to get "darkness"

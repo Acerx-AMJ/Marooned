@@ -22,3 +22,5 @@ void InitDynamicLightmap(int res);
 void BuildStaticLightmapOnce(const std::vector<LightSource>& dungeonLights);
 void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLights);
 
+
+void LogDynamicLightmapNonBlack(const char* tag);

@@ -12,7 +12,7 @@
 #include "camera_system.h"
 #include "lighting.h"
 
-bool squareRes = true; // set true for 1024x1024, false for widescreen
+bool squareRes = false; // set true for 1024x1024, false for widescreen
 
 int main() { 
 

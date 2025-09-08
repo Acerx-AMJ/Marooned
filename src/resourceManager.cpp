@@ -302,6 +302,8 @@ void ResourceManager::SetLightingShaderValues(){
 
     if (locDynTex >= 0) SetShaderValueTexture(use, locDynTex, gDynamic.tex);
 
+ 
+
 }
 
 void ResourceManager::UpdateShaders(Camera& camera){
@@ -344,10 +346,13 @@ void ResourceManager::UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "isDungeon"), &isDungeonVal, SHADER_UNIFORM_INT);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonDarkness"), &dungeonDarkness, SHADER_UNIFORM_FLOAT);
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "dungeonContrast"), &dungeonContrast, SHADER_UNIFORM_FLOAT);
+    if (!isLoadingLevel){
+        Shader lavaShader = R.GetShader("lavaShader");
+        int locTime        = GetShaderLocation(lavaShader, "uTime");
+        SetShaderValue(R.GetShader("lavaShader"), locTime, &t, SHADER_UNIFORM_FLOAT);
 
-    Shader lavaShader = R.GetShader("lavaShader");
-    int locTime        = GetShaderLocation(lavaShader, "uTime");
-    SetShaderValue(R.GetShader("lavaShader"), locTime, &t, SHADER_UNIFORM_FLOAT);
+    }
+
 
 }
 

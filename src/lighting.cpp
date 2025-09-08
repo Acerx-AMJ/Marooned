@@ -182,6 +182,7 @@ static void ComputeDungeonXZBounds(int dungeonWidth, int dungeonHeight, float ti
 
 void InitDynamicLightmap(int res)
 {
+    gStaticBase.clear();
     // If re-initting, free the old GPU texture to avoid leaks
     if (gDynamic.tex.id != 0){
         std::cout << gDynamic.tex.id << "previous texture found\n";
@@ -412,6 +413,8 @@ void BuildStaticLightmapOnce(const std::vector<LightSource>& dungeonLights)
             p.g = (unsigned char)(p.g * 0.65f);
             p.b = (unsigned char)(p.b * 0.65f);
         }
+
+        
     
 }
 
@@ -453,6 +456,7 @@ void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLi
     }
 
     UpdateTexture(gDynamic.tex, gDynamic.pixels.data());
+
 }
 
 
