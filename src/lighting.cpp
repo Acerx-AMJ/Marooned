@@ -13,6 +13,102 @@ BakedLightmap gDynamic;
 
 static std::vector<Color> gStaticBase;   // same w*h as gDynamic
 
+// --- Helper: stamp a soft radial mask into ALPHA with max-combine
+static inline void StampLavaMaskToAlpha(int tileX, int tileY, float radiusTiles = 0.55f)
+{
+    if (dungeonWidth <= 0 || dungeonHeight <= 0 || gDynamic.w <= 0 || gDynamic.h <= 0) return;
+
+    // dynamic grid scale: texels per tile (assumes divisible)
+    const int sx = gDynamic.w / dungeonWidth;
+    const int sy = gDynamic.h / dungeonHeight;
+
+    // Center of this tile in lightmap texels (center of texels)
+    const float cx = (tileX + 0.5f) * sx;
+    const float cy = (tileY + 0.5f) * sy;
+
+    // Radius in texels (soft falloff to 0 at the rim)
+    const float r  = radiusTiles * 0.5f * (sx + sy); // average to be safe if non-square
+    const float r2 = r * r;
+
+    int minx = (int)floorf(cx - r); if (minx < 0) minx = 0;
+    int maxx = (int)ceilf (cx + r); if (maxx > gDynamic.w - 1) maxx = gDynamic.w - 1;
+    int miny = (int)floorf(cy - r); if (miny < 0) miny = 0;
+    int maxy = (int)ceilf (cy + r); if (maxy > gDynamic.h - 1) maxy = gDynamic.h - 1;
+
+    for (int y = miny; y <= maxy; ++y) {
+        const float py = (y + 0.5f) - cy;
+        for (int x = minx; x <= maxx; ++x) {
+            const float px = (x + 0.5f) - cx;
+            const float d2 = px*px + py*py;
+            if (d2 > r2) continue;
+
+            // Smooth falloff (1 at center -> 0 at radius)
+            float t = 1.0f - sqrtf(d2) / r;
+            // Optional ease for a nicer shoulder:
+            t = t * t * (3.0f - 2.0f * t); // smoothstep(0,1)
+
+            unsigned char v = (unsigned char)(t * 255.0f);
+            Color &p = gStaticBase[(size_t)y * gDynamic.w + x];
+            if (v > p.a) p.a = v; // MAX-combine for masks
+        }
+    }
+}
+
+// --- Optional: tiny dilation to help thin edges survive mips
+static inline void DilateAlphaOnce()
+{
+    std::vector<unsigned char> tmp((size_t)gDynamic.w * gDynamic.h, 0);
+    for (int y = 0; y < gDynamic.h; ++y) {
+        for (int x = 0; x < gDynamic.w; ++x) {
+            unsigned char m = 0;
+            for (int dy = -1; dy <= 1; ++dy) {
+                int yy = y + dy; if (yy < 0 || yy >= gDynamic.h) continue;
+                for (int dx = -1; dx <= 1; ++dx) {
+                    int xx = x + dx; if (xx < 0 || xx >= gDynamic.w) continue;
+                    m = (unsigned char) (m > gStaticBase[(size_t)yy * gDynamic.w + xx].a
+                                         ? m : gStaticBase[(size_t)yy * gDynamic.w + xx].a);
+                }
+            }
+            tmp[(size_t)y * gDynamic.w + x] = m;
+        }
+    }
+    for (int i = 0, n = (int)tmp.size(); i < n; ++i) gStaticBase[(size_t)i].a = tmp[(size_t)i];
+}
+
+// --- Build lava into ALPHA from your dungeon image (pixel convention: 200,0,0)
+static inline void BuildLavaMaskAlphaFromImage(const Image& dungeonImg)
+{
+    // Start with alpha = 0 (A now has meaning)
+    for (Color &p : gStaticBase) p.a = 0;
+
+    int lavaCount = 0;
+    for (int ty = 0; ty < dungeonHeight; ++ty) {
+        for (int tx = 0; tx < dungeonWidth; ++tx) {
+            Color px = GetImageColor(dungeonImg, tx, ty);
+            const bool isLava = (px.r == 200 && px.g == 0 && px.b == 0);
+            if (!isLava) continue;
+            ++lavaCount;
+
+            int fx = dungeonWidth  - 1 - tx;  // mirror X
+            int fy = dungeonHeight - 1 - ty;  // mirror Y
+            StampLavaMaskToAlpha(fx, fy, /*radiusTiles=*/0.65f);
+            //StampLavaMaskToAlpha(tx, ty, /*radiusTiles=*/0.65f); // slightly > tile center for nicer mips
+        }
+    }
+
+    // A tiny dilate helps distant mips hold the glow
+    DilateAlphaOnce();
+
+    TraceLog(LOG_INFO, "[lava alpha] tiles=%d  scale=%dx%d  dyn=%dx%d",
+            lavaCount,
+            gDynamic.w / dungeonWidth, gDynamic.h / dungeonHeight,
+            gDynamic.w, gDynamic.h);
+}
+
+
+
+
+
 
 // Returns 0..1 visibility from light -> tileCenter using a small perpendicular ray fan.
 // spreadMeters ~ 0.15f * tileSize; numRays 3..5; epsilonFrac ~ 0.02f
@@ -70,7 +166,10 @@ static void SubtileVis2x2(float vis[2][2],
     }
 }
 
-// --- Static bake: tile-first stamping with 2×2 sub-tile LOS near occluders ---
+
+
+
+// // --- Static bake: tile-first stamping with 2×2 sub-tile LOS near occluders ---
 void StampLight_StaticBase_Subtile2x2_ToBuffer(std::vector<Color>& outBuf, int bufW, int bufH,
                                                const Vector3& lightPos, float radius, Color color)
 {
@@ -101,7 +200,7 @@ void StampLight_StaticBase_Subtile2x2_ToBuffer(std::vector<Color>& outBuf, int b
             float visUniform = 1.0f;
             float vis2x2[2][2]; bool useSubtile = false;
 
-            //if (TileNearSolid(tx, tz, dungeonImg)) {
+            //if (TileNearSolid(tx, tz, dungeonImg)) { //dont do this check for better results. 
             // compute 2×2 sub-tile vis only near occluders
             SubtileVis2x2(vis2x2, lightPos, cx, cz, tileSize, floorHeight);
             // if all zero, skip whole tile
@@ -211,6 +310,24 @@ void InitDynamicLightmap(int res)
     SetTextureWrap(gDynamic.tex, TEXTURE_WRAP_CLAMP);
 }
 
+// void InitLavaGlowMap(int pixelsPerTile) {
+//     gLavaGlow.minX  = gDynamic.minX;
+//     gLavaGlow.minZ  = gDynamic.minZ;
+//     gLavaGlow.sizeX = gDynamic.sizeX;
+//     gLavaGlow.sizeZ = gDynamic.sizeZ;
+
+//     gLavaGlow.w = dungeonWidth  * pixelsPerTile;
+//     gLavaGlow.h = dungeonHeight * pixelsPerTile;
+
+//     Image img = GenImageColor(gLavaGlow.w, gLavaGlow.h, BLACK);
+//     gLavaGlow.tex = LoadTextureFromImage(img);
+//     UnloadImage(img);
+
+//     SetTextureFilter(gLavaGlow.tex, TEXTURE_FILTER_BILINEAR);
+
+// }
+
+
 
 // Simple smooth falloff (1 at center -> 0 at radius)
 float SmoothFalloff(float d, float radius)
@@ -238,99 +355,6 @@ XZBounds ComputeXZFromTiles(const std::vector<FloorTile>& tiles, float tileSize)
 
 }
 
-
-
-
-
-
-// Generic: stamp into ANY buffer (e.g., gStaticBase or gDynamic.pixels)
-// Requires: TileVisibilityWorldRay(...) and SmoothFalloff(...) already defined.
-static void StampLightWithWorldLOS_TileFirst_ToBuffer(std::vector<Color>& outBuf, int bufW, int bufH,
-                                                      const Vector3& lightPos, float radius, Color color)
-{
-    if ((int)outBuf.size() != bufW*bufH) {
-        // safety: resize/clear if caller forgot to size it
-        outBuf.assign((size_t)bufW*bufH, (Color){0,0,0,255});
-    }
-
-    // Texels-per-tile (assumes bufW/H are multiples of tilesX/Z)
-    const int tppX = bufW / dungeonWidth;
-    const int tppZ = bufH / dungeonHeight;
-
-    // Light tile and radius in tiles
-    const int lx = (int)floorf((lightPos.x - gDynamic.minX) / tileSize);
-    const int lz = (int)floorf((lightPos.z - gDynamic.minZ) / tileSize);
-    const int R  = (int)ceilf(radius / tileSize);
-
-    const float radius2 = radius * radius;
-
-    // Ray fan params (tweak to taste)
-    const int   numRays       = 4;
-    const float spreadMeters  = 0.85f * tileSize;
-    const float originYOffset = 2.0f;
-    const float targetYOffset = 2.0f;
-    const float epsilonFrac   = 0.15f;
-
-    const int tx0 = std::max(0,        lx - R);
-    const int tx1 = std::min(dungeonWidth-1, lx + R);
-    const int tz0 = std::max(0,        lz - R);
-    const int tz1 = std::min(dungeonHeight-1, lz + R);
-
-    for (int tz = tz0; tz <= tz1; ++tz) {
-        for (int tx = tx0; tx <= tx1; ++tx) {
-            // Tile center in world
-            const float cx = gDynamic.minX + (tx + 0.5f) * tileSize;
-            const float cz = gDynamic.minZ + (tz + 0.5f) * tileSize;
-            const Vector3 tileCenter = { cx, floorHeight, cz };
-
-            // Quick radial cull (center-based)
-            const float dx = cx - lightPos.x;
-            const float dz = cz - lightPos.z;
-            if (dx*dx + dz*dz > (radius + 0.75f*tileSize)*(radius + 0.75f*tileSize)) continue;
-
-            // Per-tile world LOS (small fan => soft edges)
-            const float vis = TileVisibilityWorldRay(lightPos, tileCenter,
-                                                     numRays, spreadMeters,
-                                                     originYOffset, targetYOffset,
-                                                     epsilonFrac);
-            if (vis <= 0.0f) continue;
-
-            // Texel range for this tile in OUT buffer
-            const int x0 = tx * tppX;
-            const int x1 = x0 + tppX - 1;
-            const int y0 = tz * tppZ;
-            const int y1 = y0 + tppZ - 1;
-
-            // Per-texel falloff (round pools), scaled by vis
-            for (int y = y0; y <= y1; ++y) {
-                const float texV = (y + 0.5f) / bufH;
-                const float wz   = gDynamic.minZ + texV * gDynamic.sizeZ;
-
-                for (int x = x0; x <= x1; ++x) {
-                    const float texU = (x + 0.5f) / bufW;
-                    const float wx   = gDynamic.minX + texU * gDynamic.sizeX;
-
-                    const float ddx = wx - lightPos.x;
-                    const float ddz = wz - lightPos.z;
-                    const float d2  = ddx*ddx + ddz*ddz;
-                    if (d2 > radius2) continue;
-
-                    const float d = sqrtf(d2);
-                    float w = SmoothFalloff(d, radius) * vis;
-                    if (w <= 0.0f) continue;
-
-                    Color& p = outBuf[y * bufW + x];
-                    int r = p.r + (int)(color.r * w);
-                    int g = p.g + (int)(color.g * w);
-                    int b = p.b + (int)(color.b * w);
-                    p.r = (unsigned char)std::min(r, 255);
-                    p.g = (unsigned char)std::min(g, 255);
-                    p.b = (unsigned char)std::min(b, 255);
-                }
-            }
-        }
-    }
-}
 
 
 static void StampDynamicLight(const Vector3& lightPos, float radius, Color color) {
@@ -393,29 +417,28 @@ void LogDynamicLightmapNonBlack(const char* tag) {
 
 void BuildStaticLightmapOnce(const std::vector<LightSource>& dungeonLights)
 {
-        gStaticBase.assign((size_t)gDynamic.w * gDynamic.h, (Color){0,0,0,255});
-        for (const auto& L : dungeonLights) {
-            Color c = {
-                (unsigned char)Clamp(L.colorTint.x * 255.0f * L.intensity, 0.0f, 255.0f),
-                (unsigned char)Clamp(L.colorTint.y * 255.0f * L.intensity, 0.0f, 255.0f),
-                (unsigned char)Clamp(L.colorTint.z * 255.0f * L.intensity, 0.0f, 255.0f),
-                255
-            };
-            //StampLight_StaticBase_WorldLOS_TileFirst(L.position, L.range, c);
-            //StampLightWithWorldLOS_TileFirst_ToBuffer(gStaticBase, gDynamic.w, gDynamic.h, L.position, L.range, c);
-            StampLight_StaticBase_Subtile2x2_ToBuffer(gStaticBase, gDynamic.w, gDynamic.h, L.position, L.range, c);
-            //StampLight_StaticBase_Subtile3x3_ToBuffer(gStaticBase, gDynamic.w, gDynamic.h, L.position, L.range, c);
-        }
+    gStaticBase.assign((size_t)gDynamic.w * gDynamic.h, (Color){0,0,0,255});
+    for (const auto& L : dungeonLights) {
+        Color c = {
+            (unsigned char)Clamp(L.colorTint.x * 255.0f * L.intensity, 0.0f, 255.0f),
+            (unsigned char)Clamp(L.colorTint.y * 255.0f * L.intensity, 0.0f, 255.0f),
+            (unsigned char)Clamp(L.colorTint.z * 255.0f * L.intensity, 0.0f, 255.0f),
+            255
+        };
 
-        // Optional headroom so fireballs add nicely:
-        for (Color& p : gStaticBase) {
-            p.r = (unsigned char)(p.r * 0.65f);
-            p.g = (unsigned char)(p.g * 0.65f);
-            p.b = (unsigned char)(p.b * 0.65f);
-        }
+        StampLight_StaticBase_Subtile2x2_ToBuffer(gStaticBase, gDynamic.w, gDynamic.h, L.position, L.range, c);
 
+    }
+
+    // Optional headroom so fireballs add nicely:
+    for (Color& p : gStaticBase) {
+        p.r = (unsigned char)(p.r * 0.65f);
+        p.g = (unsigned char)(p.g * 0.65f);
+        p.b = (unsigned char)(p.b * 0.65f);
+    }
+
+    BuildLavaMaskAlphaFromImage(dungeonImg);
         
-    
 }
 
 void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLights)

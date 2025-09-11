@@ -135,10 +135,11 @@ void InitLevel(const LevelData& level, Camera& camera) {
     }
 
 
+
     //XZ dynamic lightmap + shader lighting with occlusion
     InitDungeonLights();
-
     isLoadingLevel = false;
+
 
 
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
@@ -193,11 +194,13 @@ void UpdateFade(float deltaTime, Camera& camera){
 
 void InitDungeonLights(){
     InitDynamicLightmap(dungeonWidth * 4); //128 for 32 pixel map. keep same ratio if bigger map. 
+
     ResourceManager::Get().SetLightingShaderValues();
+    
     BuildStaticLightmapOnce(dungeonLights);
     BuildDynamicLightmapFromFrameLights(frameLights); // build dynamic light map once for good luck.
 
-
+    //TraceLog(LOG_INFO, "dynTex.id=%d glowTex.id=%d", gDynamic.tex.id, gLavaGlow.tex.id);
 }
 
 void HandleWaves(){

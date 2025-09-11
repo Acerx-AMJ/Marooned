@@ -220,6 +220,27 @@ inline bool IsLava(int gx, int gy) {
     return lavaMask[Idx(gx,gy)] != 0;
 }
 
+void GenerateCeilingTiles(float ceilingOffsetY) {
+    ceilingTiles.clear();
+
+    for (int y = 0; y < dungeonHeight; y++) {
+        for (int x = 0; x < dungeonWidth; x++) {
+            Color pixel = GetImageColor(dungeonImg, x, y);
+            Vector3 pos = GetDungeonWorldPos(x, y, tileSize, ceilingHeight);
+
+            // Only skip transparent pixels
+            if (pixel.a == 0) continue;
+
+            CeilingTile ceiling;
+            ceiling.position = pos;
+            ceiling.tint = GRAY;
+            ceilingTiles.push_back(ceiling);
+
+        }
+
+    }
+}
+
 void GenerateFloorTiles(float baseY) {
     floorTiles.clear();
     lavaTiles.clear();
@@ -522,34 +543,7 @@ bool IsDoorOpenAt(int x, int y) {
 }
 
 
-void GenerateCeilingTiles(float ceilingOffsetY) {
-    ceilingTiles.clear();
 
-    for (int y = 0; y < dungeonHeight; y++) {
-        for (int x = 0; x < dungeonWidth; x++) {
-            Color pixel = GetImageColor(dungeonImg, x, y);
-            Vector3 pos = GetDungeonWorldPos(x, y, tileSize, ceilingHeight);
-
-            // Only skip transparent pixels
-            if (pixel.a == 0) continue;
-
-            CeilingTile ceiling;
-            ceiling.position = pos;//Vector3Add(pos, {0, ceilingOffsetY, 0});
-            ceiling.tint = GRAY;
-            ceilingTiles.push_back(ceiling);
-
-        }
-
-    }
-    //mirror the floor
-    // for (const FloorTile& floor : floorTiles) {
-    //     CeilingTile ceiling;
-    //     ceiling.position = Vector3Add(floor.position, {0, ceilingOffsetY, 0});
-    //     ceiling.tint = GRAY; // default tint
-
-    //     ceilingTiles.push_back(ceiling);
-    // }
-}
 
 
 void GenerateSpiderWebs(float baseY)
@@ -1123,9 +1117,16 @@ void DrawDungeonBarrels() {
         DrawModelEx(modelToDraw, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{350.0f, 350.0f, 350.0f}, barrel.tint); //scaled half size
         
     }
+
+
 }
 
+
+
+
+
 void DrawDungeonChests() {
+   
     for (const ChestInstance& chest : chestInstances) {
         Vector3 offsetPos = {chest.position.x, chest.position.y + 20, chest.position.z};
         if (chest.animFrame > 0){
@@ -1133,15 +1134,26 @@ void DrawDungeonChests() {
         }
         DrawModelEx(chest.model, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{60.0f, 60.0f, 60.0f}, chest.tint);
     }
+    
 }
+
+static inline void SetIsCeilingUniform(bool yes, Shader s) {
+    int locCeil = GetShaderLocation(s, "isCeiling");
+    int v = yes ? 1 : 0;
+    if (locCeil >= 0) SetShaderValue(s, locCeil, &v, SHADER_UNIFORM_INT);
+}
+
 
 void DrawDungeonCeiling(){
 
     Model& ceilingModel = R.GetModel("floorTileGray");
 
+    SetIsCeilingUniform(true, R.GetShader("lightingShader"));
+    
     for (CeilingTile& tile : ceilingTiles){
         DrawModelEx(ceilingModel, tile.position, {1,0,0}, 180.0f, Vector3{700, 700, 700}, tile.tint);
     }
+    SetIsCeilingUniform(false, R.GetShader("lightingShader"));
 }
 
 

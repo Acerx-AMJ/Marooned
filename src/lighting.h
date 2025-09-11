@@ -15,12 +15,16 @@ struct BakedLightmap {
 };
 
 extern BakedLightmap gDynamic;  //is it really a bakedLighmap if it's dynamic? it's a hybrid
+extern BakedLightmap gLavaGlow;  // your lava glow map
 
 float SmoothFalloff(float d, float radius);
 
 void InitDynamicLightmap(int res);
+void InitLavaGlowMap(int pixelsPerTile);
 void BuildStaticLightmapOnce(const std::vector<LightSource>& dungeonLights);
 void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLights);
 
+
+void BuildLavaGlowFromFloorTypes(); 
 
 void LogDynamicLightmapNonBlack(const char* tag);

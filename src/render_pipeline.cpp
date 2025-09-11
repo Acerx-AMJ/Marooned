@@ -40,16 +40,17 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             
             DrawOverworldProps();
         } else {
-            
 
             DrawDungeonFloor();
             DrawDungeonWalls();
+            DrawDungeonDoorways();
             DrawDungeonCeiling();
+
             DrawDungeonBarrels();
             DrawLaunchers();
             DrawDungeonChests();
             DrawDungeonPillars();
-            DrawDungeonDoorways();
+
         }
 
         DrawPlayer(player, camera);

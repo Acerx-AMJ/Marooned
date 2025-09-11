@@ -2,24 +2,31 @@
 
 in vec2 vUV;
 in vec3 vWorldPos;
-in vec4 vColor;         // For floors, set tint to WHITE and ignore it here
+in vec4 vColor;          // For floors, set tint to WHITE and ignore it here
 
 out vec4 finalColor;
 
 uniform sampler2D texture0;        // floor albedo
 uniform vec4      colDiffuse;      // set to WHITE for floors
 
-uniform sampler2D dynamicGridTex;  // the single XZ lightmap you rebuild each frame
+uniform sampler2D dynamicGridTex;  // the single XZ lightmap (RGB = lights, A = lava mask)
 
-// gridBounds = { minX, minZ, invSizeX, invSizeZ } for the *same* mapping used to stamp
+// gridBounds = { minX, minZ, invSizeX, invSizeZ }
 uniform vec4  gridBounds;
 
-// Simple knobs
-uniform float dynStrength;   // 0..2 (start 1.0)
-uniform float ambientBoost;  // small base so pure dark isn’t ink (e.g., 0.02..0.08)
+// Lighting knobs
+uniform float dynStrength;     // 0..2 (default 1.0)
+uniform float ambientBoost;    // e.g., 0.02–0.08
+
+// New lava/ceiling knobs
+uniform int   isCeiling;       // 0 = floor, 1 = ceiling
+uniform float lavaCeilStrength; // how much lava boosts ceilings
+uniform float ceilHeight;      // world-space Y where ceilings live (for attenuation)
+uniform float lavaFalloff;     // how fast lava glow fades with height
+                               // (e.g., 200.0 means at 200 units above floor, glow ≈0)
 
 void main() {
-    // Albedo only (no per-tile tint for floors)
+    // Albedo (ignore vColor tint for floors if colDiffuse = WHITE)
     vec4 baseS = texture(texture0, vUV);
     vec3 base  = baseS.rgb * colDiffuse.rgb;
     float alpha = baseS.a * colDiffuse.a;
@@ -28,64 +35,72 @@ void main() {
     float u = (vWorldPos.x - gridBounds.x) * gridBounds.z;
     float v = (vWorldPos.z - gridBounds.y) * gridBounds.w;
     vec2  lmUV = clamp(vec2(u, v), vec2(0.0), vec2(1.0));
+    //vec2 lmUV = clamp(vec2(u, 1.0 - v), vec2(0.0), vec2(1.0));
 
-    // Dynamic light (the only light)
-    vec3 dyn = texture(dynamicGridTex, lmUV).rgb;
+    // Sample lightmap once: RGB = dynamic light, A = lava mask
+    vec4 lm = texture(dynamicGridTex, lmUV);
+    vec3 dyn = lm.rgb;
+    float lavaMask = lm.a; // 0..1
 
-    // Final lighting = scaled dynamic + tiny ambient floor
+    // Base lighting (same as before)
     vec3 L = clamp(dyn * dynStrength + vec3(ambientBoost), 0.0, 1.0);
 
-    // Shade
+    // If drawing ceilings, add lava glow based on alpha mask
+    if (isCeiling == 1) {
+        // Vertical attenuation so glow fades the higher the ceiling
+        float distY = max(0.0, vWorldPos.y - ceilHeight);
+        float atten = exp(-distY / lavaFalloff); // exponential falloff
+
+        // Add emissive red/orange glow
+        vec3 lavaGlow = vec3(1.0, 0.25, 0.0) * lavaMask * lavaCeilStrength * atten;
+        L = clamp(L + lavaGlow, 0.0, 1.0);
+    }
+
+    // Shade final
     finalColor = vec4(base * L, alpha);
-    //finalColor = vec4(texture(dynamicGridTex, lmUV).rgb, 1.0);
 }
 
 
 // #version 330
+
 // in vec2 vUV;
 // in vec3 vWorldPos;
-// in vec4 vColor;
+// in vec4 vColor;         // For floors, set tint to WHITE and ignore it here
 
 // out vec4 finalColor;
 
-// uniform sampler2D texture0;       // base/albedo
-// uniform vec4      colDiffuse;     // set to WHITE for floors
+// uniform sampler2D texture0;        // floor albedo
+// uniform vec4      colDiffuse;      // set to WHITE for floors
 
-// uniform sampler2D lightGridTex;   // baked XZ
-// uniform sampler2D dynamicGridTex; // dynamic XZ
+// uniform sampler2D dynamicGridTex;  // the single XZ lightmap you rebuild each frame
 
-// uniform vec4  gridBounds;         // { minX, minZ, invSizeX, invSizeZ }
-// uniform float bakedStrength;      // keep what worked for you
-// uniform float ambientBoost;       // small, e.g. 0.02–0.10
-// uniform float dynGain;            // NEW: emissive gain, e.g. 0.5–1.5
+// // gridBounds = { minX, minZ, invSizeX, invSizeZ } for the *same* mapping used to stamp
+// uniform vec4  gridBounds;
+
+// // Simple knobs
+// uniform float dynStrength;   // 0..2 (start 1.0)
+// uniform float ambientBoost;  // small base so pure dark isn’t ink (e.g., 0.02..0.08)
 
 // void main() {
-//     // Albedo (drop vColor for floors so tint can’t fight lighting)
+//     // Albedo only (no per-tile tint for floors)
 //     vec4 baseS = texture(texture0, vUV);
 //     vec3 base  = baseS.rgb * colDiffuse.rgb;
 //     float alpha = baseS.a * colDiffuse.a;
 
-//     // Shared UV for both lightmaps
+//     // World XZ -> dynamic lightmap UV
 //     float u = (vWorldPos.x - gridBounds.x) * gridBounds.z;
 //     float v = (vWorldPos.z - gridBounds.y) * gridBounds.w;
 //     vec2  lmUV = clamp(vec2(u, v), vec2(0.0), vec2(1.0));
 
-//     // Baked lighting (unchanged)
-//     vec3 baked = texture(lightGridTex, lmUV).rgb;
-//     baked = baked * bakedStrength + ambientBoost;
-
-//     // Base lit by the bake
-//     vec3 lit = base * baked;
-
-//     // Dynamic overlay as a small emissive add (not a multiplier)
+//     // Dynamic light (the only light)
 //     vec3 dyn = texture(dynamicGridTex, lmUV).rgb;
 
-//     // Optional: reduce washout in already-bright baked areas
-//     // weight is ~1 in the dark, ~0.6 in bright areas
-//     float weight = 0.6 + 0.4 * (1.0 - clamp(max(max(baked.r,baked.g),baked.b), 0.0, 1.0));
+//     // Final lighting = scaled dynamic + tiny ambient floor
+//     vec3 L = clamp(dyn * dynStrength + vec3(ambientBoost), 0.0, 1.0);
 
-//     vec3 outRGB = clamp(lit + dyn * (dynGain * weight), 0.0, 1.0);
-//     finalColor = vec4(outRGB, alpha);
+//     // Shade
+//     finalColor = vec4(base * L, alpha);
+//     //finalColor = vec4(texture(dynamicGridTex, lmUV).rgb, 1.0);
 // }
 
 
@@ -95,128 +110,46 @@ void main() {
 // in vec3 vWorldPos;
 // in vec4 vColor;
 
-// out vec4 finalColor;
-
-// uniform sampler2D texture0;    // base/albedo
-// uniform vec4      colDiffuse;  // material tint
-
-// uniform sampler2D lightGridTex;    // baked (same as before)
-// uniform sampler2D dynamicGridTex;  // NEW dynamic overlay (optional)
-
-// uniform vec4  gridBounds;      // { minX, minZ, invSizeX, invSizeZ }
-// uniform float bakedStrength;   // same
-// uniform float ambientBoost;    // same
-// uniform float dynStrength;     // NEW (0.0 → off)
-
-// void main() {
-//     // EXACTLY as before (keep vColor here to match prior visuals)
-//     //vec4 base = texture(texture0, vUV) * colDiffuse * vColor;
-
-//     vec4 baseS = texture(texture0, vUV);
-//     vec4 base  = baseS * colDiffuse;   // <- no * vColor here
-
-//     // World→lightmap UV (same as before)
-//     float u = (vWorldPos.x - gridBounds.x) * gridBounds.z;
-//     float v = (vWorldPos.z - gridBounds.y) * gridBounds.w;
-//     vec2  lmUV = clamp(vec2(u, v), vec2(0.0), vec2(1.0));
-
-//     vec3 baked = texture(lightGridTex, lmUV).rgb;
-//     baked = baked * bakedStrength + ambientBoost;
-//     baked = min(baked, vec3(0.8));   // hard cap: guarantees room for dynamics
-
-//     // Dynamic overlay (neutral if dynStrength == 0)
-//     vec3 dyn = texture(dynamicGridTex, lmUV).rgb;
-
-//     // Combine in lighting domain; when dynStrength = 0, L == baked
-//     //vec3 L = baked + (vec3(1.0) - baked) * (dynStrength * dyn);
-
-//     //finalColor = vec4(base.rgb * L, base.a);
-//     finalColor = vec4(base.rgb * (dyn), base.a);
-// }
-
-
-
-// #version 330
-// in vec2 vUV;
-// in vec3 vWorldPos;
-// in vec4 vColor;
 // out vec4 finalColor;
 
 // uniform sampler2D texture0;
-// uniform vec4 colDiffuse;
+// uniform vec4      colDiffuse;
 
-// uniform sampler2D lightGridTex;     // baked (as before)
-// uniform sampler2D dynamicGridTex;   // NEW
+// uniform sampler2D dynamicGridTex;
+// uniform vec4  gridBounds;      // {minX, minZ, invSizeX, invSizeZ}
+// uniform float dynStrength;
+// uniform float ambientBoost;
 
-// uniform vec4  gridBounds;    // { minX, minZ, invSizeX, invSizeZ }
-// uniform float bakedStrength; // as before
-// uniform float ambientBoost;  // as before
-// uniform float dynStrength;   // NEW (0.0 == off)
-
-// void main() {
-//     vec4 base = texture(texture0, vUV) * colDiffuse * vColor;
-
-//     float u = (vWorldPos.x - gridBounds.x) * gridBounds.z;
-//     float v = (vWorldPos.z - gridBounds.y) * gridBounds.w;
-//     vec2  lmUV = clamp(vec2(u, v), vec2(0.0), vec2(1.0));
-
-//     vec3 baked = texture(lightGridTex,   lmUV).rgb;
-//     vec3 dyn   = texture(dynamicGridTex, lmUV).rgb;
-
-//     baked = baked * bakedStrength + ambientBoost;
-
-//     // Combine; when dynStrength = 0.0, L == baked (identical to old shader)
-//     vec3 L = baked + (vec3(1.0) - baked) * (dynStrength * dyn);
-//     //finalColor = vec4(texture(dynamicGridTex, lmUV).rgb, 1.0);
-//     finalColor = vec4(base.rgb * L, base.a);
-// }
-
-
-
-
-
-
-// #version 330
-
-// in vec2 vUV;
-// in vec3 vWorldPos;
-// in vec4 vColor;
-
-
-// out vec4 finalColor;
-
-// // Raylib default samplers/uniforms
-// uniform sampler2D texture0;    // base/albedo
-// uniform vec4 colDiffuse;       // material tint
-
-// // Baked lightmap (your 128x128 texture)
-// uniform sampler2D lightGridTex;
-
-// // Mapping from world XZ -> [0..1] UV for the baked map
-// // gridBounds = { minX, minZ, invSizeX, invSizeZ }
-// uniform vec4 gridBounds;
-
-// // Optional tweak knobs
-// uniform float bakedStrength;  // 1.0 = full baked, 0.0 = off
-// uniform float ambientBoost;   // e.g. 0.0..1.0, add small base light if you baked very dark
+// // NEW: baked lava glow, sampled top-down like dynamicGridTex
+// uniform sampler2D lavaGlowTex;     // R channel footprint/glow
+// uniform vec3  lavaGlowColor;       // e.g., vec3(1.0, 0.42, 0.12)
+// uniform float lavaGlowIntensity;   // 0..2
+// uniform int   isCeiling;           // 1 only when drawing ceiling tiles
 
 // void main() {
+//     vec4 baseS = texture(texture0, vUV);
+//     vec3 base  = baseS.rgb * colDiffuse.rgb;
+//     float alpha = baseS.a * colDiffuse.a;
 
-//     vec4 base = texture(texture0, vUV) * colDiffuse * vColor;
+//     // XZ -> [0..1]^2 (same mapping as your dynamic grid)
+//     vec2 lmUV = clamp(vec2(
+//         (vWorldPos.x - gridBounds.x) * gridBounds.z,
+//         (vWorldPos.z - gridBounds.y) * gridBounds.w), 0.0, 1.0);
 
-//     // Map world XZ into baked lightmap UVs
-//     float u = (vWorldPos.x - gridBounds.x) * gridBounds.z;
-//     float v = (vWorldPos.z - gridBounds.y) * gridBounds.w;
+//     // Dynamic lighting you already have
+//     vec3 dyn = texture(dynamicGridTex, lmUV).rgb;
+//     vec3 L   = clamp(dyn * dynStrength + vec3(ambientBoost), 0.0, 1.0);
 
-//     // Clamp to [0,1] to avoid edge sampling artifacts
-//     vec2 lmUV = clamp(vec2(u, v), vec2(0.0), vec2(1.0));
+//     // Optional emissive from lava **only on ceilings**
+//     if (isCeiling == 1) {
 
-//     vec3 baked = texture(lightGridTex, lmUV).rgb;
+//         float glow = texture(lavaGlowTex, lmUV).r;   // [0..1]
+//         vec3  E    = lavaGlowColor * (lavaGlowIntensity * glow);
 
-//     // Optional small ambient boost (prevents pitch-black)
-//     baked = baked * bakedStrength + ambientBoost;
+//         // Headroom-style combine so colors don't go muddy:
+//         L = 1.0 - (1.0 - L) * (1.0 - E);
+//     }
 
-//     finalColor = vec4(base.rgb * baked, base.a);
+//     finalColor = vec4(base * L, alpha);
     
-//     //finalColor = vec4(texture(lightGridTex, clamp(vec2(u, v), vec2(0.0), vec2(1.0))).rgb, 1.0);
 // }
