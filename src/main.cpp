@@ -116,7 +116,7 @@ int main() {
         UpdateWorldFrame(deltaTime, player);
         UpdatePlayer(player, deltaTime, camera);
         
-        if (!isLoadingLevel) BuildDynamicLightmapFromFrameLights(frameLights);
+        if (!isLoadingLevel && isDungeon) BuildDynamicLightmapFromFrameLights(frameLights);
 
         RenderFrame(camera, player, deltaTime);
         
@@ -130,6 +130,6 @@ int main() {
     CloseAudioDevice();
     CloseWindow();
 
-    system("pause"); // ← waits for keypress
+    //system("pause"); // ← waits for keypress
     return 0;
 }

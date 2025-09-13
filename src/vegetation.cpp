@@ -219,6 +219,14 @@ void DrawTrees(const std::vector<TreeInstance>& trees, Model& shadowQuad, Camera
             tree->position.z + tree->zOffset
         };
 
+        Shader shadowSh = R.GetShader("shadowShader"); // your quad shadow shader
+        int locStrength = GetShaderLocation(shadowSh, "shadowStrength");
+
+        // Draw trees (lighter)
+        float treeStrength = 0.25f;
+        SetShaderValue(shadowSh, locStrength, &treeStrength, SHADER_UNIFORM_FLOAT);
+
+
         DrawModelEx(shadowQuad, shadowPos, {0, 1, 0}, 0,
                     {tree->scale * 15.0f, 1.0f, tree->scale * 15.0f}, WHITE);
     }

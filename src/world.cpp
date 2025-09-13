@@ -52,7 +52,7 @@ bool fadeIn = true;
 float tileSize = 200;
 bool switchFromMenu = false;
 int selectedOption = 0;
-float floorHeight = 80;
+float floorHeight = 100;
 float wallHeight = 270;
 float dungeonEnemyHeight = 165;
 float ElapsedTime = 0.0f;
@@ -137,7 +137,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
 
 
     //XZ dynamic lightmap + shader lighting with occlusion
-    InitDungeonLights();
+    if (isDungeon) InitDungeonLights();
     isLoadingLevel = false;
 
 
@@ -196,12 +196,36 @@ void InitDungeonLights(){
     InitDynamicLightmap(dungeonWidth * 4); //128 for 32 pixel map. keep same ratio if bigger map. 
 
     ResourceManager::Get().SetLightingShaderValues();
-    
+
     BuildStaticLightmapOnce(dungeonLights);
     BuildDynamicLightmapFromFrameLights(frameLights); // build dynamic light map once for good luck.
 
     //TraceLog(LOG_INFO, "dynTex.id=%d glowTex.id=%d", gDynamic.tex.id, gLavaGlow.tex.id);
 }
+
+void DrawEnemyShadows() {
+    Model& shadowModel = R.GetModel("shadowQuad");
+
+    // Don’t write to depth, but still test against it
+    rlEnableDepthTest();
+    rlDisableDepthMask();
+
+    Shader shadowSh = R.GetShader("shadowShader"); // your quad shadow shader
+    int locStrength = GetShaderLocation(shadowSh, "shadowStrength");
+
+    float enemyStrength = 0.6f;
+    SetShaderValue(shadowSh, locStrength, &enemyStrength, SHADER_UNIFORM_FLOAT);
+
+    for (Character& enemy : enemies) {
+        // Ideally, raycast to ground to get exact Y; add tiny epsilon to avoid z-fighting
+        Vector3 groundPos = { enemy.position.x, enemy.position.y - 40.1f, enemy.position.z };
+        //if (enemy.type == CharacterType::Pirate) groundPos.y = enemy.position.y - 0;
+        DrawModelEx(shadowModel, groundPos, {0,1,0}, 0.0f, {100,100,100}, BLACK);
+    }
+
+    rlEnableDepthMask();
+}
+
 
 void HandleWaves(){
     //water
@@ -517,6 +541,7 @@ void UpdateWorldFrame(float dt, Player& player) {
         player.isSwimming,
         player.onBoard,
         player_boat.position
+        
     };
     CameraSystem::Get().SyncFromPlayer(pv); //synce to players rotation
 

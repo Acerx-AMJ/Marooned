@@ -1026,17 +1026,20 @@ int GetDungeonImageY(float worldZ, float tileSize, int dungeonHeight) {
 
 void ApplyLavaDPS(Player& player, float dt, float lavaDps) {
     GridCoord g;
+    player.overLava = false;
     if (!WorldToGrid(player.position, g, tileSize, dungeonWidth, dungeonHeight)) return;
-
+    
     if (lavaMask[g.y * dungeonWidth + g.x]) {
+        player.overLava = true;
         lavaTimer += dt;
-        if (lavaTimer > tickDamage && player.position.y <= 200){
+        if (lavaTimer > tickDamage && player.grounded){ // only damage if on floor. 
             player.TakeDamage(10);
+
             lavaTimer = 0.0;
 
         }
         
-        // sfx/vfx here if you like
+        // sfx/vfx here: maybe a fire decal, and a sizzle. 
     }
 }
 

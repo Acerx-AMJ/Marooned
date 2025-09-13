@@ -320,6 +320,7 @@ void ResourceManager::SetLightingShaderValues() {
 
 
 
+
 void ResourceManager::UpdateShaders(Camera& camera){
     Vector2 screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
 

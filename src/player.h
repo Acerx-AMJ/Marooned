@@ -47,10 +47,12 @@ struct Player {
     float groundY;
     bool grounded = false;
     bool isSwimming = false;
+    bool overLava = false;
     bool isMoving = false;
     bool onBoard = false;
     bool disableMovement = false;
     bool blocking = false;
+    
 
     float stamina = 100.0f;
     float maxStamina = 100.0f;

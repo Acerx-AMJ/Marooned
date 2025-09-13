@@ -12,6 +12,7 @@ struct PlayerView {
     bool isSwimming;
     bool onBoard;
     Vector3 boatPos;   // only used if onBoard
+    float camDipY;
 
 };
 

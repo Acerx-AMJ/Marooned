@@ -219,12 +219,18 @@ Tried to make dynamic shader lights. made another light map for dynamic lights t
 -Tried and succeeded so far. For now we use a single dynamic lightmap, we load both dynamic lights and static lights and update it every frame. We aren't doing LOS checks on floors so it's fine and runs fast. LLM was saying we could do dynamic occlusion stamping or some such. We would iterate every light source and do a LOS check for walls and only stamp the light on places that aren't occluded. 
 
 -we now run the lighting with occlusion check once for static lights. We save those values and copy them to the dynamic light map every frame, no need to recalculate every frame for static lights. Dynamic fireball lights just don't have occlusion because it would be too slow. Maybe it would be slow you should try it and see. it might give cool effects. it took 3 days and we tried like 3 different approaches. What worked was first just adding worldLOS checks to the stamplight function. It was super slow, so then we tried to optimize. but it didn't get much better. Then I realized how we could bake the lighting and still use the dynamic map. We run the LOS checks once and save the light values to a seprate GStaticBase vector of colors i think. and then when we run the dynamic lighting we copy gstaticbase to gDynamic so it has all the static lights before stamping the dynamic ones. I also made a lightsample at the players position so we can have shader light on the player. Looks way better than the tint based player light. 
+-Consider sub tile lighting for static lights close to walls. 
 
 
+When traveling to the next level by door, The next level's lighting is completely off, like dark. When you go to the menu and load the level from there it works. -made a hack solution where we quicly switch to menu when fading out. Then if in menu, if switchFromMenu = true we call init level and it loads correctly. My guess is that when we switch to menu, no other code runs but the menu code allowing us to cleaning switch light maps. I made another state called loading level. and switch to that instead of menu just to make things more clear and it doesn't work. The lights are broke, even though when loadingLevel no other code runs, just like menu state. 
 
-When traveling to the next level by door, The next level's lighting is completely off, like dark. When you go to the menu and load the level from there it works. 
+-what is different about being in menu state that allows the light map to switch correctly? 
 
-chests are broken. opening one chest means all other chests are open from then on.
+chests are broken. opening one chest means all other chests are open from then on. replaced all chests with keys until we can fix it somehow.
+
+lava tiles with their own custom shader and light source attachment. 
+
+implemented lava tiles. made a new floor tile in blender out of a cube matched to the size of the floor tile but 1/4 has high. Attached lava texture to model. sample lava texture somehow with shader and use world UV coords to makes the texture applied across all tile seamlessly. Had a bug where we were drawing a giant lava texture in the sky the tiled infinitely or at least to clipping plane. Just added a pixel discard to shader if world.y is over 500. Caused by world UVs and the world being very large. Still need to add lights to lava somehow. bloom doesn't pick it up. 
 
 
 

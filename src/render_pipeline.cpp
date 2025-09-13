@@ -55,7 +55,7 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
 
         DrawPlayer(player, camera);
         DrawBullets(camera);
-
+        DrawEnemyShadows();
         DrawBloodParticles(camera);
         DrawCollectableWeapons(player, dt);
         HandleWaves();

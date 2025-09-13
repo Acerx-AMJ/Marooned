@@ -80,15 +80,61 @@ void CameraSystem::Update(float dt) {
 }
 
 
+
+// Exponential smoothing helper
+inline float SmoothStepExp(float current, float target, float speed, float dt) {
+    float a = 1.0f - expf(-speed * dt);
+    return current + (target - current) * a;
+}
+
+
+// Call per frame
+void UpdateCameraDip(float dt, const Player& player, PlayerView& pv,
+                     Vector3& basePos, Vector3& baseTarget) 
+{
+
+    // --- Tunables ---
+    constexpr float CAM_DIP_WATER = -40.0f;  // deeper dip
+    constexpr float CAM_DIP_LAVA  = -35.0f;  // shallower dip
+    constexpr float CAM_DIP_SPEED = 40.0f;   // higher = snappier (units: 1/sec)
+    float targetDip = 0.0f;
+    
+    if (player.isSwimming) {
+        targetDip = CAM_DIP_WATER;
+    } else if (player.overLava) {
+        targetDip = CAM_DIP_LAVA;
+    }
+
+    pv.camDipY = SmoothStepExp(pv.camDipY, targetDip, CAM_DIP_SPEED, dt);
+
+    if (!pv.onBoard) {
+        basePos.y   += pv.camDipY;
+        baseTarget.y += pv.camDipY;
+    }
+}
+
+
+
 void CameraSystem::UpdatePlayerCam(float dt) {
     // 1) Choose base position (boat vs ground)
     Vector3 basePos = pv.onBoard
         ? Vector3Add(pv.boatPos, Vector3{0, 200.0f, 0})
         : Vector3Add(pv.position, Vector3{0, 0, 0});
 
-    // 2) Swimming lowers the camera (keeps your old magic value)
-    float swimYOffset = player.isSwimming ? -40.0f : 1.5f;  // swimming lowers the camera
-    if (!pv.onBoard && pv.isSwimming) basePos.y += swimYOffset;
+    
+    // default: small lift to keep camera out of the floor
+    // float swimYOffset = 0.0f;
+
+    // // apply dip if swimming *or* over lava
+    // if (player.isSwimming || player.overLava) {
+    //     swimYOffset = -40.0f;
+    // }
+
+    // if (!pv.onBoard) {
+    //     basePos.y += swimYOffset;
+    // }
+
+    
 
     // 3) Build forward from player yaw/pitch
     float yawRad   = DEG2RAD * pv.yawDeg;
@@ -99,6 +145,8 @@ void CameraSystem::UpdatePlayerCam(float dt) {
         cosf(pitchRad) * cosf(yawRad)
     };
     Vector3 target = Vector3Add(basePos, forward);
+
+    UpdateCameraDip(dt, player, pv, basePos, target);
 
     // 4) Apply to the rig
     playerRig.cam.position = basePos;

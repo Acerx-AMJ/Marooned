@@ -89,6 +89,7 @@ void generateRaptors(int amount, Vector3 centerPos, float radius);
 void GenerateEntrances();
 void HandleWaves();
 void UpdateEnemies(float deltaTime);
+void DrawEnemyShadows();
 void UpdateMuzzleFlashes(float deltaTime);
 void UpdateBullets(Camera& camera, float deltaTime);
 void EraseBullets();
