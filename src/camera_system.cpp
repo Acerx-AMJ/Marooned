@@ -89,10 +89,10 @@ inline float SmoothStepExp(float current, float target, float speed, float dt) {
 
 
 // Call per frame
-void UpdateCameraDip(float dt, const Player& player, PlayerView& pv,
-                     Vector3& basePos, Vector3& baseTarget) 
+void UpdateCameraDip(float dt, const Player& player, PlayerView& pv,Vector3& basePos, Vector3& baseTarget) 
+    //Drop the camera down when stepping into lava. Easier than implementing a proper floor with gravity. 
 {
-
+    if (!player.grounded || player.overLava) return;
     // --- Tunables ---
     constexpr float CAM_DIP_WATER = -40.0f;  // deeper dip
     constexpr float CAM_DIP_LAVA  = -35.0f;  // shallower dip
@@ -106,6 +106,7 @@ void UpdateCameraDip(float dt, const Player& player, PlayerView& pv,
     }
 
     pv.camDipY = SmoothStepExp(pv.camDipY, targetDip, CAM_DIP_SPEED, dt);
+
 
     if (!pv.onBoard) {
         basePos.y   += pv.camDipY;

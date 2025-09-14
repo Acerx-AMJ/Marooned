@@ -22,23 +22,22 @@ int main() {
     InitWindow(screenWidth, screenHeight, "Marooned");
     InitAudioDevice();
     SetTargetFPS(60);
+    DisableCursor();
+    SetExitKey(KEY_NULL); //Escape brings up menu, not quit
     ResourceManager::Get().LoadAllResources();
     ResourceManager::Get().SetShaderValues();
+
     SoundManager::GetInstance().LoadSounds();
     SoundManager::GetInstance().PlayMusic("dungeonAir");
     SoundManager::GetInstance().PlayMusic("jungleAmbience");
     SetMusicVolume(SoundManager::GetInstance().GetMusic("jungleAmbience"), 0.5f);
-    DisableCursor();
-    SetExitKey(KEY_NULL); //Escape brings up menu, not quit
 
     controlPlayer = true; //start as player //hit tab for free camera
     float aspect = ((float)GetScreenWidth()/ (float)GetScreenHeight());
 
-    float fovy = (aspect <= 1.0f) ? 55 : 45; //is the aspect ratio is square, bump up the FOV
+    float fovy = (aspect <= 1.0f) ? 55 : 45; //if the aspect ratio is square, bump up the FOV
     CameraSystem::Get().Init(startPosition);
     CameraSystem::Get().SetFOV(fovy);
-
-    
     
     //main game loop
     while (!WindowShouldClose()) {
@@ -72,9 +71,7 @@ int main() {
         UpdateFade(deltaTime, camera); //triggers init level on fadeout
         debugControls(camera); 
         R.UpdateShaders(camera);
-
         UpdateEnemies(deltaTime);
-
         UpdateBullets(camera, deltaTime);
         GatherFrameLights();
         EraseBullets();
@@ -102,7 +99,7 @@ int main() {
         HandleDoorInteraction(camera);
 
         if (isDungeon){
-            //only handle lighting in dungeons. Oustide we don't touch the tint. 
+            //only handle lighting in dungeons. 
             HandleWeaponTints();
             HandleDungeonTints();
         }
@@ -120,7 +117,6 @@ int main() {
 
         RenderFrame(camera, player, deltaTime);
         
-
     }
 
     // Cleanup

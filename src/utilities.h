@@ -5,7 +5,8 @@
 #include "raymath.h"
 #include <string>
 
-// Math
+
+bool InBounds(int x, int y, int w, int h);
 float RandomFloat(float min, float max);
 float Clamp01(float x);
 float LerpExp(float current, float target, float lambda, float dt); 

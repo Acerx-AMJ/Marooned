@@ -112,6 +112,8 @@ void InitLevel(const LevelData& level, Camera& camera) {
         GenerateLightSources(floorHeight);
         GenerateFloorTiles(floorHeight);//80
         GenerateWallTiles(wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
+        GenerateDoorways(floorHeight, levelIndex); //calls generate doors from archways
+        GenerateLavaSkirtsFromMask(floorHeight);
         GenerateCeilingTiles(ceilingHeight);//400
         GenerateBarrels(floorHeight);
         GenerateLaunchers(floorHeight);
@@ -121,7 +123,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
         GenerateKeys(floorHeight);
         GenerateWeapons(200);
         
-        GenerateDoorways(floorHeight, levelIndex); //calls generate doors from archways
+        
         //generate enemies.
         GenerateSkeletonsFromImage(dungeonEnemyHeight); //165
         GeneratePiratesFromImage(dungeonEnemyHeight);

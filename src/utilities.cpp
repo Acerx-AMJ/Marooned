@@ -1,6 +1,9 @@
 #include "utilities.h"
 #include <iostream> // for DebugPrintVector
 
+bool InBounds(int x, int y, int w, int h) {
+    return (x >= 0 && y >= 0 && x < w && y < h);
+}
 
 float Clamp01(float x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
 

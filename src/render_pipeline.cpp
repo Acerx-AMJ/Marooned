@@ -50,6 +50,9 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             DrawLaunchers();
             DrawDungeonChests();
             DrawDungeonPillars();
+            // for (WallRun& b : wallRunColliders){ //debug draw wall colliders
+            //     DrawBoundingBox(b.bounds, WHITE);
+            // }
 
         }
 

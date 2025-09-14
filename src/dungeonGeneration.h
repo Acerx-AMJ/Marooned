@@ -155,6 +155,7 @@ struct WallInstance {
     Color tint = WHITE;  // Default to no tinting
     Color bakedTint;    // Precomputed static lighting
     float bakedBrightness; // NEW! Used only during baking
+    Vector3 scale;
 };
 
 struct WallRun {
@@ -176,6 +177,13 @@ struct CeilingTile {
     Color tint;
     Color bakedTint;
     float bakedBrightness;
+};
+
+//edge of lava pit
+struct Edge {
+    Vector3 a, b;   // world-space endpoints ON THE RIM (axis-aligned)
+    float   rotY;   // 90 for X edges, 0 for Z edges
+    Vector3 inward; // unit normal pointing into the pit
 };
 
 extern std::vector<LightSample> frameLights;
@@ -216,6 +224,7 @@ void GenerateDoorways( float baseY, int currentLevelIndex);
 void GenerateDoorsFromArchways();
 void GeneratePotions(float baseY);
 void GenerateKeys(float baseY);
+void GenerateLavaSkirtsFromMask(float baseY);
 void DrawDungeonFloor();
 void DrawDungeonWalls();
 void DrawDungeonFloor();

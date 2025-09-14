@@ -90,7 +90,8 @@ using namespace dungeon;
 
 //    medium yellow = timing pixel (200, 50, 0)/ (200, 100, 0)/ (200, 150, 0)
 
-
+// Epsilon for float compares
+static inline bool NearlyEq(float a, float b, float eps = 1e-4f) { return fabsf(a - b) < eps; }
 
 Vector3 ColorToNormalized(Color color) {
     return (Vector3){
@@ -165,26 +166,52 @@ void UpdateDungeonChests() {
 }
 
 
-BoundingBox MakeWallBoundingBox(const Vector3& start, const Vector3& end, float thickness, float height) {
-    Vector3 min = Vector3Min(start, end);
-    Vector3 max = Vector3Max(start, end);
-    
 
-    // Expand by half thickness in perpendicular direction
-    if (start.x == end.x) {
-        // Vertical wall (same x, different z)
-        min.x -= thickness * 0.5f;
-        max.x += thickness * 0.5f;
+BoundingBox MakeWallBoundingBox(const Vector3& start, const Vector3& end,
+                                float thickness, float height)
+{
+    Vector3 minv = Vector3Min(start, end);
+    Vector3 maxv = Vector3Max(start, end);
+
+    const float halfT = thickness * 0.5f;
+
+    if (NearlyEq(start.x, end.x)) {
+        // Edge runs along Z, expand thickness in X
+        minv.x -= halfT; maxv.x += halfT;
+    } else if (NearlyEq(start.z, end.z)) {
+        // Edge runs along X, expand thickness in Z
+        minv.z -= halfT; maxv.z += halfT;
     } else {
-        // Horizontal wall (same z, different x)
-        min.z -= thickness * 0.5f;
-        max.z += thickness * 0.5f;
+        // Diagonal edge (shouldn't happen for skirts) — expand in both just in case
+        minv.x -= halfT; maxv.x += halfT;
+        minv.z -= halfT; maxv.z += halfT;
     }
 
-    max.y += height + 400; // dont jump over walls.
-
-    return { min, max };
+    maxv.y += height; // if you use this path elsewhere; for pits we'll override Ys below
+    return { minv, maxv };
 }
+
+
+// BoundingBox MakeWallBoundingBox(const Vector3& start, const Vector3& end, float thickness, float height) {
+//     Vector3 min = Vector3Min(start, end);
+//     Vector3 max = Vector3Max(start, end);
+    
+
+//     // Expand by half thickness in perpendicular direction
+//     if (start.x == end.x) {
+//         // Vertical wall (same x, different z)
+//         min.x -= thickness * 0.5f;
+//         max.x += thickness * 0.5f;
+//     } else {
+//         // Horizontal wall (same z, different x)
+//         min.z -= thickness * 0.5f;
+//         max.z += thickness * 0.5f;
+//     }
+
+//     max.y += height; // dont jump over walls.
+
+//     return { min, max };
+// }
 
 
 void LoadDungeonLayout(const std::string& imagePath) {
@@ -253,10 +280,11 @@ void GenerateFloorTiles(float baseY) {
 
             // Only skip transparent pixels
             if (pixel.a == 0) continue;
+
             if (pixel.r == 200 && pixel.g == 0 && pixel.b == 0){
                 //generate lava tile instead, add to vector of lava tiles. 
                 FloorTile lavaTile;
-                Vector3 offset = {0, -20, 0};
+                Vector3 offset = {0, -100, 0};
                 lavaTile.position = pos + offset;
                 lavaTile.tint = WHITE;
                 lavaTile.floorType = FloorType::Lava;
@@ -285,15 +313,7 @@ void GenerateWallTiles(float baseY) {
     wallRunColliders.clear();
 
     float wallThickness = 50.0f;
-    float wallHeight = 200.0f;
-
-    // auto isBarrelColor = [](const Color& c) {
-    //     return (c.r == 0 && c.g == 0 && c.b == 255); // pure blue
-    // };
-
-    // auto isWallColor = [](const Color& c) {
-    //     return (c.r == 0 && c.g == 0 && c.b == 0);   // pure black
-    // };
+    float wallHeight = 400.0f;
 
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
@@ -353,6 +373,8 @@ void GenerateWallTiles(float baseY) {
 
                     a.y -= 190.0f;
                     b.y -= 190.0f;
+
+  
 
                     BoundingBox bounds = MakeWallBoundingBox(a, b, wallThickness, wallHeight);
 
@@ -532,6 +554,129 @@ void GenerateDoorsFromArchways() {
 
     }
 }
+
+static constexpr float WALL_MODEL_H   = 320.0f;   // your mesh height
+static constexpr float EDGE_LEN       = 200.0f;   // tile size
+static constexpr float THICKNESS      = 50.0f;
+static constexpr float PUSH_IN_FACTOR = 0.1f;    // into pit
+
+BoundingBox MakeAABBFromSkirt(const WallInstance& s, int dir)
+{
+    // sizes
+    const float halfLen = EDGE_LEN * 0.5f;
+    const float halfTh  = THICKNESS * 0.5f;
+    const float halfY   = (s.scale.y * WALL_MODEL_H) * 0.5f;
+
+    // center (push fully into pit so it never straddles the rim)
+    Vector3 inward = (dir==0)? Vector3{+1,0,0}
+                    : (dir==1)? Vector3{-1,0,0}
+                    : (dir==2)? Vector3{ 0,0,+1}
+                               : Vector3{ 0,0,-1};
+
+    Vector3 c = Vector3Add(s.position, Vector3Scale(inward, THICKNESS * PUSH_IN_FACTOR));
+
+    // decide which axis is the long edge from s.rotationY
+    float r = fmodf(fabsf(s.rotationY), 180.0f);
+    bool longAlongX = (r < 45.0f || r > 135.0f);   // 0°/180° → along X, 90° → along Z
+
+    BoundingBox bb;
+    bb.min.y = c.y - halfY;  bb.max.y = c.y + halfY;
+
+    //flipped this to make it work. 
+    if (!longAlongX) {                // length on X, thickness on Z
+        bb.min.x = c.x - halfLen;    bb.max.x = c.x + halfLen;
+        bb.min.z = c.z - halfTh;     bb.max.z = c.z + halfTh;
+    } else {                         // length on Z, thickness on X
+        bb.min.x = c.x - halfTh;     bb.max.x = c.x + halfTh;
+        bb.min.z = c.z - halfLen;    bb.max.z = c.z + halfLen;
+    }
+    return bb;
+}
+
+
+
+// Make one vertical liner on edge between (x,y) and its neighbor in DIR
+// dir: 0=+X (east), 1=-X (west), 2=+Z (south), 3=-Z (north)
+void AddLavaSkirtEdge(int x, int y, int dir, float baseY) {
+    // endpoints on the floor plane at the edge between two tiles
+    Vector3 a, b;
+    Vector3 ta = GetDungeonWorldPos(x, y, tileSize, baseY);
+
+    switch (dir) {
+        case 0: // east edge: (x,y) -> (x+1,y)
+            a = GetDungeonWorldPos(x,     y, tileSize, baseY); a.x +=  tileSize*0.5f; a.z -= tileSize*0.5f;
+            b = GetDungeonWorldPos(x + 1, y, tileSize, baseY); b.x -=  tileSize*0.5f; b.z += tileSize*0.5f;
+
+            break;
+        case 1: // west edge: (x-1,y) -> (x,y)
+            a = GetDungeonWorldPos(x - 1, y, tileSize, baseY); a.x +=  tileSize*0.5f; a.z += tileSize*0.5f;
+            b = GetDungeonWorldPos(x,     y, tileSize, baseY); b.x -=  tileSize*0.5f; b.z -= tileSize*0.5f;
+            break;
+        case 2: // south edge: (x,y) -> (x,y+1)
+            a = GetDungeonWorldPos(x, y,     tileSize, baseY); a.x += tileSize*0.5f; a.z +=  tileSize*0.5f;
+            b = GetDungeonWorldPos(x, y + 1, tileSize, baseY); b.x -= tileSize*0.5f; b.z -=  tileSize*0.5f;
+            break;
+        default: // north edge: (x,y-1) -> (x,y)
+            a = GetDungeonWorldPos(x, y - 1, tileSize, baseY); a.x -= tileSize*0.5f; a.z +=  tileSize*0.5f;
+            b = GetDungeonWorldPos(x, y,     tileSize, baseY); b.x += tileSize*0.5f; b.z -=  tileSize*0.5f;
+            break;
+    }
+
+    const float topY   = baseY - 2.0f;
+    const float lavaY  = baseY - 420;
+    const float bTop   = baseY - 50;
+    const float height = (topY - lavaY);
+    const float WALL_MODEL_HEIGHT = 400.0f; // visual height of your wall model
+
+    const float t = 50.0f;
+    if (height <= 0.0f) return;
+
+    // Instance positioned at mid of the segment, centered vertically
+    Vector3 mid = Vector3Lerp(a, b, 0.5f);
+    mid.y = lavaY + 0.5f * height;
+
+    float rotY = (dir < 2) ? 0.0f : 90.0f;  // x-edges face 90°, z-edges face 0°
+    //float rotY = (dir > 2) ? 0.0f : 90.0f; //flip
+    WallInstance skirt{};
+    skirt.position  = mid;
+    skirt.rotationY = rotY;
+    skirt.tint      = WHITE;
+    skirt.scale     = {1.0f, height / WALL_MODEL_HEIGHT, 1.0f}; // <- add scale to your instance or pass to DrawModelEx
+
+    wallInstances.push_back(skirt);
+
+    BoundingBox bb = MakeAABBFromSkirt(skirt, dir);
+
+    // Store it (rotY not needed for AABB)
+    wallRunColliders.push_back({ /*start*/skirt.position, /*end*/skirt.position, 0.0f, bb }); //add colliders to skirts. 
+    
+}
+
+// --- main pass: walk mask edges and place skirts ---
+// lavaMask[y*w + x] == 1 means lava there (you already fill this)
+void GenerateLavaSkirtsFromMask(float baseY) {
+    for (int y = 0; y < dungeonHeight; ++y) {
+        for (int x = 0; x < dungeonWidth; ++x) {
+            if (lavaMask[Idx(x,y)] == 0) continue; // only build from lava cells outward
+
+            // For each of 4 neighbors: if neighbor is NOT lava (i.e., floor/solid), add an edge skirt.
+            // This guarantees we create one skirt per boundary edge (no duplicates).
+            // East
+            if (InBounds(x+1, y, dungeonWidth, dungeonHeight) && lavaMask[Idx(x+1,y)] == 0)
+                AddLavaSkirtEdge(x, y, 0, baseY);
+            // West
+            if (InBounds(x-1, y, dungeonWidth, dungeonHeight) && lavaMask[Idx(x-1,y)] == 0)
+                AddLavaSkirtEdge(x, y, 1, baseY);
+            // South
+            if (InBounds(x, y+1, dungeonWidth, dungeonHeight) && lavaMask[Idx(x,y+1)] == 0)
+                AddLavaSkirtEdge(x, y, 2, baseY);
+            // North
+            if (InBounds(x, y-1, dungeonWidth, dungeonHeight) && lavaMask[Idx(x,y-1)] == 0)
+                AddLavaSkirtEdge(x, y, 3, baseY);
+        }
+    }
+}
+
 
 bool IsDoorOpenAt(int x, int y) {
     for (const Door& door : doors) {
@@ -854,6 +999,7 @@ void GenerateGhostsFromImage(float baseY) {
         for (int x = 0; x < dungeonWidth; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
 
+            if (current.a == 0) continue;
             
             if (current.r == 200 && current.g == 200 && current.b == 200) { //very light gray = ghost. 
                 Vector3 spawnPos = GetDungeonWorldPos(x, y, tileSize, baseY);
@@ -872,6 +1018,9 @@ void GenerateGhostsFromImage(float baseY) {
 
                 enemies.push_back(ghost);
                 enemyPtrs.push_back(&enemies.back()); 
+                //optional: debug
+                std::cout << "Ghost at ("<<x<<","<<y<<") RGBA="
+                          <<int(current.r)<<","<<int(current.g)<<","<<int(current.b)<<","<<int(current.a)<<"\n";
             }
         }
     }
@@ -1248,20 +1397,6 @@ void HandleDungeonTints() {
 
     UpdateDoorTints(player.position);
 }
-
-
-
-// Vector3 playerLight(Vector3 playerPos, Vector3 tilePos, Vector3 finalColor){
-//     //return player light contribution
-//     float distToPlayer = Vector3Distance(playerPos, tilePos);
-//     float playerContribution = Clamp(1.0f - (distToPlayer / playerLightRange), 0.0f, 1.0f);
-//     float playerLight = playerContribution * playerLightIntensity;
-//     return Vector3Add(finalColor, Vector3Scale({1.0f, 0.85f, 0.7f}, playerLight)); 
-    
-
-// }
-
-
 
 
 void UpdateChestTints(Vector3 playerPos) {

@@ -224,7 +224,7 @@ Tried to make dynamic shader lights. made another light map for dynamic lights t
 
 When traveling to the next level by door, The next level's lighting is completely off, like dark. When you go to the menu and load the level from there it works. -made a hack solution where we quicly switch to menu when fading out. Then if in menu, if switchFromMenu = true we call init level and it loads correctly. My guess is that when we switch to menu, no other code runs but the menu code allowing us to cleaning switch light maps. I made another state called loading level. and switch to that instead of menu just to make things more clear and it doesn't work. The lights are broke, even though when loadingLevel no other code runs, just like menu state. 
 
--what is different about being in menu state that allows the light map to switch correctly? 
+-what is different about being in menu state that allows the light map to switch correctly? -we are drawing the menu, we are updating the menu, we are setting level index, It's not fadeout...we may never know. 
 
 chests are broken. opening one chest means all other chests are open from then on. replaced all chests with keys until we can fix it somehow.
 
@@ -232,6 +232,15 @@ lava tiles with their own custom shader and light source attachment.
 
 implemented lava tiles. made a new floor tile in blender out of a cube matched to the size of the floor tile but 1/4 has high. Attached lava texture to model. sample lava texture somehow with shader and use world UV coords to makes the texture applied across all tile seamlessly. Had a bug where we were drawing a giant lava texture in the sky the tiled infinitely or at least to clipping plane. Just added a pixel discard to shader if world.y is over 500. Caused by world UVs and the world being very large. Still need to add lights to lava somehow. bloom doesn't pick it up. 
 
+Spent two days trying to make the tiles above lava tiles glow red. Was successful in the end, but the effect is meh. Maybe the tiles around the lava should also glow red. But if it's gonna be meh, I don't want to try it. Anyway the lava glow can be used for more than just lava. We can now color an arbitrary tile any color we want. Our light map uses RGB for light color and occlusion, and uses A, the alpha channel to add glow to tiles above lava, or for example light a path along the floor. Maybe for tutorial reasons, or maybe a boss advertises his attacks and the floor lights up beneath you before an attack. It would take more work to do it dynamically. 
+
+I think we need a better way to get floor tiles, we get what tiles are lava by making a lava map. Shouldn't there be an easier way? We already have a map. 
+
+It's always sort of looked like the enemies were floating above the dungeon floor. I gave them a shadow model with a shader and it improved it a little, I needed to move all the characters down like 20 units so it looked like they were on the floor, but instead I just moved the dungeon floor up to 100, instead of 80. Luckily everything is tied to that one parameter floorHeight. So now the enemies look like they are properly grounded and with shadows to sell it more. It also made the player height shorter. Which I think is better because pirates were too short, this makes player more at eye level with them.
+
+Implemented lava pits. Before we were faking it by dropping the camera when you stepped in lava making it looked like you took one step down. I lowered the lava tile height to -200. So there is a 1 tile drop down into the pit. This made a black void in between the floor tiles and the lower lava tiles. So using the lava mask we make a "skirt" by spawning walls on the edge of lava tiles. the walls are dropped by 400 so they cover the void. The next problem was adding collision to the subterranean walls. We ended up using the old makeWallBoundingBox along with a lot more rigamarole to get them positioned correctly. but Now everything lines up perfect and it looks great. There is an extra 50 units you can stand on near the edge of the pit where the skirts are but the bounding check makes the player stay at the right height perfectly. Once you fall into the pit you need to jump to get back out. Which is what I was going for. Consider making deeper "death" pits. 
+
+make fireball emitter a sphere not a point for fireball trail. 
 
 
 
