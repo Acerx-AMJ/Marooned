@@ -80,6 +80,58 @@ void ResolvePlayerEnemyMutualCollision(Character* enemy, Player* player) {
     }
 }
 
+// returns true if a regular (non-AoE) bullet should stop after this pass
+bool HandleBarrelHitsForBullet(Bullet& b, Camera& camera) {
+    const bool isAOE = (b.type == BulletType::Fireball || b.type == BulletType::Iceball);
+    bool hitAnything = false;
+
+    for (BarrelInstance& barrel : barrelInstances) {
+        if (barrel.destroyed) continue;
+
+        if (CheckCollisionBoxSphere(barrel.bounds, b.GetPosition(), b.GetRadius())) {
+            hitAnything = true;
+
+            // Mark and open the tile
+            barrel.destroyed = true;
+            int tileX = GetDungeonImageX(barrel.position.x, tileSize, dungeonWidth);
+            int tileY = GetDungeonImageY(barrel.position.z, tileSize, dungeonHeight);
+            walkable[tileX][tileY] = true;
+
+            // Play SFX
+            SoundManager::GetInstance().Play("barrelBreak");
+
+
+            Vector3 dropPos{ barrel.position.x, barrel.position.y + 100.0f, barrel.position.z };
+            if (barrel.containsPotion) {
+                collectables.emplace_back(CollectableType::HealthPotion, dropPos, R.GetTexture("healthPotTexture"), 40);
+            }
+            if (barrel.containsMana) {
+                collectables.emplace_back(CollectableType::ManaPotion, dropPos, R.GetTexture("manaTexture"), 40);
+            }
+            if (barrel.containsGold) {
+                Collectable gold(CollectableType::Gold, dropPos, R.GetTexture("coinTexture"), 40);
+                gold.value = GetRandomValue(1, 100);
+                collectables.push_back(gold);
+            }
+
+            // For non-AoE bullets, stop after the first hit this frame
+            if (!isAOE) break;
+        }
+    }
+
+    // After processing all overlaps, resolve the bullet
+    if (hitAnything) {
+        if (isAOE) b.Explode(camera);
+        else       b.kill(camera);
+    }
+
+    // Tell caller whether to stop iterating this bullet
+    return hitAnything && !isAOE;
+}
+
+
+
+
 
 
 void SpiderWebCollision(){
@@ -323,6 +375,11 @@ void CheckBulletHits(Camera& camera) {
             }
         }
 
+                        // bullet hits barrel
+        if (HandleBarrelHitsForBullet(b, camera)){
+            break;
+        }
+
         // 🔹 3. Hit walls
         for (WallRun& w : wallRunColliders) {
             if (CheckCollisionPointBox(pos, w.bounds)) {
@@ -365,39 +422,7 @@ void CheckBulletHits(Camera& camera) {
             }
         }
 
-        // 🔹 5. Hit barrels
-        for (BarrelInstance& barrel : barrelInstances) {
-            int tileX = GetDungeonImageX(barrel.position.x, tileSize, dungeonWidth);
-            int tileY = GetDungeonImageY(barrel.position.z, tileSize, dungeonHeight);
-            if (!barrel.destroyed && CheckCollisionBoxSphere(barrel.bounds, b.GetPosition(), b.GetRadius())) {
-                barrel.destroyed = true;
-                walkable[tileX][tileY] = true; //tile is now walkable for enemies. 
-                if (b.type == BulletType::Fireball || b.type == BulletType::Iceball){
-                    b.Explode(camera);
-                    break;
-                }else{
-                    b.kill(camera);
-                    break;
 
-                }
-                SoundManager::GetInstance().Play("barrelBreak");
-
-                if (barrel.containsPotion) {
-                    Vector3 dropPos = { barrel.position.x, barrel.position.y + 100, barrel.position.z };
-                    collectables.push_back(Collectable(CollectableType::HealthPotion, dropPos, R.GetTexture("healthPotTexture"), 40));
-                }
-
-                if (barrel.containsGold) {
-                    Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
-                    int gvalue = GetRandomValue(1, 100);
-                    Collectable gold(CollectableType::Gold, pos, R.GetTexture("coinTexture"), 40);
-                    gold.value = gvalue;
-                    collectables.push_back(gold);
-
-                }
-                break;
-            }
-        }
 
         // 🔹 6. Hit pillars
         for (PillarInstance& pillar : pillars) {
@@ -426,6 +451,8 @@ void CheckBulletHits(Camera& camera) {
                 }
             }
         }
+
+
     }
 }
 

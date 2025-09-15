@@ -63,6 +63,7 @@ extern float ElapsedTime;
 extern bool debugInfo;
 extern bool isLoadingLevel;
 extern float weaponDarkness;
+extern bool drawCeiling;
 //extern float muzzleFlashTimer;
 
 extern GameState currentGameState;

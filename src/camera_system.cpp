@@ -159,8 +159,7 @@ void CameraSystem::UpdatePlayerCam(float dt) {
 }
 
 void CameraSystem::UpdateFreeCam(float dt) {
-    // WASD + mouse-look example (change to your input stack)
-    const float speed = (IsKeyDown(KEY_LEFT_SHIFT) ? 900.f : 400.f);
+    const float speed = (IsKeyDown(KEY_LEFT_SHIFT) ? 1500.f : 900.f);
     Vector3 f = Vector3Normalize(Vector3Subtract(freeRig.cam.target, freeRig.cam.position));
     Vector3 r = Vector3Normalize(Vector3CrossProduct(f, {0,1,0}));
 
@@ -170,13 +169,19 @@ void CameraSystem::UpdateFreeCam(float dt) {
     if (IsKeyDown(KEY_A)) move = Vector3Subtract(move, r);
     if (IsKeyDown(KEY_D)) move = Vector3Add(move, r);
 
+    // vertical controls
+    if (IsKeyDown(KEY_SPACE)) move = Vector3Add(move, {0, 1, 0});
+    if (IsKeyDown(KEY_LEFT_CONTROL)) move = Vector3Add(move, {0, -1, 0}); 
+    // (swap KEY_LEFT_CONTROL for KEY_LEFT_SHIFT if you want SHIFT for down,
+    // but note that LEFT_SHIFT is already your speed boost key above)
+
     if (Vector3Length(move) > 0) {
         move = Vector3Scale(Vector3Normalize(move), speed * dt);
         freeRig.cam.position = Vector3Add(freeRig.cam.position, move);
         freeRig.cam.target   = Vector3Add(freeRig.cam.target, move);
     }
 
-    // Mouse look (basic)
+    // Mouse look
     Vector2 delta = GetMouseDelta();
     float sens = 0.12f;
     freeRig.yaw   -= delta.x * sens;
@@ -191,6 +196,7 @@ void CameraSystem::UpdateFreeCam(float dt) {
     freeRig.cam.target = Vector3Add(freeRig.cam.position, dir);
     freeRig.cam.fovy   = freeRig.fov;
 }
+
 
 void CameraSystem::BeginCustom3D(const Camera3D& cam, float nearClip, float farClip) {
     rlDrawRenderBatchActive();

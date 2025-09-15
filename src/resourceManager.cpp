@@ -131,6 +131,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadModel("floorTileGray",  "assets/models/floorTileGray.glb");
     R.LoadModel("doorWayGray",    "assets/models/doorWayGray.glb");
     R.LoadModel("lavaTile",       "assets/models/lavaTileSquare.glb");
+    R.LoadModel("musket",         "assets/models/musket.glb");
 
     //generated models
     R.LoadModelFromMesh("skyModel", GenMeshCube(1.0f, 1.0f, 1.0f));
@@ -164,6 +165,22 @@ void ResourceManager::SetShaderValues(){
     //apply skyShader to sky model
     R.GetModel("skyModel").materials[0].shader = R.GetShader("skyShader");
 
+    // Load & assign once
+    Shader sky = R.GetShader("skyShader");
+    R.GetModel("skyModel").materials[0].shader = sky;
+
+    // Cache uniform locations
+    int locTime      = GetShaderLocation(sky, "time");
+    int locIsDungeon = GetShaderLocation(sky, "isDungeon");
+
+
+
+    int isDung = isDungeon ? 1 : 0; 
+    SetShaderValue(sky, locIsDungeon, &isDung, SHADER_UNIFORM_INT);
+
+
+
+
     // Shadow //Shadow decals beneath trees. 
     Model& shadowQuad = R.GetModel("shadowQuad");
     shadowQuad.materials[0].shader = shadowShader;
@@ -180,6 +197,9 @@ void ResourceManager::SetShaderValues(){
     float bloomColor[3] = { 1.0f, 0.5f, 1.0f };  
     float aaStrengthValue = 0.1f; //blur
 
+    float bloomThreshold = 0.9f;  // e.g. 1.0 in sRGB ≈ ~0.8 linear; start around 0.7–1.2
+    float bloomKnee = 0.5; 
+
     int locSat = GetShaderLocation(bloomShader, "uSaturation");
     float sat = 1.0f; // try 1.05–1.25
     SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
@@ -189,6 +209,16 @@ void ResourceManager::SetShaderValues(){
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomColor"), bloomColor, SHADER_UNIFORM_VEC3);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "aaStrength"), &aaStrengthValue, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomThreshold"), &bloomThreshold, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomKnee"), &bloomKnee, SHADER_UNIFORM_FLOAT);
+
+    if (isDungeon){
+        vignetteStrengthValue = 0.5f; //darker vignette in dungeons
+        bloomStrengthValue = 0.99f; //turn on bloom in dungeons
+        SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
+    }
+        
 
     
     int locCutoff = GetShaderLocation(R.GetShader("cutoutShader"), "alphaCutoff");
@@ -210,12 +240,6 @@ void ResourceManager::SetShaderValues(){
 void ResourceManager::SetLavaShaderValues(){
     Shader lavaShader = R.GetShader("lavaShader");
     Model& lavaTile = R.GetModel("lavaTile");
-    // IMPORTANT: set texture wrap to REPEAT so world UVs can tile
-    // Texture2D &mt = lavaTile.materials[0].maps[MATERIAL_MAP_ALBEDO].texture;
-    // SetTextureWrap(mt, TEXTURE_WRAP_REPEAT); // (signature varies by raylib version)
-    // SetTextureFilter(mt, TEXTURE_FILTER_ANISOTROPIC_16X); // or TRILINEAR if you prefer
-    // int locTex0 = GetShaderLocation(lavaShader, "texture0");
-    // SetShaderValueTexture(lavaShader, locTex0, mt);
 
     for (int i=0; i < lavaTile.materialCount; i++){
         lavaTile.materials[i].shader = lavaShader;
@@ -344,6 +368,8 @@ void ResourceManager::UpdateShaders(Camera& camera){
     
     //distance based desaturation on terrain needs camera pos
     SetShaderValue(terrainShader, camPosLoc, &camPos, SHADER_UNIFORM_VEC3);
+
+
 
     //animate sky needs elapsed time
     SetShaderValue(skyShader, GetShaderLocation(skyShader, "time"), &t, SHADER_UNIFORM_FLOAT);

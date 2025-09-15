@@ -15,7 +15,7 @@
 bool squareRes = false; // set true for 1024x1024, false for widescreen
 
 int main() { 
-
+    drawCeiling = false;
     int screenWidth = squareRes ? 1024 : 1600;
     int screenHeight = squareRes ? 1024 : 900;
 

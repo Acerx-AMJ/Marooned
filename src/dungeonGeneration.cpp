@@ -565,7 +565,7 @@ BoundingBox MakeAABBFromSkirt(const WallInstance& s, int dir)
     // sizes
     const float halfLen = EDGE_LEN * 0.5f;
     const float halfTh  = THICKNESS * 0.5f;
-    const float halfY   = (s.scale.y * WALL_MODEL_H) * 0.5f;
+    const float halfY   = (s.scale.y * WALL_MODEL_H) * 0.4f;
 
     // center (push fully into pit so it never straddles the rim)
     Vector3 inward = (dir==0)? Vector3{+1,0,0}
@@ -622,7 +622,7 @@ void AddLavaSkirtEdge(int x, int y, int dir, float baseY) {
             break;
     }
 
-    const float topY   = baseY - 2.0f;
+    const float topY   = baseY + 20.0f;
     const float lavaY  = baseY - 420;
     const float bTop   = baseY - 50;
     const float height = (topY - lavaY);
@@ -1018,9 +1018,7 @@ void GenerateGhostsFromImage(float baseY) {
 
                 enemies.push_back(ghost);
                 enemyPtrs.push_back(&enemies.back()); 
-                //optional: debug
-                std::cout << "Ghost at ("<<x<<","<<y<<") RGBA="
-                          <<int(current.r)<<","<<int(current.g)<<","<<int(current.b)<<","<<int(current.a)<<"\n";
+
             }
         }
     }
@@ -1297,14 +1295,15 @@ static inline void SetIsCeilingUniform(bool yes, Shader s) {
 
 
 void DrawDungeonCeiling(){
-
+    if (!drawCeiling) return;
     Model& ceilingModel = R.GetModel("floorTileGray");
 
     SetIsCeilingUniform(true, R.GetShader("lightingShader"));
-    
+    rlEnableBackfaceCulling();
     for (CeilingTile& tile : ceilingTiles){
         DrawModelEx(ceilingModel, tile.position, {1,0,0}, 180.0f, Vector3{700, 700, 700}, tile.tint);
     }
+    rlDisableBackfaceCulling();
     SetIsCeilingUniform(false, R.GetShader("lightingShader"));
 }
 

@@ -37,6 +37,7 @@ Vector3 playerSpawnPoint = {0,0,0};
 Vector3 waterPos = {0, 0, 0};
 int pendingLevelIndex = -1; //wait to switch level until faded out. UpdateFade() needs to know the next level index. 
 
+bool drawCeiling = true;
 float waterHeightY = 60;
 Vector3 bottomPos = {0, waterHeightY - 100, 0};
 float dungeonPlayerHeight = 100;
@@ -102,10 +103,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
    
     if (level.isDungeon){
         isDungeon = true;
-        vignetteStrengthValue = 0.5f; //darker vignette in dungeons
-        bloomStrengthValue = 0.15f; //turn on bloom in dungeons
-        SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
-        SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
+
 
         LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);
