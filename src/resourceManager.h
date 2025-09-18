@@ -10,8 +10,8 @@ public:
     
     // Texture
     Texture2D& LoadTexture(const std::string& name, const std::string& path);
-    Texture2D& GetTexture(const std::string& name) const;
-
+    //Texture2D& GetTexture(const std::string& name) const;
+    Texture2D&  GetTexture(const std::string& name);     
     // Model
     Model&      LoadModel(const std::string& name, const std::string& path);
     Model&      LoadModelFromMesh(const std::string& name, const Mesh& mesh);
@@ -53,6 +53,11 @@ private:
     std::unordered_map<std::string, Model>          _models;
     std::unordered_map<std::string, Shader>         _shaders;
     std::unordered_map<std::string, RenderTexture2D> _renderTextures;
+
+    // Fallback texture (not in the map); 'mutable' so const GetTexture can lazy-init it
+    mutable Texture2D _fallbackTex{};
+    mutable bool      _fallbackReady = false;
+    void ensureFallback_() const;   // creates procedural checker if needed
 
     static ResourceManager* _instance;
 };

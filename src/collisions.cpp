@@ -85,6 +85,7 @@ bool HandleBarrelHitsForBullet(Bullet& b, Camera& camera) {
     const bool isAOE = (b.type == BulletType::Fireball || b.type == BulletType::Iceball);
     bool hitAnything = false;
 
+
     for (BarrelInstance& barrel : barrelInstances) {
         if (barrel.destroyed) continue;
 
@@ -95,7 +96,16 @@ bool HandleBarrelHitsForBullet(Bullet& b, Camera& camera) {
             barrel.destroyed = true;
             int tileX = GetDungeonImageX(barrel.position.x, tileSize, dungeonWidth);
             int tileY = GetDungeonImageY(barrel.position.z, tileSize, dungeonHeight);
-            walkable[tileX][tileY] = true;
+
+            if (tileX >= 0 && tileX < dungeonWidth &&
+                tileY >= 0 && tileY < dungeonHeight)
+            {
+                if (!walkable[tileX][tileY]) {
+                    walkable[tileX][tileY] = true;
+                }
+            }
+
+
 
             // Play SFX
             SoundManager::GetInstance().Play("barrelBreak");
@@ -104,16 +114,13 @@ bool HandleBarrelHitsForBullet(Bullet& b, Camera& camera) {
             Vector3 dropPos{ barrel.position.x, barrel.position.y + 100.0f, barrel.position.z };
             if (barrel.containsPotion) {
                 collectables.emplace_back(CollectableType::HealthPotion, dropPos, R.GetTexture("healthPotTexture"), 40);
-            }
-            if (barrel.containsMana) {
-                collectables.emplace_back(CollectableType::ManaPotion, dropPos, R.GetTexture("manaTexture"), 40);
-            }
-            if (barrel.containsGold) {
+            } else if (barrel.containsMana) {
+                collectables.emplace_back(CollectableType::ManaPotion, dropPos, R.GetTexture("manaPotion"), 40);
+            } else if (barrel.containsGold) {
                 Collectable gold(CollectableType::Gold, dropPos, R.GetTexture("coinTexture"), 40);
                 gold.value = GetRandomValue(1, 100);
                 collectables.push_back(gold);
             }
-
             // For non-AoE bullets, stop after the first hit this frame
             if (!isAOE) break;
         }
@@ -128,10 +135,6 @@ bool HandleBarrelHitsForBullet(Bullet& b, Camera& camera) {
     // Tell caller whether to stop iterating this bullet
     return hitAnything && !isAOE;
 }
-
-
-
-
 
 
 void SpiderWebCollision(){
@@ -375,10 +378,7 @@ void CheckBulletHits(Camera& camera) {
             }
         }
 
-                        // bullet hits barrel
-        if (HandleBarrelHitsForBullet(b, camera)){
-            break;
-        }
+
 
         // 🔹 3. Hit walls
         for (WallRun& w : wallRunColliders) {
@@ -450,6 +450,11 @@ void CheckBulletHits(Camera& camera) {
 
                 }
             }
+        }
+
+                            // bullet hits barrel
+        if (HandleBarrelHitsForBullet(b, camera)){
+            break; //check bullets last
         }
 
 

@@ -49,22 +49,22 @@ void main() {
         // base night tint (very dark blue)
         vec3 night = vec3(0.001, 0.002, 0.004);
 
-
-
         // small stars
         float n1 = noise3(dir * 80.0);
         float starsSmall = step(0.97, n1) * pow(n1, 40.0);
 
         // rare bright stars
-        float n2 = noise3(dir * 40.0);
-        float starsBig = step(0.98, n2) * pow(n2, 10.0) * 3.0;
+        // float n2 = noise3(dir * 40.0);
+        // float starsBig = step(0.98, n2) * pow(n2, 10.0) * 3.0;
+
+        vec3 p = floor(dir * 220.0) + 0.1;   // snap to grid
+        float n = hash31(p);
+        float starsBig = step(0.9999, n);        // just a yes/no star
+
+
 
         vec3 col = night + vec3(1.0)*(starsSmall + starsBig);
 
-
-
-        // Brighter, larger stars
-        //vec3 col = night + vec3(1.0) * stars * tw * 2.5;
         finalColor = vec4(pow(col, vec3(1.0/2.2)), 1.0);
         return;
     }

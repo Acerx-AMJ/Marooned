@@ -250,8 +250,10 @@ inline bool IsLava(int gx, int gy) {
 void GenerateCeilingTiles(float ceilingOffsetY) {
     ceilingTiles.clear();
 
+    //fill the whole dungeon with ceiling tiles. 
     for (int y = 0; y < dungeonHeight; y++) {
         for (int x = 0; x < dungeonWidth; x++) {
+
             Color pixel = GetImageColor(dungeonImg, x, y);
             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, ceilingHeight);
 
@@ -284,9 +286,9 @@ void GenerateFloorTiles(float baseY) {
             if (pixel.r == 200 && pixel.g == 0 && pixel.b == 0){
                 //generate lava tile instead, add to vector of lava tiles. 
                 FloorTile lavaTile;
-                Vector3 offset = {0, -100, 0};
+                Vector3 offset = {0, -150, 0};
                 lavaTile.position = pos + offset;
-                lavaTile.tint = WHITE;
+                lavaTile.tint = BLACK;
                 lavaTile.floorType = FloorType::Lava;
                 lavaTiles.push_back(lavaTile);
                 lavaMask[Idx(x,y)] = 1;  //mark as lava on lava mask
@@ -558,7 +560,7 @@ void GenerateDoorsFromArchways() {
 static constexpr float WALL_MODEL_H   = 320.0f;   // your mesh height
 static constexpr float EDGE_LEN       = 200.0f;   // tile size
 static constexpr float THICKNESS      = 50.0f;
-static constexpr float PUSH_IN_FACTOR = 0.1f;    // into pit
+static constexpr float PUSH_OUT_FACTOR = 0.5f;    // out of pit
 
 BoundingBox MakeAABBFromSkirt(const WallInstance& s, int dir)
 {
@@ -568,12 +570,12 @@ BoundingBox MakeAABBFromSkirt(const WallInstance& s, int dir)
     const float halfY   = (s.scale.y * WALL_MODEL_H) * 0.4f;
 
     // center (push fully into pit so it never straddles the rim)
-    Vector3 inward = (dir==0)? Vector3{+1,0,0}
-                    : (dir==1)? Vector3{-1,0,0}
-                    : (dir==2)? Vector3{ 0,0,+1}
-                               : Vector3{ 0,0,-1};
+    Vector3 outward = (dir==0)? Vector3{-1,0,0}
+                    : (dir==1)? Vector3{+1,0,0}
+                    : (dir==2)? Vector3{ 0,0,-1}
+                               : Vector3{ 0,0,+1};
 
-    Vector3 c = Vector3Add(s.position, Vector3Scale(inward, THICKNESS * PUSH_IN_FACTOR));
+    Vector3 c = Vector3Add(s.position, Vector3Scale(outward, THICKNESS * PUSH_OUT_FACTOR));
 
     // decide which axis is the long edge from s.rotationY
     float r = fmodf(fabsf(s.rotationY), 180.0f);
@@ -592,6 +594,122 @@ BoundingBox MakeAABBFromSkirt(const WallInstance& s, int dir)
     }
     return bb;
 }
+
+
+
+// // dir: 0=+X (east), 1=-X (west), 2=+Z (south), 3=-Z (north)
+// static inline void AddSkirtEdgeEx(
+//     int x, int y, int dir, float baseY,
+//     float yBottom, float yTop,            // world Y of bottom/top of the skirt
+//     float lipOut, float extraThick,       // shift toward floor + extra thickness
+//     Color tint, bool addCollider)
+// {
+//     if (yTop <= yBottom) return;
+
+//     // Endpoints on the edge between the two tiles
+//     Vector3 a, b;
+//     switch (dir) {
+//         case 0: // east: (x,y)->(x+1,y)
+//             a = GetDungeonWorldPos(x,     y, tileSize, baseY); a.x += tileSize*0.5f; a.z -= tileSize*0.5f;
+//             b = GetDungeonWorldPos(x + 1, y, tileSize, baseY); b.x -= tileSize*0.5f; b.z += tileSize*0.5f;
+//             break;
+//         case 1: // west: (x-1,y)->(x,y)
+//             a = GetDungeonWorldPos(x - 1, y, tileSize, baseY); a.x += tileSize*0.5f; a.z += tileSize*0.5f;
+//             b = GetDungeonWorldPos(x,     y, tileSize, baseY); b.x -= tileSize*0.5f; b.z -= tileSize*0.5f;
+//             break;
+//         case 2: // south: (x,y)->(x,y+1)
+//             a = GetDungeonWorldPos(x, y,     tileSize, baseY); a.x += tileSize*0.5f; a.z += tileSize*0.5f;
+//             b = GetDungeonWorldPos(x, y + 1, tileSize, baseY); b.x -= tileSize*0.5f; b.z -= tileSize*0.5f;
+//             break;
+//         default: // north: (x,y-1)->(x,y)
+//             a = GetDungeonWorldPos(x, y - 1, tileSize, baseY); a.x -= tileSize*0.5f; a.z += tileSize*0.5f;
+//             b = GetDungeonWorldPos(x, y,     tileSize, baseY); b.x += tileSize*0.5f; b.z -= tileSize*0.5f;
+//             break;
+//     }
+
+//     const float WALL_MODEL_HEIGHT    = 400.0f;   // your wall mesh Y size
+//     const float WALL_MODEL_THICKNESS = 50.0f;    // your wall mesh native “thickness” (X or Z)
+
+//     Vector3 mid = Vector3Lerp(a, b, 0.5f);
+//     mid.y = 0.5f * (yBottom + yTop);
+
+//     // outward points from lava toward the non-lava neighbor
+//     Vector3 outward = {0,0,0};
+//     switch (dir) {
+//         case 0: outward = { -1, 0,  0 }; break; // east edge -> floor is west
+//         case 1: outward = { +1, 0,  0 }; break; // west edge -> floor is east
+//         case 2: outward = {  0, 0, -1 }; break; // south edge -> floor is north
+//         default:outward = {  0, 0, +1 }; break; // north edge -> floor is south
+//     }
+
+//     // shift toward the floor side so the slab tucks under the wall base
+//     mid = Vector3Add(mid, Vector3Scale(outward, lipOut));
+
+//     // build instance
+//     WallInstance skirt{};
+//     skirt.position  = mid;
+//     skirt.rotationY = (dir < 2) ? 0.0f : 90.0f;     // edges along Z use rot 0°, along X use 90°
+//     skirt.tint      = tint;
+
+//     // thickness axis is perpendicular to edge direction
+//     float thicknessScale = (WALL_MODEL_THICKNESS + extraThick) / WALL_MODEL_THICKNESS;
+//     if (dir < 2) { // edge runs along Z -> fatten X
+//         skirt.scale = { thicknessScale, (yTop - yBottom) / WALL_MODEL_HEIGHT, 1.0f };
+//     } else {       // edge runs along X -> fatten Z
+//         skirt.scale = { 1.0f, (yTop - yBottom) / WALL_MODEL_HEIGHT, thicknessScale };
+//     }
+
+//     wallInstances.push_back(skirt);
+
+//     if (addCollider) {
+//         BoundingBox bb = MakeAABBFromSkirt(skirt, dir);
+//         wallRunColliders.push_back({ skirt.position, skirt.position, 0.0f, bb });
+//     }
+// }
+
+// static inline bool IsWall(Color c) { return (c.r==0 && c.g==0 && c.b==0); }
+// // If your lava mask already handles lava, you can also derive IsLava from it.
+
+// void GenerateLavaSkirtsFromMask(float baseY) {
+//     const float lavaBottom = baseY - 420.0f;
+//     const float skirtTop   = baseY - 20.0f;     // your existing tall-skirt top
+//     const float topCapBot  = baseY+50;     // short “cap” hugging the floor
+//     const float topCapTop  = baseY +  200.0f;
+
+//     for (int y = 0; y < dungeonHeight; ++y) {
+//         for (int x = 0; x < dungeonWidth; ++x) {
+//             if (lavaMask[Idx(x,y)] == 0) continue;
+
+//             // neighbors
+//             const int nx[4] = { x+1, x-1, x,   x   };
+//             const int ny[4] = { y,   y,   y+1, y-1 };
+//             for (int dir = 0; dir < 4; ++dir) {
+//                 int px = nx[dir], py = ny[dir];
+//                 if (!InBounds(px, py, dungeonWidth, dungeonHeight)) continue;
+//                 if (lavaMask[Idx(px,py)] == 1) continue; // only boundaries
+
+//                 // --- main tall skirt (visual + collider)
+//                 AddSkirtEdgeEx(
+//                     x,y,dir, baseY,
+//                     lavaBottom, skirtTop,
+//                     tileSize * 0.125f,    // lipOut toward floor
+//                     tileSize * 0.50f,     // extra thickness to eat shelf
+//                     WHITE, true);
+
+//                 // --- if neighbor is a WALL, add a second short cap up near the floor
+//                 Color neighbor = dungeonPixels[py * dungeonWidth + px];
+//                 if (IsWall(neighbor)) {
+//                     AddSkirtEdgeEx(
+//                         x,y,dir, baseY,
+//                         topCapBot, topCapTop,   // ~45 units tall
+//                         tileSize * 0.22f,       // push a bit more under the wall lip
+//                         tileSize * 0.75f,       // even thicker to fully cover shelf
+//                         WHITE, true);           // collider too (or false if visual-only)
+//                 }
+//             }
+//         }
+//     }
+// }
 
 
 
@@ -635,13 +753,47 @@ void AddLavaSkirtEdge(int x, int y, int dir, float baseY) {
     Vector3 mid = Vector3Lerp(a, b, 0.5f);
     mid.y = lavaY + 0.5f * height;
 
+
+
+
     float rotY = (dir < 2) ? 0.0f : 90.0f;  // x-edges face 90°, z-edges face 0°
     //float rotY = (dir > 2) ? 0.0f : 90.0f; //flip
     WallInstance skirt{};
-    skirt.position  = mid;
+    
     skirt.rotationY = rotY;
     skirt.tint      = WHITE;
-    skirt.scale     = {1.0f, height / WALL_MODEL_HEIGHT, 1.0f}; // <- add scale to your instance or pass to DrawModelEx
+    skirt.scale     = {1.0f, height / WALL_MODEL_HEIGHT, 1.0f}; 
+
+    // --- how much to overlap/shift ---
+    const float lipOut    = tileSize * 0.125f;   // push skirt outward toward the floor side (0..100+)
+    const float extraThick = tileSize * 0.50f;  // add thickness so it eats the shelf from both sides
+
+    // --- figure outward normal based on the edge dir (lava -> neighbor) ---
+    Vector3 outward = {0,0,0};
+    switch (dir) {
+        case 0: outward = { -1, 0, 0 }; break; // east edge
+        case 1: outward = { +1, 0, 0 }; break; // west edge
+        case 2: outward = {  0, 0,-1 }; break; // south edge
+        default:outward = {  0, 0,+1 }; break; // north edge
+    }
+
+    // 1) PUSH the skirt toward the floor side so it sits under the wall base/ledge
+    mid = Vector3Add(mid, Vector3Scale(outward, lipOut));
+
+    // 2) THICKEN the skirt so it actually overlaps the shelf (symmetrically)
+    const float WALL_MODEL_THICKNESS = 50.0f; // <-- the source mesh’s native thickness in its local "thickness" axis (measure once)
+    float thicknessScale = (WALL_MODEL_THICKNESS + extraThick) / WALL_MODEL_THICKNESS;
+
+    // rotY is already set above. If dir < 2, the edge runs along Z, so thickness axis is X; else thickness axis is Z.
+    if (dir < 2) {
+        // along Z, so expand X
+        skirt.scale = { thicknessScale, height / WALL_MODEL_HEIGHT, 1.0f };
+    } else {
+        // along X, so expand Z
+        skirt.scale = { 1.0f, height / WALL_MODEL_HEIGHT, thicknessScale };
+    }
+
+    skirt.position  = mid;
 
     wallInstances.push_back(skirt);
 
@@ -1179,7 +1331,7 @@ void ApplyLavaDPS(Player& player, float dt, float lavaDps) {
     if (lavaMask[g.y * dungeonWidth + g.x]) {
         player.overLava = true;
         lavaTimer += dt;
-        if (lavaTimer > tickDamage && player.grounded){ // only damage if on floor. 
+        if (lavaTimer > tickDamage && player.grounded && player.position.y < floorHeight){ // only damage if on floor. //floor is lower over lava // a bit fucky
             player.TakeDamage(10);
 
             lavaTimer = 0.0;
@@ -1296,13 +1448,19 @@ static inline void SetIsCeilingUniform(bool yes, Shader s) {
 
 void DrawDungeonCeiling(){
     if (!drawCeiling) return;
+    const float cull_radius = 5400;
     Model& ceilingModel = R.GetModel("floorTileGray");
 
     SetIsCeilingUniform(true, R.GetShader("lightingShader"));
     rlEnableBackfaceCulling();
     for (CeilingTile& tile : ceilingTiles){
-        DrawModelEx(ceilingModel, tile.position, {1,0,0}, 180.0f, Vector3{700, 700, 700}, tile.tint);
+        float dist = Vector3Distance(player.position, tile.position);
+        if (dist < cull_radius){
+            DrawModelEx(ceilingModel, tile.position, {1,0,0}, 180.0f, Vector3{700, 700, 700}, tile.tint);
+        }
+
     }
+        
     rlDisableBackfaceCulling();
     SetIsCeilingUniform(false, R.GetShader("lightingShader"));
 }
@@ -1312,12 +1470,16 @@ void DrawDungeonFloor() {
 
     Model& floorModel = R.GetModel("floorTileGray");
     Model& lavaModel = R.GetModel("lavaTile");
-    //const float cull_radius = 5400.0f;
+    const float cull_radius = 10000.0f;
 
-     const Vector3 baseScale   = {700, 700, 700};
+    const Vector3 baseScale   = {700, 700, 700};
 
     for (const FloorTile& tile : floorTiles) {
-        DrawModelEx(floorModel, tile.position, {0,1,0}, 0.0f, baseScale, tile.tint);
+        float dist = Vector3Distance(player.position, tile.position);
+        if (dist < cull_radius){
+            DrawModelEx(floorModel, tile.position, {0,1,0}, 0.0f, baseScale, tile.tint);    
+        }
+        
     }
 
     for (const FloorTile& lavaTile : lavaTiles){

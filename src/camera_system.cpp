@@ -154,7 +154,7 @@ void CameraSystem::UpdatePlayerCam(float dt) {
     playerRig.cam.target   = target;
 
     // 5) Per-scene far clip (you were doing this in render)
-    float farClip = isDungeon ? 10000.0f : 50000.0f; // use your global or pass it in
+    float farClip = isDungeon ? 16000.0f : 50000.0f; // use your global or pass it in
     SetFarClip(farClip);
 }
 

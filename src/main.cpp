@@ -12,11 +12,11 @@
 #include "camera_system.h"
 #include "lighting.h"
 
-bool squareRes = false; // set true for 1024x1024, false for widescreen
+bool squareRes = true; // set true for 1024x1024, false for widescreen
 
 int main() { 
     drawCeiling = false;
-    int screenWidth = squareRes ? 1024 : 1600;
+    int screenWidth = squareRes ? 1280 : 1600;
     int screenHeight = squareRes ? 1024 : 900;
 
     InitWindow(screenWidth, screenHeight, "Marooned");
@@ -69,7 +69,7 @@ int main() {
      
         //update context
         UpdateFade(deltaTime, camera); //triggers init level on fadeout
-        debugControls(camera); 
+        debugControls(camera, deltaTime); 
         R.UpdateShaders(camera);
         UpdateEnemies(deltaTime);
         UpdateBullets(camera, deltaTime);

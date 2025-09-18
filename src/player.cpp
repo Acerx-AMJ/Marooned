@@ -388,7 +388,7 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     if (isDungeon) {
         player.groundY = dungeonPlayerHeight;
         if (player.overLava) {
-            player.groundY -= 100.0f; // or LAVA_DROP
+            player.groundY -= 150.0f; // or LAVA_DROP
         }
     }
     float feetY = player.position.y - player.height / 2.0f;

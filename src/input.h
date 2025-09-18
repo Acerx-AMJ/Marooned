@@ -10,7 +10,7 @@ extern InputMode currentInputMode;
 
 
 //void UpdateInputMode();
-void debugControls(Camera& camera);
+void debugControls(Camera& camera, float deltaTime);
 
 void HandleMouseLook(float deltaTime);
 

@@ -5,6 +5,23 @@
 
 ResourceManager* ResourceManager::_instance = nullptr;
 
+
+
+void ResourceManager::ensureFallback_() const {
+    if (_fallbackReady) return;
+    Image img = GenImageChecked(64, 64, 8, 8, MAGENTA, BLACK);
+    _fallbackTex = LoadTextureFromImage(img);
+    UnloadImage(img);
+    if (_fallbackTex.id == 0) {
+        Image tiny = GenImageColor(1, 1, WHITE);
+        _fallbackTex = LoadTextureFromImage(tiny);
+        UnloadImage(tiny);
+    }
+    _fallbackReady = (_fallbackTex.id != 0);
+}
+
+
+
 ResourceManager& ResourceManager::Get() {
     if (!_instance) _instance = new ResourceManager();
     return *_instance;
@@ -14,14 +31,31 @@ ResourceManager& ResourceManager::Get() {
 Texture2D& ResourceManager::LoadTexture(const std::string& name, const std::string& path) {
     auto it = _textures.find(name);
     if (it != _textures.end()) return it->second;
+
+    if (path.empty()) {
+        TraceLog(LOG_ERROR, "❌ LoadTexture failed: empty path for texture '%s'", name.c_str());
+        exit(1);
+    }
+
     Texture2D tex = ::LoadTexture(path.c_str());
+
+    if (tex.id == 0) {
+        TraceLog(LOG_ERROR, "❌ LoadTexture failed for '%s' at path '%s'", name.c_str(), path.c_str());
+        exit(1);
+    }
+
     _textures.emplace(name, tex);
     return _textures[name];
 }
-Texture2D& ResourceManager::GetTexture(const std::string& name) const {
+
+
+Texture2D& ResourceManager::GetTexture(const std::string& name) {
     auto it = _textures.find(name);
-    if (it == _textures.end()) throw std::runtime_error("Texture not found: " + name);
-    return const_cast<Texture2D&>(it->second);
+    if (it != _textures.end()) return it->second;
+
+    ensureFallback_();
+    TraceLog(LOG_ERROR, "Missing texture: %s (using fallback)", name.c_str());
+    return _fallbackTex; // safe: owned member, not a temporary
 }
 
 // Model
@@ -80,7 +114,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadRenderTexture("sceneTexture", (int)screenResolution.x, (int)screenResolution.y);
     R.LoadRenderTexture("postProcessTexture", (int)screenResolution.x,(int) screenResolution.y);
 
-    //Resources are saved to unordered maps, with a string key. Get a resource by calling R.GetModel("Blunderbuss") for example. 
+    //Resources are saved to unordered maps, with a string key. Get a resource by calling R.GetModel("blunderbuss") for example. 
     R.LoadTexture("raptorTexture",    "assets/sprites/raptorSheet.png");
     R.LoadTexture("skeletonSheet",    "assets/sprites/skeletonSheet.png");
     R.LoadTexture("muzzleFlash",      "assets/sprites/muzzleFlash.png");
@@ -105,7 +139,6 @@ void ResourceManager::LoadAllResources() {
     R.LoadTexture("shadowTex",        "assets/textures/shadow_decal.png");
     R.LoadTexture("ghostSheet",       "assets/sprites/ghostSheet.png");
     R.LoadTexture("magicAttackSheet", "assets/sprites/magicAttackSheet.png");
-    //R.LoadTexture("lavaTexture",      "assets/textures/lavaTexture.png");
 
 
     // Models (registering with string keys)
@@ -140,15 +173,15 @@ void ResourceManager::LoadAllResources() {
     R.LoadModelFromMesh("shadowQuad",GenMeshPlane(1.0f, 1.0f, 1, 1));
 
     //shaders
-    R.LoadShader("terrainShader", "assets/shaders/height_color.vs",  "assets/shaders/height_color.fs");
-    R.LoadShader("fogShader",     /*vsPath=*/"",                    "assets/shaders/fog_postprocess.fs");
-    R.LoadShader("shadowShader",  "assets/shaders/shadow_decal.vs", "assets/shaders/shadow_decal.fs");
-    R.LoadShader("skyShader",     "assets/shaders/skybox.vs",       "assets/shaders/skybox.fs");
-    R.LoadShader("waterShader",   "assets/shaders/water.vs",        "assets/shaders/water.fs");
-    R.LoadShader("bloomShader",   /*vsPath=*/"",                    "assets/shaders/bloom.fs");
-    R.LoadShader("cutoutShader",                        "",         "assets/shaders/leaf_cutout.fs");
-    R.LoadShader("lightingShader", "assets/shaders/lighting_baked_xz.vs", "assets/shaders/lighting_baked_xz.fs");
-    R.LoadShader("lavaShader","assets/shaders/lava_world.vs", "assets/shaders/lava_world.fs");
+    R.LoadShader("terrainShader", "assets/shaders/height_color.vs",      "assets/shaders/height_color.fs");
+    R.LoadShader("fogShader",     /*vsPath=*/"",                         "assets/shaders/fog_postprocess.fs");
+    R.LoadShader("shadowShader",  "assets/shaders/shadow_decal.vs",      "assets/shaders/shadow_decal.fs");
+    R.LoadShader("skyShader",     "assets/shaders/skybox.vs",            "assets/shaders/skybox.fs");
+    R.LoadShader("waterShader",   "assets/shaders/water.vs",             "assets/shaders/water.fs");
+    R.LoadShader("bloomShader",   /*vsPath=*/"",                         "assets/shaders/bloom.fs");
+    R.LoadShader("cutoutShader",                        "",              "assets/shaders/leaf_cutout.fs");
+    R.LoadShader("lightingShader","assets/shaders/lighting_baked_xz.vs", "assets/shaders/lighting_baked_xz.fs");
+    R.LoadShader("lavaShader",    "assets/shaders/lava_world.vs",        "assets/shaders/lava_world.fs");
 }
 
 
@@ -197,12 +230,25 @@ void ResourceManager::SetShaderValues(){
     float bloomColor[3] = { 1.0f, 0.5f, 1.0f };  
     float aaStrengthValue = 0.1f; //blur
 
-    float bloomThreshold = 0.9f;  // e.g. 1.0 in sRGB ≈ ~0.8 linear; start around 0.7–1.2
+    float bloomThreshold = 0.1f;  // e.g. 1.0 in sRGB ≈ ~0.8 linear; start around 0.7–1.2
     float bloomKnee = 0.5; 
+
+    //tonemap
+    float exposure = 1.0;
+    int toneOp = 1;
+
+    float lavaBoot = 5.0f;
+
+    int locLB = GetShaderLocation(bloomShader, "lavaBoost");
+    SetShaderValue(bloomShader, locLB, &lavaBoot, SHADER_UNIFORM_FLOAT);
 
     int locSat = GetShaderLocation(bloomShader, "uSaturation");
     float sat = 1.0f; // try 1.05–1.25
     SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
+
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "uExposure"), &exposure, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "uToneMapOperator"), &toneOp, SHADER_UNIFORM_INT);
+
 
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
     SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
@@ -260,7 +306,7 @@ void ResourceManager::SetLavaShaderValues(){
     Vector2 scroll = { 0.07f, 0.0f };
     float speed = 0.5f, freq = 6.0f, amp = 0.02f;
     float gain = 0.1f;
-    Vector3 emis = { 1.0f, 0.4f, 0.08f };
+    Vector3 emis = { 3.0f, 1.0f, 0.08f };
 
     // World-to-UV scale:
     //   If your tile is 'tileSize' world units and you want 1 repeat per *tile*,
@@ -312,7 +358,7 @@ void ResourceManager::SetLightingShaderValues() {
     if (locGrid   >= 0) SetShaderValue(use, locGrid, grid, SHADER_UNIFORM_VEC4);
 
     float dynStrength  = 0.8f;
-    float ambientBoost = 0.2f;
+    float ambientBoost = 0.3f;
 
     if (!isDungeon) { // entrances fully lit
         dynStrength  = 0.0f;
@@ -379,8 +425,8 @@ void ResourceManager::UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
     //dungeonDarkness //is there a reason we need to set these every frame? 
-    float dungeonDarkness = -0.25f;//it darkens the gun model as well, so go easy. negative number brightens it. 
-    float dungeonContrast = 1.25f; //makes darks darker. 
+    float dungeonDarkness = 0.0f;//it darkens the gun model as well, so go easy. negative number brightens it. 
+    float dungeonContrast = 1.00f; //makes darks darker. 
 
     int isDungeonVal = isDungeon ? 1 : 0;
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
@@ -403,6 +449,8 @@ void ResourceManager::UnloadAll() {
     UnloadContainer(_models,          ::UnloadModel);
     UnloadContainer(_shaders,         ::UnloadShader);
     UnloadContainer(_renderTextures,  ::UnloadRenderTexture);
+    if (_fallbackTex.id) { UnloadTexture(_fallbackTex); _fallbackTex = {}; }
+    _fallbackReady = false;
 }
 
 ResourceManager::~ResourceManager() {

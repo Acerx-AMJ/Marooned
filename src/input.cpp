@@ -9,7 +9,7 @@
 InputMode currentInputMode = InputMode::KeyboardMouse;
 
 
-void debugControls(Camera& camera){
+void debugControls(Camera& camera, float deltaTime){
 
     if (IsKeyPressed(KEY_GRAVE)){
         debugInfo = !debugInfo;
@@ -30,7 +30,35 @@ void debugControls(Camera& camera){
     
     }
 
+    if (debugInfo){
+        Vector3 input = {0};
+        if (IsKeyDown(KEY_UP)) input.z += 1;
+        if (IsKeyDown(KEY_DOWN)) input.z -= 1;
+        if (IsKeyDown(KEY_LEFT)) input.x += 1;
+        if (IsKeyDown(KEY_RIGHT)) input.x -= 1;
 
+        player.running = IsKeyDown(KEY_LEFT_SHIFT) && player.canRun;
+        float speed = player.running ? player.runSpeed : player.walkSpeed;
+
+        if (input.x != 0 || input.z != 0) {
+            input = Vector3Normalize(input);
+            float yawRad = DEG2RAD * player.rotation.y;
+            player.isMoving = true;
+            Vector3 forward = { sinf(yawRad), 0, cosf(yawRad) };
+            Vector3 right = { forward.z, 0, -forward.x };
+
+            Vector3 moveDir = {
+                forward.x * input.z + right.x * input.x,
+                0,
+                forward.z * input.z + right.z * input.x
+            };
+
+            moveDir = Vector3Scale(Vector3Normalize(moveDir), speed * deltaTime);
+            player.position = Vector3Add(player.position, moveDir);
+            player.forward = forward;
+        }
+
+    }
 
     //debug fireball
     if (IsKeyPressed(KEY_F) && debugInfo) {
