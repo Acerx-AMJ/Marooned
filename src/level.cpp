@@ -31,17 +31,19 @@ std::vector<LevelData> levels = {
         {0.0f, 300.0f, 0.0f}, //starting position
         -90.0f, //starting player rotation
         {0, 0, 0}, //raptor spawn center
-        5, //raptor count
+        10, //raptor count
         false, //isDungeon
         {entranceToDungeon1, entranceToDungeon3, entranceToDungeon4}, //add entrance struct to level's vector of entrances. 
         0, //current level
         2, //next level, index 2
         {
-            { PropType::FirePit,  5200.f, -5600.f,  0.f, 100.0f }, // camp fire
+            { PropType::FirePit,  5200.f, -5600.f,  0.f, 100.0f }, // outdoor props
             { PropType::Barrel,   5020.f, -5930.f, 30.f, 350.0f },
             { PropType::Barrel,   5100.f, -5810.f, -15.f, 100.0f },
         
         },
+        true,
+        
        
     },
     {
@@ -71,7 +73,8 @@ std::vector<LevelData> levels = {
         {}, //dungeons don't have level entrances
         2, //current level index
         3, //next level index 
-        {} //outdoor props
+        {}, //outdoor props
+        true,
 
     },
     {
@@ -86,7 +89,8 @@ std::vector<LevelData> levels = {
         {},
         3, 
         4,
-        {}
+        {},
+        true,
        
 
     },
@@ -103,7 +107,8 @@ std::vector<LevelData> levels = {
         {},
         4, 
         0,
-        {}
+        {},
+        true,
     },
     {
         "Dungeon4",
@@ -117,7 +122,8 @@ std::vector<LevelData> levels = {
         {},
         5, 
         6,
-        {}
+        {},
+        true,
     },
         {
         "Dungeon5",
@@ -131,7 +137,8 @@ std::vector<LevelData> levels = {
         {},
         6, 
         7,
-        {}
+        {}, 
+        true, 
     },
         {
         "Dungeon6",
@@ -145,7 +152,8 @@ std::vector<LevelData> levels = {
         {},
         7, 
         8,
-        {}
+        {}, 
+        true, 
     },
         {
         "Dungeon7",
@@ -159,7 +167,8 @@ std::vector<LevelData> levels = {
         {},
         8, 
         9,
-        {}
+        {}, 
+        true,
     },
         {
         "Dungeon8",
@@ -173,24 +182,26 @@ std::vector<LevelData> levels = {
         {},
         9, 
         10,
-        {}
+        {},
+        true, 
     },
         {
         "Dungeon9",
         "assets/heightmaps/blank.png",
         "assets/maps/map14.png",
         {0.0f, 300.0f, 0.0f},
-        180.0f,
+        0.0f,
         {0.0f, 0.0f, 0.0f},
         0, 
         true, //isDungeon is true
         {},
         10, 
         11,
-        {}
+        {}, 
+        true, 
     },
         {
-        "Dungeon10",
+        "Dungeon10", //lava level
         "assets/heightmaps/blank.png",
         "assets/maps/map15.png",
         {0.0f, 300.0f, 0.0f},
@@ -201,7 +212,8 @@ std::vector<LevelData> levels = {
         {},
         11, 
         12,
-        {}
+        {}, 
+        false, 
     },
         {
         "Dungeon11",
@@ -215,7 +227,8 @@ std::vector<LevelData> levels = {
         {},
         12, 
         13,
-        {}
+        {}, 
+        false,
     },
     
 };

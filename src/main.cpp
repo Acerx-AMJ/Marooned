@@ -12,12 +12,13 @@
 #include "camera_system.h"
 #include "lighting.h"
 
-bool squareRes = true; // set true for 1024x1024, false for widescreen
+bool squareRes = true; // set true for 1280x1024, false for widescreen
 
 int main() { 
-    drawCeiling = false;
     int screenWidth = squareRes ? 1280 : 1600;
     int screenHeight = squareRes ? 1024 : 900;
+
+    drawCeiling = true; //debug no ceiling mode. drawCeiling is set by levelData so we can have dungeons with and without ceilings. 
 
     InitWindow(screenWidth, screenHeight, "Marooned");
     InitAudioDevice();
@@ -25,16 +26,18 @@ int main() {
     DisableCursor();
     SetExitKey(KEY_NULL); //Escape brings up menu, not quit
     ResourceManager::Get().LoadAllResources();
-    ResourceManager::Get().SetShaderValues();
+    //ResourceManager::Get().SetShaderValues(); // we set shader values again on level load
 
     SoundManager::GetInstance().LoadSounds();
+    
     SoundManager::GetInstance().PlayMusic("dungeonAir");
     SoundManager::GetInstance().PlayMusic("jungleAmbience");
     SetMusicVolume(SoundManager::GetInstance().GetMusic("jungleAmbience"), 0.5f);
 
-    controlPlayer = true; //start as player //hit tab for free camera
-    float aspect = ((float)GetScreenWidth()/ (float)GetScreenHeight());
+    controlPlayer = true; //start as player //hit ~ for debug mode, hit Tab for freecam in debug mode. 
+    //was accidently hitting tab and entering freeCam while playing. 
 
+    float aspect = ((float)GetScreenWidth()/ (float)GetScreenHeight());
     float fovy = (aspect <= 1.0f) ? 55 : 45; //if the aspect ratio is square, bump up the FOV
     CameraSystem::Get().Init(startPosition);
     CameraSystem::Get().SetFOV(fovy);
@@ -63,8 +66,6 @@ int main() {
 
 
         if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Menu;
-
-
         UpdateMusicStream(SoundManager::GetInstance().GetMusic(isDungeon ? "dungeonAir" : "jungleAmbience"));
      
         //update context
@@ -99,7 +100,6 @@ int main() {
         HandleDoorInteraction(camera);
 
         if (isDungeon){
-            //only handle lighting in dungeons. 
             HandleWeaponTints();
             HandleDungeonTints();
         }

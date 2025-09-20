@@ -88,34 +88,6 @@ inline float SmoothStepExp(float current, float target, float speed, float dt) {
 }
 
 
-// Call per frame
-void UpdateCameraDip(float dt, const Player& player, PlayerView& pv,Vector3& basePos, Vector3& baseTarget) 
-    //Drop the camera down when stepping into lava. Easier than implementing a proper floor with gravity. 
-{
-    if (!player.grounded || player.overLava) return;
-    // --- Tunables ---
-    constexpr float CAM_DIP_WATER = -40.0f;  // deeper dip
-    constexpr float CAM_DIP_LAVA  = -35.0f;  // shallower dip
-    constexpr float CAM_DIP_SPEED = 40.0f;   // higher = snappier (units: 1/sec)
-    float targetDip = 0.0f;
-    
-    if (player.isSwimming) {
-        targetDip = CAM_DIP_WATER;
-    } else if (player.overLava) {
-        targetDip = CAM_DIP_LAVA;
-    }
-
-    pv.camDipY = SmoothStepExp(pv.camDipY, targetDip, CAM_DIP_SPEED, dt);
-
-
-    if (!pv.onBoard) {
-        basePos.y   += pv.camDipY;
-        baseTarget.y += pv.camDipY;
-    }
-}
-
-
-
 void CameraSystem::UpdatePlayerCam(float dt) {
     // 1) Choose base position (boat vs ground)
     Vector3 basePos = pv.onBoard
@@ -137,7 +109,7 @@ void CameraSystem::UpdatePlayerCam(float dt) {
 
     
 
-    // 3) Build forward from player yaw/pitch
+    // Build forward from player yaw/pitch
     float yawRad   = DEG2RAD * pv.yawDeg;
     float pitchRad = DEG2RAD * pv.pitchDeg;
     Vector3 forward = {
@@ -147,14 +119,12 @@ void CameraSystem::UpdatePlayerCam(float dt) {
     };
     Vector3 target = Vector3Add(basePos, forward);
 
-    UpdateCameraDip(dt, player, pv, basePos, target);
 
-    // 4) Apply to the rig
     playerRig.cam.position = basePos;
     playerRig.cam.target   = target;
 
-    // 5) Per-scene far clip (you were doing this in render)
-    float farClip = isDungeon ? 16000.0f : 50000.0f; // use your global or pass it in
+    
+    float farClip = isDungeon ? 16000.0f : 50000.0f; 
     SetFarClip(farClip);
 }
 
@@ -172,8 +142,6 @@ void CameraSystem::UpdateFreeCam(float dt) {
     // vertical controls
     if (IsKeyDown(KEY_SPACE)) move = Vector3Add(move, {0, 1, 0});
     if (IsKeyDown(KEY_LEFT_CONTROL)) move = Vector3Add(move, {0, -1, 0}); 
-    // (swap KEY_LEFT_CONTROL for KEY_LEFT_SHIFT if you want SHIFT for down,
-    // but note that LEFT_SHIFT is already your speed boost key above)
 
     if (Vector3Length(move) > 0) {
         move = Vector3Scale(Vector3Normalize(move), speed * dt);

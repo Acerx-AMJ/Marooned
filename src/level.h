@@ -39,6 +39,7 @@ struct LevelData {
     int nextLevel; //next level index
 
     std::vector<PropSpawn> overworldProps;   // authored list
+    bool hasCeiling;
     
     
 };

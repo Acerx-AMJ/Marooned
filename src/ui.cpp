@@ -185,7 +185,7 @@ void DrawHUDBars(const Player& player) {
     float baseY   = GetScreenHeight() - 80.0f; // top of the stack, aligned with inventory
     //float xCenter = GetScreenWidth() * 0.33f;   // center anchor 
     float aspect = (float)GetScreenWidth() / (float)GetScreenHeight();
-    float xCenter = GetScreenWidth() * 0.33f + ((aspect <= 1.0f) ? 225.0f : 0.0f); //adaptive for square resolution.
+    float xCenter = GetScreenWidth() * 0.45f + ((aspect <= 1.0f) ? 225.0f : 0.0f); //adaptive for square resolution. 225
     
     // Vertical spacing between bars 
     float gap = 8.0f;

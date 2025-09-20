@@ -61,7 +61,7 @@ std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
         }
     }
 
-    // ⬇️ This is the key fix: if goal never discovered, no path.
+    //if goal never discovered, no path.
     if (!reached) return {};
 
     // Reconstruct
@@ -79,75 +79,6 @@ std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
     return path;
 }
 
-
-// std::vector<Vector2> FindPath(Vector2 start, Vector2 goal) {
-//     int width = walkable.size();
-//     int height = walkable[0].size();
-
-//     std::queue<Vector2> frontier;
-//     frontier.push(start);
-
-//     // Use a map to save the tiles we came from. used to reconstuct path
-//     std::unordered_map<int, Vector2> cameFrom;
-
-//     auto toIndex = [&](int x, int y) {
-//         return y * width + x;  //uniquely encodes (x, y) into a single number that is used as a key for the unordered map
-//     };
-
-//     cameFrom[toIndex((int)start.x, (int)start.y)] = {-1, -1}; //mark the start as having no parent
-
-//     // 4-way movement
-//     const int dx[] = {1, -1, 0, 0};
-//     const int dy[] = {0, 0, 1, -1};
-
-//     while (!frontier.empty()) {
-//         Vector2 current = frontier.front();
-//         frontier.pop();
-
-//         if ((int)current.x == (int)goal.x && (int)current.y == (int)goal.y) {
-//             break; //reached the goal, break then reconstruct
-//         }
-
-//         for (int i = 0; i < 4; ++i) {
-//             int nx = (int)current.x + dx[i];
-//             int ny = (int)current.y + dy[i];
-
-//             if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue; //out of bounds
-//             if (!walkable[nx][ny]) continue; //unwalkable
-
-//             int index = toIndex(nx, ny);
-//             if (cameFrom.count(index) == 0) {
-//                 frontier.push({(float)nx, (float)ny});
-//                 cameFrom[index] = current;
-//             }
-//         }
-//     }
-
-//     // Reconstruct path
-//     std::vector<Vector2> path;
-//     Vector2 current = goal;
-
-//     while (!(current.x == -1 && current.y == -1)) {
-//         path.push_back(current);
-//         int index = toIndex((int)current.x, (int)current.y);
-//         if (cameFrom.count(index) == 0) break;
-//         current = cameFrom[index];
-//     }
-
-//     std::reverse(path.begin(), path.end());
-
-//     // Optional: check if path is valid
-//     if (path.size() == 1 && (int)path[0].x != (int)goal.x) {
-//         return {}; // goal unreachable 
-//     }
-
-//     // Trim final step so skeleton stops adjacent to player //they stop too far away
-//     // if (path.size() > 1) {
-//     //     path.pop_back();
-//     // }
-
-//     return path;
-// }
 
 
 void ConvertImageToWalkableGrid(const Image& dungeonMap) {
@@ -169,7 +100,7 @@ void ConvertImageToWalkableGrid(const Image& dungeonMap) {
             bool skyBlue = (c.r == 0 && c.g == 128 && c.b == 255);   // chests
             bool purple  = (c.r == 128 && c.g == 0 && c.b == 128);   // closed doors
             bool aqua    = (c.r == 0 && c.g == 255 && c.b == 255);   // locked doors
-            bool lava     = (c.r == 200 && c.g == 0 && c.b == 0);    // lava
+            bool lava     = (c.r == 200 && c.g == 0 && c.b == 0);    // lava pit
 
             walkable[x][y] = !(black || blue || yellow || skyBlue || purple || aqua || lava);
         }
@@ -293,7 +224,7 @@ bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction) {
     float epsilon = epsilonFraction * maxDistance;
 
     for (const WallRun& wall : wallRunColliders) {
-        RayCollision hit = GetRayCollisionBox(ray, wall.bounds); //ray stops at the collider, epsilon pushes it further to the actual wall. 
+        RayCollision hit = GetRayCollisionBox(ray, wall.bounds); //ray stops at the collider, epsilon pushes it further to the actual wall position. 
         if (hit.hit && hit.distance + epsilon < maxDistance) {
             return false;
         }
@@ -402,7 +333,6 @@ std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& d
     std::vector<Vector2> result;
 
     if (path.empty()) return result;
-
     size_t i = 0;
     while (i < path.size()) {
         result.push_back(path[i]);
@@ -430,7 +360,7 @@ std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& d
     return result;
 }
 
-//Raptor steering
+//Raptor steering behavior
 Vector3 SeekXZ(const Vector3& pos, const Vector3& target, float maxSpeed) {
     // Fast “point at it”
     Vector3 dir = NormalizeXZ(Vector3Subtract(target, pos));

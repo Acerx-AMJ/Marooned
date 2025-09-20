@@ -2,6 +2,7 @@
 #include "resourceManager.h"
 #include "world.h"
 #include "lighting.h"
+#include "level.h"
 
 ResourceManager* ResourceManager::_instance = nullptr;
 
@@ -187,10 +188,10 @@ void ResourceManager::LoadAllResources() {
 
 
 void ResourceManager::SetShaderValues(){
+    //outdoor shaders + bloom, tonemap, saturation, foliage alpha cutoff , shadowTex
     Vector2 screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
     // set shaders values
     Shader& fogShader = R.GetShader("fogShader");
-    Shader& bloomShader = R.GetShader("bloomShader");
     Shader& shadowShader = R.GetShader("shadowShader");
     Shader& waterShader = R.GetShader("waterShader");
 
@@ -206,15 +207,11 @@ void ResourceManager::SetShaderValues(){
     int locTime      = GetShaderLocation(sky, "time");
     int locIsDungeon = GetShaderLocation(sky, "isDungeon");
 
-
-
     int isDung = isDungeon ? 1 : 0; 
     SetShaderValue(sky, locIsDungeon, &isDung, SHADER_UNIFORM_INT);
 
 
-
-
-    // Shadow //Shadow decals beneath trees. 
+    // Shadow //Shadow decals beneath trees. Also shadows beneath enemies. 
     Model& shadowQuad = R.GetModel("shadowQuad");
     shadowQuad.materials[0].shader = shadowShader;
     SetMaterialTexture(&shadowQuad.materials[0], MATERIAL_MAP_DIFFUSE, R.GetTexture("shadowTex"));
@@ -225,48 +222,7 @@ void ResourceManager::SetShaderValues(){
     R.GetModel("waterModel").materials[0].shader = waterShader;
     R.GetModel("bottomPlane").materials[0].shader = waterShader;
 
-    //bloom post process. 
-    bloomStrengthValue = 0.0f;
-    float bloomColor[3] = { 1.0f, 0.5f, 1.0f };  
-    float aaStrengthValue = 0.1f; //blur
-
-    float bloomThreshold = 0.1f;  // e.g. 1.0 in sRGB ≈ ~0.8 linear; start around 0.7–1.2
-    float bloomKnee = 0.5; 
-
-    //tonemap
-    float exposure = 1.0;
-    int toneOp = 1;
-
-    float lavaBoot = 5.0f;
-
-    int locLB = GetShaderLocation(bloomShader, "lavaBoost");
-    SetShaderValue(bloomShader, locLB, &lavaBoot, SHADER_UNIFORM_FLOAT);
-
-    int locSat = GetShaderLocation(bloomShader, "uSaturation");
-    float sat = 1.0f; // try 1.05–1.25
-    SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
-
-    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "uExposure"), &exposure, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "uToneMapOperator"), &toneOp, SHADER_UNIFORM_INT);
-
-
-    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
-    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomColor"), bloomColor, SHADER_UNIFORM_VEC3);
-    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "aaStrength"), &aaStrengthValue, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomThreshold"), &bloomThreshold, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomKnee"), &bloomKnee, SHADER_UNIFORM_FLOAT);
-
-    if (isDungeon){
-        vignetteStrengthValue = 0.5f; //darker vignette in dungeons
-        bloomStrengthValue = 0.99f; //turn on bloom in dungeons
-        SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
-        SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
-    }
-        
-
-    
+    //palm tree alpha cutoff
     int locCutoff = GetShaderLocation(R.GetShader("cutoutShader"), "alphaCutoff");
     float cutoff = 0.5f;
     SetShaderValue(R.GetShader("cutoutShader"), locCutoff, &cutoff, SHADER_UNIFORM_FLOAT);
@@ -279,8 +235,57 @@ void ResourceManager::SetShaderValues(){
         palm2.materials[m].shader = R.GetShader("cutoutShader");  
     }
 
+    Shader& bloomShader = R.GetShader("bloomShader");
 
-    SetLavaShaderValues();
+    //tonemap
+    float exposure = isDungeon ? 1.0 : 0.9; // needed for both dungeons and outdoor level
+    int toneOp = isDungeon ? 1 : 0;
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "uExposure"), &exposure, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "uToneMapOperator"), &toneOp, SHADER_UNIFORM_INT);
+
+    int locSat = GetShaderLocation(bloomShader, "uSaturation"); //also needed for overworld map
+    float sat = 1.0; // try 1.05–1.25
+    SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
+
+
+
+}
+
+void ResourceManager::SetBloomShaderValues(){
+    //bloom post process. 
+    Shader& bloomShader = R.GetShader("bloomShader");
+    Vector2 screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
+    bloomStrengthValue = 0.0f;
+    float bloomColor[3] = { 1.0f, 1.0f, 1.0f };  
+    float aaStrengthValue = 0.0f; //blur
+
+    float bloomThreshold = 0.1f;  // e.g. 1.0 in sRGB ≈ ~0.8 linear; start around 0.7–1.2
+    float bloomKnee = 0.0; 
+
+    //tonemap
+    float exposure = isDungeon ? 1.0 : 0.9; // need to trigger on level switch
+    int toneOp = isDungeon ? 1 : 0;
+
+    float lavaBoot = 5.0f;
+
+    int locLB = GetShaderLocation(bloomShader, "lavaBoost");
+    SetShaderValue(bloomShader, locLB, &lavaBoot, SHADER_UNIFORM_FLOAT);
+
+
+
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "uExposure"), &exposure, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "uToneMapOperator"), &toneOp, SHADER_UNIFORM_INT);
+
+    vignetteStrengthValue = 0.5f; //darker vignette in dungeons
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "resolution"), &screenResolution, SHADER_UNIFORM_VEC2);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomColor"), bloomColor, SHADER_UNIFORM_VEC3);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "aaStrength"), &aaStrengthValue, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomThreshold"), &bloomThreshold, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(bloomShader, GetShaderLocation(bloomShader, "bloomKnee"), &bloomKnee, SHADER_UNIFORM_FLOAT);
+  
+    
 }
 
 void ResourceManager::SetLavaShaderValues(){
@@ -358,7 +363,7 @@ void ResourceManager::SetLightingShaderValues() {
     if (locGrid   >= 0) SetShaderValue(use, locGrid, grid, SHADER_UNIFORM_VEC4);
 
     float dynStrength  = 0.8f;
-    float ambientBoost = 0.3f;
+    float ambientBoost = 0.2f;
 
     if (!isDungeon) { // entrances fully lit
         dynStrength  = 0.0f;
@@ -425,7 +430,7 @@ void ResourceManager::UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
     //dungeonDarkness //is there a reason we need to set these every frame? 
-    float dungeonDarkness = 0.0f;//it darkens the gun model as well, so go easy. negative number brightens it. 
+    float dungeonDarkness = -0.0f;//it darkens the gun model as well, so go easy. negative number brightens it. 
     float dungeonContrast = 1.00f; //makes darks darker. 
 
     int isDungeonVal = isDungeon ? 1 : 0;

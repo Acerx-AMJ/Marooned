@@ -29,6 +29,7 @@ public:
     //should these be ResourceManager::LoadAllResources ect..? functions are not part of the class. 
     void LoadAllResources();
     void UpdateShaders(Camera& camera);
+    void SetBloomShaderValues();
     void SetLavaShaderValues();
     void SetLightingShaderValues();
     void SetShaderValues();

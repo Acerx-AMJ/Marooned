@@ -103,8 +103,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
    
     if (level.isDungeon){
         isDungeon = true;
-
-
+        drawCeiling = level.hasCeiling;
         LoadDungeonLayout(level.dungeonPath);
         ConvertImageToWalkableGrid(dungeonImg);
         GenerateLightSources(floorHeight);
@@ -130,18 +129,21 @@ void InitLevel(const LevelData& level, Camera& camera) {
 
         if (levelIndex == 4) levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position.
 
+        R.SetLavaShaderValues();
+        R.SetBloomShaderValues();
 
+        //XZ dynamic lightmap + shader lighting with occlusion
+        InitDungeonLights();
  
     }
 
 
 
-    //XZ dynamic lightmap + shader lighting with occlusion
-    if (isDungeon) InitDungeonLights();
+
     isLoadingLevel = false;
 
 
-
+    R.SetShaderValues();
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
     CameraSystem::Get().SnapAllToPlayer(); //put freecam at player pos
