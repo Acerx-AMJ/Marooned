@@ -8,6 +8,7 @@
 #include "sound_manager.h"
 #include "utilities.h"
 #include "dungeonGeneration.h"
+#include "pathfinding.h"
 
 
 // New constructor matching velocity-based logic
@@ -45,7 +46,7 @@ void Bullet::UpdateMagicBall(Camera& camera, float deltaTime) {
 
     // Collision with floor
     if (isDungeon) {
-        if (position.y <= dungeonPlayerHeight) {
+        if (position.y <= floorHeight) {
             //Explode(camera);
             Explode(camera);
 
@@ -82,11 +83,51 @@ void Bullet::UpdateMagicBall(Camera& camera, float deltaTime) {
 
 }
 
+void Bullet::HandleBulletWorldCollision(Camera& camera){
+    // Handle floor/ceiling collision
+    if (isDungeon) {
+        if (drawCeiling && position.y >= ceilingHeight){
+            kill(camera);
+        }
+
+
+        // Recompute only if we changed tiles
+        int tx = GetDungeonImageX(position.x, tileSize, dungeonWidth);
+        int ty = GetDungeonImageY(position.z, tileSize, dungeonWidth);
+        if (tx != curTileX || ty != curTileY) {
+            curTileX = tx; curTileY = ty;
+            tileIsLava = (lavaMask[Idx(tx, ty)] == 1);
+
+            // If lava: let bullets sink *below* the normal floor before killing.
+            // Otherwise: normal floor kill right at floorHeight.
+            killFloorY = tileIsLava ? (floorHeight - 150)    // 150
+                                    : (floorHeight+20);
+        }
+
+        // Continuous check to avoid tunneling
+        if (prevPosition.y > killFloorY && position.y <= killFloorY) {
+
+            kill(camera);
+            return;
+        }
+    } else {
+        // Overworld: terrain height varies; sampling each frame is fine.
+        float h = GetHeightAtWorldPosition(position, heightmap, terrainScale);
+        if (prevPosition.y > h && position.y <= h) {
+            kill(camera);
+            return;
+        }
+    }
+
+}
+
 
 
 void Bullet::Update(Camera& camera, float deltaTime) {
 
     if (!alive) return;
+
+    prevPosition = position;
 
     // Fireball logic
     if (type == BulletType::Fireball) {
@@ -149,17 +190,7 @@ void Bullet::Update(Camera& camera, float deltaTime) {
 
     if (age >= maxLifetime && !exploded) alive = false;
 
-
-
-    // Handle floor/ceiling collision
-    if (isDungeon) {
-        if (position.y <= dungeonPlayerHeight || position.y >= ceilingHeight)
-            kill(camera);
-    } else {
-        float terrainHeight = GetHeightAtWorldPosition(position, heightmap, terrainScale);
-        if (position.y <= terrainHeight)
-            kill(camera);
-    }
+    HandleBulletWorldCollision(camera);
 }
 
 

@@ -6,6 +6,9 @@
 #include "transparentDraw.h"
 #include "bullet.h"
 #include "player.h"
+#include <cstdint>
+
+
 
 enum class FloorType {
     Normal,
@@ -186,6 +189,7 @@ struct Edge {
     Vector3 inward; // unit normal pointing into the pit
 };
 
+extern std::vector<uint8_t> lavaMask;
 extern std::vector<LightSample> frameLights;
 extern std::vector<LauncherTrap> launchers;
 extern std::vector<PillarInstance> pillars;
@@ -230,7 +234,7 @@ void DrawDungeonWalls();
 void DrawDungeonFloor();
 void DrawDungeonBarrels();
 void DrawLaunchers();
-
+int Idx(int x, int y); 
 void ApplyLavaDPS(Player& player, float dt, float lavaDps);
 
 //void DrawSpiderWebs(Camera& camera);

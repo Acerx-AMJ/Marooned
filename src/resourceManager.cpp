@@ -4,9 +4,8 @@
 #include "lighting.h"
 #include "level.h"
 
+
 ResourceManager* ResourceManager::_instance = nullptr;
-
-
 
 void ResourceManager::ensureFallback_() const {
     if (_fallbackReady) return;
@@ -96,13 +95,12 @@ Shader& ResourceManager::GetShader(const std::string& name) const {
 
 
 // RenderTexture
-RenderTexture2D& ResourceManager::LoadRenderTexture(const std::string& name, int w, int h) {
-    auto it = _renderTextures.find(name);
-    if (it != _renderTextures.end()) return it->second;
-    RenderTexture2D rt = ::LoadRenderTexture(w, h);
-    _renderTextures.emplace(name, rt);
-    return _renderTextures[name];
+RenderTexture2D& ResourceManager::LoadRenderTexture(const std::string& name, int w, int h) { 
+    auto it = _renderTextures.find(name); if (it != _renderTextures.end()) return it->second; 
+    RenderTexture2D rt = ::LoadRenderTexture(w, h); _renderTextures.emplace(name, rt); 
+    return _renderTextures[name]; 
 }
+
 RenderTexture2D& ResourceManager::GetRenderTexture(const std::string& name) const {
     auto it = _renderTextures.find(name);
     if (it == _renderTextures.end()) throw std::runtime_error("RenderTexture not found: " + name);
@@ -114,6 +112,7 @@ void ResourceManager::LoadAllResources() {
     //render textures
     R.LoadRenderTexture("sceneTexture", (int)screenResolution.x, (int)screenResolution.y);
     R.LoadRenderTexture("postProcessTexture", (int)screenResolution.x,(int) screenResolution.y);
+
 
     //Resources are saved to unordered maps, with a string key. Get a resource by calling R.GetModel("blunderbuss") for example. 
     R.LoadTexture("raptorTexture",    "assets/sprites/raptorSheet.png");
@@ -246,10 +245,11 @@ void ResourceManager::SetShaderValues(){
     int locSat = GetShaderLocation(bloomShader, "uSaturation"); //also needed for overworld map
     float sat = 1.0; // try 1.05–1.25
     SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
-
+    
 
 
 }
+
 
 void ResourceManager::SetBloomShaderValues(){
     //bloom post process. 

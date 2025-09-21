@@ -241,7 +241,7 @@ Vector3 FindSpawnPoint(Color* pixels, int width, int height, float tileSize, flo
 }
 
 
-inline int Idx(int x, int y) { return y * dungeonWidth + x; }
+int Idx(int x, int y) { return y * dungeonWidth + x; }
 
 inline bool IsLava(int gx, int gy) {
     return lavaMask[Idx(gx,gy)] != 0;

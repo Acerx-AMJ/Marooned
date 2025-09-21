@@ -171,7 +171,7 @@ std::vector<LevelData> levels = {
         true,
     },
         {
-        "Dungeon8",
+        "Dungeon8", //fireball level
         "assets/heightmaps/blank.png",
         "assets/maps/map12.png",
         {0.0f, 300.0f, 0.0f},
@@ -183,7 +183,7 @@ std::vector<LevelData> levels = {
         9, 
         10,
         {},
-        true, 
+        false, 
     },
         {
         "Dungeon9",

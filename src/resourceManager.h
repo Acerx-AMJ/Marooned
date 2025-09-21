@@ -34,6 +34,7 @@ public:
     void SetLightingShaderValues();
     void SetShaderValues();
 
+
     // Clean-up
     void UnloadAll();
     ~ResourceManager();

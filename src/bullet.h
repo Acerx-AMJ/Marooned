@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include <vector>
 #include "emitter.h"
+#include "raymath.h"
 
 enum class BulletType {
     Default,
@@ -29,28 +30,6 @@ struct BulletLight {
 class Bullet {
 public:
     Bullet(Vector3 position, Vector3 velocity, float lifetime, bool enemy,  BulletType t = BulletType::Default, float radius = 1.0f, bool launcher = false);
-    BulletLight light;
-    void Update(Camera& camera, float deltaTime);
-    void UpdateMagicBall(Camera& camera, float deltaTime);
-    void Erase();
-    void Draw(Camera& camera) const;
-    void kill(Camera& camera);
-    bool IsExpired() const;
-    bool IsAlive() const;
-    bool IsEnemy() const;
-    bool isFireball() const;
-    bool isExploded() const;
-    void Blood(Camera& camera);
-    void Explode(Camera& camera);
-
-    float GetRadius() const { return radius; }
-    bool pendingExplosion = false;
-    float explosionTimer = 0.0f;
-    bool launcher = false;
-    BulletType type = BulletType::Default;
-    Vector3 GetPosition() const;
-
-private:
     Emitter fireEmitter;
     Emitter sparkEmitter;
     Vector3 position;
@@ -67,6 +46,34 @@ private:
     bool exploded = false;
     float timeSinceExploded = 0.0f;
     bool explosionTriggered = false;
+    BulletLight light;
+    void Update(Camera& camera, float deltaTime);
+    void UpdateMagicBall(Camera& camera, float deltaTime);
+    void Erase();
+    void Draw(Camera& camera) const;
+    void kill(Camera& camera);
+    bool IsExpired() const;
+    bool IsAlive() const;
+    bool IsEnemy() const;
+    bool isFireball() const;
+    bool isExploded() const;
+    void Blood(Camera& camera);
+    void Explode(Camera& camera);
+    void HandleBulletWorldCollision(Camera& camera);
+
+    float GetRadius() const { return radius; }
+    bool pendingExplosion = false;
+    float explosionTimer = 0.0f;
+    bool launcher = false;
+    BulletType type = BulletType::Default;
+    Vector3 GetPosition() const;
+    Vector3 prevPosition;
+    int curTileX = INT_MIN, curTileY = INT_MIN;
+    float killFloorY = 0;          // Y at which to kill this bullet in the current tile
+    bool tileIsLava = false;              // cached flag for current tile
+
+private:
+
 };
 
 void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int pelletCount, float speed, float lifetime, bool enemy);

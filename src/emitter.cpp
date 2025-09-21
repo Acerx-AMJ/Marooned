@@ -105,14 +105,31 @@ void Emitter::CreateParticle(Particle& p) {
             break;
 
         case ParticleType::FireTrail:
+        {
             p.color = ORANGE;
             p.gavity = 100.0f;
+
+            // Emit particles in a sphere around emitter position, not a point. 
+            float radius = 20.0f; 
+            Vector3 offset;
+            do {
+                offset = {
+                    RandomFloat(-1.0f, 1.0f),
+                    RandomFloat(-1.0f, 1.0f),
+                    RandomFloat(-1.0f, 1.0f)
+                };
+            } while (Vector3Length(offset) > 1.0f); // reject points outside unit sphere
+            offset = Vector3Scale(Vector3Normalize(offset), RandomFloat(0.0f, radius));
+
+            p.position = Vector3Add(position, offset);
+
             p.velocity = {
                 RandomFloat(-30, 30),
                 RandomFloat(30, 100),
                 RandomFloat(-30, 30)
             };
-            break;
+        }
+        break;
 
         case ParticleType::Smoke:
             p.color = DARKGRAY;

@@ -21,7 +21,7 @@ struct CameraRig {
     float yaw = 0.f;
     float pitch = 0.f;
     float fov = 45.f;
-    float nearClip = 60.f;      // matches your BeginCustom3D
+    float nearClip = 60.0f;      // matches your BeginCustom3D
     float farClip = 50000.f;
     Vector3 velocity{0,0,0};    // free-cam movement
 };
