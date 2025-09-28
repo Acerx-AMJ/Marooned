@@ -7,7 +7,7 @@
 #include "resourceManager.h"
 #include "world.h"
 
-// Simple holder
+//Holder for the rt
 struct TreeShadowMask {
     RenderTexture2D rt = {0};
     int width = 0, height = 0;
@@ -31,46 +31,56 @@ inline void InitOrResizeTreeShadowMask(TreeShadowMask& mask, int w, int h, const
     }
 }
 
-// Draw soft circles for each tree
-inline void BuildTreeShadowMask(TreeShadowMask& mask,
-                                const std::vector<TreeInstance>& trees,
-                                float baseRadiusMeters = 4.0f,
-                                float darknessCenter   = 0.25f,
-                                int   rings            = 16)
+static inline void StampCanopy(Texture2D tex,
+                               int cx, int cy,       // center in mask pixels
+                               float diameterPx,     // dest diameter in pixels
+                               float rotationDeg,
+                               float strength01)
+{
+    Rectangle src = { 0, 0, (float)tex.width, (float)tex.height };
+
+    // Pattern A: dest.x/y = CENTER, origin = half size
+    Rectangle dst   = { (float)cx, (float)cy, diameterPx, diameterPx };
+    Vector2   origin= { diameterPx*0.5f, diameterPx*0.5f };
+
+    unsigned char a = (unsigned char)Clamp(strength01 * 255.0f, 0.0f, 255.0f);
+    Color tint = { 0, 0, 0, a };
+
+    DrawTexturePro(tex, src, dst, origin, rotationDeg, tint);
+}
+
+inline void BuildTreeShadowMask_Tex(TreeShadowMask& mask,
+                                    const std::vector<TreeInstance>& trees,
+                                    Texture2D canopyTex,
+                                    float baseDiameterMeters = 88.0f, // tweak to match canopy
+                                    float strength01         = 0.55f,// overall darkness
+                                    float minDiameterPx      = 88.0f)
 {
     BeginTextureMode(mask.rt);
     ClearBackground(WHITE);
     BeginBlendMode(BLEND_ALPHA);
 
-    // optional: test marker while tuning
-    // DrawCircle(mask.width/2, mask.height/2, mask.height*0.25f, BLACK);
-
     const float metersPerTexel = mask.worldXZBounds.width / (float)mask.width;
-    const float minPxRadius    = 5.0f; // keep or lower once you’re happy
 
     for (const auto& t : trees) {
-        // *** Use the same world position you use when DRAWING the tree ***
+        // Use the EXACT draw position (incl. your jitter offsets)
         Vector3 wp = t.position;
         wp.x += t.xOffset;
         wp.z += t.zOffset;
-        // (y doesn’t matter for the mask)
 
-        float radiusMeters = baseRadiusMeters * (t.scale / 25.0f);
-        float pxRadius     = radiusMeters / metersPerTexel;
-        if (pxRadius < minPxRadius) pxRadius = minPxRadius;
+        // Scale canopy size by your tree scale if useful
+        float diameterM  = baseDiameterMeters * (t.scale / 25.0f);
+        float diameterPx = diameterM / metersPerTexel;
+        if (diameterPx < minDiameterPx) diameterPx = minDiameterPx;
 
+        // World → mask pixels
         Vector2 uv = WorldXZToUV(mask.worldXZBounds, wp);
         int cx = (int)(uv.x * mask.width);
         int cy = (int)(uv.y * mask.height);
 
-        for (int r = rings; r >= 1; --r) {
-            float tstep = (float)r / (float)rings;
-            float rr    = pxRadius * tstep;
-
-            float gray  = darknessCenter + (1.0f - darknessCenter) * (tstep*tstep);
-            unsigned char g = (unsigned char)Clamp(gray * 255.0f, 0.0f, 255.0f);
-            DrawCircle(cx, cy, rr, { g, g, g, 255 });
-        }
+        // Stamp with rotation; flip sign if it appears reversed
+        StampCanopy(canopyTex, cx, cy, diameterPx, t.rotationY, strength01);
+        // If rotation looks mirrored, use -t.rotationY
     }
 
     EndBlendMode();

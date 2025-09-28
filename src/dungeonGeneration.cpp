@@ -1554,7 +1554,7 @@ void DrawDungeonPillars() {
 
 void HandleDungeonTints() {
 
-    UpdateBarrelTints(player.position);
+    //UpdateBarrelTints(player.position); //barrels now lit by shader
     UpdateChestTints(player.position);
 
     UpdateDoorTints(player.position);

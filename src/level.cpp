@@ -22,6 +22,12 @@ DungeonEntrance entranceToDungeon4 = {
     5, 
 };
 
+DungeonEntrance entranceToDungeon11 = {
+    {6294, 150, 5515},
+    10, 
+
+};
+
 
 std::vector<LevelData> levels = {
     {
@@ -55,10 +61,11 @@ std::vector<LevelData> levels = {
         {0.0f, 0, 0.0f},
         0,
         false,
-        {},
+        {entranceToDungeon11},
         1, 
-        -1,
-        {} 
+        0,
+        {},
+        true, 
    
     },
     {
@@ -228,7 +235,7 @@ std::vector<LevelData> levels = {
         12, 
         13,
         {}, 
-        false,
+        false,// ceiling
     },
     
 };

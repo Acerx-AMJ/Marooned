@@ -97,10 +97,6 @@ void InitLevel(const LevelData& level, Camera& camera) {
     
     terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
     terrainModel = LoadModelFromMesh(terrainMesh);
-    Shader& terrainShader = R.GetShader("terrainShader");
-
-
-    //terrainModel.materials[0].shader = R.GetShader("terrainShader");
 
 
 
@@ -110,19 +106,18 @@ void InitLevel(const LevelData& level, Camera& camera) {
     generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
     GenerateEntrances();
     generateVegetation();
-
-    // after you load/create the terrain shader
+    //tree shadows after tree generation
+    Shader& terrainShader = R.GetShader("terrainShader");
     terrainShader.locs[SHADER_LOC_MAP_OCCLUSION] = GetShaderLocation(terrainShader, "textureOcclusion");
-
-    // assign shader to the model
     terrainModel.materials[0].shader = terrainShader;
-
     // plug the shadow mask into the material's occlusion map
     SetMaterialTexture(&terrainModel.materials[0], MATERIAL_MAP_OCCLUSION, gTreeShadowMask.rt.texture);
 
-    
+
     if (!level.isDungeon) InitBoat(player_boat, boatPosition);
+
     TutorialSetup();
+    
     if (level.isDungeon){
         isDungeon = true;
         drawCeiling = level.hasCeiling;

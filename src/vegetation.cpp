@@ -63,11 +63,13 @@ void generateVegetation(){
 
     // Create/update a global or stored mask
     //static TreeShadowMask gTreeShadowMask;
-    InitOrResizeTreeShadowMask(gTreeShadowMask, /*tex size*/ 1024, 1024, worldXZ);
+    InitOrResizeTreeShadowMask(gTreeShadowMask, /*tex size*/ 4096, 4096, worldXZ);
+
+    BuildTreeShadowMask_Tex(gTreeShadowMask, trees, R.GetTexture("treeShadow"));
 
     // Bake
-    BuildTreeShadowMask(gTreeShadowMask, trees,
-        /*baseRadiusMeters*/ 4.5f,  /*darknessCenter*/ 0.55f, /*rings*/ 10);
+    // BuildTreeShadowMask(gTreeShadowMask, trees,
+    //     /*baseRadiusMeters*/ 4.5f,  /*darknessCenter*/ 0.55f, /*rings*/ 10);
 
     
 }

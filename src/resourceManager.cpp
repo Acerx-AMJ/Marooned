@@ -143,6 +143,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadTexture("shadowTex",        "assets/textures/shadow_decal.png");
     R.LoadTexture("ghostSheet",       "assets/sprites/ghostSheet.png");
     R.LoadTexture("magicAttackSheet", "assets/sprites/magicAttackSheet.png");
+    R.LoadTexture("treeShadow",       "assets/textures/treeShadow.png");
 
 
     // Models (registering with string keys)
@@ -353,11 +354,16 @@ void ResourceManager::SetLightingShaderValues() {
     Model& floorModel   = R.GetModel("floorTileGray");
     Model& wallModel    = R.GetModel("wallSegment");
     Model& doorwayModel = R.GetModel("doorWayGray");
-
+    Model& launcherModel = R.GetModel("stonePillar");
+    Model& barrelModel = R.GetModel("barrelModel");
+    Model& brokeModel = R.GetModel("brokeBarrel");
     // Bind shader to models
     for (int i = 0; i < wallModel.materialCount; i++)    wallModel.materials[i].shader = lightingShader;
     for (int i = 0; i < doorwayModel.materialCount; i++) doorwayModel.materials[i].shader = lightingShader;
     for (int i = 0; i < floorModel.materialCount; ++i)   floorModel.materials[i].shader = lightingShader;
+    for (int i = 0; i < launcherModel.materialCount; ++i)   launcherModel.materials[i].shader = lightingShader;
+    for (int i = 0; i < barrelModel.materialCount; ++i)   barrelModel.materials[i].shader = lightingShader;
+    for (int i = 0; i < brokeModel.materialCount; ++i)   brokeModel.materials[i].shader = lightingShader;
 
     // Use one material's shader handle to set uniforms (shared Shader)
     Shader use = floorModel.materials[0].shader;
@@ -443,7 +449,7 @@ void ResourceManager::UpdateShaders(Camera& camera){
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "vignetteIntensity"), &vignetteIntensity, SHADER_UNIFORM_FLOAT);
 
     //dungeonDarkness //is there a reason we need to set these every frame? 
-    float dungeonDarkness = -0.0f;//it darkens the gun model as well, so go easy. negative number brightens it. 
+    float dungeonDarkness = -0.1f;//it darkens the gun model as well, so go easy. negative number brightens it. 
     float dungeonContrast = 1.00f; //makes darks darker. 
 
     int isDungeonVal = isDungeon ? 1 : 0;
