@@ -885,7 +885,7 @@ void GenerateSpiderWebs(float baseY)
 
             // Define oriented bounding box (thin plane)
             float width = 150.0f;
-            float thickness = 20.0f;
+            float thickness = 40.0f;
             float height = 200.0f;
 
             BoundingBox box;
@@ -919,6 +919,8 @@ void GenerateLaunchers(float baseY) {
     //fireball launchers are a 3 pixel line. A launcher pixel (vermilion) a direction pixel (yellowish) and a timing pixel (one of 3 medium oranges)
     //The launcher pixel is in the middle, the direction pixel faces the direction the launcher fires, the timing pixel is always opposit the direction.
     //create the launcher and determine the timing and the direction. 
+
+    // Offsets for 4-neighbor (cardinal) directions: left, right, up, down
     const int dx[4] = { -1, 1, 0, 0 };
     const int dy[4] = {  0, 0,-1, 1 };
 
@@ -927,11 +929,10 @@ void GenerateLaunchers(float baseY) {
             Color current = dungeonPixels[y * dungeonWidth + x];
 
             // Vermilion trap pixel
-            if (!(current.r == 255 && current.g == 66 && current.b == 52)) continue;
-
+            if (!(current.r == 255 && current.g == 66 && current.b == 52)) continue; //if not vermillion try again. 
+            
             float fireIntervalSec = 3.0f; // default interval
             Vector3 fireDir = {0, 0, 1}; // default forward
-            bool found = false;
 
             // Find the yellow direction pixel among the 4 neighbors
             for (int i = 0; i < 4; ++i) {
@@ -959,7 +960,7 @@ void GenerateLaunchers(float baseY) {
                     }
                 }
 
-                found = true;
+
                 break;
             }
 

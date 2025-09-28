@@ -11,7 +11,6 @@
 #include "pathfinding.h"
 
 
-// New constructor matching velocity-based logic
 Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, BulletType t, float r, bool launch)
     : position(startPos),
       velocity(vel),
@@ -32,7 +31,7 @@ void Bullet::UpdateMagicBall(Camera& camera, float deltaTime) {
 
     // Gravity-based arc
     
-    gravity = launcher ? 0 : 980; //fireballs fired from traps have no gravity
+    gravity = launcher ? 0 : 980.0f; //fireballs fired from traps have no gravity
     fireEmitter.SetPosition(position);
     sparkEmitter.SetPosition(position);
     
@@ -84,7 +83,7 @@ void Bullet::UpdateMagicBall(Camera& camera, float deltaTime) {
 }
 
 void Bullet::HandleBulletWorldCollision(Camera& camera){
-    // Handle floor/ceiling collision
+    // Handle floor/ceiling/terrain collision
     if (isDungeon) {
         if (drawCeiling && position.y >= ceilingHeight){
             kill(camera);

@@ -15,8 +15,8 @@ enum class BulletType {
 struct BulletLight {
     bool   active = false;        // has light?
     Vector3 color = {1,1,1};      // 0..1
-    float  range = 0.f;           // > 0
-    float  intensity = 0.f;       // >= 0
+    float  range = 0.0f;           // > 0
+    float  intensity = 0.0f;       // >= 0
 
     // Optional post-explosion glow
     bool   detachOnDeath = true;
@@ -52,11 +52,14 @@ public:
     void Erase();
     void Draw(Camera& camera) const;
     void kill(Camera& camera);
+
+    //These just return the public members now. Clean this up eventually
     bool IsExpired() const;
     bool IsAlive() const;
     bool IsEnemy() const;
     bool isFireball() const;
     bool isExploded() const;
+
     void Blood(Camera& camera);
     void Explode(Camera& camera);
     void HandleBulletWorldCollision(Camera& camera);

@@ -7,6 +7,7 @@
 
 
 
+
 struct TreeInstance {
     Vector3 position;
     float rotationY;
@@ -38,6 +39,7 @@ struct BushInstance {
 extern std::vector<TreeInstance> trees;
 extern std::vector<BushInstance> bushes;
 extern std::vector<const TreeInstance*> sortedTrees;
+
 
 
 void generateVegetation();

@@ -9,6 +9,53 @@
 #include "utilities.h"
 #include "camera_system.h"
 
+static HintManager hints;   // one global-ish instance, private to UI.cpp
+
+void TutorialSetup(){
+    if (!first){
+        hints.SetMessage("");
+        
+
+    }
+    else{
+        hints.AddHint("WASD TO MOVE");
+        hints.AddHint("MOVE MOUSE TO LOOK");
+        hints.AddHint("LEFT CLICK TO ATTACK");
+        hints.AddHint("Q TO SWITCH WEAPONS");
+        hints.AddHint("RIGHT CLICK TO BLOCK");
+        hints.AddHint("SPACEBAR TO JUMP");
+        
+        //setmessage E TO INTERACT when you encounter first dungeon entrance
+        //Also set message to 1 TO USE HEALTH POTION when health is low and you have a health pot. This should happen every time.
+        //see hintmanager.cpp update tutuorial
+        hints.SetAnchor({0.5f, 0.85f});         // bottom-center
+        hints.SetMaxWidthFraction(0.7f);        // wrap at 70% of screen width
+        hints.SetFontScale(0.030f);             // ~3% of screen height
+        hints.SetLetterSpacing(5.0f);           // pixels
+        hints.SetFadeSpeeds(2.0f, 2.0f);        // fadeIn/fadeOut
+
+    }
+
+}
+
+void AdvanceHint(){
+    
+    hints.Advance();
+}
+
+void UpdateHintManager(float deltaTime){
+    if (!playerInit) return;
+    
+    hints.Update(deltaTime);
+    hints.UpdateTutorial();
+    
+}
+
+void DrawHints(){
+
+    hints.Draw();
+}
+
 void DrawMagicIcon(){
     //magic staff selected spell icon. 
     Texture2D currentTexture;
@@ -183,10 +230,9 @@ void DrawHUDBars(const Player& player) {
 
     //Position the bars on screen
     float baseY   = GetScreenHeight() - 80.0f; // top of the stack, aligned with inventory
-    //float xCenter = GetScreenWidth() * 0.33f;   // center anchor 
     float aspect = (float)GetScreenWidth() / (float)GetScreenHeight();
-    float xCenter = GetScreenWidth() * 0.45f + ((aspect <= 1.0f) ? 225.0f : 0.0f); //adaptive for square resolution. 225
-    
+    float xCenter = 550;
+ 
     // Vertical spacing between bars 
     float gap = 8.0f;
 

@@ -45,7 +45,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     player.inventory.SetupItemTextures();
 
     meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordClean");
-    
+    playerInit = true;
 
     if (first){
         first = false; // player first starting position uses first as well, it's set to false here

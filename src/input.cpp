@@ -16,16 +16,15 @@ void debugControls(Camera& camera, float deltaTime){
     }
 
     if (IsKeyPressed(KEY_L)) {
-        isLoadingLevel = true;
         std::cout << "Player Position: ";
         DebugPrintVector(player.position);
-
-        InitDynamicLightmap(dungeonWidth * 4);
-        R.SetLightingShaderValues();
-        BuildStaticLightmapOnce(dungeonLights);
-        BuildDynamicLightmapFromFrameLights(frameLights);
-        isLoadingLevel = false;
-        LogDynamicLightmapNonBlack("testing: ");
+        // isLoadingLevel = true;
+        // InitDynamicLightmap(dungeonWidth * 4);
+        // R.SetLightingShaderValues();
+        // BuildStaticLightmapOnce(dungeonLights);
+        // BuildDynamicLightmapFromFrameLights(frameLights);
+        // isLoadingLevel = false;
+        // LogDynamicLightmapNonBlack("testing: ");
         
     
     }

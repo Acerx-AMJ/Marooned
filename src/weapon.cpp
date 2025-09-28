@@ -7,12 +7,13 @@
 #include "resourceManager.h"
 #include "player.h"
 #include "world.h"
-
+#include "ui.h"
 
 void Weapon::Fire(Camera& camera) {
 
     if (GetTime() - lastFired >= fireCooldown) {
         SoundManager::GetInstance().Play("shotgun");
+        
         
         recoil = recoilAmount;
         lastFired = GetTime();

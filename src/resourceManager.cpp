@@ -3,9 +3,13 @@
 #include "world.h"
 #include "lighting.h"
 #include "level.h"
+//#include "shadows.h"
+#include "vegetation.h"
 
 
 ResourceManager* ResourceManager::_instance = nullptr;
+
+
 
 void ResourceManager::ensureFallback_() const {
     if (_fallbackReady) return;
@@ -193,6 +197,9 @@ void ResourceManager::SetShaderValues(){
     Shader& fogShader = R.GetShader("fogShader");
     Shader& shadowShader = R.GetShader("shadowShader");
     Shader& waterShader = R.GetShader("waterShader");
+    Shader& terrainShader = R.GetShader("terrainShader");
+
+
 
     // Sky
     //apply skyShader to sky model
@@ -245,6 +252,12 @@ void ResourceManager::SetShaderValues(){
     int locSat = GetShaderLocation(bloomShader, "uSaturation"); //also needed for overworld map
     float sat = 1.0; // try 1.05–1.25
     SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
+
+    // Once (cache locations)
+
+
+
+
     
 
 
@@ -444,6 +457,25 @@ void ResourceManager::UpdateShaders(Camera& camera){
         SetShaderValue(R.GetShader("lavaShader"), locTime, &t, SHADER_UNIFORM_FLOAT);
 
     }
+    //tree shadows
+    // Once (cache locations)
+    int locShadow      = GetShaderLocation(terrainShader, "u_ShadowMask");
+    int locWorldMinXZ  = GetShaderLocation(terrainShader, "u_WorldMinXZ");
+    int locWorldSizeXZ = GetShaderLocation(terrainShader, "u_WorldSizeXZ");
+
+    
+
+    // Per-frame before drawing terrain:
+    Vector2 worldMinXZ  = { gTreeShadowMask.worldXZBounds.x, gTreeShadowMask.worldXZBounds.y };
+    Vector2 worldSizeXZ = { gTreeShadowMask.worldXZBounds.width, gTreeShadowMask.worldXZBounds.height };
+    //std::cout << gTreeShadowMask.rt.texture.id << " id\n" << gTreeShadowMask.rt.texture.width << " width\n";
+
+    SetShaderValue(terrainShader, locWorldMinXZ,  &worldMinXZ,  SHADER_UNIFORM_VEC2);
+    SetShaderValue(terrainShader, locWorldSizeXZ, &worldSizeXZ, SHADER_UNIFORM_VEC2);
+    SetShaderValueTexture(terrainShader, locShadow, gTreeShadowMask.rt.texture);
+
+
+
 
 
 }

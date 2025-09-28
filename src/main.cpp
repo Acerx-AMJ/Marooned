@@ -11,7 +11,7 @@
 #include "render_pipeline.h"
 #include "camera_system.h"
 #include "lighting.h"
-
+#include "hintManager.h"
 bool squareRes = true; // set true for 1280x1024, false for widescreen
 
 int main() { 
@@ -84,18 +84,13 @@ int main() {
         UpdateDungeonChests();
         ApplyLavaDPS(player, deltaTime, 1);
         HandleWaves();
+        //hints.Update(deltaTime);
+        UpdateHintManager(deltaTime);
+        
+        
 
         //collisions
-        CheckBulletHits(camera); //bullet collision
-        TreeCollision(camera); //player and raptor vs tree
-        WallCollision();
-        DoorCollision();
-        SpiderWebCollision();
-        barrelCollision();
-        ChestCollision();
-        HandleEnemyPlayerCollision(&player);
-        pillarCollision();
-        HandleMeleeHitboxCollision(camera);
+        UpdateCollisions(camera);
 
         HandleDoorInteraction(camera);
 

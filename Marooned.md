@@ -251,11 +251,33 @@ A sky box for dungeons? Night sky, stars, moon, maybe add on to current skybox s
 
 -added tone map to bloom shader. turned contrast down to 0. we now add contrast via ACES tone map plus 1.0 exposure. 
 
-make fireball emitter a sphere not a point for fireball trail. 
+make fireball emitter a sphere not a point for fireball trail. x
 
-bullets should hit lava not stop at floor above it. 
+bullets should hit lava not stop at floor above it. x
 
 make UI bars centered for all resolutions. 
+
+When exiting dungeon to over world the dungeon entrances are colored black. 
+
+other island entrances now start locked and unlock after dungeon 3. 
+
+If your going to make a demo, you need a way to communicate the controls to the player. How would you do this? Do it like you did the last few times. text pop ups before each new thing. Start with "WASD TO MOVE", than once they move "Left click to attack" "Q to switch weapons" Then do a controls page in the menu later. Ok how would we do popup text? 
+
+inside UI.h make Class Popup.it has a position on screen, a width and height, a std::string "message". Maybe a popup could have some kind of state. Like showing first message. Maybe a table of messages.
+-we have a vector of messages inside a class hintManager.h/cpp We instance hints in UI, setup tutorial text, then iterate the vector of std::strings depending on the players action. We update the messages inside hintManager because all we need is the player or input keys. Should probably be in UI.cpp. It's called UpdateTutorial and could be put anywhere I'm just afraid it's going to be hard to find later. 
+
+Do we need any more popups? The staff. The interact popup should popup when you are close to the dungeon entrance. 
+
+Test other styles of font, don't just take the first one. 
+
+38 days left. What is it missing? 
+
+  How hard would it be to shrink the world? Very. We sized the tiles to 200 on a whim. and the floor tiles are x700 before that. Could I make like a global size factor. 
+
+  make a new island. make a portal out the the archway with a shader that animates a multicolored door. The portal could be at the end of the last dungeon and your teleported to a new island. Make a boss. 
+
+
+
 
 
 

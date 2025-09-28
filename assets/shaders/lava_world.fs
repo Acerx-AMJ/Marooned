@@ -28,7 +28,7 @@ void main() {
     uv += vec2(sx, cy) * uDistortAmp;
 
     vec3 base = texture(texture0, uv).rgb * vColor.rgb;
-    if (vWorldPos.y > 500.0) discard; //fix the giant lava texture in the sky by discarding anything above 500.
+    //if (vWorldPos.y > 500.0) discard; //fix the giant lava texture in the sky by discarding anything above 500.
 
 
     // Emissive lava (self-lit)

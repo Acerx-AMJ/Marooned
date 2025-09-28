@@ -1,7 +1,9 @@
 // ui.h
 #pragma once
 #include "raylib.h"
-#include "player.h" 
+#include "player.h"
+#include "hintManager.h" 
+
 
 enum class SlantSide { Right, Left };
 
@@ -44,7 +46,10 @@ void DrawMagicIcon();
 void DrawMenu(int selectedOption, int levelIndex); 
 void DrawTimer(float ElapsedTime);
 void UpdateMenu(Camera& camera);
-
+void TutorialSetup();
 void DrawTrapezoidFill(Vector2 TL, Vector2 TR, Vector2 BR, Vector2 BL, float t, Color colFill, Color colBack);
 void DrawTrapezoidBar(float x, float y, float value, float maxValue, const BarStyle& style);
 void DrawHUDBars(const Player& player);
+void UpdateHintManager(float deltaTime);
+void DrawHints();
+void TutorialSetup();

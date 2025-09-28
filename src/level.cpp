@@ -31,7 +31,7 @@ std::vector<LevelData> levels = {
         {0.0f, 300.0f, 0.0f}, //starting position
         -90.0f, //starting player rotation
         {0, 0, 0}, //raptor spawn center
-        10, //raptor count
+        5, //raptor count
         false, //isDungeon
         {entranceToDungeon1, entranceToDungeon3, entranceToDungeon4}, //add entrance struct to level's vector of entrances. 
         0, //current level
@@ -47,8 +47,8 @@ std::vector<LevelData> levels = {
        
     },
     {
-        "EyeballIsle", //place holder
-        "assets/heightmaps/EyeballIsle.png",
+        "River", //place holder
+        "assets/heightmaps/River.png",
         "",
         {0.0f, 300.0f, 0.0f},
         180.0f,

@@ -9,10 +9,13 @@
 #include "resourceManager.h"
 #include "world.h"
 #include "algorithm"
+#include "shadows.h"
 
 std::vector<TreeInstance> trees;
 std::vector<BushInstance> bushes;
 std::vector<const TreeInstance*> sortedTrees;
+
+
 
 
 void sortTrees(Camera& camera){
@@ -25,6 +28,7 @@ void sortTrees(Camera& camera){
 }
 
 
+
 void generateVegetation(){
 
     float treeSpacing = 150.0f;
@@ -34,6 +38,8 @@ void generateVegetation(){
     heightmapPixels = (unsigned char*)heightmap.data; //for iterating heightmap data for tree placement
     // 🌴 Generate the trees
     trees = GenerateTrees(heightmap, heightmapPixels, terrainScale, treeSpacing, minTreeSpacing, treeHeightThreshold);
+
+
 
     // 🌴 Filter trees based on final height cutoff
     trees = FilterTreesAboveHeightThreshold(trees, heightmap, heightmapPixels, terrainScale, treeHeightThreshold);
@@ -46,6 +52,24 @@ void generateVegetation(){
     for (const auto& tree : trees) { //solves tree leaf glitches. 
         sortedTrees.push_back(&tree);
     }
+
+    // Define world XZ bounds from your terrainScale (centered at origin)
+    Rectangle worldXZ = {
+        -terrainScale.x * 0.5f,   // minX
+        -terrainScale.z * 0.5f,   // minZ
+        terrainScale.x,          // sizeX
+        terrainScale.z           // sizeZ
+    };
+
+    // Create/update a global or stored mask
+    //static TreeShadowMask gTreeShadowMask;
+    InitOrResizeTreeShadowMask(gTreeShadowMask, /*tex size*/ 1024, 1024, worldXZ);
+
+    // Bake
+    BuildTreeShadowMask(gTreeShadowMask, trees,
+        /*baseRadiusMeters*/ 4.5f,  /*darknessCenter*/ 0.55f, /*rings*/ 10);
+
+    
 }
 
 std::vector<TreeInstance> GenerateTrees(Image& heightmap, unsigned char* pixels, Vector3 terrainScale,
@@ -213,22 +237,22 @@ void DrawTrees(const std::vector<TreeInstance>& trees, Model& shadowQuad, Camera
         DrawModelEx(treeModel, pos, { 0, 1, 0 }, tree->rotationY,
                     { tree->scale, tree->scale, tree->scale }, WHITE);
 
-        Vector3 shadowPos = {
-            tree->position.x + tree->xOffset,
-            tree->position.y + 9.0f,
-            tree->position.z + tree->zOffset
-        };
+        // Vector3 shadowPos = {
+        //     tree->position.x + tree->xOffset,
+        //     tree->position.y + 9.0f,
+        //     tree->position.z + tree->zOffset
+        // };
 
-        Shader shadowSh = R.GetShader("shadowShader"); // your quad shadow shader
-        int locStrength = GetShaderLocation(shadowSh, "shadowStrength");
+        // Shader shadowSh = R.GetShader("shadowShader"); // your quad shadow shader
+        // int locStrength = GetShaderLocation(shadowSh, "shadowStrength");
 
-        // Draw trees (lighter)
-        float treeStrength = 0.25f;
-        SetShaderValue(shadowSh, locStrength, &treeStrength, SHADER_UNIFORM_FLOAT);
+        // // Draw trees (lighter)
+        // float treeStrength = 0.25f;
+        // SetShaderValue(shadowSh, locStrength, &treeStrength, SHADER_UNIFORM_FLOAT);
 
 
-        DrawModelEx(shadowQuad, shadowPos, {0, 1, 0}, 0,
-                    {tree->scale * 15.0f, 1.0f, tree->scale * 15.0f}, WHITE);
+        // DrawModelEx(shadowQuad, shadowPos, {0, 1, 0}, 0,
+        //             {tree->scale * 15.0f, 1.0f, tree->scale * 15.0f}, WHITE);
     }
 
 

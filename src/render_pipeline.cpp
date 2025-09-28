@@ -11,10 +11,14 @@
 #include "input.h"
 #include "camera_system.h"
 #include "lighting.h"
+#include "shadows.h"
+
 
 
 
 void RenderFrame(Camera3D& camera, Player& player, float dt) {
+    Shader& terrainShader = R.GetShader("terrainShader");
+    int locShadow      = GetShaderLocation(terrainShader, "u_ShadowMask");
     // --- 3D scene to sceneTexture ---
     BeginTextureMode(R.GetRenderTexture("sceneTexture"));
         ClearBackground(SKYBLUE);
@@ -28,7 +32,9 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
         rlSetBlendMode(BLEND_ALPHA);
 
         if (!isDungeon) {
+
             DrawModel(terrainModel, {-terrainScale.x/2,0,-terrainScale.z/2}, 1.0f, WHITE);
+
             DrawModel(R.GetModel("waterModel"), {0, waterPos.y + (float)sin(GetTime()*0.9f)*0.9f, 0}, 1.0f, WHITE);
             DrawModel(R.GetModel("bottomPlane"), {0, waterHeightY - 100, 0}, 1.0f, DARKBLUE);
             DrawBoat(player_boat);
@@ -99,6 +105,7 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
                 if (player.activeWeapon == WeaponType::MagicStaff) DrawMagicIcon();
                 DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD);
                 player.inventory.DrawInventoryUIWithIcons(itemTextures, slotOrder, 20, GetScreenHeight() - 80, 64);
+                DrawHints();
 
             } 
 
@@ -106,6 +113,8 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
                 DrawTimer(ElapsedTime);
                 DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
                 DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 280, 30, 20, WHITE);
+
+
             }
             
         }

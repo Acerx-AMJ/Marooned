@@ -12,6 +12,7 @@
 #include "collectableWeapon.h"
 #include "list"
 #include "dungeonGeneration.h"
+#include "shadows.h"
 
 enum class GameState {
     Menu,
@@ -64,10 +65,13 @@ extern bool debugInfo;
 extern bool isLoadingLevel;
 extern float weaponDarkness;
 extern bool drawCeiling;
+extern bool unlockEntrances;
+extern bool playerInit;
 //extern float muzzleFlashTimer;
 
 extern GameState currentGameState;
 
+extern TreeShadowMask gTreeShadowMask;
 extern std::vector<DungeonEntrance> dungeonEntrances;
 //extern std::vector<Bullet> activeBullets;
 extern std::list<Bullet> activeBullets; // instead of std::vector

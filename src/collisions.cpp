@@ -9,6 +9,8 @@
 #include "pathfinding.h"
 
 
+
+
 bool CheckCollisionPointBox(Vector3 point, BoundingBox box) {
     return (
         point.x >= box.min.x && point.x <= box.max.x &&
@@ -134,6 +136,14 @@ bool HandleBarrelHitsForBullet(Bullet& b, Camera& camera) {
 
     // Tell caller whether to stop iterating this bullet
     return hitAnything && !isAOE;
+}
+
+void launcherCollision(){
+    for (LauncherTrap& launcher : launchers){
+        if (CheckCollisionBoxSphere(launcher.bounds, player.position, player.radius)){
+            ResolveBoxSphereCollision(launcher.bounds, player.position, player.radius);
+        }
+    }
 }
 
 
@@ -617,6 +627,8 @@ void HandleDoorInteraction(Camera& camera) {
                     pendingLevelIndex = doors[i].linkedLevelIndex;
                     isLoadingLevel = true; //stops updating characters, prevents crash on level switch.
                     currentGameState = GameState::LoadingLevel; 
+                    if (levelIndex == 4) unlockEntrances = true;
+
                 }
 
                 break; // done with this door
@@ -645,6 +657,20 @@ void HandleDoorInteraction(Camera& camera) {
             pendingDoorIndex = -1;
         }
     }
+}
+
+void UpdateCollisions(Camera& camera){
+    CheckBulletHits(camera); //bullet collision
+    TreeCollision(camera); //player and raptor vs tree
+    WallCollision();
+    DoorCollision();
+    SpiderWebCollision();
+    barrelCollision();
+    ChestCollision();
+    HandleEnemyPlayerCollision(&player);
+    pillarCollision();
+    launcherCollision();
+    HandleMeleeHitboxCollision(camera);
 }
 
 

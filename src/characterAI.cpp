@@ -454,9 +454,15 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
 
 
         case CharacterState::Attack:
+
         {
+
+            if (distance > ATTACK_EXIT) {
+                if (canSee) ChangeState(CharacterState::Chase);
+                break;
+            }
             if (distance < FLEE_ENTER) { ChangeState(CharacterState::RunAway); break;}
-            if (attackCooldown <= 0.0f) {
+            if (attackCooldown <= 0.0f && distance < ATTACK_EXIT) {
                 attackCooldown = 1.0f; // seconds between attacks
 
                 // Play attack sound
@@ -480,11 +486,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
 
             }
 
-            if (distance > ATTACK_EXIT) {
-                if (canSee) ChangeState(CharacterState::Chase);
-                
-                break;
-            }
+
 
 
         } break;

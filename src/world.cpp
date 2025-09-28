@@ -13,6 +13,7 @@
 #include "list"
 #include "assert.h"
 #include "lighting.h"
+#include "ui.h"
 
 
 
@@ -23,6 +24,8 @@ Model terrainModel;
 Image heightmap;
 Mesh terrainMesh;
 Vector3 terrainScale = {16000.0f, 200.0f, 16000.0f}; //very large x and z, 
+
+TreeShadowMask gTreeShadowMask;
 
 int levelIndex = 0; //current level, levels[levelIndex]
 int previousLevelIndex = 0;
@@ -36,7 +39,7 @@ Vector3 boatPosition = {6000, -20, 0.0};
 Vector3 playerSpawnPoint = {0,0,0};
 Vector3 waterPos = {0, 0, 0};
 int pendingLevelIndex = -1; //wait to switch level until faded out. UpdateFade() needs to know the next level index. 
-
+bool unlockEntrances = false; // unlock entrances after levelindex 4
 bool drawCeiling = true;
 float waterHeightY = 60;
 Vector3 bottomPos = {0, waterHeightY - 100, 0};
@@ -60,6 +63,7 @@ float ElapsedTime = 0.0f;
 bool debugInfo = false;
 bool isLoadingLevel = false;
 float weaponDarkness = 0.0f;
+bool playerInit = false;
 
 //std::vector<Bullet> activeBullets;
 std::list<Bullet> activeBullets; // instead of std::vector
@@ -75,7 +79,7 @@ std::vector<DungeonEntrance> dungeonEntrances;
 
 void InitLevel(const LevelData& level, Camera& camera) {
     isLoadingLevel = true;
-
+    isDungeon = false;
     //Called when starting game and changing level. init the level you pass it. the level is chosen by menu or door's linkedLevelIndex. 
     ClearLevel();//clears everything. 
 
@@ -93,14 +97,32 @@ void InitLevel(const LevelData& level, Camera& camera) {
     
     terrainMesh = GenMeshHeightmap(heightmap, terrainScale);
     terrainModel = LoadModelFromMesh(terrainMesh);
-    terrainModel.materials[0].shader = R.GetShader("terrainShader");
+    Shader& terrainShader = R.GetShader("terrainShader");
+
+
+    //terrainModel.materials[0].shader = R.GetShader("terrainShader");
+
+
+
+
     dungeonEntrances = level.entrances; //get level entrances from level data
 
     generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
     GenerateEntrances();
-    generateVegetation(); 
+    generateVegetation();
+
+    // after you load/create the terrain shader
+    terrainShader.locs[SHADER_LOC_MAP_OCCLUSION] = GetShaderLocation(terrainShader, "textureOcclusion");
+
+    // assign shader to the model
+    terrainModel.materials[0].shader = terrainShader;
+
+    // plug the shadow mask into the material's occlusion map
+    SetMaterialTexture(&terrainModel.materials[0], MATERIAL_MAP_OCCLUSION, gTreeShadowMask.rt.texture);
+
+    
     if (!level.isDungeon) InitBoat(player_boat, boatPosition);
-   
+    TutorialSetup();
     if (level.isDungeon){
         isDungeon = true;
         drawCeiling = level.hasCeiling;
@@ -139,13 +161,14 @@ void InitLevel(const LevelData& level, Camera& camera) {
 
 
 
-
+    ResourceManager::Get().SetLightingShaderValues();
     isLoadingLevel = false;
 
 
     R.SetShaderValues();
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
+
     CameraSystem::Get().SnapAllToPlayer(); //put freecam at player pos
 
     //start with blunderbus and sword in that order
@@ -202,7 +225,6 @@ void InitDungeonLights(){
     BuildStaticLightmapOnce(dungeonLights);
     BuildDynamicLightmapFromFrameLights(frameLights); // build dynamic light map once for good luck.
 
-    //TraceLog(LOG_INFO, "dynTex.id=%d glowTex.id=%d", gDynamic.tex.id, gLavaGlow.tex.id);
 }
 
 void DrawEnemyShadows() {
@@ -276,40 +298,82 @@ void HandleWeaponTints(){
 
 }
 
-void GenerateEntrances(){
-    for (const DungeonEntrance& e : dungeonEntrances) {
+void GenerateEntrances() {
+    doors.clear();
+    doorways.clear();
+
+    for (size_t i = 0; i < dungeonEntrances.size(); ++i) {
+        const DungeonEntrance& e = dungeonEntrances[i];
+
         Door d{};
         d.position = e.position;
-        d.rotationY = 0.0f; 
+        d.rotationY = 0.0f;
         d.doorTexture = R.GetTexture("doorTexture");
         d.isOpen = false;
-        d.isLocked = false;
+
+        // first one unlocked, others locked until dungeon 3ee
+        if (i > 0){
+            d.isLocked = !unlockEntrances;
+        }else{
+            d.isLocked = false;
+        }
+
         d.scale = {300, 365, 1};
         d.tint = WHITE;
-        d.linkedLevelIndex = e.linkedLevelIndex; //use entrance's linkedLevelIndex to determine which dungeon to enter from overworld
-        //allowing more than one enterance to dungeon per overworld
+        d.linkedLevelIndex = e.linkedLevelIndex;
+        d.doorType = DoorType::GoToNext;
 
-        d.doorType = DoorType::GoToNext; //Go to Dungeon
-
-        float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
-        float height = 365.0f;
-        float depth = 20.0f;        // Thickness into the doorway (forward axis)
-
-        d.collider = MakeDoorBoundingBox(d.position, d.rotationY, halfWidth, height, depth); //the whole archway is covered by collider
-
+        float halfWidth = 200.0f;
+        float height    = 365.0f;
+        float depth     = 20.0f;
+        d.collider = MakeDoorBoundingBox(d.position, d.rotationY, halfWidth, height, depth);
         doors.push_back(d);
 
         DoorwayInstance dw{};
         dw.position = e.position;
-        dw.rotationY = 90.0f * DEG2RAD; //rotate to match door 0 rotation, we could rotate door to match arch instead.
+        dw.rotationY = 90.0f * DEG2RAD;
         dw.isOpen = false;
-        dw.isLocked = false;
+        dw.isLocked = (i > 0);
         dw.tint = WHITE;
-
         doorways.push_back(dw);
     }
-
 }
+
+
+// void GenerateEntrances(){
+//     for (const DungeonEntrance& e : dungeonEntrances) {
+//         Door d{};
+//         d.position = e.position;
+//         d.rotationY = 0.0f; 
+//         d.doorTexture = R.GetTexture("doorTexture");
+//         d.isOpen = false;
+//         d.isLocked = false;
+//         d.scale = {300, 365, 1};
+//         d.tint = WHITE;
+//         d.linkedLevelIndex = e.linkedLevelIndex; //use entrance's linkedLevelIndex to determine which dungeon to enter from overworld
+//         //allowing more than one enterance to dungeon per overworld
+
+//         d.doorType = DoorType::GoToNext; //Go to Dungeon
+
+//         float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
+//         float height = 365.0f;
+//         float depth = 20.0f;        // Thickness into the doorway (forward axis)
+
+//         d.collider = MakeDoorBoundingBox(d.position, d.rotationY, halfWidth, height, depth); //the whole archway is covered by collider
+
+//         doors.push_back(d);
+
+//         DoorwayInstance dw{};
+//         dw.position = e.position;
+//         dw.rotationY = 90.0f * DEG2RAD; //rotate to match door 0 rotation, we could rotate door to match arch instead.
+//         dw.isOpen = false;
+//         dw.isLocked = false;
+//         dw.tint = WHITE;
+
+//         doorways.push_back(dw);
+//     }
+
+// }
 
 void generateRaptors(int amount, Vector3 centerPos, float radius) {
 
