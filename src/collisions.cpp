@@ -622,9 +622,10 @@ void HandleDoorInteraction(Camera& camera) {
                     previousLevelIndex = levelIndex;
                     isWaiting = false;
                     openTimer = 0.0f;
-                    fadeIn = true;
-                    isFading = true;
+                    //fadeIn = true;
+                    //isFading = true;
                     pendingLevelIndex = doors[i].linkedLevelIndex;
+                    StartFadeOutToLevel(pendingLevelIndex);
                     isLoadingLevel = true; //stops updating characters, prevents crash on level switch.
                     currentGameState = GameState::LoadingLevel; 
                     if (levelIndex == 4) unlockEntrances = true;

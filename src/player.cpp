@@ -28,23 +28,11 @@ void InitPlayer(Player& player, Vector3 startPosition) {
     player.grounded = false;
     player.groundY = 0.0;
 
-    weapon.model = R.GetModel("blunderbuss");
-    weapon.scale = { 2.0f, 2.0f, 2.0f };
-    weapon.muzzleFlashTexture = R.GetTexture("muzzleFlash");
-    weapon.fireCooldown = 2.0f;
-    weapon.flashDuration = 1.0;
-    
-
+    InitBlunderbuss(weapon);
+    InitSword(meleeWeapon);
     InitMagicStaff(magicStaff);
 
-
-    
-    meleeWeapon.model = R.GetModel("swordModel");
-    meleeWeapon.scale = {2, 2, 2};
-
     player.inventory.SetupItemTextures();
-
-    meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordClean");
     playerInit = true;
 
     if (first){
@@ -221,7 +209,7 @@ void UpdateMeleeHitbox(Camera& camera){
         Vector3 hitboxCenter = Vector3Add(player.position, Vector3Scale(forward, 200.0f));
         hitboxCenter.y += 0.0f; 
 
-        Vector3 boxSize = {100.0f, 100.0f, 100.0f}; // tweak to taste
+        Vector3 boxSize = {100.0f, 100.0f, 100.0f};
 
         Vector3 min = {
             hitboxCenter.x - boxSize.x * 0.5f,
@@ -239,6 +227,24 @@ void UpdateMeleeHitbox(Camera& camera){
         // Collapse the hitbox to prevent accidental damage
         player.meleeHitbox = { player.position, player.position };
     }
+}
+
+void InitSword(MeleeWeapon& meleeWeapon){
+    //init sword
+    meleeWeapon.model = R.GetModel("swordModel");
+    meleeWeapon.scale = {2, 2, 2};
+    meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordClean");
+    
+}
+
+void InitBlunderbuss(Weapon& weapon){
+    //init blunderbuss
+    weapon.model = R.GetModel("blunderbuss");
+    weapon.scale = { 2.0f, 2.0f, 2.0f };
+    weapon.muzzleFlashTexture = R.GetTexture("muzzleFlash");
+    weapon.fireCooldown = 2.0f;
+    weapon.flashDuration = 1.0;
+
 }
 
 void InitMagicStaff(MagicStaff& magicStaff) {
@@ -475,11 +481,10 @@ void Player::TakeDamage(int amount){
 
 }
 
-
-
 void DrawPlayer(const Player& player, Camera& camera) {
-    DrawCapsule(player.position, Vector3 {player.position.x, player.height, player.position.z}, 5, 4, 4, RED);
+    DrawCapsule(player.position, Vector3 {player.position.x, player.height/2, player.position.z}, 5, 4, 4, RED);
     //DrawBoundingBox(player.GetBoundingBox(), RED);
+    //DrawBoundingBox(player.meleeHitbox, WHITE);
 
     if (controlPlayer) {
         switch (player.activeWeapon) {

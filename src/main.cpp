@@ -12,6 +12,8 @@
 #include "camera_system.h"
 #include "lighting.h"
 #include "hintManager.h"
+
+
 bool squareRes = false; // set true for 1280x1024, false for widescreen
 
 int main() { 
@@ -26,8 +28,6 @@ int main() {
     DisableCursor();
     SetExitKey(KEY_NULL); //Escape brings up menu, not quit
     ResourceManager::Get().LoadAllResources();
-    //ResourceManager::Get().SetShaderValues(); // we set shader values again on level load
-
     SoundManager::GetInstance().LoadSounds();
     
     SoundManager::GetInstance().PlayMusic("dungeonAir");
@@ -38,7 +38,7 @@ int main() {
     //was accidently hitting tab and entering freeCam while playing. 
 
     float aspect = (float)GetScreenWidth() / (float)GetScreenHeight();
-    float fovy   = (aspect < (16.0f/9.0f)) ? 55.0f : 45.0f; //bump up FOV if it's narrower than 16x9
+    float fovy   = (aspect < (16.0f/9.0f)) ? 50.0f : 45.0f; //bump up FOV if it's narrower than 16x9
 
     CameraSystem::Get().Init(startPosition);
     CameraSystem::Get().SetFOV(fovy);
@@ -48,13 +48,15 @@ int main() {
     while (!WindowShouldClose()) {
         ElapsedTime += GetFrameTime();
         float deltaTime = GetFrameTime();
-
+        
        // Use the active camera everywhere:
         Camera3D& camera = CameraSystem::Get().Active();
         
+        UpdateFade(camera);
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
             UpdateMenu(camera);
+            
             BeginDrawing();
             DrawMenu(selectedOption, levelIndex);
             EndDrawing();
@@ -69,9 +71,9 @@ int main() {
 
         if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Menu;
         UpdateMusicStream(SoundManager::GetInstance().GetMusic(isDungeon ? "dungeonAir" : "jungleAmbience"));
-     
+        //UpdateFade(camera);
         //update context
-        UpdateFade(deltaTime, camera); //triggers init level on fadeout
+        //UpdateFade(deltaTime, camera); //triggers init level on fadeout
         debugControls(camera, deltaTime); 
         R.UpdateShaders(camera);
         UpdateEnemies(deltaTime);
@@ -89,8 +91,6 @@ int main() {
         //hints.Update(deltaTime);
         UpdateHintManager(deltaTime);
         
-        
-
         //collisions
         UpdateCollisions(camera);
 

@@ -45,7 +45,7 @@ void AdvanceHint(){
 
 void UpdateHintManager(float deltaTime){
     if (!playerInit) return;
-    
+
     hints.Update(deltaTime);
     hints.UpdateTutorial();
     
@@ -254,33 +254,89 @@ void DrawHUDBars(const Player& player) {
     DrawTrapezoidBar(leftX(stam.width), yStam, stamDisp, staminaMax,stam);
 }
 
+static Rectangle FitTextureDest(const Texture2D& tex, int screenW, int screenH, bool cover)
+{
+    float sw = (float)screenW, sh = (float)screenH;
+    float tw = (float)tex.width, th = (float)tex.height;
+
+    float scale = cover ? fmaxf(sw/tw, sh/th)  // fill (crop)
+                        : fminf(sw/tw, sh/th); // fit (bars)
+
+    float dw = tw * scale;
+    float dh = th * scale;
+    float dx = (sw - dw) * 0.5f;  // center
+    float dy = (sh - dh) * 0.5f;
+
+    // (optional) avoid subpixel blur
+    dx = floorf(dx); dy = floorf(dy); dw = floorf(dw); dh = floorf(dh);
+
+    return Rectangle{ dx, dy, dw, dh };
+}
+
+
+inline void DrawTextShadowed(const char* text, int x, int y, int fontSize,
+                             Color color,
+                             int shadowPx = -1,
+                             Color shadowCol = {0,0,0,190})
+{
+    if (shadowPx < 0) shadowPx = std::max(1, fontSize/18); // scale with size
+    DrawText(text, x + shadowPx, y + shadowPx, fontSize, shadowCol); // shadow
+    DrawText(text, x,            y,            fontSize, color);     // main
+}
+
+
 
 void DrawMenu(int selectedOption, int levelIndex) {
     ClearBackground(BLACK);
     Texture2D backDrop = R.GetTexture("backDrop");
-    DrawTexturePro(
-        backDrop,
-        Rectangle{ 0, 0, (float)backDrop.width, (float)backDrop.height },
-        Rectangle{ 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() },
-        Vector2{ 0, 0 },
-        0.0f,
-        WHITE
-    );
+    // choose contain or cover
+    bool cover = false; // true = fill screen (crop), false = fit inside (letterbox)
 
-    //float middle = GetScreenWidth()/2 - 150;
+    Rectangle src  = { 0, 0, (float)backDrop.width, (float)backDrop.height };
+    Rectangle dest = FitTextureDest(backDrop, GetScreenWidth(), GetScreenHeight(), cover);
+
+    // if you want letterbox bars, clear first to your bar color
+    ClearBackground(BLACK);
+
+    DrawTexturePro(backDrop, src, dest, Vector2{0,0}, 0.0f, WHITE);
+
     const char* title = "MAROONED";
-    int fontSize = 60;
-    int titleX = GetScreenWidth() / 2 - MeasureText(title, fontSize) / 2;
-    DrawText(title, titleX, 180, fontSize, GREEN);
 
-    DrawText(selectedOption == 0 ? "> Start" : "  Start", titleX, 280, 30, WHITE);
-    
-    DrawText(
-        TextFormat("%s Level: %s", selectedOption == 1 ? ">" : " ", levels[levelIndex].name.c_str()),
-        titleX, 330, 30, YELLOW
-    );
 
-    DrawText(selectedOption == 2 ? "> Quit" : "  Quit", titleX, 380, 30, WHITE);
+    int fontSize = 80;
+
+    // center X
+    int titleX = GetScreenWidth()/2 - MeasureText(title, fontSize)/2;
+    int titleY = 180;
+    int menuX = titleX + 128;
+    // shadow settings
+    int shadowPx = std::max(1, fontSize/18);          // scales with size (≈3–4 px here)
+    Color shadowCol = {0, 0, 0, 180};                 // semi-transparent black
+
+    // draw shadow, then title
+    DrawText(title, titleX + shadowPx, titleY + shadowPx, fontSize, shadowCol);
+    DrawText(title, titleX,             titleY,             fontSize, GREEN);
+
+    int menuFontSize = 30;
+    int menuShadowPx = std::max(1, menuFontSize/18);
+    //Color shadowCol = {0,0,0,190};
+
+    char startBuf[32];
+    snprintf(startBuf, sizeof(startBuf), "%sStart", (selectedOption==0?"> ":"  "));
+    DrawTextShadowed(startBuf, menuX, 280, menuFontSize,
+                    WHITE, menuShadowPx, shadowCol);
+
+    std::string levelLine = TextFormat("%s Level: %s",
+                                    (selectedOption==1?">":" "),
+                                    levels[levelIndex].name.c_str());
+    DrawTextShadowed(levelLine.c_str(), menuX, 330, menuFontSize,
+                    YELLOW, menuShadowPx, shadowCol);
+
+    char quitBuf[32];
+    snprintf(quitBuf, sizeof(quitBuf), "%sQuit", (selectedOption==2?"> ":"  "));
+    DrawTextShadowed(quitBuf, menuX, 380, menuFontSize,
+                    WHITE, menuShadowPx, shadowCol);
+
 }
 
 void UpdateMenu(Camera& camera){

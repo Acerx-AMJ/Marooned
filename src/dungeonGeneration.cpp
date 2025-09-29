@@ -878,27 +878,33 @@ void GenerateSpiderWebs(float baseY)
                 continue;  // not valid web position
             }
 
-            // World position
+            // World position (treat as center of the web)
             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
-            Vector3 offsetPos = {pos.x, pos.y + 200, pos.z};
-            pos = offsetPos;
 
-            // Define oriented bounding box (thin plane)
-            float width = 150.0f;
-            float thickness = 40.0f;
-            float height = 200.0f;
+            // Center it vertically where you want the web midline to be.
+            // Example: raise it a bit off the floor but keep it centered.
+            pos.y += 200.0f; // tweak to taste
 
+            // Oriented bounding box approximated by an axis-aligned box using half-extents
+            const float width      = 150.0f;
+            const float thickness  = 40.0f;
+            const float height     = 200.0f;
+
+            const float hw = width * 0.5f;
+            const float ht = thickness * 0.5f;
+            const float hh = height * 0.5f;
+
+            // rotationY: 0 -> facing Z, 90deg -> facing X (your existing logic is fine)
             BoundingBox box;
             if (rotationY == 0.0f) {
-                // Facing Z+ or Z-
-                box.min = { pos.x - width * 0.5f, pos.y, pos.z - thickness * 0.5f };
-                box.max = { pos.x + width * 0.5f, pos.y + height, pos.z + thickness * 0.5f };
-            }
-            else {
-                // Facing X+ or X-
-                box.min = { pos.x - thickness * 0.5f, pos.y, pos.z - width * 0.5f };
-                box.max = { pos.x + thickness * 0.5f, pos.y + height, pos.z + width * 0.5f };
-            }
+                // plane spans X (wide) and Y (tall), thin in Z
+                box.min = { pos.x - hw, pos.y - hh, pos.z - ht };
+                box.max = { pos.x + hw, pos.y + hh, pos.z + ht };
+            } else {
+                // plane spans Z (wide) and Y (tall), thin in X
+                box.min = { pos.x - ht, pos.y - hh, pos.z - hw };
+                box.max = { pos.x + ht, pos.y + hh, pos.z + hw };
+}
 
             // Add to spiderWebs
             spiderWebs.push_back({

@@ -21,6 +21,10 @@ enum class GameState {
     Quit
 };
 
+// Globals or in a FadeController:
+enum class FadePhase { Idle, FadingOut, Swapping, FadingIn };
+
+
 extern Model terrainModel;
 extern Image heightmap;
 extern Mesh terrainMesh;
@@ -87,7 +91,7 @@ extern std::vector<Character*> enemyPtrs;
 void ClearLevel();
 void InitLevel(const LevelData& level, Camera& camera);
 void InitDungeonLights();
-void UpdateFade(float deltaTime, Camera& camera);
+void UpdateFade(Camera& camera);
 void removeAllCharacters();
 void generateRaptors(int amount, Vector3 centerPos, float radius);
 //void BeginCustom3D(Camera3D camera, float farClip);
@@ -110,3 +114,5 @@ Vector3 ResolveSpawnPoint(const LevelData& level, bool isDungeon, bool first, fl
 float GetHeightAtWorldPosition(Vector3 position, Image& heightmap, Vector3 terrainScale);
 
 void UpdateWorldFrame(float dt, Player& player);
+void StartFadeOutToLevel(int levelIndex);
+void StartFadeInFromBlack(); 

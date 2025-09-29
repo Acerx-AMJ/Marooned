@@ -31,6 +31,27 @@ inline void InitOrResizeTreeShadowMask(TreeShadowMask& mask, int w, int h, const
     }
 }
 
+struct ShadowParams {
+    float minPx   = 64.0f;   // smallest canopy in pixels on the mask
+    float maxPx   = 150.0f;   // largest canopy in pixels on the mask
+    float curve   = 1.6f;    // >1 = bias small, <1 = bias large
+    float jitter  = 0.08f;   // ±8% random break-up
+};
+
+// t.scale is ~20..30 in your setup
+static inline float ScaleToDiameterPx(float scale, const ShadowParams& p) {
+    float s = (scale - 20.0f) / 10.0f;        // 0..1
+    s = fminf(fmaxf(s, 0.0f), 1.0f);
+    // curve control (ease-in like powf); replace with smoothstep for cheaper curve
+    float w = powf(s, p.curve);
+    float px = p.minPx + (p.maxPx - p.minPx) * w;
+
+    // tiny per-tree jitter so same-sized trees don’t look copy/pasted
+    //float j = 1.0f + ((GetRandomValue(-1000, 1000) / 1000.0f) * p.jitter);
+    return px;
+}
+
+
 static inline void StampCanopy(Texture2D tex,
                                int cx, int cy,       // center in mask pixels
                                float diameterPx,     // dest diameter in pixels
@@ -51,36 +72,39 @@ static inline void StampCanopy(Texture2D tex,
 
 inline void BuildTreeShadowMask_Tex(TreeShadowMask& mask,
                                     const std::vector<TreeInstance>& trees,
-                                    Texture2D canopyTex,
-                                    float baseDiameterMeters = 88.0f, // tweak to match canopy
-                                    float strength01         = 0.55f,// overall darkness
-                                    float minDiameterPx      = 88.0f)
+                                    Texture2D canopyTex, 
+                                    float strength01 = 0.45f// overall darkness
+                                    )
 {
     BeginTextureMode(mask.rt);
     ClearBackground(WHITE);
     BeginBlendMode(BLEND_ALPHA);
 
-    const float metersPerTexel = mask.worldXZBounds.width / (float)mask.width;
-
+    // const float metersPerTexel = mask.worldXZBounds.width / (float)mask.width;
+    ShadowParams p;
     for (const auto& t : trees) {
         // Use the EXACT draw position (incl. your jitter offsets)
         Vector3 wp = t.position;
         wp.x += t.xOffset;
         wp.z += t.zOffset;
 
-        // Scale canopy size by your tree scale if useful
-        float diameterM  = baseDiameterMeters * (t.scale / 25.0f);
-        float diameterPx = diameterM / metersPerTexel;
-        if (diameterPx < minDiameterPx) diameterPx = minDiameterPx;
+        // const float metersPerTexel = mask.worldXZBounds.width / (float)mask.width;
+
+        // float rel = powf(t.scale / 25.0f, 2.0f); // >1.0 widens differences
+        // float diameterM = baseDiameterMeters * rel;
+        // float diameterPx = diameterM / metersPerTexel;
+
+        float diameterPx = ScaleToDiameterPx(t.scale, p);//fmaxf(diameterPx, 12.0f); 
+
 
         // World → mask pixels
         Vector2 uv = WorldXZToUV(mask.worldXZBounds, wp);
         int cx = (int)(uv.x * mask.width);
         int cy = (int)(uv.y * mask.height);
 
-        // Stamp with rotation; flip sign if it appears reversed
+        
         StampCanopy(canopyTex, cx, cy, diameterPx, t.rotationY, strength01);
-        // If rotation looks mirrored, use -t.rotationY
+        
     }
 
     EndBlendMode();

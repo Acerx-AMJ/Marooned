@@ -80,6 +80,7 @@ std::vector<DungeonEntrance> dungeonEntrances;
 void InitLevel(const LevelData& level, Camera& camera) {
     isLoadingLevel = true;
     isDungeon = false;
+    
     //Called when starting game and changing level. init the level you pass it. the level is chosen by menu or door's linkedLevelIndex. 
     ClearLevel();//clears everything. 
 
@@ -117,7 +118,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
     if (!level.isDungeon) InitBoat(player_boat, boatPosition);
 
     TutorialSetup();
-    
+
     if (level.isDungeon){
         isDungeon = true;
         drawCeiling = level.hasCeiling;
@@ -170,47 +171,122 @@ void InitLevel(const LevelData& level, Camera& camera) {
     player.collectedWeapons = {WeaponType::Blunderbuss, WeaponType::Sword};
     player.activeWeapon = WeaponType::Blunderbuss;
     player.currentWeaponIndex = 0;
+    StartFadeInFromBlack();
 
 
 }
 
+inline float FadeDt() {
+    // Use unpaused time, but cap it to avoid spikes
+    float dt = GetFrameTime();               // or your unscaled dt source
+    if (dt > 0.05f) dt = 0.05f;              // cap to 50 ms (20 fps) for fades
+    return dt;
+}
+
+static FadePhase fadePhase = FadePhase::Idle;
+static float fadeValue = 0.0f;    // 0 = clear, 1 = black
+//static float fadeSpeed = 1.5f;    // tweak to taste
+static int   queuedLevel = -1;
 
 
-void UpdateFade(float deltaTime, Camera& camera){
-    //fades out on death, and level transition if pendingLevelIndex != -1
-    if (isFading) {
-        if (fadeIn) {
-            fadeToBlack += fadeSpeed * deltaTime;
+void StartFadeOutToLevel(int levelIndex) {
+    queuedLevel = levelIndex;
+    fadePhase = FadePhase::FadingOut;
+    // don't rely on previous value; clamp explicitly
+    fadeValue = std::clamp(fadeValue, 0.0f, 1.0f);
+}
 
-            if (fadeToBlack >= 1.0f) {
-                fadeToBlack = 1.0f;
-                isFading = false;
+void StartFadeInFromBlack() {
+    fadePhase = FadePhase::FadingIn;
+    fadeValue = 1.0f; // start fully black, then tick down
+}
 
-                if (pendingLevelIndex != -1) {
-                    currentGameState = GameState::Menu; //HACK //quickly switch to menu before switching to new level. This fixes lighting bug on level switch.
-                    //Menu gameState stops all other code from running, letting us switch lightmaps cleanly, found no other way. 
-                    switchFromMenu = true;
-                    //InitLevel(levels[pendingLevelIndex], camera); //Start new Level
-                    //pendingLevelIndex = -1;
 
-                    // Start fading back in
-                    fadeIn = false;
-                    isFading = true;
-                }
+// Call this EVERY FRAME, regardless of game state:
+void UpdateFade(Camera& camera) {
+
+    float dt = FadeDt(); //prevents loading time accumulating frames and skiping the fade.
+
+    switch (fadePhase) {
+    case FadePhase::FadingOut:
+        fadeValue += fadeSpeed * dt;
+        if (fadeValue >= 1.0f) {
+            fadeValue = 1.0f;
+            fadePhase = FadePhase::Swapping;
+
+            // Do the swap atomically here:
+            if (queuedLevel != -1) {
+                currentGameState = GameState::Menu; // or Loading
+                switchFromMenu   = true;
+                // Perform your clean switch/init here (or let Menu detect switchFromMenu and call InitLevel)
+                // InitLevel(levels[queuedLevel], camera);
+                // queuedLevel = -1;
             }
-        } else {
-            fadeToBlack -= fadeSpeed * deltaTime;
-            if (fadeToBlack <= 0.0f) {
-                fadeToBlack = 0.0f;
-                isFading = false;
-            }
+
+            // Immediately proceed to fade in next frame
+            fadePhase = FadePhase::FadingIn;
         }
-        Shader& fogShader = R.GetShader("fogShader");
-        SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
+        break;
+
+    case FadePhase::FadingIn:
+        fadeValue -= fadeSpeed * dt;
+        
+        if (fadeValue <= 0.0f) {
+            fadeValue = 0.0f;
+            fadePhase = FadePhase::Idle;
+        }
+        break;
+
+    case FadePhase::Swapping:
+    case FadePhase::Idle:
+        // no-op
+        break;
     }
 
-
+    // Push uniform every frame so the shader always matches
+    Shader& fogShader = R.GetShader("fogShader");
+    SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"),
+                   &fadeValue, SHADER_UNIFORM_FLOAT);
 }
+
+// void UpdateFade(float deltaTime, Camera& camera){
+//     //fades out on death, and level transition if pendingLevelIndex != -1
+//     if (isFading) {
+//         if (fadeIn) {
+//             fadeToBlack += fadeSpeed * deltaTime;
+
+//             if (fadeToBlack >= 1.0f) {
+//                 fadeToBlack = 1.0f;
+//                 isFading = false;
+
+//                 if (pendingLevelIndex != -1) {
+//                     currentGameState = GameState::Menu; //HACK //quickly switch to menu before switching to new level. This fixes lighting bug on level switch.
+//                     //Menu gameState stops all other code from running, letting us switch lightmaps cleanly, found no other way. 
+//                     switchFromMenu = true;
+//                     //InitLevel(levels[pendingLevelIndex], camera); //Start new Level
+//                     //pendingLevelIndex = -1;
+
+//                     // Start fading back in
+//                     fadeIn = false;
+//                     isFading = true;
+//                 }
+//             }
+//         } else {//fade in = false
+//             std::cout << "fading in \n" << fadeToBlack << "\n";
+//             fadeToBlack -= fadeSpeed * deltaTime;
+            
+//             if (fadeToBlack <= 0.0f) {
+//                 fadeToBlack = 0.0f;
+//                 isFading = false;
+//             }
+//         }
+
+//     }
+
+//     Shader& fogShader = R.GetShader("fogShader");
+//     SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
+
+// }
 
 void InitDungeonLights(){
     InitDynamicLightmap(dungeonWidth * 4); //128 for 32 pixel map. keep same ratio if bigger map. 

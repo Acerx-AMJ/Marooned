@@ -83,5 +83,6 @@ void InitPlayer(Player& player, Vector3 startPosition);
 void UpdatePlayer(Player& player, float deltaTime, Camera& camera);
 
 void DrawPlayer(const Player& player, Camera& camera);
-
+void InitSword(MeleeWeapon& sword);
+void InitBlunderbuss(Weapon& blunderbuss);
 void InitMagicStaff(MagicStaff& magicStaff);
