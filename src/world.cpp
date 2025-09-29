@@ -162,6 +162,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
 
 
     R.SetShaderValues();
+    R.SetTerrainShaderValues();
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
 

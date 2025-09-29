@@ -144,6 +144,8 @@ void ResourceManager::LoadAllResources() {
     R.LoadTexture("ghostSheet",       "assets/sprites/ghostSheet.png");
     R.LoadTexture("magicAttackSheet", "assets/sprites/magicAttackSheet.png");
     R.LoadTexture("treeShadow",       "assets/textures/treeShadow.png");
+    R.LoadTexture("grassTexture",     "assets/textures/grass2.png");
+    R.LoadTexture("sandTexture",      "assets/textures/sand.png");
 
 
     // Models (registering with string keys)
@@ -202,6 +204,8 @@ void ResourceManager::SetShaderValues(){
 
 
 
+
+
     // Sky
     //apply skyShader to sky model
     R.GetModel("skyModel").materials[0].shader = R.GetShader("skyShader");
@@ -252,15 +256,53 @@ void ResourceManager::SetShaderValues(){
 
     int locSat = GetShaderLocation(bloomShader, "uSaturation"); //also needed for overworld map
     float sat = 1.0; // try 1.05–1.25
-    SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT);
-
-    // Once (cache locations)
+    SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT); 
 
 
+}
 
+void ResourceManager::SetTerrainShaderValues(){
+    // Load textures (tileable, power-of-two helps mips)
+    Shader& terrainShader = R.GetShader("terrainShader");
+    Texture2D grassTex = R.GetTexture("grassTexture");
+    Texture2D sandTex  = R.GetTexture("sandTexture");
+
+    // Make them look good when tiled
+    GenTextureMipmaps(&grassTex);
+    GenTextureMipmaps(&sandTex);
+    SetTextureFilter(grassTex, TEXTURE_FILTER_TRILINEAR);
+    SetTextureFilter(sandTex,  TEXTURE_FILTER_TRILINEAR);
+    SetTextureWrap(grassTex, TEXTURE_WRAP_REPEAT);
+    SetTextureWrap(sandTex,  TEXTURE_WRAP_REPEAT);
+
+    // Hook shader samplers to material map locations
+    terrainShader.locs[SHADER_LOC_MAP_ALBEDO]     = GetShaderLocation(terrainShader, "texGrass");
+    terrainShader.locs[SHADER_LOC_MAP_METALNESS]  = GetShaderLocation(terrainShader, "texSand");
+    terrainShader.locs[SHADER_LOC_MAP_OCCLUSION]  = GetShaderLocation(terrainShader, "textureOcclusion");
+
+    // Assign shader and maps to the terrain material
+    terrainModel.materials[0].shader = terrainShader;
+    SetMaterialTexture(&terrainModel.materials[0], MATERIAL_MAP_ALBEDO,    grassTex);
+    SetMaterialTexture(&terrainModel.materials[0], MATERIAL_MAP_METALNESS, sandTex);
+
+    //terrain
+    // Uniforms for world bounds & tiling
+    int locWorldMinXZ  = GetShaderLocation(terrainShader, "u_WorldMinXZ");
+    int locWorldSizeXZ = GetShaderLocation(terrainShader, "u_WorldSizeXZ");
+    int locGrassTile   = GetShaderLocation(terrainShader, "grassTiling");
+    int locSandTile    = GetShaderLocation(terrainShader, "sandTiling");
 
     
+    Vector2 t_worldMinXZ  = { -terrainScale.x*0.5f, -terrainScale.z*0.5f };
+    Vector2 t_worldSizeXZ = {  terrainScale.x,       terrainScale.z      };
+    SetShaderValue(terrainShader, locWorldMinXZ,  &t_worldMinXZ,  SHADER_UNIFORM_VEC2);
+    SetShaderValue(terrainShader, locWorldSizeXZ, &t_worldSizeXZ, SHADER_UNIFORM_VEC2);
 
+    // Tiling counts (start here; tweak live)
+    float grassTiles = 60.0f;   // repeats across island width
+    float sandTiles  = 20.0f;
+    SetShaderValue(terrainShader, locGrassTile, &grassTiles, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(terrainShader, locSandTile,  &sandTiles,  SHADER_UNIFORM_FLOAT);
 
 }
 
@@ -479,9 +521,6 @@ void ResourceManager::UpdateShaders(Camera& camera){
     SetShaderValue(terrainShader, locWorldMinXZ,  &worldMinXZ,  SHADER_UNIFORM_VEC2);
     SetShaderValue(terrainShader, locWorldSizeXZ, &worldSizeXZ, SHADER_UNIFORM_VEC2);
     SetShaderValueTexture(terrainShader, locShadow, gTreeShadowMask.rt.texture);
-
-
-
 
 
 }

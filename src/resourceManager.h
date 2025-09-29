@@ -32,6 +32,7 @@ public:
     void SetBloomShaderValues();
     void SetLavaShaderValues();
     void SetLightingShaderValues();
+    void SetTerrainShaderValues();
     void SetShaderValues();
 
 

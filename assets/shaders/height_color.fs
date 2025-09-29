@@ -2,73 +2,124 @@
 
 in vec3 fragNormal;
 in vec3 fragPosition;
-
 out vec4 finalColor;
 
 uniform vec3 cameraPos;
 
-// NEW: world bounds and shadow mask
+// already used for the shadow mask + world-space mapping
 uniform vec2 u_WorldMinXZ;   // (minX, minZ)
 uniform vec2 u_WorldSizeXZ;  // (sizeX, sizeZ)
-uniform sampler2D u_ShadowMask; // R channel: 1=no shadow, 0=full shadow
-uniform sampler2D textureOcclusion;  // raylib will bind this for MATERIAL_MAP_OCCLUSION
+
+// textures
+uniform sampler2D textureOcclusion;  // your palm shadow mask (bound to MATERIAL_MAP_OCCLUSION)
+uniform sampler2D texGrass;          // tileable grass
+uniform sampler2D texSand;           // tileable sand
+
+// tiling controls (how many repeats across the island width)
+uniform float grassTiling;  // e.g. 60.0
+uniform float sandTiling;   // e.g. 20.0
 
 void main()
 {
     float height = fragPosition.y;
 
-    vec3 waterColor = vec3(0.1, 0.6, 1.0);
-    vec3 sandColor  = vec3(0.9, 0.9, 0.01);
-    vec3 grassColor = vec3(0.2, 0.7, 0.2);
+    // === World-space UVs (0..1 across island), then tile ===
+    vec2 uvIsland = (fragPosition.xz - u_WorldMinXZ) / u_WorldSizeXZ;
+    uvIsland = clamp(uvIsland, 0.0, 1.0);
 
-    float brightness = 0.60;
+    vec2 uvGrass = uvIsland * grassTiling;
+    vec2 uvSand  = uvIsland * sandTiling;
 
-    // Base color by height
-    vec3 color = waterColor;
-    if (height > 60.0) {
-        float t = smoothstep(30.0, 80.0, height);
-        color = mix(waterColor, sandColor, t);
+    // Sample textures
+    vec3 grassTex = texture(texGrass, uvGrass).rgb;
+    vec3 sandTex  = texture(texSand,  uvSand ).rgb;
 
-        if (height > 120.0) {
-            float s = smoothstep(100.0, 130.0, height);
-            color = mix(sandColor, grassColor, s);
-        }
-    }
-    color *= brightness;
+    // === Height-based blending (tweak thresholds to match your old look) ===
+    // 1) water → sand
+    float tWaterSand = smoothstep(30.0, 80.0, height);  // 0=water, 1=sand+
+    vec3 baseWS = mix(vec3(0.1, 0.6, 1.0), sandTex, tWaterSand);
+
+    // 2) sand → grass
+    float tSandGrass = smoothstep(100.0, 130.0, height);
+    vec3 base = mix(baseWS, grassTex, tSandGrass);
+
+    // Global brightness like before
+    base *= 0.60;
 
     // === Palm shadow mask ===
-    // Map world xz -> 0..1 UV
-    // vec2 uv;
-    // uv.x = (fragPosition.x - u_WorldMinXZ.x) / u_WorldSizeXZ.x;
-    // uv.y = (fragPosition.z - u_WorldMinXZ.y) / u_WorldSizeXZ.y;
-    // uv   = clamp(uv, 0.0, 1.0);
+    vec2 uvMask = uvIsland;
+    uvMask.y = 1.0 - uvMask.y;                // RenderTexture flip
+    float mask = texture(textureOcclusion, uvMask).r;  // 1=no shadow, 0=darkest
+    base *= mask;
 
-    // // Sample: 1 = no shadow, 0 = darkest
-    // float mask = texture(u_ShadowMask, uv).r;
-
-    // // Multiply into base color. The mask already encodes darkness (center ~0.55 .. edge ~1.0)
-    // color *= mask;
-
-    vec2 uv;
-    uv.x = (fragPosition.x - u_WorldMinXZ.x) / u_WorldSizeXZ.x;
-    uv.y = (fragPosition.z - u_WorldMinXZ.y) / u_WorldSizeXZ.y;
-    uv = clamp(uv, 0.0, 1.0);
-    uv.y = 1.0 - uv.y; // RenderTexture flip
-
-    float mask = texture(textureOcclusion, uv).r; // 1=no shadow, 0=dark
-    color *= mask;
-
-    // Distance-based desaturation & fog-ish tint (your existing bits)
+    // === Distance desaturation / fog tint (your style) ===
     float dist = length(fragPosition - cameraPos);
     float desatFactor = clamp((dist - 5000.0) / 20000.0, 0.0, 1.0);
+    float grayscale = dot(base, vec3(0.299, 0.587, 0.114));
+    base = mix(base, vec3(grayscale), desatFactor);
 
-    vec3 fogColor = vec3(0.6, 0.7, 0.9);
-    float grayscale = dot(color, vec3(0.299, 0.587, 0.114));
-    color = mix(color, vec3(grayscale), desatFactor);
-
-    finalColor = vec4(color, 1.0);
-
+    finalColor = vec4(base, 1.0);
 }
+
+
+// #version 330
+
+// in vec3 fragNormal;
+// in vec3 fragPosition;
+
+// out vec4 finalColor;
+
+// uniform vec3 cameraPos;
+
+// // NEW: world bounds and shadow mask
+// uniform vec2 u_WorldMinXZ;   // (minX, minZ)
+// uniform vec2 u_WorldSizeXZ;  // (sizeX, sizeZ)
+// uniform sampler2D u_ShadowMask; // R channel: 1=no shadow, 0=full shadow
+// uniform sampler2D textureOcclusion;  // raylib will bind this for MATERIAL_MAP_OCCLUSION
+
+// void main()
+// {
+//     float height = fragPosition.y;
+
+//     vec3 waterColor = vec3(0.1, 0.6, 1.0);
+//     vec3 sandColor  = vec3(0.9, 0.9, 0.01);
+//     vec3 grassColor = vec3(0.2, 0.7, 0.2);
+
+//     float brightness = 0.60;
+
+//     // Base color by height
+//     vec3 color = waterColor;
+//     if (height > 60.0) {
+//         float t = smoothstep(30.0, 80.0, height);
+//         color = mix(waterColor, sandColor, t);
+
+//         if (height > 120.0) {
+//             float s = smoothstep(100.0, 130.0, height);
+//             color = mix(sandColor, grassColor, s);
+//         }
+//     }
+//     color *= brightness;
+
+//     vec2 uv;
+//     uv.x = (fragPosition.x - u_WorldMinXZ.x) / u_WorldSizeXZ.x;
+//     uv.y = (fragPosition.z - u_WorldMinXZ.y) / u_WorldSizeXZ.y;
+//     uv = clamp(uv, 0.0, 1.0);
+//     uv.y = 1.0 - uv.y; // RenderTexture flip
+
+//     float mask = texture(textureOcclusion, uv).r; // 1=no shadow, 0=dark
+//     color *= mask;
+
+//     // Distance-based desaturation & fog-ish tint (your existing bits)
+//     float dist = length(fragPosition - cameraPos);
+//     float desatFactor = clamp((dist - 5000.0) / 20000.0, 0.0, 1.0);
+
+//     vec3 fogColor = vec3(0.6, 0.7, 0.9);
+//     float grayscale = dot(color, vec3(0.299, 0.587, 0.114));
+//     color = mix(color, vec3(grayscale), desatFactor);
+
+//     finalColor = vec4(color, 1.0);
+
+// }
 
 
 
