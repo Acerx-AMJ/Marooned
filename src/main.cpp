@@ -52,7 +52,8 @@ int main() {
        // Use the active camera everywhere:
         Camera3D& camera = CameraSystem::Get().Active();
         
-        UpdateFade(camera);
+        UpdateFade(camera); //always update fade
+
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
             UpdateMenu(camera);
@@ -67,13 +68,11 @@ int main() {
             continue; // skip the rest of the game loop
         }
 
-
-
         if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Menu;
         UpdateMusicStream(SoundManager::GetInstance().GetMusic(isDungeon ? "dungeonAir" : "jungleAmbience"));
-        //UpdateFade(camera);
+
         //update context
-        //UpdateFade(deltaTime, camera); //triggers init level on fadeout
+
         debugControls(camera, deltaTime); 
         R.UpdateShaders(camera);
         UpdateEnemies(deltaTime);
@@ -88,7 +87,6 @@ int main() {
         UpdateDungeonChests();
         ApplyLavaDPS(player, deltaTime, 1);
         HandleWaves();
-        //hints.Update(deltaTime);
         UpdateHintManager(deltaTime);
         
         //collisions
@@ -112,7 +110,7 @@ int main() {
         
         if (!isLoadingLevel && isDungeon) BuildDynamicLightmapFromFrameLights(frameLights);
 
-        RenderFrame(camera, player, deltaTime);
+        RenderFrame(camera, player, deltaTime); //draw everything
         
     }
 

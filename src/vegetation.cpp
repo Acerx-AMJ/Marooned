@@ -239,22 +239,7 @@ void DrawTrees(const std::vector<TreeInstance>& trees, Model& shadowQuad, Camera
         DrawModelEx(treeModel, pos, { 0, 1, 0 }, tree->rotationY,
                     { tree->scale, tree->scale, tree->scale }, WHITE);
 
-        // Vector3 shadowPos = {
-        //     tree->position.x + tree->xOffset,
-        //     tree->position.y + 9.0f,
-        //     tree->position.z + tree->zOffset
-        // };
 
-        // Shader shadowSh = R.GetShader("shadowShader"); // your quad shadow shader
-        // int locStrength = GetShaderLocation(shadowSh, "shadowStrength");
-
-        // // Draw trees (lighter)
-        // float treeStrength = 0.25f;
-        // SetShaderValue(shadowSh, locStrength, &treeStrength, SHADER_UNIFORM_FLOAT);
-
-
-        // DrawModelEx(shadowQuad, shadowPos, {0, 1, 0}, 0,
-        //             {tree->scale * 15.0f, 1.0f, tree->scale * 15.0f}, WHITE);
     }
 
 
@@ -269,21 +254,5 @@ void DrawBushes(const std::vector<BushInstance>& bushes, Model& shadowQuad) {
         Color customGreen = { 0, 160, 0, 255 };
         DrawModel(bush.model, pos, bush.scale, WHITE);
 
-            //draw shadow decal under bushes. 
-        // Vector3 shadowPos = {
-        //     bush.position.x + bush.xOffset,
-        //     bush.position.y + bush.yOffset + 10.0f, // Slightly above ground to prevent Z-fighting
-        //     bush.position.z + bush.zOffset
-        // };
-
-        
-        // DrawModelEx(
-        //     shadowQuad,
-        //     shadowPos,
-        //     {0, 1, 0},
-        //     0,
-        //     {bush.scale * 5.0f, 1.0f, bush.scale * 5.0f}, // XZ scale, flat on Y
-        //     WHITE
-        // );
     }
 }
