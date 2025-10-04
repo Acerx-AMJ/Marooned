@@ -46,6 +46,7 @@ std::vector<LevelData> levels = {
             { PropType::FirePit,  5200.f, -5600.f,  0.f, 100.0f }, // outdoor props
             { PropType::Barrel,   5020.f, -5930.f, 30.f, 350.0f },
             { PropType::Barrel,   5100.f, -5810.f, -15.f, 100.0f },
+            { PropType::Boat,     6000.0f, -20.0f, 0.0f},
         
         },
         true,
@@ -64,7 +65,7 @@ std::vector<LevelData> levels = {
         {entranceToDungeon11},
         1, 
         0,
-        {},
+        {{ PropType::Boat,-1343.15, 103.922, -1524.03}},
         true, 
    
     },

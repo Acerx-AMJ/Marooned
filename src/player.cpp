@@ -11,6 +11,7 @@
 #include "input.h"
 #include "weapon.h"
 #include "camera_system.h"
+#include "array"
 
 Weapon weapon;
 MeleeWeapon meleeWeapon;
@@ -169,9 +170,53 @@ BoundingBox Player::GetBoundingBox() const {
     };
 }
 
+// void PlaySwimSound() {
+//     if (!player.isSwimming){
+
+//         return;
+
+//     } 
+//     static std::vector<std::string> swimKeys = { "swim1", "swim2", "swim3", "swim4" };
+//     static int lastIndex = -1;
+
+//     int index;
+//     do {
+//         index = GetRandomValue(0, swimKeys.size() - 1);
+//     } while (index == lastIndex && swimKeys.size() > 1);  // avoid repeat if more than 1
+
+//     lastIndex = index;
+//     std::string swimKey = swimKeys[index];
+
+//     SoundManager::GetInstance().Play(swimKey);
+    
+// }
+
+void PlaySwimOnce()
+{
+    static const std::array<const char*,4> KEYS = { "swim1","swim2","swim3","swim4" };
+    static int lastIndex = -1;
+    static Sound current = {0};  // raylib Sound handle of the *last* played clip
+
+    // If a previous swim sound is still playing, do nothing
+    if (current.frameCount > 0 && IsSoundPlaying(current)){
+         return;
+
+    }
+
+    int idx;
+    do { idx = GetRandomValue(0, (int)KEYS.size() - 1); }
+    while (idx == lastIndex && KEYS.size() > 1);
+    lastIndex = idx;
+
+    current = SoundManager::GetInstance().GetSound(KEYS[idx]);
+    PlaySound(current);
+}
+
+
 
 
 void PlayFootstepSound() {
+    if (player.isSwimming) return;
     static std::vector<std::string> footstepKeys = { "step1", "step2", "step3", "step4" };
     static int lastIndex = -1;
 
@@ -187,7 +232,8 @@ void PlayFootstepSound() {
 }
 
 void UpdateFootsteps(float deltaTime){
-    if (player.isMoving && player.grounded &&!player.onBoard) {
+
+    if (player.isMoving && player.grounded && !player.onBoard) {
         player.footstepTimer += deltaTime;
 
         float interval = player.running ? 0.4f : 0.6f;
@@ -199,6 +245,23 @@ void UpdateFootsteps(float deltaTime){
     } else {
         player.footstepTimer = 0.0f;
     }
+
+}
+
+void UpdateSwimSounds(float deltaTime){
+    if (!player.isSwimming) return;
+    if (player.isMoving && player.isSwimming && !player.onBoard) {
+        player.swimTimer += deltaTime;
+        float interval = 0.9f;
+
+        if (player.swimTimer >= interval) {
+            PlaySwimOnce();
+            player.swimTimer = 0.0f;
+        }
+    } else {
+        player.swimTimer = 0.0f;
+    }
+
 }
 
 void UpdateMeleeHitbox(Camera& camera){
@@ -273,6 +336,7 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     magicStaff.Update(deltaTime);
     UpdateMeleeHitbox(camera);
     UpdateFootsteps(deltaTime);
+
     UpdateBlockHitbox(player, 250, 300, 100);
     vignetteFade += deltaTime * 2.0f; 
     vignetteIntensity = Clamp(1.0f - vignetteFade, 0.0f, 1.0f);
@@ -368,6 +432,7 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     // === Swimming Check ===
     if (player.position.y <= waterHeightY + player.height / 2.0f) {
         player.isSwimming = true;
+        UpdateSwimSounds(deltaTime);
     } else {
         player.isSwimming = false;
     }

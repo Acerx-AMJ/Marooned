@@ -5,7 +5,7 @@
 #include "raylib.h"
 #include <optional>
 
-enum class PropType { Barrel, FirePit};
+enum class PropType { Barrel, FirePit, Boat};
 
 struct PropSpawn {
     PropType type;

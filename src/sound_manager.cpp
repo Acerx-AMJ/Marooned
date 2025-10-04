@@ -34,6 +34,12 @@ void SoundManager::Play(const std::string& name) {
     }
 }
 
+void SoundManager::Stop(const std::string& name) {
+    if (sounds.count(name)) {
+        StopSound(sounds[name]);
+    }
+}
+
 
 
 void SoundManager::PlayMusic(const std::string& name, float volume) {
@@ -145,6 +151,11 @@ void SoundManager::LoadSounds() {
     SoundManager::GetInstance().LoadSound("explosion", "assets/sounds/explosion.ogg");
     SoundManager::GetInstance().LoadSound("staffHit", "assets/sounds/staffHit.ogg");
     SoundManager::GetInstance().LoadSound("iceMagic", "assets/sounds/iceMagic.ogg");
+
+    SoundManager::GetInstance().LoadSound("swim1", "assets/sounds/swim1.ogg");
+    SoundManager::GetInstance().LoadSound("swim2", "assets/sounds/swim2.ogg");
+    SoundManager::GetInstance().LoadSound("swim3", "assets/sounds/swim3.ogg");
+    SoundManager::GetInstance().LoadSound("swim4", "assets/sounds/swim4.ogg");
     
     //music (ambience)
     SoundManager::GetInstance().LoadMusic("dungeonAir", "assets/sounds/dungeonAir.ogg");

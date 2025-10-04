@@ -34,6 +34,7 @@ struct Player {
     float height = 200.0f;
     float jumpStrength = 600.0f; 
     float footstepTimer = 0.0f;
+    float swimTimer = 0.0f;
     float maxHealth = 100.0f;
     float currentHealth = maxHealth;
     float maxMana = 100.0f;

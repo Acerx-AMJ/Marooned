@@ -155,7 +155,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadModel("boatModel",      "assets/models/boat.glb");
     R.LoadModel("blunderbuss",    "assets/models/blunderbus.glb");
     R.LoadModel("floorTile",      "assets/models/floorTile.glb");
-    R.LoadModel("doorWay",        "assets/models/doorWay.glb");
+    //R.LoadModel("doorWay",        "assets/models/doorWay.glb");
     R.LoadModel("wall",           "assets/models/wall.glb");
     R.LoadModel("barrelModel",    "assets/models/barrel.glb");
     R.LoadModel("swordModel",     "assets/models/sword.glb");
@@ -189,6 +189,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadShader("cutoutShader",                        "",              "assets/shaders/leaf_cutout.fs");
     R.LoadShader("lightingShader","assets/shaders/lighting_baked_xz.vs", "assets/shaders/lighting_baked_xz.fs");
     R.LoadShader("lavaShader",    "assets/shaders/lava_world.vs",        "assets/shaders/lava_world.fs");
+    R.LoadShader("treeShader", "assets/shaders/treeShader.vs",           "assets/shaders/treeShader.fs");
 }
 
 
@@ -201,9 +202,6 @@ void ResourceManager::SetShaderValues(){
     Shader& shadowShader = R.GetShader("shadowShader");
     Shader& waterShader = R.GetShader("waterShader");
     Shader& terrainShader = R.GetShader("terrainShader");
-
-
-
 
 
     // Sky
@@ -234,17 +232,17 @@ void ResourceManager::SetShaderValues(){
     R.GetModel("bottomPlane").materials[0].shader = waterShader;
 
     //palm tree alpha cutoff
-    int locCutoff = GetShaderLocation(R.GetShader("cutoutShader"), "alphaCutoff");
-    float cutoff = 0.5f;
-    SetShaderValue(R.GetShader("cutoutShader"), locCutoff, &cutoff, SHADER_UNIFORM_FLOAT);
-    Model& palm = R.GetModel("palmTree");
-    Model& palm2 = R.GetModel("palm2");
+    // int locCutoff = GetShaderLocation(R.GetShader("cutoutShader"), "alphaCutoff");
+    // float cutoff = 0.5f;
+    // SetShaderValue(R.GetShader("cutoutShader"), locCutoff, &cutoff, SHADER_UNIFORM_FLOAT);
+    // Model& palm = R.GetModel("palmTree");
+    // Model& palm2 = R.GetModel("palm2");
    
-    for (int m = 0; m < palm.materialCount; ++m) {
+    // for (int m = 0; m < palm.materialCount; ++m) {
         
-        palm.materials[m].shader = R.GetShader("cutoutShader");
-        palm2.materials[m].shader = R.GetShader("cutoutShader");  
-    }
+    //     palm.materials[m].shader = R.GetShader("cutoutShader");
+    //     palm2.materials[m].shader = R.GetShader("cutoutShader");  
+    // }
 
     Shader& bloomShader = R.GetShader("bloomShader");
 
@@ -261,7 +259,7 @@ void ResourceManager::SetShaderValues(){
 
 }
 
-void ResourceManager::SetTerrainShaderValues(){
+void ResourceManager::SetTerrainShaderValues(){ //plus palm tree shader
     // Load textures (tileable, power-of-two helps mips)
     Shader& terrainShader = R.GetShader("terrainShader");
     Texture2D grassTex = R.GetTexture("grassTexture");
@@ -303,6 +301,86 @@ void ResourceManager::SetTerrainShaderValues(){
     float sandTiles  = 20.0f;
     SetShaderValue(terrainShader, locGrassTile, &grassTiles, SHADER_UNIFORM_FLOAT);
     SetShaderValue(terrainShader, locSandTile,  &sandTiles,  SHADER_UNIFORM_FLOAT);
+
+    //distant fog
+    int locSkyTop   = GetShaderLocation(terrainShader, "u_SkyColorTop");
+    int locSkyHorz  = GetShaderLocation(terrainShader, "u_SkyColorHorizon");
+    int locFogStart = GetShaderLocation(terrainShader, "u_FogStart");
+    int locFogEnd   = GetShaderLocation(terrainShader, "u_FogEnd");
+    int locSea      = GetShaderLocation(terrainShader, "u_SeaLevel");
+    int locFalloff  = GetShaderLocation(terrainShader, "u_FogHeightFalloff");
+    //0.0, 0.60, 1.00
+    // nice tropical-ish defaults
+    Vector3 skyTop  = {0.55f, 0.75f, 1.00f};
+    Vector3 skyHorz = {0.6f, 0.8f, 0.95f};
+    float fogStart  = 100.0f;
+    float fogEnd    = 18000.0f;
+    float seaLevel  = 400.0f;     // your existing cutoff
+    float falloff   = 0.002f;    // smaller = thinner with height
+
+    SetShaderValue(terrainShader, locSkyTop,   &skyTop,  SHADER_UNIFORM_VEC3);
+    SetShaderValue(terrainShader, locSkyHorz,  &skyHorz, SHADER_UNIFORM_VEC3);
+    SetShaderValue(terrainShader, locFogStart, &fogStart,SHADER_UNIFORM_FLOAT);
+    SetShaderValue(terrainShader, locFogEnd,   &fogEnd,  SHADER_UNIFORM_FLOAT);
+    SetShaderValue(terrainShader, locSea,      &seaLevel,SHADER_UNIFORM_FLOAT);
+    SetShaderValue(terrainShader, locFalloff,  &falloff, SHADER_UNIFORM_FLOAT);
+
+    // Load tree shader
+    Shader treeShader = R.GetShader("treeShader");
+
+    Model& treeModel = R.GetModel("palmTree");
+    Model& smallTreeModel = R.GetModel("palm2");
+    Model& bushModel = R.GetModel("bush");
+    Model& doorwayModel = R.GetModel("doorWayGray");
+
+    // Hook ALBEDO to our sampler name
+    treeShader.locs[SHADER_LOC_MAP_ALBEDO] = GetShaderLocation(treeShader, "textureDiffuse");
+
+    // (optional) hook diffuse tint if you plan to use it; otherwise raylib will handle it
+    treeShader.locs[SHADER_LOC_COLOR_DIFFUSE] = GetShaderLocation(treeShader, "colDiffuse");
+
+    // Set shared fog uniforms once (reuse the same values as terrain)
+    SetShaderValue(treeShader, GetShaderLocation(treeShader,"u_SkyColorTop"),      &skyTop,   SHADER_UNIFORM_VEC3);
+    SetShaderValue(treeShader, GetShaderLocation(treeShader,"u_SkyColorHorizon"),  &skyHorz,  SHADER_UNIFORM_VEC3);
+    SetShaderValue(treeShader, GetShaderLocation(treeShader,"u_FogStart"),         &fogStart, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(treeShader, GetShaderLocation(treeShader,"u_FogEnd"),           &fogEnd,   SHADER_UNIFORM_FLOAT);
+    SetShaderValue(treeShader, GetShaderLocation(treeShader,"u_SeaLevel"),         &seaLevel, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(treeShader, GetShaderLocation(treeShader,"u_FogHeightFalloff"), &falloff,  SHADER_UNIFORM_FLOAT);
+
+
+
+
+    // Alpha cutoff (tweak per asset)
+    float alphaCut = 0.30f;
+    SetShaderValue(treeShader, GetShaderLocation(treeShader,"alphaCutoff"), &alphaCut, SHADER_UNIFORM_FLOAT);
+    //bushModel.materials->shader = treeShader;
+    //bushModel.materials->maps[MATERIAL_MAP_ALBEDO].color = WHITE;
+    // Assign to your tree model/material(s)
+
+
+    for (int i = 0; i < doorwayModel.materialCount; ++i) {
+        doorwayModel.materials[i].shader = treeShader;
+        doorwayModel.materials[i].maps[MATERIAL_MAP_ALBEDO].color = WHITE;
+    }
+
+    
+
+    for (int i = 0; i < bushModel.materialCount; ++i) {
+        bushModel.materials[i].shader = treeShader;
+        bushModel.materials[i].maps[MATERIAL_MAP_ALBEDO].color = WHITE;
+    }
+
+    for (int i = 0; i < treeModel.materialCount; ++i) {
+        treeModel.materials[i].shader = treeShader;
+        smallTreeModel.materials[i].shader = treeShader;
+        
+        
+        // IMPORTANT: keep map tint white so it doesn’t darken
+        treeModel.materials[i].maps[MATERIAL_MAP_ALBEDO].color = WHITE;
+        smallTreeModel.materials[i].maps[MATERIAL_MAP_ALBEDO].color = WHITE;
+    }
+
+
 
 }
 
@@ -465,6 +543,7 @@ void ResourceManager::UpdateShaders(Camera& camera){
     Shader& terrainShader = R.GetShader("terrainShader");
     Shader& fogShader = R.GetShader("fogShader");
     Shader& bloomShader = R.GetShader("bloomShader");
+    Shader& treeShader = R.GetShader("treeShader");
 
     Vector3 camPos = camera.position;
 
@@ -521,6 +600,13 @@ void ResourceManager::UpdateShaders(Camera& camera){
     SetShaderValue(terrainShader, locWorldMinXZ,  &worldMinXZ,  SHADER_UNIFORM_VEC2);
     SetShaderValue(terrainShader, locWorldSizeXZ, &worldSizeXZ, SHADER_UNIFORM_VEC2);
     SetShaderValueTexture(terrainShader, locShadow, gTreeShadowMask.rt.texture);
+
+    //distance fog
+    int locCam_Terrain = GetShaderLocation(terrainShader, "cameraPos");
+    int locCam_Trees   = GetShaderLocation(treeShader,   "cameraPos");
+
+    SetShaderValue(terrainShader, locCam_Terrain, &camPos, SHADER_UNIFORM_VEC3);
+    SetShaderValue(treeShader,   locCam_Trees,   &camPos, SHADER_UNIFORM_VEC3);
 
 
 }

@@ -96,16 +96,16 @@ void CameraSystem::UpdatePlayerCam(float dt) {
 
     
     // default: small lift to keep camera out of the floor
-    // float swimYOffset = 0.0f;
+    float swimYOffset = 0.0f;
 
-    // // apply dip if swimming *or* over lava
-    // if (player.isSwimming || player.overLava) {
-    //     swimYOffset = -40.0f;
-    // }
+    // apply dip if swimming *or* over lava
+    if (player.isSwimming) {
+        swimYOffset = -40.0f;
+    }
 
-    // if (!pv.onBoard) {
-    //     basePos.y += swimYOffset;
-    // }
+    if (!pv.onBoard) {
+        basePos.y += swimYOffset;
+    }
 
     
 

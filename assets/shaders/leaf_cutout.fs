@@ -16,5 +16,5 @@ void main() {
     if (tex.a < alphaCutoff) discard;
 
     finalColor = tex;
-    //finalColor = vec4(1.0, 0.0, 0.0, 1.0); // solid red
+    
 }

@@ -100,8 +100,6 @@ void InitLevel(const LevelData& level, Camera& camera) {
     terrainModel = LoadModelFromMesh(terrainMesh);
 
 
-
-
     dungeonEntrances = level.entrances; //get level entrances from level data
 
     generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
@@ -111,11 +109,18 @@ void InitLevel(const LevelData& level, Camera& camera) {
     Shader& terrainShader = R.GetShader("terrainShader");
     terrainShader.locs[SHADER_LOC_MAP_OCCLUSION] = GetShaderLocation(terrainShader, "textureOcclusion");
     terrainModel.materials[0].shader = terrainShader;
+
     // plug the shadow mask into the material's occlusion map
     SetMaterialTexture(&terrainModel.materials[0], MATERIAL_MAP_OCCLUSION, gTreeShadowMask.rt.texture);
 
 
     if (!level.isDungeon) InitBoat(player_boat, boatPosition);
+    for (const auto& p : levels[levelIndex].overworldProps) {
+        if (p.type == PropType::Boat){
+            player_boat.position.x = p.x;
+            player_boat.position.z = p.z;
+        }
+    }
 
     TutorialSetup();
 
@@ -162,7 +167,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
 
 
     R.SetShaderValues();
-    R.SetTerrainShaderValues();
+    if (!isDungeon) R.SetTerrainShaderValues();
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
 
