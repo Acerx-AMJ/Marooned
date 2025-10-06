@@ -454,9 +454,10 @@ void GenerateDoorways(float baseY, int currentLevelIndex) {
             bool isDoor = (current.r == 128 && current.g == 0 && current.b == 128);   // purple
             bool isExit     = (current.r == 0 && current.g == 128 && current.b == 128);   // teal
             bool nextLevel = (current.r == 255 && current.g == 128 && current.b == 0); //orange
-            bool lockedDoor = (current.r == 0 && current.g == 255 && current.b == 255); //Aqua
+            bool lockedDoor = (current.r == 0 && current.g == 255 && current.b == 255); //CYAN
+            bool portal = (current.r == 200 && current.g == 0 && current.b == 200); //portal 
 
-            if (!isDoor && !isExit && !nextLevel && !lockedDoor) continue;
+            if (!isDoor && !isExit && !nextLevel && !lockedDoor && !portal) continue;
 
             // Check surrounding walls to determine door orientation
             Color left = dungeonPixels[y * dungeonWidth + (x - 1)];
@@ -479,12 +480,15 @@ void GenerateDoorways(float baseY, int currentLevelIndex) {
             }
 
             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
-            DoorwayInstance archway = { pos, rotationY, false, false, WHITE, x, y };
+            DoorwayInstance archway = { pos, rotationY, false, false, false, WHITE, x, y };
 
             GenerateSideColliders(pos, rotationY, archway);
 
 
-
+            if (portal){
+                archway.isPortal = true;
+                nextLevel = true;
+            }
 
             if (isExit) { //teal
                 archway.linkedLevelIndex = previousLevelIndex; //go back outside. 
@@ -514,20 +518,9 @@ void GenerateDoorsFromArchways() {
         Door door{};
         door.position = dw.position;
         door.rotationY = dw.rotationY + DEG2RAD * 90.0f;
-        door.isOpen = false;struct DoorwayInstance {
-    Vector3 position;
-    float rotationY;
-    bool isOpen = false;
-    bool isLocked = false;
-    Color tint = GRAY;
-    Color bakedTint;
-    float bakedBrightness;
-    int tileX;
-    int tileY;
-    int linkedLevelIndex = -1;
-    std::vector<BoundingBox> sideColliders;
+        door.isOpen = false;
+        door.isPortal = dw.isPortal;
 
-};
         door.isLocked = dw.isLocked;
         door.doorTexture = R.GetTexture("doorTexture");
         door.scale = {300, 365, 1}; //stretch it taller
@@ -1530,6 +1523,7 @@ void DrawFlatDoor(Texture2D tex, Vector3 pos, float width, float height, float r
     Vector3 topLeft     = Vector3Add(bottomLeft, {0, h, 0});
     Vector3 topRight    = Vector3Add(bottomRight, {0, h, 0});
     if (!isDungeon) BeginShaderMode(R.GetShader("treeShader")); //fog on flat door at distance in jungle
+
     rlSetTexture(tex.id);
     rlBegin(RL_QUADS);
         rlColor4ub(tint.r, tint.g, tint.b, tint.a);

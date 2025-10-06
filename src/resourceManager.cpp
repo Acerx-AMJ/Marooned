@@ -190,6 +190,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadShader("lightingShader","assets/shaders/lighting_baked_xz.vs", "assets/shaders/lighting_baked_xz.fs");
     R.LoadShader("lavaShader",    "assets/shaders/lava_world.vs",        "assets/shaders/lava_world.fs");
     R.LoadShader("treeShader", "assets/shaders/treeShader.vs",           "assets/shaders/treeShader.fs");
+    R.LoadShader("portalShader", "assets/shaders/portal.vs",             "assets/shaders/portal.fs");
 }
 
 
@@ -256,6 +257,34 @@ void ResourceManager::SetShaderValues(){
     float sat = 1.0; // try 1.05–1.25
     SetShaderValue(bloomShader, locSat, &sat, SHADER_UNIFORM_FLOAT); 
 
+
+}
+
+void ResourceManager::SetPortalShaderValues(){
+    Shader portal = R.GetShader("portalShader");
+
+    int loc_speed         = GetShaderLocation(portal, "u_speed");
+    int loc_swirlStrength = GetShaderLocation(portal, "u_swirlStrength");
+    int loc_swirlScale    = GetShaderLocation(portal, "u_swirlScale");
+    int loc_colorA        = GetShaderLocation(portal, "u_colorA");
+    int loc_colorB        = GetShaderLocation(portal, "u_colorB");
+    int loc_edgeFeather   = GetShaderLocation(portal, "u_edgeFeather");
+    int loc_rings         = GetShaderLocation(portal, "u_rings");
+    int loc_glowBoost     = GetShaderLocation(portal, "u_glowBoost");
+
+    // One-time defaults
+    SetShaderValue(portal, loc_speed,         (float[]){1.4f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(portal, loc_swirlStrength, (float[]){1.2f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(portal, loc_swirlScale,    (float[]){12.0f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(portal, loc_edgeFeather,   (float[]){0.08f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(portal, loc_rings,         (float[]){0.7f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(portal, loc_glowBoost,     (float[]){0.8f}, SHADER_UNIFORM_FLOAT);
+
+    // Colors 
+    Vector3 cA = {0.0f, 0.25f, 1.0f};
+    Vector3 cB = {0.5f, 0.2f, 1.0f};
+    SetShaderValue(portal, loc_colorA, &cA, SHADER_UNIFORM_VEC3);
+    SetShaderValue(portal, loc_colorB, &cB, SHADER_UNIFORM_VEC3);
 
 }
 
@@ -607,6 +636,10 @@ void ResourceManager::UpdateShaders(Camera& camera){
 
     SetShaderValue(terrainShader, locCam_Terrain, &camPos, SHADER_UNIFORM_VEC3);
     SetShaderValue(treeShader,   locCam_Trees,   &camPos, SHADER_UNIFORM_VEC3);
+
+    int loc_time_p = GetShaderLocation(R.GetShader("portalShader"), "u_time");
+    //portal
+    SetShaderValue(R.GetShader("portalShader"), loc_time_p, &t, SHADER_UNIFORM_FLOAT);
 
 
 }

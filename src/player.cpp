@@ -93,6 +93,7 @@ void HandleKeyboardInput(float deltaTime) {
     if (player.grounded && IsKeyPressed(KEY_SPACE)) {
         player.velocity.y = player.jumpStrength;
         player.grounded = false;
+
     }
 
     if (IsKeyPressed(KEY_Q)) {
@@ -340,7 +341,8 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     UpdateBlockHitbox(player, 250, 300, 100);
     vignetteFade += deltaTime * 2.0f; 
     vignetteIntensity = Clamp(1.0f - vignetteFade, 0.0f, 1.0f);
-
+    
+    //FOV punch on hit
     if (player.hitTimer > 0.0f){
         player.hitTimer -= deltaTime;
         camera.fovy = Lerp(camera.fovy, player.targetFOV, deltaTime * 12.0f); // fast zoom
@@ -401,9 +403,6 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
         }
         
     }
-
-
-
 
 
     // --- Boarding Check ---
@@ -483,6 +482,8 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
             if (IsKeyPressed(KEY_SPACE)) {
                 player.velocity.y = player.jumpStrength;
                 player.grounded = false;
+                SoundManager::GetInstance().Play("jump");
+                std::cout << "play sound\n";
             }
         }
     }
@@ -551,6 +552,7 @@ void DrawPlayer(const Player& player, Camera& camera) {
     //DrawBoundingBox(player.GetBoundingBox(), RED);
     //DrawBoundingBox(player.meleeHitbox, WHITE);
 
+    //draw weapon
     if (controlPlayer) {
         switch (player.activeWeapon) {
             case WeaponType::Blunderbuss:

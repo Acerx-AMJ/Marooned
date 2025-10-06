@@ -447,7 +447,7 @@ void CheckBulletHits(Camera& camera) {
                 }
             }
         }
-
+        //Hit spiderweb
         for (SpiderWebInstance& web : spiderWebs){
             if (!web.destroyed && CheckCollisionBoxSphere(web.bounds, b.GetPosition(), b.GetRadius())){
                 web.destroyed = true;
@@ -538,6 +538,46 @@ void ResolveTreeCollision(const TreeInstance& tree, Vector3& playerPos) {
 
 
 
+void CheckBulletsAgainstTrees(std::vector<TreeInstance>& trees,
+                              Camera& camera)
+{
+    constexpr float CULL_RADIUS = 500.0f;
+    const float cullDistSq = CULL_RADIUS * CULL_RADIUS;
+
+    for (TreeInstance& tree : trees) {
+        // use the same center the collision routine uses
+        Vector3 treeBase = {
+            tree.position.x + tree.xOffset,
+            tree.position.y + tree.yOffset,
+            tree.position.z + tree.zOffset
+        };
+
+        
+
+        for (Bullet& bullet : activeBullets) {
+            if (!bullet.IsAlive()) continue;
+
+            const Vector3 bp = bullet.GetPosition();
+
+            // cheap early-out around the correct center
+            if (Vector3DistanceSqr(treeBase, bp) < cullDistSq) {
+                if (CheckBulletHitsTree(tree, bp)) {
+                    if (bullet.type == BulletType::Fireball){
+                        bullet.Explode(camera);
+
+                    }else{
+                        bullet.kill(camera);
+                    } 
+
+                    break; // stop checking this tree for this frame
+                }
+            }
+        }
+    }
+}
+
+
+
 void TreeCollision(Camera& camera){
 
     for (TreeInstance& tree : trees) {
@@ -561,25 +601,25 @@ void TreeCollision(Camera& camera){
     }
 
 
+    CheckBulletsAgainstTrees(trees,  camera);
+    // for (TreeInstance& tree : trees) {
+    //     for (Bullet& bullet : activeBullets){
 
-    for (TreeInstance& tree : trees) {
-        for (Bullet& bullet : activeBullets){
-            if (!bullet.IsAlive()) continue; // <-- early out for dead bullets
-            if (Vector3DistanceSqr(tree.position, bullet.GetPosition()) < 500 * 500) { 
-                if (CheckBulletHitsTree(tree, bullet.GetPosition())) {
-                   if (bullet.isFireball()){
-                    bullet.Explode(camera);
-                   }else{
-                        //Tree hit by bullet. Play a sound. 
-                        bullet.kill(camera);
-                   }
-                    break;
-                }
+    //         if (Vector3DistanceSqr(tree.position, bullet.GetPosition()) < 500 * 500) { 
+    //             if (CheckBulletHitsTree(tree, bullet.GetPosition())) {
+    //                if (bullet.isFireball()){
+    //                 bullet.Explode(camera);
+    //                }else{
+    //                     //Tree hit by bullet. Play a sound. 
+    //                 bullet.kill(camera);
+    //                }
+    //                 break;
+    //             }
 
-            }
+    //         }
  
-        }
-    }
+    //     }
+    // }
 
 }
 

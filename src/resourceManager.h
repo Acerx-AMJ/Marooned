@@ -33,6 +33,7 @@ public:
     void SetLavaShaderValues();
     void SetLightingShaderValues();
     void SetTerrainShaderValues();
+    void SetPortalShaderValues();
     void SetShaderValues();
 
 

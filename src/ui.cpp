@@ -287,7 +287,9 @@ inline void DrawTextShadowed(const char* text, int x, int y, int fontSize,
 
 
 void DrawMenu(int selectedOption, int levelIndex) {
+
     ClearBackground(BLACK);
+   
     Texture2D backDrop = R.GetTexture("backDrop");
     // choose contain or cover
     bool cover = false; // true = fill screen (crop), false = fit inside (letterbox)
@@ -295,14 +297,13 @@ void DrawMenu(int selectedOption, int levelIndex) {
     Rectangle src  = { 0, 0, (float)backDrop.width, (float)backDrop.height };
     Rectangle dest = FitTextureDest(backDrop, GetScreenWidth(), GetScreenHeight(), cover);
 
-    // if you want letterbox bars, clear first to your bar color
-    ClearBackground(BLACK);
 
-    DrawTexturePro(backDrop, src, dest, Vector2{0,0}, 0.0f, WHITE);
+
+    if (fade <= 0) DrawTexturePro(backDrop, src, dest, Vector2{0,0}, 0.0f, WHITE);
 
     const char* title = "MAROONED";
 
-
+ 
     int fontSize = 80;
 
     // center X
@@ -318,6 +319,7 @@ void DrawMenu(int selectedOption, int levelIndex) {
     DrawText(title, titleX,             titleY,             fontSize, GREEN);
 
     int menuFontSize = 30;
+ 
     int menuShadowPx = std::max(1, menuFontSize/18);
     //Color shadowCol = {0,0,0,190};
 
@@ -337,20 +339,16 @@ void DrawMenu(int selectedOption, int levelIndex) {
     DrawTextShadowed(quitBuf, menuX, 380, menuFontSize,
                     WHITE, menuShadowPx, shadowCol);
 
+    float alpha = 1.0f; // 0..1
+    if (fade > 0) DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, alpha));
+    //when we switch from menu, it was flashing the menu screen for 1 frame durring fade out. 
+    //So draw a black rectangle over the menu when fading. For some reason this function needs to run for the lights to work. 
+
 }
 
 void UpdateMenu(Camera& camera){
     //Main Menu - level select 
     if (currentGameState == GameState::Menu) {
-
-        if (switchFromMenu){ //HACK//// make lighting work on level load from door. When game state is menu, only menu code runs,
-        //enabling us to cleanly switch levels and lightmaps. 
-            switchFromMenu = false;
-            InitLevel(levels[pendingLevelIndex], camera);
-            pendingLevelIndex = -1;
-            currentGameState = GameState::Playing;
-        } 
-
 
         if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Playing;
         if (IsKeyPressed(KEY_UP)) selectedOption = (selectedOption - 1 + 3) % 3;

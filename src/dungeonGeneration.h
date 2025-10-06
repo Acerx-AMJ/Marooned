@@ -18,7 +18,7 @@ enum class FloorType {
 enum class DoorType {
     Normal,
     ExitToPrevious,
-    GoToNext
+    GoToNext,
 };
 
 enum class LightType {
@@ -56,6 +56,7 @@ struct DoorwayInstance {
     float rotationY = 0.0f;
     bool isOpen = false;
     bool isLocked = false;
+    bool isPortal = false;
     Color tint = GRAY;
     Color bakedTint = WHITE;
     float bakedBrightness = 0.0f;
@@ -73,6 +74,7 @@ struct Door {
     std::vector<BoundingBox> sideColliders;
     bool isOpen = false;
     bool isLocked = false;
+    bool isPortal = false;
     Texture2D doorTexture;
     Vector3 scale = {100.0f, 200.0f, 1.0f}; // width, height, unused
     Color tint = WHITE;

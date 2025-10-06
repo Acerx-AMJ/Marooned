@@ -56,11 +56,24 @@ int main() {
 
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
+
+            if (switchFromMenu){ //HACK//// make lighting work on level load from door. When game state is menu, only menu code runs,
+            //enabling us to cleanly switch levels and lightmaps. 
+               
+                InitLevel(levels[pendingLevelIndex], camera);
+                pendingLevelIndex = -1;
+                
+                switchFromMenu = false;
+                currentGameState = GameState::Playing;
+            } 
+
             UpdateMenu(camera);
-            
+      
+            //dont draw menu when doing the menu switching hack
             BeginDrawing();
             DrawMenu(selectedOption, levelIndex);
             EndDrawing();
+
 
             if (currentGameState == GameState::Quit) break;
             
@@ -93,9 +106,9 @@ int main() {
         UpdateCollisions(camera);
 
         HandleDoorInteraction(camera);
-
+        HandleWeaponTints();
         if (isDungeon){
-            HandleWeaponTints();
+            
             HandleDungeonTints();
         }
 

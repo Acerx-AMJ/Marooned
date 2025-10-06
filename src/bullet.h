@@ -36,7 +36,7 @@ public:
     Vector3 velocity;   // replaces direction and speed
     bool alive;
     bool enemy;
-    bool fireball;
+    bool fireball = false;
     float age;
     float maxLifetime;
     float timer;

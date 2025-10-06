@@ -159,7 +159,8 @@ void GatherDoors(Camera& camera) {
             door.scale.x, // width, used in size
             door.tint,
             Vector3Distance(camera.position, door.position),
-            door.rotationY
+            door.rotationY,
+            door.isPortal
         });
     }
 }
@@ -269,6 +270,7 @@ void DrawTransparentDrawRequests(Camera& camera) {
                 break;
 
             case Billboard_Door:
+                if (req.isPortal) BeginShaderMode(R.GetShader("portalShader"));
                 DrawFlatDoor(
                     (req.texture), 
                     req.position, 

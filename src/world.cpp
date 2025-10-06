@@ -64,6 +64,7 @@ bool debugInfo = false;
 bool isLoadingLevel = false;
 float weaponDarkness = 0.0f;
 bool playerInit = false;
+float fade = 0.0f;
 
 //std::vector<Bullet> activeBullets;
 std::list<Bullet> activeBullets; // instead of std::vector
@@ -83,6 +84,9 @@ void InitLevel(const LevelData& level, Camera& camera) {
     
     //Called when starting game and changing level. init the level you pass it. the level is chosen by menu or door's linkedLevelIndex. 
     ClearLevel();//clears everything. 
+
+
+
 
     camera.position = player.position; //start as player, not freecam.
     levelIndex = level.levelIndex; //update current level index to new level. 
@@ -163,6 +167,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
 
 
     ResourceManager::Get().SetLightingShaderValues();
+    ResourceManager::Get().SetPortalShaderValues();
     isLoadingLevel = false;
 
 
@@ -190,7 +195,7 @@ inline float FadeDt() {
 }
 
 static FadePhase fadePhase = FadePhase::Idle;
-static float fadeValue = 0.0f;    // 0 = clear, 1 = black
+static float fadeValue = 0.0;   // 0 = clear, 1 = black
 //static float fadeSpeed = 1.5f;    // tweak to taste
 static int   queuedLevel = -1;
 
@@ -212,7 +217,7 @@ void StartFadeInFromBlack() {
 void UpdateFade(Camera& camera) {
 
     float dt = FadeDt(); //prevents loading time accumulating frames and skiping the fade.
-
+    fade = fadeValue;
     switch (fadePhase) {
     case FadePhase::FadingOut:
         fadeValue += fadeSpeed * dt;
@@ -371,7 +376,12 @@ float CalculateDarknessFactor(Vector3 playerPos, const std::vector<LightSource>&
 
 
 void HandleWeaponTints(){
-    weaponDarkness = CalculateDarknessFactor(player.position, dungeonLights);
+    if (!isDungeon){
+        weaponDarkness = 0.0f;
+    }else{
+        weaponDarkness = CalculateDarknessFactor(player.position, dungeonLights);
+    }
+
 
 }
 

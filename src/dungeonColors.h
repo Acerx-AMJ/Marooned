@@ -18,6 +18,7 @@ enum class Code {
     Skeleton,           // Red (255,0,0)
     Light,              // Yellow (255,255,0)
     Doorway,            // Purple (128,0,128)
+    DoorPortal,            
     ExitTeal,           // Teal (0,128,128)
     NextLevelOrange,    // Orange (255,128,0)
     LockedDoorAqua,     // Aqua (0,255,255)
@@ -52,6 +53,7 @@ constexpr Color ColorOf(Code c) {
         case Code::Skeleton:               return Make(255, 0, 0);
         case Code::Light:                  return Make(255, 255, 0);
         case Code::Doorway:                return Make(128, 0, 128);
+        case Code::DoorPortal:             return Make(200, 0, 200);
         case Code::ExitTeal:               return Make(0, 128, 128);
         case Code::NextLevelOrange:        return Make(255, 128, 0);
         case Code::LockedDoorAqua:         return Make(0, 255, 255);

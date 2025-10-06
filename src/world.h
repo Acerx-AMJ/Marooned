@@ -71,6 +71,7 @@ extern float weaponDarkness;
 extern bool drawCeiling;
 extern bool unlockEntrances;
 extern bool playerInit;
+extern float fade;
 //extern float muzzleFlashTimer;
 
 extern GameState currentGameState;

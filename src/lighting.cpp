@@ -14,73 +14,6 @@ BakedLightmap gDynamic;
 static std::vector<Color> gStaticBase;   // same w*h as gDynamic
 
 
-
-
-// Multiply-darken a soft disk into gDynamic.RGB (leave ALPHA untouched)
-static inline void StampShadowDisk(const Vector3& worldPosXZ, float radiusWorld, float strength01)
-{
-    if (gDynamic.w <= 0 || gDynamic.h <= 0) return;
-
-    // Map world XZ -> lightmap texel space
-    const float u = (worldPosXZ.x - gDynamic.minX) / gDynamic.sizeX; // 0..1
-    const float v = (worldPosXZ.z - gDynamic.minZ) / gDynamic.sizeZ; // 0..1
-    if (u < 0.0f || u > 1.0f || v < 0.0f || v > 1.0f) return; // outside
-
-    const float cx = u * gDynamic.w;
-    const float cy = v * gDynamic.h;
-
-    // Convert radius from world -> texels (average scale to be safe)
-    const float texPerWorldX = gDynamic.w / gDynamic.sizeX;
-    const float texPerWorldZ = gDynamic.h / gDynamic.sizeZ;
-    const float r  = radiusWorld * 0.5f * (texPerWorldX + texPerWorldZ);
-    const float r2 = r * r;
-
-    int minx = (int)floorf(cx - r); if (minx < 0) minx = 0;
-    int maxx = (int)ceilf (cx + r); if (maxx > gDynamic.w - 1) maxx = gDynamic.w - 1;
-    int miny = (int)floorf(cy - r); if (miny < 0) miny = 0;
-    int maxy = (int)ceilf (cy + r); if (maxy > gDynamic.h - 1) maxy = gDynamic.h - 1;
-
-    for (int y = miny; y <= maxy; ++y) {
-        float py = (y + 0.5f) - cy;
-        for (int x = minx; x <= maxx; ++x) {
-            float px = (x + 0.5f) - cx;
-            float d2 = px*px + py*py;
-            if (d2 > r2) continue;
-
-            // Smooth falloff (1 at center -> 0 at radius), with a soft shoulder
-            float t = 1.0f - sqrtf(d2) / r;
-            t = t * t * (3.0f - 2.0f * t); // smoothstep
-
-            // Darkness factor (how much to dim). strength01 in [0..1].
-            float dim = 1.0f - strength01 * t; // multiply into RGB
-
-            Color &p = gDynamic.pixels[(size_t)y * gDynamic.w + x];
-            // Apply in linear-ish byte domain (cheap): scale each channel
-            p.r = (unsigned char)(p.r * dim);
-            p.g = (unsigned char)(p.g * dim);
-            p.b = (unsigned char)(p.b * dim);
-            // DO NOT touch p.a (lava mask lives here)
-        }
-    }
-}
-
-static inline void StampEnemyShadowBiased(const Vector3& enemyPos, float radiusWorld, float strength01, float biasTiles = 1.0f)
-{
-    // Direction away from player on XZ
-    Vector3 toPlayer = { player.position.x - enemyPos.x, 0.0f, player.position.z - enemyPos.z };
-    float len = sqrtf(toPlayer.x*toPlayer.x + toPlayer.z*toPlayer.z);
-    Vector3 away = (len > 0.0001f) ? Vector3{ -toPlayer.x/len, 0.0f, -toPlayer.z/len } : Vector3{0,0,0};
-
-    // Bias by some fraction of a tile (e.g., 0.5 -> half a tile)
-    Vector3 biased = { enemyPos.x + away.x * (biasTiles * tileSize),
-                       0.0f,
-                       enemyPos.z + away.z * (biasTiles * tileSize) };
-
-    StampShadowDisk(biased, radiusWorld, strength01);
-}
-
-
-
 // --- Helper: stamp a soft radial mask into ALPHA with max-combine
 static inline void StampLavaMaskToAlpha(int tileX, int tileY, float radiusTiles = 0.55f)
 {
@@ -325,8 +258,7 @@ void StampLight_StaticBase_Subtile2x2_ToBuffer(std::vector<Color>& outBuf, int b
 
 
 
-// Compute world-space bounds from your dungeon indices & tile size.
-// Assumes GetDungeonWorldPos(x,y, tileSize, baseY) returns the *center* of the tile.
+// Compute world-space bounds from dungeon indices & tile size.
 static void ComputeDungeonXZBounds(int dungeonWidth, int dungeonHeight, float tileSize,
                                    float baseY, float& outMinX, float& outMinZ,
                                    float& outSizeX, float& outSizeZ)
@@ -352,7 +284,6 @@ void InitDynamicLightmap(int res)
     gStaticBase.clear();
     // If re-initting, free the old GPU texture to avoid leaks
     if (gDynamic.tex.id != 0){
-        std::cout << gDynamic.tex.id << "previous texture found\n";
         UnloadTexture(gDynamic.tex);
     } 
 
@@ -377,24 +308,6 @@ void InitDynamicLightmap(int res)
     SetTextureFilter(gDynamic.tex, TEXTURE_FILTER_BILINEAR);
     SetTextureWrap(gDynamic.tex, TEXTURE_WRAP_CLAMP);
 }
-
-// void InitLavaGlowMap(int pixelsPerTile) {
-//     gLavaGlow.minX  = gDynamic.minX;
-//     gLavaGlow.minZ  = gDynamic.minZ;
-//     gLavaGlow.sizeX = gDynamic.sizeX;
-//     gLavaGlow.sizeZ = gDynamic.sizeZ;
-
-//     gLavaGlow.w = dungeonWidth  * pixelsPerTile;
-//     gLavaGlow.h = dungeonHeight * pixelsPerTile;
-
-//     Image img = GenImageColor(gLavaGlow.w, gLavaGlow.h, BLACK);
-//     gLavaGlow.tex = LoadTextureFromImage(img);
-//     UnloadImage(img);
-
-//     SetTextureFilter(gLavaGlow.tex, TEXTURE_FILTER_BILINEAR);
-
-// }
-
 
 
 // Simple smooth falloff (1 at center -> 0 at radius)
@@ -498,7 +411,7 @@ void BuildStaticLightmapOnce(const std::vector<LightSource>& dungeonLights)
 
     }
 
-    // Optional headroom so fireballs add nicely:
+    // headroom so fireballs add nicely:
     for (Color& p : gStaticBase) {
         p.r = (unsigned char)(p.r * 0.65f);
         p.g = (unsigned char)(p.g * 0.65f);
@@ -517,7 +430,7 @@ void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLi
     //Dynamic player light
     const LightSample ls =  {
         player.position,
-        Vector3 {1.0f, 1.0f, 1.0f},   // 0..1
+        Vector3 {1.0f, 1.0f, 1.0f},  //white
         400,
         0.5f //subtle
     };
@@ -545,8 +458,6 @@ void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLi
         StampDynamicLight(L.pos, L.range, c);
         // No occlusion for fireballs, too expensive. 
     }
-
-
 
     UpdateTexture(gDynamic.tex, gDynamic.pixels.data());
 
