@@ -10,6 +10,8 @@
 #include "pathfinding.h"
 #include "resourceManager.h"
 
+//Character raptor(spawnPos, R.GetTexture("raptorTexture"), 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
+
 Character::Character(Vector3 pos, Texture2D& tex, int fw, int fh, int frames, float speed, float scl, int row, CharacterType t)
     : position(pos),
       texture(tex),

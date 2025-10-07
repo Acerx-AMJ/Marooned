@@ -1522,8 +1522,10 @@ void DrawFlatDoor(Texture2D tex, Vector3 pos, float width, float height, float r
     Vector3 bottomRight = Vector3Add(center, Vector3Add(Vector3Scale(right,  w * 0.5f), Vector3Scale(forward, -1.0f)));
     Vector3 topLeft     = Vector3Add(bottomLeft, {0, h, 0});
     Vector3 topRight    = Vector3Add(bottomRight, {0, h, 0});
+    BeginBlendMode(BLEND_ALPHA);
     if (!isDungeon) BeginShaderMode(R.GetShader("treeShader")); //fog on flat door at distance in jungle
-
+    rlEnableDepthTest();   // make sure testing is on
+    rlDisableDepthMask();  // <-- NO depth writes from the portal..still occludes bullets for some reason. 
     rlSetTexture(tex.id);
     rlBegin(RL_QUADS);
         rlColor4ub(tint.r, tint.g, tint.b, tint.a);
@@ -1535,6 +1537,8 @@ void DrawFlatDoor(Texture2D tex, Vector3 pos, float width, float height, float r
     rlEnd();
     rlSetTexture(0);
     rlColor4ub(255, 255, 255, 255);
+    rlEnableDepthMask();
+    EndBlendMode();
     EndShaderMode();
 }
 

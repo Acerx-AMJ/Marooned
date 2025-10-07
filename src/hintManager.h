@@ -1,13 +1,10 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include "raylib.h"
 
-// Lightweight, reusable hint/tutorial text manager.
-// - Queue-based hints: AddHint() then Advance() when your game detects the action.
-// - One-off message override: SetMessage("Press E to open") then Clear() or Advance() later.
-// - Call Update(dt) each frame, then Draw().
-// - Defaults: bottom-center anchor, auto word-wrap, subtle fade in/out.
+
 
 class HintManager {
 public:
@@ -30,7 +27,7 @@ public:
     bool HasActiveHint() const;
     std::string GetCurrentHint() const;
     void UpdateTutorial();
-    // Presentation tweaks (optional)
+   
     void SetAnchor(Vector2 normalizedAnchor);      // default {0.5f, 0.85f}
     void SetMaxWidthFraction(float f);             // 0..1, default 0.70f
     void SetPadding(float px);                     // default 12
@@ -39,7 +36,7 @@ public:
     void SetLetterSpacing(float px); // default 1.0f
 
     int GetCurrentIndex() const;
-    int GetHintCount() const;  // if you want total size
+    int GetHintCount() const;  
 
     // Fade speeds (units: 1/sec). Higher = snappier.
     void SetFadeSpeeds(float fadeInPerSec, float fadeOutPerSec);

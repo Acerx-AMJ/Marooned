@@ -270,7 +270,9 @@ void DrawTransparentDrawRequests(Camera& camera) {
                 break;
 
             case Billboard_Door:
-                if (req.isPortal) BeginShaderMode(R.GetShader("portalShader"));
+                if (req.isPortal) BeginShaderMode(R.GetShader("portalShader")); 
+                //we added another field to drawRequest just for portal doors. We could mark other things as portal an apply the same wacky color shader to them. 
+                //maybe we could protal shader ghost. 
                 DrawFlatDoor(
                     (req.texture), 
                     req.position, 

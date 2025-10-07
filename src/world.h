@@ -76,6 +76,8 @@ extern float fade;
 
 extern GameState currentGameState;
 
+extern FadePhase gFadePhase;
+
 extern TreeShadowMask gTreeShadowMask;
 extern std::vector<DungeonEntrance> dungeonEntrances;
 //extern std::vector<Bullet> activeBullets;

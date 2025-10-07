@@ -334,6 +334,11 @@ void CheckBulletHits(Camera& camera) {
 
         // 🔹 1. Hit player
         if (CheckCollisionBoxSphere(player.GetBoundingBox(), b.GetPosition(), b.GetRadius())) { //use CollisionBoxSphere and use bullet radius
+            if (b.type == BulletType::Fireball){
+                b.Explode(camera);
+                //damage delt elseware
+                continue;
+            }
             if (b.IsEnemy()) {
                 b.kill(camera);
                 player.TakeDamage(25);
@@ -602,24 +607,7 @@ void TreeCollision(Camera& camera){
 
 
     CheckBulletsAgainstTrees(trees,  camera);
-    // for (TreeInstance& tree : trees) {
-    //     for (Bullet& bullet : activeBullets){
 
-    //         if (Vector3DistanceSqr(tree.position, bullet.GetPosition()) < 500 * 500) { 
-    //             if (CheckBulletHitsTree(tree, bullet.GetPosition())) {
-    //                if (bullet.isFireball()){
-    //                 bullet.Explode(camera);
-    //                }else{
-    //                     //Tree hit by bullet. Play a sound. 
-    //                 bullet.kill(camera);
-    //                }
-    //                 break;
-    //             }
-
-    //         }
- 
-    //     }
-    // }
 
 }
 

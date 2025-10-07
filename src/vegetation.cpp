@@ -226,7 +226,7 @@ void RemoveAllVegetation() {
 
 
 
-void DrawTrees(const std::vector<TreeInstance>& trees, Model& shadowQuad, Camera& camera){
+void DrawTrees(const std::vector<TreeInstance>& trees, Camera& camera){
     //sortTrees(camera); //sort trees by distance to camera
     for (const TreeInstance* tree : sortedTrees) {
         Vector3 pos = tree->position;
@@ -245,7 +245,7 @@ void DrawTrees(const std::vector<TreeInstance>& trees, Model& shadowQuad, Camera
 
 }
 
-void DrawBushes(const std::vector<BushInstance>& bushes, Model& shadowQuad) {
+void DrawBushes(const std::vector<BushInstance>& bushes) {
     for (const auto& bush : bushes) {
         Vector3 pos = bush.position;
         pos.x += bush.xOffset;

@@ -14,7 +14,6 @@ void Weapon::Fire(Camera& camera) {
     if (GetTime() - lastFired >= fireCooldown) {
         SoundManager::GetInstance().Play("shotgun");
         
-        
         recoil = recoilAmount;
         lastFired = GetTime();
 
@@ -49,9 +48,9 @@ void Weapon::Fire(Camera& camera) {
         FireBlunderbuss(
             bulletOrigin,
             camForward,
-            2.0f,    // spreadDegrees (tweak this!)
+            2.0f,    // spreadDegrees 
             6,        // pelletCount
-            2000.0f,   // bulletSpeed
+            2500.0f,   // bulletSpeed //anymore than 2k seems to tunnel through enemies. Maybe we could do something about that. if faster bullets feels better. 
             2.0f,      // lifetimeSeconds
             false
         );

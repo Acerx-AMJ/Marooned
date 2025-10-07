@@ -59,42 +59,60 @@ void Player::EquipNextWeapon() {
 }
 
 
-
-void HandleKeyboardInput(float deltaTime) {
+void HandlePlayerMovement(float deltaTime){
+    float dt = deltaTime;
     if (!player.canMove) return;
-    player.isMoving = false;
-    Vector3 input = {0};
-    if (IsKeyDown(KEY_W)) input.z += 1;
-    if (IsKeyDown(KEY_S)) input.z -= 1;
-    if (IsKeyDown(KEY_A)) input.x += 1;
-    if (IsKeyDown(KEY_D)) input.x -= 1;
+
+    // --- build desired direction in local space (same as yours)
+    Vector2 wish = {0,0};
+    if (IsKeyDown(KEY_W)) wish.y += 1;
+    if (IsKeyDown(KEY_S)) wish.y -= 1;
+    if (IsKeyDown(KEY_A)) wish.x += 1;
+    if (IsKeyDown(KEY_D)) wish.x -= 1;
 
     player.running = IsKeyDown(KEY_LEFT_SHIFT) && player.canRun;
-    float speed = player.running ? player.runSpeed : player.walkSpeed;
+    const float maxSpeed = player.running ? player.runSpeed : player.walkSpeed;
 
-    if (input.x != 0 || input.z != 0) {
-        input = Vector3Normalize(input);
-        float yawRad = DEG2RAD * player.rotation.y;
+    Vector3 desiredVel = {0,0,0};
+    if (wish.x != 0 || wish.y != 0) {
+        float yaw = DEG2RAD * player.rotation.y;
+        Vector3 f = { sinf(yaw), 0, cosf(yaw) };
+        Vector3 r = { f.z, 0, -f.x };
+        Vector3 moveDir = Vector3Normalize({ r.x*wish.x + f.x*wish.y, 0, r.z*wish.x + f.z*wish.y });
+        desiredVel = Vector3Scale(moveDir, maxSpeed);
         player.isMoving = true;
-        Vector3 forward = { sinf(yawRad), 0, cosf(yawRad) };
-        Vector3 right = { forward.z, 0, -forward.x };
-
-        Vector3 moveDir = {
-            forward.x * input.z + right.x * input.x,
-            0,
-            forward.z * input.z + right.z * input.x
-        };
-
-        moveDir = Vector3Scale(Vector3Normalize(moveDir), speed * deltaTime);
-        player.position = Vector3Add(player.position, moveDir);
-        player.forward = forward;
+        player.forward = f;
+    } else {
+        player.isMoving = false;
     }
 
-    if (player.grounded && IsKeyPressed(KEY_SPACE)) {
-        player.velocity.y = player.jumpStrength;
-        player.grounded = false;
+    // --- accelerate toward desired velocity (ground vs air)
+    auto approach = [](float current, float target, float rate, float dt){
+        float delta = target - current;
+        float step  = rate * dt;
+        if      (delta >  step) return current + step;
+        else if (delta < -step) return current - step;
+        else                    return target;
+    };
 
-    }
+    float accel   = player.grounded ? player.ACCEL_GROUND : player.ACCEL_AIR;
+    float decel   = player.grounded ? player.DECEL_GROUND : player.FRICTION_AIR;
+
+    player.velocity.x = approach(player.velocity.x, desiredVel.x, (fabsf(desiredVel.x) > 0.001f) ? accel : decel, dt);
+    player.velocity.z = approach(player.velocity.z, desiredVel.z, (fabsf(desiredVel.z) > 0.001f) ? accel : decel, dt);
+
+    // --- gravity
+    player.velocity.y += player.GRAVITY * dt;
+    HandleJumpButton(GetTime());
+    
+    TryQueuedJump();
+
+    player.position = Vector3Add(player.position, Vector3Scale(player.velocity, dt)); //apply movement
+
+}
+
+void HandleKeyboardInput(float deltaTime) {
+
 
     if (IsKeyPressed(KEY_Q)) {
  
@@ -171,29 +189,10 @@ BoundingBox Player::GetBoundingBox() const {
     };
 }
 
-// void PlaySwimSound() {
-//     if (!player.isSwimming){
-
-//         return;
-
-//     } 
-//     static std::vector<std::string> swimKeys = { "swim1", "swim2", "swim3", "swim4" };
-//     static int lastIndex = -1;
-
-//     int index;
-//     do {
-//         index = GetRandomValue(0, swimKeys.size() - 1);
-//     } while (index == lastIndex && swimKeys.size() > 1);  // avoid repeat if more than 1
-
-//     lastIndex = index;
-//     std::string swimKey = swimKeys[index];
-
-//     SoundManager::GetInstance().Play(swimKey);
-    
-// }
 
 void PlaySwimOnce()
 {
+    if (isDungeon) return;
     static const std::array<const char*,4> KEYS = { "swim1","swim2","swim3","swim4" };
     static int lastIndex = -1;
     static Sound current = {0};  // raylib Sound handle of the *last* played clip
@@ -325,6 +324,30 @@ void InitMagicStaff(MagicStaff& magicStaff) {
    
 }
 
+void OnGroundCheck(bool groundedNow, float timeNow) {
+    if (groundedNow) player.lastGroundedTime = timeNow;
+    player.grounded = groundedNow;
+}
+
+void HandleJumpButton(float timeNow){
+    OnGroundCheck(player.grounded, timeNow);
+    if (IsKeyPressed(KEY_SPACE)) player.lastJumpPressedTime = timeNow;
+    
+}
+
+void TryQueuedJump(){
+    float now = GetTime(); // or your own clock
+    bool canCoyote = (now - player.lastGroundedTime) <= player.COYOTE_TIME;
+    bool buffered  = (now - player.lastJumpPressedTime) <= player.JUMP_BUFFER;
+
+    if (buffered && canCoyote) {
+        player.velocity.y = player.jumpStrength;
+        player.grounded = false;
+        // consume buffer so we don’t multi-fire
+        player.lastJumpPressedTime = -999.f;
+    }
+}
+
 
 
 void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
@@ -429,11 +452,13 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     }
 
     // === Swimming Check ===
-    if (player.position.y <= waterHeightY + player.height / 2.0f) {
+    if (player.position.y <= waterHeightY + player.height / 2.0f) { //player.height is the mid point not the feet. 
         player.isSwimming = true;
+        player.canRun = false;
         UpdateSwimSounds(deltaTime);
     } else {
         player.isSwimming = false;
+        player.canRun = true;
     }
 
 
@@ -443,12 +468,6 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     // === Skip Movement if On Boat ===
     if (player.onBoard) {
         return;
-    }
-
-    // === Gravity ===
-    if (!player.grounded) {
-        player.velocity.y -= player.gravity * deltaTime;
-        player.position.y += player.velocity.y * deltaTime;
     }
 
     // === Ground Check ===
@@ -471,23 +490,6 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
         player.grounded = false;
     }
 
-    // === Jump Input ===
-    if (player.grounded) {
-        if (IsGamepadAvailable(0)) {
-            if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
-                player.velocity.y = player.jumpStrength;
-                player.grounded = false;
-            }
-        } else {
-            if (IsKeyPressed(KEY_SPACE)) {
-                player.velocity.y = player.jumpStrength;
-                player.grounded = false;
-                SoundManager::GetInstance().Play("jump");
-                std::cout << "play sound\n";
-            }
-        }
-    }
-
     //start the dying process. 
     if (player.dying) {
         player.deathTimer += deltaTime;
@@ -495,9 +497,9 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
         player.canMove = false;
         vignetteIntensity = 1.0f; //should stay red becuase its set to 1 everyframe. 
         vignetteFade = 0.0f;
-        isFading = true;
-        fadeIn = true;      // fade to black
-        fadeSpeed = 1.5f;   
+
+        gFadePhase = FadePhase::FadingOut; //dont fadeout to level, just fade out. updateFade handles the rest. 
+
 
         if (player.deathTimer > 1.5f) { 
             player.dying = false;
@@ -512,15 +514,16 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
         player.currentHealth = player.maxHealth;
         player.dead = false;
         player.canMove = true;
-
-        isFading = true;
-        fadeIn = false;     // fade out of black
-        fadeSpeed = 1.5f;
+        
 
     }
 
     //PLAYER MOVEMENT KEYBOARD INPUT
-    if (controlPlayer) HandleKeyboardInput(deltaTime);
+    if (controlPlayer){
+        HandleKeyboardInput(deltaTime);
+        HandlePlayerMovement(deltaTime);
+    } 
+
    
 }
 

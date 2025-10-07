@@ -22,6 +22,18 @@ struct Player {
 
     Inventory inventory;
 
+    const float ACCEL_GROUND   = 8000.0f;   // how fast we reach target speed
+    const float DECEL_GROUND   = 7000.0f;   // how fast we slow to zero
+    const float ACCEL_AIR      = 3500.0f;    // small air control
+    const float FRICTION_AIR   = 0.01f;    // bleed a bit of air speed
+    const float GRAVITY        = -980.0f;
+
+    const float COYOTE_TIME    = 0.12f;  // grace after walking off ledge
+    const float JUMP_BUFFER    = 0.12f;  // grace before touching ground
+
+    float lastGroundedTime = 0.0f;
+    float lastJumpPressedTime = -999.f;
+
     int gold = 0;
     float displayedGold = 0.0f;
 
@@ -82,8 +94,11 @@ void InitPlayer(Player& player, Vector3 startPosition);
 
 // Updates player movement and physics
 void UpdatePlayer(Player& player, float deltaTime, Camera& camera);
-
+void HandlePlayerMovement(float deltaTime);
+void TryQueuedJump();
 void DrawPlayer(const Player& player, Camera& camera);
 void InitSword(MeleeWeapon& sword);
 void InitBlunderbuss(Weapon& blunderbuss);
 void InitMagicStaff(MagicStaff& magicStaff);
+void HandleJumpButton(float timeNow);
+void OnGroundCheck(bool groundedNow, float timeNow);

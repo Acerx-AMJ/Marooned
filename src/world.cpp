@@ -65,6 +65,7 @@ bool isLoadingLevel = false;
 float weaponDarkness = 0.0f;
 bool playerInit = false;
 float fade = 0.0f;
+FadePhase gFadePhase = FadePhase::Idle;
 
 //std::vector<Bullet> activeBullets;
 std::list<Bullet> activeBullets; // instead of std::vector
@@ -194,7 +195,7 @@ inline float FadeDt() {
     return dt;
 }
 
-static FadePhase fadePhase = FadePhase::Idle;
+
 static float fadeValue = 0.0;   // 0 = clear, 1 = black
 //static float fadeSpeed = 1.5f;    // tweak to taste
 static int   queuedLevel = -1;
@@ -202,13 +203,13 @@ static int   queuedLevel = -1;
 
 void StartFadeOutToLevel(int levelIndex) {
     queuedLevel = levelIndex;
-    fadePhase = FadePhase::FadingOut;
+    gFadePhase = FadePhase::FadingOut;
     // don't rely on previous value; clamp explicitly
     fadeValue = std::clamp(fadeValue, 0.0f, 1.0f);
 }
 
 void StartFadeInFromBlack() {
-    fadePhase = FadePhase::FadingIn;
+    gFadePhase = FadePhase::FadingIn;
     fadeValue = 1.0f; // start fully black, then tick down
 }
 
@@ -218,24 +219,22 @@ void UpdateFade(Camera& camera) {
 
     float dt = FadeDt(); //prevents loading time accumulating frames and skiping the fade.
     fade = fadeValue;
-    switch (fadePhase) {
+    switch (gFadePhase) {
     case FadePhase::FadingOut:
         fadeValue += fadeSpeed * dt;
         if (fadeValue >= 1.0f) {
             fadeValue = 1.0f;
-            fadePhase = FadePhase::Swapping;
+            gFadePhase = FadePhase::Swapping;
 
             // Do the swap atomically here:
             if (queuedLevel != -1) {
                 currentGameState = GameState::Menu; // or Loading
                 switchFromMenu   = true;
-                // Perform your clean switch/init here (or let Menu detect switchFromMenu and call InitLevel)
-                // InitLevel(levels[queuedLevel], camera);
-                // queuedLevel = -1;
+                queuedLevel = -1;
             }
 
             // Immediately proceed to fade in next frame
-            fadePhase = FadePhase::FadingIn;
+            gFadePhase = FadePhase::FadingIn;
         }
         break;
 
@@ -244,7 +243,7 @@ void UpdateFade(Camera& camera) {
         
         if (fadeValue <= 0.0f) {
             fadeValue = 0.0f;
-            fadePhase = FadePhase::Idle;
+           gFadePhase = FadePhase::Idle;
         }
         break;
 

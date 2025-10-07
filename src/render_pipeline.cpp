@@ -39,11 +39,10 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             DrawModel(R.GetModel("bottomPlane"), {0, waterHeightY - 100, 0}, 1.0f, DARKBLUE);
             DrawBoat(player_boat);
             BeginShaderMode(R.GetShader("cutoutShader"));
-            DrawTrees(trees, R.GetModel("shadowQuad"), camera);
+            DrawTrees(trees, camera); 
+            DrawBushes(bushes); //alpha cuttout bushes as well as tree leaf
             EndShaderMode();
-            DrawBushes(bushes, R.GetModel("shadowQuad"));
-            DrawDungeonDoorways();
-            
+            DrawDungeonDoorways();          
             DrawOverworldProps();
         } else {
 
@@ -112,7 +111,7 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             if (debugInfo) {
                 DrawTimer(ElapsedTime);
                 DrawText(TextFormat("%d FPS", GetFPS()), 10, 10, 20, WHITE);
-                DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2 + 280, 30, 20, WHITE);
+                DrawText("PRESS TAB FOR FREE CAMERA", GetScreenWidth()/2, 30, 20, WHITE);
 
 
             }

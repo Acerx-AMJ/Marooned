@@ -41,7 +41,7 @@ public:
     float maxLifetime;
     float timer;
     float gravity = 300.0f;
-    float radius = 1.5f;
+    float radius = 3.5f;
     float spinAngle = 0.0f;
     bool exploded = false;
     float timeSinceExploded = 0.0f;
@@ -75,7 +75,6 @@ public:
     float killFloorY = 0;          // Y at which to kill this bullet in the current tile
     bool tileIsLava = false;              // cached flag for current tile
 
-private:
 
 };
 

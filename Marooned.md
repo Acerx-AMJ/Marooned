@@ -1,4 +1,4 @@
-Marooned on an island full of dinosaurs 
+Marooned on an island full of dinosaurs 06/18/2025
 
 Set in the 1700s in the Caribbean. Some one marooned you on purpose. You lost your memory? 
 Trapped on an island lost to time. Find a treasure chest with a gun in it. Add a sword at some point. 
@@ -272,9 +272,37 @@ Test other styles of font, don't just take the first one.
 
 38 days left. What is it missing? 
 
-  How hard would it be to shrink the world? Very. We sized the tiles to 200 on a whim. and the floor tiles are x700 before that. Could I make like a global size factor. 
+How hard would it be to shrink the world? Very. We sized the tiles to 200 on a whim. and the floor tiles are x700 before that. Could I make like a global size factor. 
 
-  make a new island. make a portal out the the archway with a shader that animates a multicolored door. The portal could be at the end of the last dungeon and your teleported to a new island. Make a boss. 
+make a new island. make a portal out the the archway with a shader that animates a multicolored door. The portal could be at the end of the last dungeon and your teleported to a new island. Make a boss. 
+
+09/25/2025
+
+Fixed tree shadows. We now stamp the shadow onto the terrain with a shader. So shadow quads are no longer floating in the air sometimes.
+
+More sounds, sound of bullets hitting wall. jump sound effect. ghost sound effects. enemy hurt sound effect should be positional. 
+
+River level was crashing because there were no entrances. over world level must have entrances. or account for this. 
+
+Can we just apply the lighting shader to the launcher model and it will just work? Yup it just works. That means barrels and chests can be lit by the shader as well we don't need to tint them. -need to ad more dungeon props if we can light things so easily. 
+
+maybe we could tint the gun and sword model with the same shader? it would probably make it too dark in dark areas. My guess is using our current tint method would work better. 
+
+Take another stab at adding a texture to the grass some how. Can we apply a texture to pixels that are over a certian height on the heightmap? you can sample a texture with a shader surely. You tried it before and it wouldn't work. Maybe it was something to do with the vertex shaders UVs or something. 
+
+-This time it worked. I think because of all the experience with lighting shader. 
+
+Added fog for distant terrain. Then added treeShader which is applied to trees, bushes, entrances, and doors. So it should probably be called fog shader or something. It just blends the colors toward background sky color depending on distance. 
+
+make swimming work. -added swim sound effect, works the same as foosteps but for water. 
+
+Make ghost slowly turn invisible when not attacking. It should start and remain visible until player enters vision. then slowly fade out, intantly fade back in if attacking, then slowly fade out. Upon taking damage instantly fade back in. 
+
+Commision an artist to redraw all the enemy sprites. 
+
+Commision a musician for an ambient music track. 
+
+
 
 
 

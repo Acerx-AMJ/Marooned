@@ -321,9 +321,6 @@ void Bullet::Explode(Camera& camera) {
                 if (dist < explosionRadius) {
                     float dmg =  Lerp(maxDamage, minDamage, dist / explosionRadius);
                     enemy->ChangeState(CharacterState::Freeze);
-                    // enemy->state = CharacterState::Freeze;
-                    // enemy->stateTimer = 0; 
-                    // enemy->SetAnimation(0, 1, 1.0f); //shouldn't we call changeState(CharacterState::Freeze)?
                     enemy->currentHealth -= dmg; //dont call take damage, it triggers stagger which over rides freeze. 
 
                     
