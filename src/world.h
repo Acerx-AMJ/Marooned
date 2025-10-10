@@ -72,6 +72,7 @@ extern bool drawCeiling;
 extern bool unlockEntrances;
 extern bool playerInit;
 extern float fade;
+extern bool hasStaff;
 //extern float muzzleFlashTimer;
 
 extern GameState currentGameState;
@@ -97,6 +98,7 @@ void InitDungeonLights();
 void UpdateFade(Camera& camera);
 void removeAllCharacters();
 void generateRaptors(int amount, Vector3 centerPos, float radius);
+void generateTrex(int amount, Vector3 centerPos, float radius);
 //void BeginCustom3D(Camera3D camera, float farClip);
 void GenerateEntrances();
 void HandleWaves();

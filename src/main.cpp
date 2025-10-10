@@ -56,7 +56,7 @@ int main() {
 
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
-
+            UpdateMusicStream(SoundManager::GetInstance().GetMusic("jungleAmbience"));
             if (switchFromMenu){ //HACK//// make lighting work on level load from door. When game state is menu, only menu code runs,
             //enabling us to cleanly switch levels and lightmaps. 
                

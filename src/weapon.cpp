@@ -50,7 +50,7 @@ void Weapon::Fire(Camera& camera) {
             camForward,
             2.0f,    // spreadDegrees 
             6,        // pelletCount
-            2500.0f,   // bulletSpeed //anymore than 2k seems to tunnel through enemies. Maybe we could do something about that. if faster bullets feels better. 
+            2100.0f,   // bulletSpeed //anymore than 2k seems to tunnel through enemies. Maybe we could do something about that. if faster bullets feels better. 
             2.0f,      // lifetimeSeconds
             false
         );

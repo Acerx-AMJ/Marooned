@@ -303,8 +303,17 @@ Commision an artist to redraw all the enemy sprites.
 Commision a musician for an ambient music track. 
 
 
+make a boss. A larger sized sprite. A big Dinosaur, A T-Rex. It would have to use character code. I guess same as raptor so it's not just tracking and following player at all times. Character size is hard coded? It's a 200x200 image. scale scales it like it should, I made raptor scaled to 2.0 instead of 0.5 and it's as big as a t-rex. Needs new art. CharacterType::T-Rex
 
+generate the art as real art not pixel art. Resizing them to 200x200 can pixelate them enough. Do this with pirate and skeleton as well. Could be just what it needs. -AI is still trash at reproducing an image. Find a human source. 
 
+LEVEL 4 staff level. nuke it. -edited it, took away the staff until we fix the issue. there are 3 keys on two locked doors now. So you don't have to visit every corner of the map. 
+
+Freezing an enemy than killing them, has a chance to make them invincible some how. maybe they get stuck in stagger? but they can still attack and move so they must be switching states okay, just impervious to bullets and melee and fireballs. I don't want to go looking through the character AI code. 
+
+maybe give the staff at level 9. If you have been playing that long, you will forgive the bugginess. 
+
+-make has staff stay on after you pick it up. How? global var in world. isn't reset by level switch. 
 
 
 

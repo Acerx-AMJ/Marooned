@@ -30,6 +30,7 @@ void debugControls(Camera& camera, float deltaTime){
     }
 
     if (debugInfo){
+        //control player with arrow keys while in free cam. 
         Vector3 input = {0};
         if (IsKeyDown(KEY_UP)) input.z += 1;
         if (IsKeyDown(KEY_DOWN)) input.z -= 1;
@@ -66,11 +67,11 @@ void debugControls(Camera& camera, float deltaTime){
         FireFireball(player.position, targetPoint, 5000, 10, false, true);
     }
     //give all weapons
-    if (IsKeyPressed(KEY_SEMICOLON)) {
+    if (IsKeyPressed(KEY_SEMICOLON && debugInfo)) {
         if (player.collectedWeapons.size() < 3) {
 
             player.collectedWeapons.push_back(WeaponType::MagicStaff);
-            
+          
             
             player.activeWeapon = WeaponType::Blunderbuss;
         }

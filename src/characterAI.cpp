@@ -12,8 +12,12 @@ void Character::UpdateAI(float deltaTime, Player& player) {
     switch (type) {
         case CharacterType::Raptor:
             UpdateRaptorAI(deltaTime, player);
-            
             break;
+
+        case CharacterType::Trex:
+            UpdateRaptorAI(deltaTime, player);
+            break;
+
         case CharacterType::Skeleton:
             UpdateSkeletonAI(deltaTime, player);
             break;
@@ -403,7 +407,8 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
         } break;
 
         case CharacterState::Orbit:
-{
+{           //we never use this. 
+
             // Seed once on entry (stateTimer is reset by ChangeState)
             if (stateTimer == 0.0f) {
                 orbitDirCW    = (GetRandomValue(0, 1) == 0) ? +1 : -1; // clockwise or CCW

@@ -146,6 +146,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadTexture("treeShadow",       "assets/textures/treeShadow.png");
     R.LoadTexture("grassTexture",     "assets/textures/grass2.png");
     R.LoadTexture("sandTexture",      "assets/textures/sand.png");
+    R.LoadTexture("trexSheet",        "assets/sprites/trexSheet.png");
 
 
     // Models (registering with string keys)
@@ -154,9 +155,12 @@ void ResourceManager::LoadAllResources() {
     R.LoadModel("bush",           "assets/models/grass(stripped).glb");
     R.LoadModel("boatModel",      "assets/models/boat.glb");
     R.LoadModel("blunderbuss",    "assets/models/blunderbus.glb");
-    R.LoadModel("floorTile",      "assets/models/floorTile.glb");
-    //R.LoadModel("doorWay",        "assets/models/doorWay.glb");
-    R.LoadModel("wall",           "assets/models/wall.glb");
+    //R.LoadModel("floorTile",      "assets/models/floorTile.glb"); //unused? we made the tiles gray but then reverted them but kept the name. 
+    //R.LoadModel("doorWay",        "assets/models/doorWay.glb"); //fix this
+    R.LoadModel("floorTileGray",  "assets/models/floorTileGray.glb");
+    R.LoadModel("doorWayGray",    "assets/models/doorWayGray.glb");
+    //R.LoadModel("wall",           "assets/models/wall.glb");
+    R.LoadModel("wallSegment",    "assets/models/wallSegment.glb");
     R.LoadModel("barrelModel",    "assets/models/barrel.glb");
     R.LoadModel("swordModel",     "assets/models/sword.glb");
     R.LoadModel("lampModel",      "assets/models/lamp.glb");
@@ -167,9 +171,8 @@ void ResourceManager::LoadAllResources() {
     R.LoadModel("iceballModel",   "assets/models/iceBall.glb");
     R.LoadModel("campFire",       "assets/models/campFire.glb");
     R.LoadModel("stonePillar",    "assets/models/stonePillar.glb");
-    R.LoadModel("wallSegment",    "assets/models/wallSegment.glb");
-    R.LoadModel("floorTileGray",  "assets/models/floorTileGray.glb");
-    R.LoadModel("doorWayGray",    "assets/models/doorWayGray.glb");
+
+
     R.LoadModel("lavaTile",       "assets/models/lavaTileSquare.glb");
     R.LoadModel("musket",         "assets/models/musket.glb");
 

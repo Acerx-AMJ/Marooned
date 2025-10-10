@@ -64,6 +64,7 @@ bool debugInfo = false;
 bool isLoadingLevel = false;
 float weaponDarkness = 0.0f;
 bool playerInit = false;
+bool hasStaff = false;
 float fade = 0.0f;
 FadePhase gFadePhase = FadePhase::Idle;
 
@@ -86,9 +87,6 @@ void InitLevel(const LevelData& level, Camera& camera) {
     //Called when starting game and changing level. init the level you pass it. the level is chosen by menu or door's linkedLevelIndex. 
     ClearLevel();//clears everything. 
 
-
-
-
     camera.position = player.position; //start as player, not freecam.
     levelIndex = level.levelIndex; //update current level index to new level. 
 
@@ -107,7 +105,8 @@ void InitLevel(const LevelData& level, Camera& camera) {
 
     dungeonEntrances = level.entrances; //get level entrances from level data
 
-    generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000);
+    generateRaptors(level.raptorCount, level.raptorSpawnCenter, 6000.0f);
+    if (level.name == "River") generateTrex(1, level.raptorSpawnCenter, 10000.0f); //generate 1 t-rex on river level. 
     GenerateEntrances();
     generateVegetation();
     //tree shadows after tree generation
@@ -180,9 +179,13 @@ void InitLevel(const LevelData& level, Camera& camera) {
     CameraSystem::Get().SnapAllToPlayer(); //put freecam at player pos
 
     //start with blunderbus and sword in that order
-    player.collectedWeapons = {WeaponType::Blunderbuss, WeaponType::Sword};
+
+    player.collectedWeapons = {WeaponType::Blunderbuss, WeaponType::Sword}; 
+    if (hasStaff) player.collectedWeapons.push_back(WeaponType::MagicStaff); //once you pick up the staff in world you have it forever. 
+
     player.activeWeapon = WeaponType::Blunderbuss;
     player.currentWeaponIndex = 0;
+
     StartFadeInFromBlack();
 
 
@@ -426,40 +429,53 @@ void GenerateEntrances() {
 }
 
 
-// void GenerateEntrances(){
-//     for (const DungeonEntrance& e : dungeonEntrances) {
-//         Door d{};
-//         d.position = e.position;
-//         d.rotationY = 0.0f; 
-//         d.doorTexture = R.GetTexture("doorTexture");
-//         d.isOpen = false;
-//         d.isLocked = false;
-//         d.scale = {300, 365, 1};
-//         d.tint = WHITE;
-//         d.linkedLevelIndex = e.linkedLevelIndex; //use entrance's linkedLevelIndex to determine which dungeon to enter from overworld
-//         //allowing more than one enterance to dungeon per overworld
+void generateTrex(int amount, Vector3 centerPos, float radius) {
 
-//         d.doorType = DoorType::GoToNext; //Go to Dungeon
+    int spawned = 0;
+    int attempts = 0;
+    const int maxAttempts = 1000;
+    //try 1000 times to spawn all the raptors either above 80 on heightmap or on empty floor tiles in dungeon. 
+    while (spawned < amount && attempts < maxAttempts) {
+        ++attempts;
 
-//         float halfWidth = 200.0f;   // Half of the 400-unit wide doorway
-//         float height = 365.0f;
-//         float depth = 20.0f;        // Thickness into the doorway (forward axis)
+        float angle = GetRandomValue(0, 360) * DEG2RAD;
+        float distance = GetRandomValue(500, (int)radius);
+        float x = centerPos.x + cosf(angle) * distance;
+        float z = centerPos.z + sinf(angle) * distance;
 
-//         d.collider = MakeDoorBoundingBox(d.position, d.rotationY, halfWidth, height, depth); //the whole archway is covered by collider
+        Vector3 spawnPos = { x, 0.0f, z }; //random x, z  get height diferrently for dungeon
+        
+        if (isDungeon) {
+            // Convert world x,z to dungeon tile coordinates
+            const float tileSize = 200.0f; 
+            int gridX = (int)(x / tileSize);
+            int gridY = (int)(z / tileSize);
 
-//         doors.push_back(d);
+            if (!IsDungeonFloorTile(gridX, gridY)) continue; //try again
 
-//         DoorwayInstance dw{};
-//         dw.position = e.position;
-//         dw.rotationY = 90.0f * DEG2RAD; //rotate to match door 0 rotation, we could rotate door to match arch instead.
-//         dw.isOpen = false;
-//         dw.isLocked = false;
-//         dw.tint = WHITE;
+            float dh = 85.0f;
+            float spriteHeight = 200 * 0.5f;
+            spawnPos.y = dh + spriteHeight / 2.0f;
 
-//         doorways.push_back(dw);
-//     }
+        } else {
+            float terrainHeight = GetHeightAtWorldPosition(spawnPos, heightmap, terrainScale);
+            if (terrainHeight <= 80.0f) continue; //try again
 
-// }
+            float spriteHeight = 200 * 0.5f;
+            spawnPos.y = terrainHeight + spriteHeight / 2.0f;
+        }
+
+        std::cout << "generated T-Rex\n";
+        Character Trex(spawnPos, R.GetTexture("trexSheet.png"), 200, 200, 1, 0.5, 2.0, 0, CharacterType::Trex);
+
+        enemies.push_back(Trex);
+        enemyPtrs.push_back(&enemies.back()); 
+        ++spawned;
+    }
+
+
+}
+
 
 void generateRaptors(int amount, Vector3 centerPos, float radius) {
 

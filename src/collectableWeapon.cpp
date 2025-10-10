@@ -34,6 +34,7 @@ void DrawCollectableWeapons(Player& player, float deltaTime){
 
         if (cw.CheckPickup(player) && player.collectedWeapons.size() < 3) {
             player.collectedWeapons.push_back(cw.type);
+            hasStaff = true;
             if (player.activeWeapon == WeaponType::None) {
     
                 player.activeWeapon = cw.type;

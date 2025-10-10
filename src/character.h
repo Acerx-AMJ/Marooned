@@ -11,6 +11,7 @@ enum class CharacterType {
     Pirate,
     Spider,
     Ghost,
+    Trex,
    
 };
 
