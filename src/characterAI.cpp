@@ -15,7 +15,7 @@ void Character::UpdateAI(float deltaTime, Player& player) {
             break;
 
         case CharacterType::Trex:
-            UpdateRaptorAI(deltaTime, player);
+            UpdateTrexAI(deltaTime, player);
             break;
 
         case CharacterType::Skeleton:
@@ -290,6 +290,115 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 // Raptor = overworld, no grid pathing.
 // Skeleton only (structure + thresholds). Fill TODOs as you add steering.
 
+void Character::UpdateTrexAI(float deltaTime, Player& player){
+    stateTimer += deltaTime;
+    attackCooldown  = std::max(0.0f, attackCooldown - deltaTime);
+
+    const float distance = Vector3Distance(position, player.position);
+    UpdateRaptorVisibility(player, deltaTime);
+
+    // --- Simple deadbands ---
+    const float STALK_ENTER   = 2000.0f;  // engage if closer than this
+    const float STALK_EXIT    = 2400.0f;  // drop back to idle 
+    const float ATTACK_ENTER  = 400.0f;   // start attack if closer than this
+    const float ATTACK_EXIT   = 800.0f;   // leave attack if beyond this 
+    const float FLEE_ENTER    = 100.0f;   // too close -> run away
+    const float FLEE_EXIT     = 1000.0f;   // far enough -> stop fleeing
+    const float VISION_ENTER = 4000.0f;
+
+    switch (state)
+    {
+
+        case CharacterState::Idle:
+        {
+
+            const float IDLE_TO_PATROL_TIME = 10.0f; // tweak
+            if (stateTimer >= IDLE_TO_PATROL_TIME) {
+                // seed a patrol target around the current position
+                patrolTarget = RandomPointOnRingXZ(position, /*minR*/800.0f, /*maxR*/2200.0f);
+
+                hasPatrolTarget  = true;
+                ChangeState(CharacterState::Patrol);
+                SoundManager::GetInstance().PlaySoundAtPosition((GetRandomValue(0, 1) == 0 ? "TrexRoar" : "TrexRoar2"), position, player.position, 0.0, 6000);
+                break;
+            }
+
+            if (distance < STALK_ENTER && playerVisible) {
+                if (canSee) ChangeState(CharacterState::Chase);
+                SoundManager::GetInstance().PlaySoundAtPosition((GetRandomValue(0, 1) == 0 ? "TrexRoar" : "TrexRoar2"), position, player.position, 0.0, 6000);
+                
+                break;
+            }
+        } break;
+
+        case CharacterState::Patrol:
+        {
+            UpdatePatrol(deltaTime);
+            UpdateTrexStepSFX(deltaTime);
+            break;
+        }
+
+        case CharacterState::Chase:
+        {
+            UpdateTrexStepSFX(deltaTime);
+            UpdateChase(deltaTime);
+            break;
+        }
+
+        case CharacterState::Attack:
+        {
+            if (distance > ATTACK_EXIT) {
+                if (canSee) ChangeState(CharacterState::Chase);
+                break;
+            }
+
+            if (distance < FLEE_ENTER) { ChangeState(CharacterState::RunAway); break;}
+            if (attackCooldown <= 0.0f && distance < ATTACK_EXIT){
+                attackCooldown = 3.0f;
+                player.TakeDamage(10);
+                SoundManager::GetInstance().Play(GetRandomValue(0, 1) == 0 ? "TrexBite" : "TrexBite2");
+                break;
+            }
+            
+            
+
+        } break;
+
+        case CharacterState::RunAway:
+        {
+            UpdateRunaway(deltaTime);
+            break;
+        }
+
+        case CharacterState::Stagger:
+        {
+            //do nothing
+            
+            if (stateTimer >= 1.0f) {
+                canBleed = true;
+                ChangeState(CharacterState::Chase);
+                
+                
+                //chaseDuration = GetRandomValue(4, 8); 
+            }
+        } break;
+
+        case CharacterState::Death:
+        {
+            if (!isDead) {
+                SoundManager::GetInstance().Play(GetRandomValue(0, 1) == 0 ? "TrexHurt" : "TrexHurt2");
+                isDead = true;
+                deathTimer = 0.0f;// Start counting
+            }
+
+            deathTimer += deltaTime;
+        } break;
+
+
+    }
+
+}
+
 void Character::UpdateRaptorAI(float deltaTime, Player& player)
 {
 
@@ -301,7 +410,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
     const float distance = Vector3Distance(position, player.position);
     UpdateRaptorVisibility(player, deltaTime);
 
-    // --- Simple deadbands (tweak per type) ---
+    // --- Simple deadbands ---
     const float STALK_ENTER   = 2000.0f;  // engage if closer than this
     const float STALK_EXIT    = 2400.0f;  // drop back to idle 
     const float ATTACK_ENTER  = 200.0f;   // start attack if closer than this
@@ -313,7 +422,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
     //playerVisible = distance < VISION_ENTER;
 
     // --- Placeholder for steering output (fill later) ---
-    Vector3 desiredVel = {0,0,0};   // compute with Seek/Arrive/Orbit/Flee later
+    //Vector3 desiredVel = {0,0,0};   // compute with Seek/Arrive/Orbit/Flee later
 
     switch (state)
     {
@@ -340,69 +449,14 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
 
         case CharacterState::Patrol:
         {
-            
-            // If we somehow lost the target, pick a new one quickly
-            if (!hasPatrolTarget) {
-                patrolTarget    = RandomPointOnRingXZ(position, 800.0f, 2200.0f);
-                
-                hasPatrolTarget = true;
-            }
-
-            // Move straight toward target (ease-in near the point)
-            const float PATROL_SPEED      = raptorSpeed * 0.6f; // slower than chase
-            const float PATROL_SLOW_RAD   = 400.0f;
-            const float ARRIVE_EPS_XZ     = 150.0f;
-
-            Vector3 vel = ArriveXZ(position, patrolTarget, PATROL_SPEED, PATROL_SLOW_RAD);
-            position = Vector3Add(position, Vector3Scale(vel, deltaTime));
-            bool blocked = StopAtWaterEdge(position, vel, 65 , deltaTime);
-            if (blocked) ChangeState(CharacterState::RunAway);
-
-            if (vel.x*vel.x + vel.z*vel.z > 1e-4f) {
-                rotationY = RAD2DEG * atan2f(vel.x, vel.z);
-            }
-
-            // Arrived? go Idle and reset
-            if (DistXZ(position, patrolTarget) <= ARRIVE_EPS_XZ) {
-                hasPatrolTarget = false;
-                ChangeState(CharacterState::Idle);
-                break;
-            }
-
-            // If player shows up while patrolling, escalate to Chase
-            const float STALK_ENTER = 2000.0f;
-            if (playerVisible && Vector3Distance(position, player.position) < STALK_ENTER) {
-                hasPatrolTarget = false; // drop current patrol
-                if (canSee) ChangeState(CharacterState::Chase);
-                
-                break;
-            }
-        } break;
+            UpdatePatrol(deltaTime);
+            break;   
+        }
 
         case CharacterState::Chase:
         {
             
-            if (!canSee) {ChangeState(CharacterState::Idle); break; }
-            if (stateTimer > chaseDuration) { ChangeState(CharacterState::RunAway); break;}
-                    // (keep your existing enter/exit checks above or below as you like)
-            if (distance < ATTACK_ENTER) { ChangeState(CharacterState::Attack); break; }
-            if (distance > VISION_ENTER) { ChangeState(CharacterState::Idle); break; }
-
-            const float MAX_SPEED   = raptorSpeed;  // per-type speed
-            const float SLOW_RADIUS = 400.0f;       // ease-in so we don’t overshoot
-
-            // Move straight toward the player (XZ only), easing inside SLOW_RADIUS
-            Vector3 vel = ArriveXZ(position, player.position, MAX_SPEED, SLOW_RADIUS);
-            position = Vector3Add(position, Vector3Scale(vel, deltaTime));
-            //ClampToTerrain(position, /*footOffset*/0.0f);
-
-            bool blocked = StopAtWaterEdge(position, vel, 65, deltaTime);
-            if (blocked) ChangeState(CharacterState::Idle);
-
-            if (vel.x*vel.x + vel.z*vel.z > 1e-4f) {
-                rotationY = RAD2DEG * atan2f(vel.x, vel.z);
-            }
-
+            UpdateChase(deltaTime);
           
         } break;
 
@@ -486,55 +540,14 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
                     
                     player.TakeDamage(10);
                 }
-
-
-
             }
-
-
-
 
         } break;
 
         case CharacterState::RunAway:
         {
-            // --- simple knobs ---
-            const float MAX_SPEED     = raptorSpeed;   // same as chase or a bit higher
-            const float FLEE_MIN_TIME = 0.7f;          // don’t instantly flip back
-            const float FLEE_MAX_TIME = 2.0f;          // optional: cap flee bursts
-            const float FLEE_EXIT     = 400.0f;        // you already defined this earlier
-            const float SEP_CAP       = 200.0f;        // limit separation shove
-
-            // Steering: flee + a touch of separation + tiny wander so it’s not laser-straight
-            Vector3 vFlee   = FleeXZ(position, player.position, MAX_SPEED);
-
+            UpdateRunaway(deltaTime);
             
-            Vector3 vSep    = ComputeRepulsionForce(enemyPtrs, /*radius*/200, /*strength*/600);
-            vSep            = Limit(vSep, SEP_CAP);
-
-            
-            Vector3 vWander = WanderXZ(wanderAngle, /*turn*/4.0f, /*speed*/80.0f, deltaTime);
-
-            Vector3 desired = Vector3Add(vFlee, Vector3Add(vSep, vWander));
-            desired         = Limit(desired, MAX_SPEED);
-
-            bool blocked = StopAtWaterEdge(position, desired, 65, deltaTime);
-            if (blocked) ChangeState(CharacterState::Idle);
-
-            // Integrate + face motion
-            position = Vector3Add(position, Vector3Scale(desired, deltaTime));
-            if (desired.x*desired.x + desired.z*desired.z > 1e-4f) {
-                rotationY = RAD2DEG * atan2f(desired.x, desired.z);
-            }
-
-            // Exit conditions: far enough OR time window expired
-            if ((distance > FLEE_EXIT && stateTimer >= FLEE_MIN_TIME) || stateTimer >= FLEE_MAX_TIME) {
-                if (canSee){
-                    ChangeState(CharacterState::Chase);
-                    break;
-                } 
-                
-            }
         } break;
 
 
@@ -547,9 +560,6 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
 
         case CharacterState::Stagger:
         {
-
-            desiredVel = {0,0,0};
-            
             //do nothing
  
             if (stateTimer >= 1.0f) {
@@ -982,8 +992,6 @@ bool Character::MoveAlongPath(std::vector<Vector3>& path,
     return false;
 }
 
-
-// Character.cpp
 void Character::SetPathTo(const Vector3& goalWorld) {
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal  = WorldToImageCoords(goalWorld);
@@ -1002,7 +1010,7 @@ void Character::SetPathTo(const Vector3& goalWorld) {
     }
 }
 
-// Call this for raptors (overworld)
+// Call this for raptors/Trex (overworld)
 void Character::UpdateRaptorVisibility(const Player& player, float deltaTime) {
     const float VISION_ENTER = 4000.0f; 
     const float VISION_EXIT  = 4200.0f;  // deadband so it doesn’t flicker at the edge
@@ -1024,6 +1032,145 @@ void Character::UpdateRaptorVisibility(const Player& player, float deltaTime) {
         if (timeSinceLastSeen > forgetTime) playerVisible = false;
     }
 }
+
+void Character::UpdateChase(float deltaTime)
+{
+    //update raptor/trex chase state. 
+    float ATTACK_ENTER  = 300.0f;   // start attack if closer than this
+    if (type == CharacterType::Trex) ATTACK_ENTER = 600;
+
+    const float VISION_ENTER = 4000.0f;
+    float distance = Vector3Distance(position, player.position);
+    if (!canSee) {ChangeState(CharacterState::Idle); return; }
+    if (stateTimer > chaseDuration) { ChangeState(CharacterState::RunAway); return;}
+            // (keep your existing enter/exit checks above or below as you like)
+    if (distance < ATTACK_ENTER) { ChangeState(CharacterState::Attack); return; }
+    if (distance > VISION_ENTER) { ChangeState(CharacterState::Idle); return; }
+
+    const float MAX_SPEED   = raptorSpeed;  // per-type speed
+    const float SLOW_RADIUS = 800.0f;       // ease-in so we don’t overshoot
+
+    // Move straight toward the player (XZ only), easing inside SLOW_RADIUS
+    Vector3 vel = ArriveXZ(position, player.position, MAX_SPEED, SLOW_RADIUS);
+    position = Vector3Add(position, Vector3Scale(vel, deltaTime));
+    //SoundManager::GetInstance().PlaySoundAtPosition("TrexStep", position, player.position, 0.0f, 4000.0f);
+
+    bool blocked = StopAtWaterEdge(position, vel, 65, deltaTime);
+    if (blocked) ChangeState(CharacterState::Idle);
+
+    if (vel.x*vel.x + vel.z*vel.z > 1e-4f) {
+        rotationY = RAD2DEG * atan2f(vel.x, vel.z);
+    }
+
+
+}
+
+
+void Character::UpdateTrexStepSFX(float dt)
+{
+    if (state != CharacterState::Chase) {  // only step in Chase
+        stepTimer = 0.0f;                   // reset when not chasing
+        return;
+    }
+
+    stepTimer += dt;
+    if (stepTimer >= 1.0f) {
+
+        SoundManager::GetInstance().PlaySoundAtPosition("TrexStep", position, player.position, 0.0f, 8000.0f);
+        stepTimer -= 1.0f; // use -= to survive occasional long frames
+    }
+}
+
+
+void Character::UpdateRunaway(float deltaTime)
+{
+    //update raptor/Trex runaway state
+    float distance = Vector3Distance(position, player.position);
+    // --- simple knobs ---
+    const float MAX_SPEED     = raptorSpeed;   // same as chase or a bit higher
+    const float FLEE_MIN_TIME = 0.7f;          // don’t instantly flip back
+    const float FLEE_MAX_TIME = 2.0f;          // optional: cap flee bursts
+    const float FLEE_EXIT     = 400.0f;        // you already defined this earlier
+    const float SEP_CAP       = 200.0f;        // limit separation shove
+
+    // Steering: flee + a touch of separation + tiny wander so it’s not laser-straight
+    Vector3 vFlee   = FleeXZ(position, player.position, MAX_SPEED);
+
+    
+    Vector3 vSep    = ComputeRepulsionForce(enemyPtrs, /*radius*/200, /*strength*/600);
+    vSep            = Limit(vSep, SEP_CAP);
+
+    
+    Vector3 vWander = WanderXZ(wanderAngle, /*turn*/4.0f, /*speed*/80.0f, deltaTime);
+
+    Vector3 desired = Vector3Add(vFlee, Vector3Add(vSep, vWander));
+    desired         = Limit(desired, MAX_SPEED);
+
+    bool blocked = StopAtWaterEdge(position, desired, 65, deltaTime);
+    if (blocked) ChangeState(CharacterState::Idle);
+
+    // Integrate + face motion
+    position = Vector3Add(position, Vector3Scale(desired, deltaTime));
+    if (desired.x*desired.x + desired.z*desired.z > 1e-4f) {
+        rotationY = RAD2DEG * atan2f(desired.x, desired.z);
+    }
+
+    // Exit conditions: far enough OR time window expired
+    if ((distance > FLEE_EXIT && stateTimer >= FLEE_MIN_TIME) || stateTimer >= FLEE_MAX_TIME) {
+        if (canSee){
+            ChangeState(CharacterState::Chase);
+            return;
+        } 
+        
+    }
+}
+
+
+void Character::UpdatePatrol(float deltaTime)
+{
+    //update raptor/Trex patrol state
+    // Acquire a patrol target if we don't have one
+    if (!hasPatrolTarget) {
+        patrolTarget    = RandomPointOnRingXZ(position, 800.0f, 2200.0f);
+        hasPatrolTarget = true;
+    }
+
+    // Movement toward target
+    const float PATROL_SPEED    = raptorSpeed * 0.6f;
+    const float PATROL_SLOW_RAD = 400.0f;
+    const float ARRIVE_EPS_XZ   = 150.0f;
+
+    Vector3 vel = ArriveXZ(position, patrolTarget, PATROL_SPEED, PATROL_SLOW_RAD);
+    position    = Vector3Add(position, Vector3Scale(vel, deltaTime));
+
+    // Stop at water edge → flee
+    if (StopAtWaterEdge(position, vel, 65, deltaTime)) {
+        hasPatrolTarget = false;
+        ChangeState(CharacterState::RunAway);
+        return;
+    }
+
+    // Face travel direction
+    if (vel.x*vel.x + vel.z*vel.z > 1e-4f) {
+        rotationY = RAD2DEG * atan2f(vel.x, vel.z);
+    }
+
+    // Arrived → idle
+    if (DistXZ(position, patrolTarget) <= ARRIVE_EPS_XZ) {
+        hasPatrolTarget = false;
+        ChangeState(CharacterState::Idle);
+        return;
+    }
+
+    // Player seen → chase
+    const float STALK_ENTER = 2000.0f;
+    if (playerVisible && Vector3Distance(position, player.position) < STALK_ENTER) {
+        hasPatrolTarget = false;
+        if (canSee) ChangeState(CharacterState::Chase); //cant see if player is in water
+        return;
+    }
+}
+
 
 
 

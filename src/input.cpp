@@ -6,6 +6,8 @@
 #include "utilities.h"
 #include "lighting.h"
 #include "resourceManager.h"
+#include "sound_manager.h"
+
 InputMode currentInputMode = InputMode::KeyboardMouse;
 
 
@@ -16,6 +18,7 @@ void debugControls(Camera& camera, float deltaTime){
     }
 
     if (IsKeyPressed(KEY_L)) {
+
         std::cout << "Player Position: ";
         DebugPrintVector(player.position);
         // isLoadingLevel = true;
@@ -67,12 +70,11 @@ void debugControls(Camera& camera, float deltaTime){
         FireFireball(player.position, targetPoint, 5000, 10, false, true);
     }
     //give all weapons
-    if (IsKeyPressed(KEY_SEMICOLON && debugInfo)) {
+    if (IsKeyPressed(KEY_SEMICOLON) && debugInfo) {
         if (player.collectedWeapons.size() < 3) {
 
             player.collectedWeapons.push_back(WeaponType::MagicStaff);
           
-            
             player.activeWeapon = WeaponType::Blunderbuss;
         }
 

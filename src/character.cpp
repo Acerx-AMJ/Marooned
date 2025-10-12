@@ -48,6 +48,7 @@ void Character::playRaptorSounds(){
 }
 
 
+
 void Character::TakeDamage(int amount) {
     if (isDead) return;
 
@@ -96,8 +97,10 @@ void Character::TakeDamage(int amount) {
             SoundManager::GetInstance().Play("phit1");
         }else if (type == CharacterType::Spider){
             SoundManager::GetInstance().Play("spiderDeath");
-        }else{
+        }else if (type == CharacterType::Raptor || type == CharacterType::Skeleton){
             SoundManager::GetInstance().Play("dinoHit"); //raptor and skeletons
+        }else if (type == CharacterType::Trex){
+            SoundManager::GetInstance().Play(GetRandomValue(0, 1) == 0 ? "TrexHurt" : "TrexHurt2");
         }
         
     }
@@ -177,7 +180,23 @@ void Character::Update(float deltaTime, Player& player ) {
 
 static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
     switch (type) {
+        case CharacterType::Trex:
+            switch (state) {
+                case CharacterState::Chase:
+                case CharacterState::Patrol:
+                case CharacterState::Reposition:
+                case CharacterState::Orbit:
+                    return AnimDesc {1, 4, 0.25, true}; //walk
 
+                case CharacterState::RunAway: return {1, 4, 0.25f, true};
+                case CharacterState::Freeze: return {0, 1, 1.0f, true};
+                case CharacterState::Idle:   return {0, 1, 1.0f, true};
+                case CharacterState::Attack: return {2, 3, 1.0f, false};  // 4 * 0.2 = 0.8s
+                case CharacterState::Stagger: return {4, 1, 1.0f, false}; // Use first frame of death anim for 1 second. for all enemies
+                case CharacterState::Death:  return {4, 4, 0.25f, false};
+                
+                default:                     return {0, 1, 1.0f, true};
+            }
         case CharacterType::Raptor:
             switch (state) {
 
@@ -273,6 +292,7 @@ static inline bool StateUsesPath(CharacterState s) {
         case CharacterState::Chase:
         case CharacterState::Patrol:
         case CharacterState::Reposition:
+        case CharacterState::Orbit:
             return true;
         default:
             return false;
@@ -282,21 +302,24 @@ static inline bool StateUsesPath(CharacterState s) {
 void Character::ChangeState(CharacterState next) {
     if (state == next) return;  // no spam
 
+    // Auto-flush path when transitioning from a path-using state to a non-path state. 
+    bool clearPath = StateUsesPath(state) && !StateUsesPath(next);
     state = next;
     stateTimer = 0.0f;
 
-    // Auto-flush path when transitioning from a path-using state to a non-path state
-    if (StateUsesPath(state) && !StateUsesPath(next)) {
-        currentWorldPath.clear();
-    }
+    if (clearPath) currentWorldPath.clear();
 
     if (type == CharacterType::Raptor && state == CharacterState::Chase){
         chaseDuration = GetRandomValue(5, 8);
         playRaptorSounds(); //play a random tweet when switching to chase. 
-    } 
+    }
+
+    if (type == CharacterType::Trex && state == CharacterState::Chase){
+        chaseDuration = GetRandomValue(10, 20);
+
+    }
 
     if (state == CharacterState::Attack) attackCooldown = 0.0f;
-    
 
     const AnimDesc a = GetAnimFor(type, state);
     SetAnimation(a.row, a.frames, a.frameTime, a.loop);

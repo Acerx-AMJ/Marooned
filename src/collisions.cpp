@@ -378,7 +378,7 @@ void CheckBulletHits(Camera& camera) {
 
                 }else if (!b.IsEnemy() && (b.type == BulletType::Iceball)){
                     //enemy->TakeDamage(25);
-                    enemy->state = CharacterState::Freeze;
+                    enemy->ChangeState(CharacterState::Freeze);
                     b.pendingExplosion = true;
                     b.explosionTimer = 0.04f;
 

@@ -327,7 +327,7 @@ void DrawEnemyShadows() {
     for (Character& enemy : enemies) {
         // Ideally, raycast to ground to get exact Y; add tiny epsilon to avoid z-fighting
         Vector3 groundPos = { enemy.position.x, enemy.position.y - 40.1f, enemy.position.z };
-        //if (enemy.type == CharacterType::Pirate) groundPos.y = enemy.position.y - 0;
+        if (enemy.type == CharacterType::Trex) groundPos.y -= 100; //half the frame height? 
         DrawModelEx(shadowModel, groundPos, {0,1,0}, 0.0f, {100,100,100}, BLACK);
     }
 
@@ -466,8 +466,9 @@ void generateTrex(int amount, Vector3 centerPos, float radius) {
         }
 
         std::cout << "generated T-Rex\n";
-        Character Trex(spawnPos, R.GetTexture("trexSheet.png"), 200, 200, 1, 0.5, 2.0, 0, CharacterType::Trex);
-
+        Character Trex(spawnPos, R.GetTexture("trexSheet"), 300, 300, 1, 0.5, 1.0, 0, CharacterType::Trex);
+        Trex.maxHealth = 1000;
+        Trex.currentHealth = 1000;
         enemies.push_back(Trex);
         enemyPtrs.push_back(&enemies.back()); 
         ++spawned;

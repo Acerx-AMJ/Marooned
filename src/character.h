@@ -55,7 +55,7 @@ public:
     float scale;
     float rotationY = 0.0f; // in degrees
     float stateTimer = 0.0f;
-
+    float stepTimer = 0.0f;
     float raptorSpeed = 700.0f;
     Vector3 patrolTarget{0,0,0};
     bool hasPatrolTarget = false;
@@ -102,6 +102,7 @@ public:
     BoundingBox GetBoundingBox() const;
     void Update(float deltaTime, Player& player);
     Vector3 ComputeRepulsionForce(const std::vector<Character*>& allRaptors, float repulsionRadius = 500.0f, float repulsionStrength = 6000.0f);
+    void UpdateTrexAI(float deltaTime, Player& player);
     void UpdateRaptorAI(float deltaTime, Player& player);
     void UpdateAI(float deltaTime, Player& player); 
     void UpdateSkeletonAI(float deltaTime, Player& player);
@@ -120,5 +121,9 @@ public:
     void playRaptorSounds();
     void ChangeState(CharacterState next);
     bool MoveAlongPath(std::vector<Vector3>& path, Vector3& pos, float& yawDeg,float speed, float dt, float arriveEps = 100.0f, Vector3 repulsion = {});
+    void UpdatePatrol(float deltaTime);
+    void UpdateRunaway(float deltaTime);
+    void UpdateChase(float deltaTime);
+    void UpdateTrexStepSFX(float dt);
 };
 

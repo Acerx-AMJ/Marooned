@@ -157,6 +157,16 @@ void SoundManager::LoadSounds() {
     SoundManager::GetInstance().LoadSound("swim2", "assets/sounds/swim2.ogg");
     SoundManager::GetInstance().LoadSound("swim3", "assets/sounds/swim3.ogg");
     SoundManager::GetInstance().LoadSound("swim4", "assets/sounds/swim4.ogg");
+
+    SoundManager::GetInstance().LoadSound("TrexRoar", "assets/sounds/TrexRoar.ogg");
+    SoundManager::GetInstance().LoadSound("TrexRoar2", "assets/sounds/TrexRoar.ogg");
+    SoundManager::GetInstance().LoadSound("TrexBite", "assets/sounds/TrexBite.ogg");
+    SoundManager::GetInstance().LoadSound("TrexBite2", "assets/sounds/TrexBite2.ogg");
+    SoundManager::GetInstance().LoadSound("TrexHurt", "assets/sounds/TrexHurt.ogg");
+    SoundManager::GetInstance().LoadSound("TrexHurt2", "assets/sounds/TrexHurt2.ogg");
+    SoundManager::GetInstance().LoadSound("TrexStep", "assets/sounds/TrexStep.ogg");
+
+
     
     //music (ambience)
     SoundManager::GetInstance().LoadMusic("dungeonAir", "assets/sounds/dungeonAir.ogg");
