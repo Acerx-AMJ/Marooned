@@ -49,9 +49,8 @@ std::vector<LevelData> levels = {
             { PropType::Boat,     6000.0f, -20.0f, 0.0f},
         
         },
-        true,
+        true, //ceiling default is true. doesn't matter for islands. 
         
-       
     },
     {
         "River", 
@@ -60,13 +59,13 @@ std::vector<LevelData> levels = {
         {5475.0f, 300.0f, -5665.0f},
         180.0f,
         {0.0f, 0, 0.0f},
-        0,
+        7,//raptor count
         false,
         {entranceToDungeon11},
         1, 
         0,
         {{ PropType::Boat,-1343.15, 103.922, -1524.03}},
-        true, 
+        true, //ceiling
    
     },
     {

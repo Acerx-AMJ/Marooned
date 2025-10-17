@@ -45,6 +45,8 @@ void Weapon::Fire(Camera& camera) {
         bulletOrigin = Vector3Add(bulletOrigin, Vector3Scale(camRight, sideOffset));
         bulletOrigin = Vector3Add(bulletOrigin, Vector3Scale(camUp, verticalOffset));
 
+        
+
         FireBlunderbuss(
             bulletOrigin,
             camForward,

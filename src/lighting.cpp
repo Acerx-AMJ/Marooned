@@ -138,7 +138,7 @@ static float TileVisibilityWorldRay(const Vector3& lightPos,
         to.z += perp.z * t * spreadMeters;
         to.y  = tileCenter.y + targetYOffset;
 
-        if (HasWorldLineOfSight(from, to, epsilonFrac)) ++visible;
+        if (HasWorldLineOfSight(from, to, epsilonFrac, LOSMode::Lighting)) ++visible;
     }
     return (float)visible / (float)rays;
 }
@@ -431,8 +431,8 @@ void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLi
     const LightSample ls =  {
         player.position,
         Vector3 {1.0f, 1.0f, 1.0f},  //white
-        400,
-        0.5f //subtle
+        player.lightRange,
+        player.lightIntensity,
     };
 
     Color c = {

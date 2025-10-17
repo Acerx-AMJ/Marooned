@@ -17,6 +17,7 @@ public:
     Sound GetSound(const std::string& name);
     void Play(const std::string& name);
     void Stop(const std::string& name);
+    bool IsPlaying(const std::string& name) const;
     void LoadSounds();
     void UnloadAll();
 

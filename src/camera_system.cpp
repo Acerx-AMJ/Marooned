@@ -25,7 +25,7 @@ void CameraSystem::Init(const Vector3& startPos) {
 }
 
 void CameraSystem::SnapAllToPlayer() {
-    Vector3 camPos = {player.position.x, 200, player.position.z};
+    Vector3 camPos = {player.position.x, player.position.y, player.position.z};
     playerRig.cam.position = camPos;
     freeRig.cam   = playerRig.cam;
     freeRig.fov   = playerRig.fov;

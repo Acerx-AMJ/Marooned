@@ -279,7 +279,7 @@ void Bullet::Explode(Camera& camera) {
 
     if (!explosionTriggered){
         explosionTriggered = true;
-        velocity.x = 0; //stop bullets velocity when exploding but keep gravity. could bullet apply damage more than once if it remains alive?
+        velocity.x = 0; //stop bullets velocity when exploding but keep gravity. 
         velocity.z = 0;
         SoundManager::GetInstance().PlaySoundAtPosition("explosion", position, player.position, player.rotation.y, 3000.0f);
         

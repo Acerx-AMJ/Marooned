@@ -216,34 +216,87 @@ bool TrySetRandomPatrolPath(const Vector2& start, Character* self, std::vector<V
     return !outPath.empty();
 }
 
+//TODO: Create a second worldLOSLeaky
 
-bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction) {  
-
+bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction, LOSMode mode)
+{
     Ray ray = { from, Vector3Normalize(Vector3Subtract(to, from)) };
     float maxDistance = Vector3Distance(from, to);
     float epsilon = epsilonFraction * maxDistance;
 
+    // Walls always block
     for (const WallRun& wall : wallRunColliders) {
-        RayCollision hit = GetRayCollisionBox(ray, wall.bounds); //ray stops at the collider, epsilon pushes it further to the actual wall position. 
-        if (hit.hit && hit.distance + epsilon < maxDistance) {
-            return false;
-        }
+        RayCollision hit = GetRayCollisionBox(ray, wall.bounds);
+        if (hit.hit && hit.distance + epsilon < maxDistance) return false;
     }
 
-    for (const Door& door: doors) {
-        if (!door.isOpen){
-            RayCollision hit = GetRayCollisionBox(ray, door.collider);
-            
-            if (hit.hit && hit.distance + epsilon < maxDistance) {
-                return false;
+    if (mode == LOSMode::AI) {
+        // For AI vision, a CLOSED door panel blocks. (Open doors do not.)
+        for (const Door& door : doors) {
+            if (!door.isOpen) {
+                RayCollision hit = GetRayCollisionBox(ray, door.collider);
+                if (hit.hit && hit.distance + epsilon < maxDistance) return false;
             }
         }
-
+        // Optionally also block by door jambs/side colliders for AI (feels more "real"):
+        for (const DoorwayInstance& dw : doorways) {
+            for (const BoundingBox& sc : dw.sideColliders) {
+                RayCollision hit = GetRayCollisionBox(ray, sc);
+                if (hit.hit && hit.distance + epsilon < maxDistance) return false;
+            }
+        }
+    } else { // LOSMode::Lighting
+        // For lighting, let light leak through the middle of the doorway but block the sides.
+        for (const DoorwayInstance& dw : doorways) {
+            for (const BoundingBox& sc : dw.sideColliders) {
+                RayCollision hit = GetRayCollisionBox(ray, sc);
+                if (hit.hit && hit.distance + epsilon < maxDistance) return false;
+            }
+        }
+        // NOTE: We intentionally do NOT test door panels here, so closed doors don't kill the glow.
     }
-
 
     return true;
 }
+
+
+// bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction) {  
+
+//     Ray ray = { from, Vector3Normalize(Vector3Subtract(to, from)) };
+//     float maxDistance = Vector3Distance(from, to);
+//     float epsilon = epsilonFraction * maxDistance;
+
+//     for (const WallRun& wall : wallRunColliders) {
+//         RayCollision hit = GetRayCollisionBox(ray, wall.bounds); //ray stops at the collider, epsilon pushes it further to the actual wall position. 
+//         if (hit.hit && hit.distance + epsilon < maxDistance) {
+//             return false;
+//         }
+//     }
+
+//     // for (const Door& door: doors) {
+//     //     if (!door.isOpen){
+//     //         RayCollision hit = GetRayCollisionBox(ray, door.collider);
+            
+//     //         if (hit.hit && hit.distance + epsilon < maxDistance) {
+//     //             return false;
+//     //         }
+//     //     }
+
+//     // }
+
+//     for (const DoorwayInstance& dw : doorways){ //check against side colliders not door way, let light leak through doors. 
+//         for (const auto& sc : dw.sideColliders){
+//             RayCollision hit = GetRayCollisionBox(ray, sc);
+
+//             if (hit.hit && hit.distance + epsilon < maxDistance) {
+//                 return false;
+//             }
+//         }
+//     }
+
+
+//     return true;
+// }
 
 Vector2 TileToWorldCenter(Vector2 tile) {
     return {
@@ -254,7 +307,7 @@ Vector2 TileToWorldCenter(Vector2 tile) {
 
 
 bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int maxSteps, float epsilon) {
-
+    //raymarch the PNG map, do we use this? 
     const int numRays = 5;
     const float spread = 0.1f; // widen fan
 
@@ -324,41 +377,90 @@ bool SingleRayBlocked(Vector2 start, Vector2 end, const Image& dungeonMap, int m
     return false;
 }
 
+// Tunables
+static constexpr int   kMaxLookahead = 8;      // tiles/waypoints ahead to try
+static constexpr float kMaxSkipDist  = 12.0f;  // meters (or your world units)
+static constexpr float kEpsFraction  = 0.01f;  // 1% of segment length
 
+std::vector<Vector3> SmoothWorldPath(const std::vector<Vector3>& worldPath)
+{
+    std::vector<Vector3> out;
+    if (worldPath.empty()) return out;
 
-
-std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& dungeonMap) {
-    //check for short cuts. skip points if you can connect stright to a point further along. 
-   
-    std::vector<Vector2> result;
-
-    if (path.empty()) return result;
     size_t i = 0;
-    while (i < path.size()) {
-        result.push_back(path[i]);
+    const size_t N = worldPath.size();
 
-        size_t j = path.size() - 1;
-        bool found = false;
+    while (i < N) {
+        // Always keep the current point
+        out.push_back(worldPath[i]);
 
-        for (; j > i + 1; --j) {
-            Vector2 start = TileToWorldCenter(path[i]);
-            Vector2 end   = TileToWorldCenter(path[j]);
+        // Try to jump ahead greedily
+        size_t furthest = i;
+        const size_t maxJ = std::min(N - 1, i + static_cast<size_t>(kMaxLookahead));
 
-            if (LineOfSightRaycast(start, end, dungeonMap, 100, 0.0f)) {
-                found = true;
-                break;
+        for (size_t j = maxJ; j > i + 0; --j) {
+            const float dist = Vector3Distance(worldPath[i], worldPath[j]);
+            if (dist > kMaxSkipDist) continue;
+
+            if (HasWorldLineOfSight(worldPath[i], worldPath[j], kEpsFraction)) {
+                furthest = j;
+                break; // take the longest valid skip we found
             }
         }
 
-        if (found) {
-            i = j;  // jump to further straight-line segment
+        if (furthest == i) {
+            // Couldn’t skip—advance one to avoid infinite loop
+            ++i;
         } else {
-            ++i;    // fallback: step forward to prevent infinite loop
+            // Jump to the furthest visible point
+            i = furthest;
         }
     }
 
-    return result;
+    // Ensure destination is included (in case the loop ended on a mid point)
+    if (out.back().x != worldPath.back().x ||
+        out.back().y != worldPath.back().y ||
+        out.back().z != worldPath.back().z) {
+        out.push_back(worldPath.back());
+    }
+
+    return out;
 }
+
+
+// std::vector<Vector2> SmoothPath(const std::vector<Vector2>& path, const Image& dungeonMap) {
+//     //check for short cuts. skip points if you can connect stright to a point further along. 
+   
+//     std::vector<Vector2> result;
+
+//     if (path.empty()) return result;
+//     size_t i = 0;
+//     while (i < path.size()) {
+//         result.push_back(path[i]);
+
+//         size_t j = path.size() - 1;
+//         bool found = false;
+
+//         for (; j > i + 1; --j) {
+//             Vector2 start = TileToWorldCenter(path[i]);
+//             Vector2 end   = TileToWorldCenter(path[j]);
+            
+            
+//             if (LineOfSightRaycast(start, end, dungeonMap, 100, 0.0f)) { //raymarch the pixel map
+//                 found = true;
+//                 break;
+//             }
+//         }
+
+//         if (found) {
+//             i = j;  // jump to further straight-line segment
+//         } else {
+//             ++i;    // fallback: step forward to prevent infinite loop
+//         }
+//     }
+
+//     return result;
+// }
 
 //Raptor steering behavior
 Vector3 SeekXZ(const Vector3& pos, const Vector3& target, float maxSpeed) {
@@ -436,7 +538,7 @@ bool StopAtWaterEdge(const Vector3& pos,
     // Look a short distance ahead in the movement direction (XZ only)
     Vector3 dir = { desiredVel.x, 0.0f, desiredVel.z };
     float  speed = sqrtf(v2);
-    float  look  = fmaxf(80.0f, speed * 0.4f); // small peek ahead; tweak
+    float  look  = fmaxf(100.0f, speed * 0.4f); // small peek ahead; tweak
 
     Vector3 ahead = { pos.x + dir.x / speed * look,
                       pos.y,

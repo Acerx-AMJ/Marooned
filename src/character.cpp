@@ -62,10 +62,14 @@ void Character::TakeDamage(int amount) {
         deathTimer = 0.0f;
         //state = CharacterState::Death;
         if (type == CharacterType::Ghost) SetAnimation(1, 7, 0.2);
+
+        // Toward the *camera/player* in world space
+        Vector3 toPlayer = Vector3Normalize(Vector3Subtract(player.position, position));
+        Vector3 newPos   = Vector3Add(position, Vector3Scale(toPlayer, 100.0f)); // 100 units in front of the enemy
         if (type == CharacterType::Skeleton || type == CharacterType::Ghost) {
-            bloodEmitter.EmitBlood(position, 20, WHITE);
+            bloodEmitter.EmitBlood(newPos, 20, WHITE);
         } else {
-            bloodEmitter.EmitBlood(position, 20, RED);
+            bloodEmitter.EmitBlood(newPos, 20, RED);
         }
 
         ChangeState(CharacterState::Death);
@@ -81,12 +85,14 @@ void Character::TakeDamage(int amount) {
     
         if (canBleed){
             canBleed = false;
+            // Toward the *camera/player* in world space
+            Vector3 toPlayer = Vector3Normalize(Vector3Subtract(player.position, position));
+            Vector3 newPos   = Vector3Add(position, Vector3Scale(toPlayer, 100.0f)); // 100 units in front of the enemy
             if (type == CharacterType::Skeleton || type == CharacterType::Ghost) {
-                bloodEmitter.EmitBlood(position, 20, WHITE);
+                bloodEmitter.EmitBlood(newPos, 10, WHITE);
             } else {
-                bloodEmitter.EmitBlood(position, 20, RED);
+                bloodEmitter.EmitBlood(newPos, 20, RED);
             }
-       
         }
         //SetAnimation(4, 1, 1.0f); // Use first frame of death anim for 1 second. for all enemies
         
@@ -98,9 +104,9 @@ void Character::TakeDamage(int amount) {
         }else if (type == CharacterType::Spider){
             SoundManager::GetInstance().Play("spiderDeath");
         }else if (type == CharacterType::Raptor || type == CharacterType::Skeleton){
-            SoundManager::GetInstance().Play("dinoHit"); //raptor and skeletons
+            SoundManager::GetInstance().PlaySoundAtPosition("dinoHit", position, player.position, 0.0f, 4000.0f); //raptor and skeletons
         }else if (type == CharacterType::Trex){
-            SoundManager::GetInstance().Play(GetRandomValue(0, 1) == 0 ? "TrexHurt" : "TrexHurt2");
+            SoundManager::GetInstance().Play(GetRandomValue(0, 1) == 0 ? "TrexHurt2" : "TrexHurt");
         }
         
     }
@@ -301,6 +307,7 @@ static inline bool StateUsesPath(CharacterState s) {
 
 void Character::ChangeState(CharacterState next) {
     if (state == next) return;  // no spam
+
 
     // Auto-flush path when transitioning from a path-using state to a non-path state. 
     bool clearPath = StateUsesPath(state) && !StateUsesPath(next);

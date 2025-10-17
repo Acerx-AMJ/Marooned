@@ -242,10 +242,11 @@ void DrawTransparentDrawRequests(Camera& camera) {
         });
 
     for (const BillboardDrawRequest& req : billboardRequests) {
-        rlDisableDepthMask(); // we manually get depth by sorting by distance. //with alpha discard shader we could use depthMask to automatically sort.
+        //rlDisableDepthMask(); // we manually get depth by sorting by distance. //with alpha discard shader we could use depthMask to automatically sort.
         //and we would discard any transparent border pixels. This has it's own limitations however. Like alpha blending wouldn't work.
         //Means no soft edges. So we sort manually.
         if (!isDungeon) BeginShaderMode(R.GetShader("treeShader"));
+        if (isDungeon) BeginShaderMode(R.GetShader("cutoutShader"));
         switch (req.type) {
             case Billboard_FacingCamera: //use draw billboard for both decals, and enemies. 
             case Billboard_Decal:

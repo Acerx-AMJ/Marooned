@@ -28,9 +28,18 @@ Sound SoundManager::GetSound(const std::string& name) {
     return {0}; // Empty sound
 }
 
+bool SoundManager::IsPlaying(const std::string& name) const {
+    auto it = sounds.find(name);
+    if (it == sounds.end()) return false;
+    return IsSoundPlaying(it->second);
+}
+
 void SoundManager::Play(const std::string& name) {
-    if (sounds.count(name)) {
-        PlaySound(sounds[name]);
+    auto it = sounds.find(name);
+    if (it == sounds.end()) return;
+
+    if (!IsSoundPlaying(it->second)) {
+        PlaySound(it->second);
     }
 }
 
@@ -159,7 +168,7 @@ void SoundManager::LoadSounds() {
     SoundManager::GetInstance().LoadSound("swim4", "assets/sounds/swim4.ogg");
 
     SoundManager::GetInstance().LoadSound("TrexRoar", "assets/sounds/TrexRoar.ogg");
-    SoundManager::GetInstance().LoadSound("TrexRoar2", "assets/sounds/TrexRoar.ogg");
+    SoundManager::GetInstance().LoadSound("TrexRoar2", "assets/sounds/TrexRoar2.ogg");
     SoundManager::GetInstance().LoadSound("TrexBite", "assets/sounds/TrexBite.ogg");
     SoundManager::GetInstance().LoadSound("TrexBite2", "assets/sounds/TrexBite2.ogg");
     SoundManager::GetInstance().LoadSound("TrexHurt", "assets/sounds/TrexHurt.ogg");

@@ -299,12 +299,9 @@ void Character::UpdateTrexAI(float deltaTime, Player& player){
 
     // --- Simple deadbands ---
     const float STALK_ENTER   = 2000.0f;  // engage if closer than this
-    const float STALK_EXIT    = 2400.0f;  // drop back to idle 
-    const float ATTACK_ENTER  = 400.0f;   // start attack if closer than this
     const float ATTACK_EXIT   = 800.0f;   // leave attack if beyond this 
     const float FLEE_ENTER    = 100.0f;   // too close -> run away
-    const float FLEE_EXIT     = 1000.0f;   // far enough -> stop fleeing
-    const float VISION_ENTER = 4000.0f;
+
 
     switch (state)
     {
@@ -324,8 +321,11 @@ void Character::UpdateTrexAI(float deltaTime, Player& player){
             }
 
             if (distance < STALK_ENTER && playerVisible) {
-                if (canSee) ChangeState(CharacterState::Chase);
-                SoundManager::GetInstance().PlaySoundAtPosition((GetRandomValue(0, 1) == 0 ? "TrexRoar" : "TrexRoar2"), position, player.position, 0.0, 6000);
+                if (canSee){
+                    ChangeState(CharacterState::Chase);
+                    SoundManager::GetInstance().PlaySoundAtPosition((GetRandomValue(0, 1) == 0 ? "TrexRoar" : "TrexRoar2"), position, player.position, 0.0, 6000);
+                } 
+                
                 
                 break;
             }
@@ -334,7 +334,6 @@ void Character::UpdateTrexAI(float deltaTime, Player& player){
         case CharacterState::Patrol:
         {
             UpdatePatrol(deltaTime);
-            UpdateTrexStepSFX(deltaTime);
             break;
         }
 
@@ -353,7 +352,7 @@ void Character::UpdateTrexAI(float deltaTime, Player& player){
             }
 
             if (distance < FLEE_ENTER) { ChangeState(CharacterState::RunAway); break;}
-            if (attackCooldown <= 0.0f && distance < ATTACK_EXIT){
+            if (attackCooldown <= 0.0f && distance < ATTACK_EXIT && canSee){
                 attackCooldown = 3.0f;
                 player.TakeDamage(10);
                 SoundManager::GetInstance().Play(GetRandomValue(0, 1) == 0 ? "TrexBite" : "TrexBite2");
@@ -912,6 +911,7 @@ Vector3 Character::ComputeRepulsionForce(const std::vector<Character*>& allRapto
 }
 
 void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
+    //*nearby enemies
     Vector2 originTile = WorldToImageCoords(alertOrigin);
 
     for (Character& other : enemies) {
@@ -932,23 +932,45 @@ void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
     }
 }
 
-void Character::SetPath(Vector2 start){
-    float pirateHeight = 160;
-    Vector2 goal = WorldToImageCoords(player.position);
-    std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
+// void Character::SetPath(Vector2 start){
+//     float pirateHeight = 160;
+//     Vector2 goal = WorldToImageCoords(player.position);
+//     std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
 
-    currentWorldPath.clear(); //construct the path the frame before chasing
+//     currentWorldPath.clear(); //construct the path the frame before chasing
+//     for (const Vector2& tile : tilePath) {
+//         Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
+//         worldPos.y = 180;
+//         if (type == CharacterType::Pirate) worldPos.y = pirateHeight;
+//         currentWorldPath.push_back(worldPos);
+//     }
+
+// }
+
+
+void Character::SetPath(Vector2 start)
+{
+    // 1) Find tile path (same as before)
+    Vector2 goal = WorldToImageCoords(player.position);
+    std::vector<Vector2> tilePath = FindPath(start, goal);
+
+    // 2) Convert tile centers to world points (y based on type)
+    std::vector<Vector3> worldPath;
+    worldPath.reserve(tilePath.size());
     for (const Vector2& tile : tilePath) {
-        Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
-        worldPos.y = 180;
-        if (type == CharacterType::Pirate) worldPos.y = pirateHeight;
-        currentWorldPath.push_back(worldPos);
+        Vector3 wp = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
+        wp.y = (type == CharacterType::Pirate) ? 160.0f : 180.0f; // pirate height
+        worldPath.push_back(wp);
     }
 
+    // 3) Smooth in world space using your LOS
+    std::vector<Vector3> smoothed = SmoothWorldPath(worldPath);
+
+    // 4) Store
+    currentWorldPath = std::move(smoothed);
 }
 
-// Optional repulsion: pass a small lateral force in world units/sec (e.g., from ComputeRepulsionForce).
-// Leave default {} to behave exactly like before.
+//move with repulsion
 bool Character::MoveAlongPath(std::vector<Vector3>& path,
                               Vector3& pos, float& yawDeg,
                               float speed, float deltaTime,
@@ -971,7 +993,7 @@ bool Character::MoveAlongPath(std::vector<Vector3>& path,
     // Forward move toward waypoint
     Vector3 moveFwd = Vector3Scale(dir, step);
 
-    // Optional repulsion (scaled by dt so it's “units per second”)
+    // repulsion (scaled by dt so it's “units per second”)
     Vector3 moveRep = Vector3Scale(repulsion, deltaTime);
 
     // Apply both
@@ -996,7 +1018,7 @@ void Character::SetPathTo(const Vector3& goalWorld) {
     Vector2 start = WorldToImageCoords(position);
     Vector2 goal  = WorldToImageCoords(goalWorld);
 
-    std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
+    std::vector<Vector2> tilePath = FindPath(start, goal);
 
     currentWorldPath.clear();
     currentWorldPath.reserve(tilePath.size());
@@ -1008,6 +1030,12 @@ void Character::SetPathTo(const Vector3& goalWorld) {
         worldPos.y = feetY;
         currentWorldPath.push_back(worldPos);
     }
+
+    // 3) Smooth in world space using your LOS
+    std::vector<Vector3> smoothed = SmoothWorldPath(currentWorldPath);
+
+    // 4) Store
+    currentWorldPath = std::move(smoothed);
 }
 
 // Call this for raptors/Trex (overworld)
@@ -1049,14 +1077,15 @@ void Character::UpdateChase(float deltaTime)
 
     const float MAX_SPEED   = raptorSpeed;  // per-type speed
     const float SLOW_RADIUS = 800.0f;       // ease-in so we don’t overshoot
-
     // Move straight toward the player (XZ only), easing inside SLOW_RADIUS
     Vector3 vel = ArriveXZ(position, player.position, MAX_SPEED, SLOW_RADIUS);
-    position = Vector3Add(position, Vector3Scale(vel, deltaTime));
+    bool blocked = StopAtWaterEdge(position, vel, 65, deltaTime);
+
+    if (!blocked) position = Vector3Add(position, Vector3Scale(vel, deltaTime));
     //SoundManager::GetInstance().PlaySoundAtPosition("TrexStep", position, player.position, 0.0f, 4000.0f);
 
-    bool blocked = StopAtWaterEdge(position, vel, 65, deltaTime);
-    if (blocked) ChangeState(CharacterState::Idle);
+    
+    if (blocked) ChangeState(CharacterState::RunAway);
 
     if (vel.x*vel.x + vel.z*vel.z > 1e-4f) {
         rotationY = RAD2DEG * atan2f(vel.x, vel.z);
@@ -1090,7 +1119,7 @@ void Character::UpdateRunaway(float deltaTime)
     const float MAX_SPEED     = raptorSpeed;   // same as chase or a bit higher
     const float FLEE_MIN_TIME = 0.7f;          // don’t instantly flip back
     const float FLEE_MAX_TIME = 2.0f;          // optional: cap flee bursts
-    const float FLEE_EXIT     = 400.0f;        // you already defined this earlier
+    const float FLEE_EXIT     = 400.0f;       
     const float SEP_CAP       = 200.0f;        // limit separation shove
 
     // Steering: flee + a touch of separation + tiny wander so it’s not laser-straight

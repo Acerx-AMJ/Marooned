@@ -542,6 +542,10 @@ void UpdateMuzzleFlashes(float deltaTime) {
         std::remove_if(activeMuzzleFlashes.begin(), activeMuzzleFlashes.end(),
                        [](const MuzzleFlash& flash) { return flash.age >= flash.lifetime; }),
         activeMuzzleFlashes.end());
+
+    // Light while any flash is active
+    player.lightIntensity = activeMuzzleFlashes.empty() ? 0.5f : 0.25f;
+    player.lightRange = activeMuzzleFlashes.empty() ? 400.0f : 1600.0f;
 }
 
 void UpdateBullets(Camera& camera, float dt) {
@@ -567,7 +571,6 @@ void UpdateBullets(Camera& camera, float dt) {
             }
         }
     }
-    // Don’t erase bullets here—do it after lighting if you need to.
 }
 
 
@@ -701,6 +704,8 @@ void UpdateWorldFrame(float dt, Player& player) {
     if (IsKeyPressed(KEY_TAB) && debugInfo) {
         auto m = CameraSystem::Get().GetMode();
         CameraSystem::Get().SetMode(m == CamMode::Player ? CamMode::Free : CamMode::Player);
+        CameraSystem::Get().SnapAllToPlayer();
+        
     }
 
     PlayerView pv{
