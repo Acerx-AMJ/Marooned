@@ -14,7 +14,7 @@
 #include "hintManager.h"
 
 
-bool squareRes = true; // set true for 1280x1024, false for widescreen
+bool squareRes = false; // set true for 1280x1024, false for widescreen
 
 int main() { 
     int screenWidth = squareRes ? 1280 : 1600;

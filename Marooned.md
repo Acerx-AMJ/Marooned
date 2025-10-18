@@ -315,6 +315,21 @@ maybe give the staff at level 9. If you have been playing that long, you will fo
 
 -make has staff stay on after you pick it up. How? global var in world. isn't reset by level switch. 
 
+Played for 20 minutes, had 1 bad bug. Where skeleton was invincible. and game breaking bug where level 7 or something didn't have an exit. -moved the staff to a later level, once you pick it up you have it from then on. investigate the freeze bug. 
+
+push then make a secret release. 
+
+Could we make blunderbuss fire make the players light intensity and range get higher for .25 seconds? -Made intenstity and range change for the 0.1f seconds we show the muzzle flash. Triple the range and I actually lower the intensity, because it looked pretty jarring. over time I think I grew to like the effect. 
+
+Had the option to have light leak through closed doors or light stop at closed doors. Chose to let it leak. It only ever looks bad when walking up to a closed door that has a light on the other side. Most of the time you get a cool effect of the light coming through the open door. I check for side colliders on doorways so the light only comes through the middle door part. Let it leak, until you can figure out how to recalculate baked lighting live. 
+
+replaced smoothPath with SmoothWorldPath, where we smooth the world path instead of the tile path. Using the worldLOS checker, this is more reliable than the ray marching and theoretically would make the enemies use diagonals more and not be so rigid looking. In practice it looks about the same. Next try adding diagonal steps to the BFS. 
+
+Finaly switched over to using the depth test and mask to sort the billboards. I was hanging on to my custom billboard sorter just because I put so much work into it, when all I needed to do was add an alpha cutoff shader to all billboards. So I went ahead and did that and it works, and now the T-rex isn't occluding bullets. I thought I might need the custom sorter for blended toward alpha edges on sprites, but I haven't needed semi transparent or blended billboards yet and don't think I will ever need that. We still manualy sort the billboards for no reason. When we put all the billboards into one vector of struct drawRequest. Having all the draws in one vector seems like a good idea, instead of character, fire, web, door, ect all having their own draw function. Although we have the gather function for all those things. I don't really want to go back and dismantel it, maybe there will be a reason to sort the billboards manualy in the future. 
+
+
+
+
 
 
 

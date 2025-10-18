@@ -19,7 +19,7 @@ DungeonEntrance entranceToDungeon3 = {
 //Player Position: X=6294.27 Y=299.216 Z=5515.47
 DungeonEntrance entranceToDungeon4 = {
     {6294, 150, 5515},
-    5, 
+    6, 
 };
 
 DungeonEntrance entranceToDungeon11 = {
@@ -127,7 +127,7 @@ std::vector<LevelData> levels = {
         0, 
         true, //isDungeon is true
         {},
-        5, 
+        5, //skip, was the first dungeon from entrance 2
         6,
         {},
         true,
@@ -143,7 +143,7 @@ std::vector<LevelData> levels = {
         true, //isDungeon is true
         {},
         6, 
-        7,
+        8, //skip dungeon 6/map10/index7
         {}, 
         true, 
     },
