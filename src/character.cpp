@@ -308,13 +308,12 @@ static inline bool StateUsesPath(CharacterState s) {
 void Character::ChangeState(CharacterState next) {
     if (state == next) return;  // no spam
 
-
     // Auto-flush path when transitioning from a path-using state to a non-path state. 
-    bool clearPath = StateUsesPath(state) && !StateUsesPath(next);
+    //bool clearPath = StateUsesPath(state) && !StateUsesPath(next);
     state = next;
     stateTimer = 0.0f;
 
-    if (clearPath) currentWorldPath.clear();
+    //if (clearPath) currentWorldPath.clear(); testing with this off to see if it fixes a bug where skeletons stop chasing and just stand there. 
 
     if (type == CharacterType::Raptor && state == CharacterState::Chase){
         chaseDuration = GetRandomValue(5, 8);

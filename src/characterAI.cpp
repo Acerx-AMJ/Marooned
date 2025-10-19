@@ -354,7 +354,7 @@ void Character::UpdateTrexAI(float deltaTime, Player& player){
             if (distance < FLEE_ENTER) { ChangeState(CharacterState::RunAway); break;}
             if (attackCooldown <= 0.0f && distance < ATTACK_EXIT && canSee){
                 attackCooldown = 3.0f;
-                player.TakeDamage(10);
+                player.TakeDamage(20);
                 SoundManager::GetInstance().Play(GetRandomValue(0, 1) == 0 ? "TrexBite" : "TrexBite2");
                 break;
             }

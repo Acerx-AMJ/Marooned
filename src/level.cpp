@@ -142,7 +142,7 @@ std::vector<LevelData> levels = {
         0, 
         true, //isDungeon is true
         {},
-        6, 
+        6, //start here from entrance 3. 
         8, //skip dungeon 6/map10/index7
         {}, 
         true, 
@@ -218,7 +218,7 @@ std::vector<LevelData> levels = {
         true, //isDungeon is true
         {},
         11, 
-        12,
+        1, //go from portal to river, skip last 2 for demo
         {}, 
         false, 
     },
@@ -233,12 +233,12 @@ std::vector<LevelData> levels = {
         true, //isDungeon is true
         {},
         12, 
-        13, 
+        13, //river 
         {}, 
         false,// ceiling
     },
         {
-        "Dungeon12",
+        "Dungeon12", //skipped
         "assets/heightmaps/blank.png",
         "assets/maps/map17.png",
         {0.0f, 300.0f, 0.0f},

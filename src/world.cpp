@@ -191,6 +191,13 @@ void InitLevel(const LevelData& level, Camera& camera) {
 
 }
 
+void MenuToggleFullScreen(){
+    int mon = GetCurrentMonitor();
+    SetWindowSize(GetMonitorWidth(mon), GetMonitorHeight(mon));
+    // Now go exclusive fullscreen:
+    ToggleFullscreen();   // Alt+Enter does the same at runtime
+}
+
 inline float FadeDt() {
     // Use unpaused time, but cap it to avoid spikes
     float dt = GetFrameTime();               // or your unscaled dt source
@@ -465,8 +472,8 @@ void generateTrex(int amount, Vector3 centerPos, float radius) {
 
         std::cout << "generated T-Rex\n";
         Character Trex(spawnPos, R.GetTexture("trexSheet"), 300, 300, 1, 0.5, 1.0, 0, CharacterType::Trex);
-        Trex.maxHealth = 1000;
-        Trex.currentHealth = 1000;
+        Trex.maxHealth = 2000;
+        Trex.currentHealth = Trex.maxHealth;
         enemies.push_back(Trex);
         enemyPtrs.push_back(&enemies.back()); 
         ++spawned;

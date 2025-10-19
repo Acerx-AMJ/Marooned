@@ -9,11 +9,11 @@
 #include "sound_manager.h"
 
 InputMode currentInputMode = InputMode::KeyboardMouse;
-
+//TODO: add controller support 
 
 void debugControls(Camera& camera, float deltaTime){
 
-    if (IsKeyPressed(KEY_GRAVE)){
+    if (IsKeyPressed(KEY_GRAVE)){ // ~
         debugInfo = !debugInfo;
     }
 
@@ -21,6 +21,8 @@ void debugControls(Camera& camera, float deltaTime){
 
         std::cout << "Player Position: ";
         DebugPrintVector(player.position);
+
+        //Reloading lights live breaks them for what ever reason
         // isLoadingLevel = true;
         // InitDynamicLightmap(dungeonWidth * 4);
         // R.SetLightingShaderValues();

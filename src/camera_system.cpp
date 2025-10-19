@@ -24,14 +24,32 @@ void CameraSystem::Init(const Vector3& startPos) {
     freeRig = playerRig; // start free cam matching player
 }
 
+static inline float YawFromDir(const Vector3& d) {
+    return RAD2DEG * atan2f(d.x, d.z); // x vs z (matches your forward build)
+}
+static inline float PitchFromDir(const Vector3& d) {
+    // safer than asinf(d.y) when d isn't perfectly normalized
+    return RAD2DEG * atan2f(d.y, sqrtf(d.x*d.x + d.z*d.z));
+}
+
 void CameraSystem::SnapAllToPlayer() {
-    Vector3 camPos = {player.position.x, player.position.y, player.position.z};
-    playerRig.cam.position = camPos;
-    freeRig.cam   = playerRig.cam;
-    freeRig.fov   = playerRig.fov;
+    // 1) position/target from the *player camera*, not player entity
+    playerRig.cam.position = playerRig.cam.position; // (no-op, just emphasis)
+    Vector3 pos = playerRig.cam.position;
+    Vector3 dir = Vector3Normalize(Vector3Subtract(playerRig.cam.target, pos));
+
+    // 2) copy camera state
+    freeRig.cam.position = pos;
+    freeRig.cam.target   = Vector3Add(pos, dir);
+    freeRig.fov          = playerRig.fov;
+
+    // 3) copy angles — either from cached playerRig...
     freeRig.yaw   = playerRig.yaw;
     freeRig.pitch = playerRig.pitch;
+
 }
+
+
 
 void CameraSystem::AttachToPlayer(const Vector3& pos, const Vector3& forward) {
     // Simple follow; you can add head-bob/weapon sway offsets here
@@ -89,44 +107,31 @@ inline float SmoothStepExp(float current, float target, float speed, float dt) {
 
 
 void CameraSystem::UpdatePlayerCam(float dt) {
-    // 1) Choose base position (boat vs ground)
     Vector3 basePos = pv.onBoard
         ? Vector3Add(pv.boatPos, Vector3{0, 200.0f, 0})
-        : Vector3Add(pv.position, Vector3{0, 0, 0});
+        : pv.position;
 
-    
-    // default: small lift to keep camera out of the floor
-    float swimYOffset = 0.0f;
+    if (player.isSwimming && !pv.onBoard) basePos.y -= 40.0f;
 
-    // apply dip if swimming *or* over lava
-    if (player.isSwimming) {
-        swimYOffset = -40.0f;
-    }
-
-    if (!pv.onBoard) {
-        basePos.y += swimYOffset;
-    }
-
-    
-
-    // Build forward from player yaw/pitch
     float yawRad   = DEG2RAD * pv.yawDeg;
     float pitchRad = DEG2RAD * pv.pitchDeg;
+
     Vector3 forward = {
         cosf(pitchRad) * sinf(yawRad),
         sinf(pitchRad),
         cosf(pitchRad) * cosf(yawRad)
     };
-    Vector3 target = Vector3Add(basePos, forward);
-
 
     playerRig.cam.position = basePos;
-    playerRig.cam.target   = target;
+    playerRig.cam.target   = Vector3Add(basePos, forward);
 
-    
-    float farClip = isDungeon ? 16000.0f : 50000.0f; 
-    SetFarClip(farClip);
+    // keep the angles cached so other rigs can copy
+    playerRig.yaw   = pv.yawDeg;
+    playerRig.pitch = pv.pitchDeg;
+
+    SetFarClip(isDungeon ? 16000.0f : 50000.0f);
 }
+
 
 void CameraSystem::UpdateFreeCam(float dt) {
     const float speed = (IsKeyDown(KEY_LEFT_SHIFT) ? 1500.f : 900.f);

@@ -333,11 +333,18 @@ void DrawMenu(int selectedOption, int levelIndex) {
                                     levels[levelIndex].name.c_str());
     DrawTextShadowed(levelLine.c_str(), menuX, 330, menuFontSize,
                     YELLOW, menuShadowPx, shadowCol);
+    char fullBuf[32];
+
+    snprintf(fullBuf, sizeof(fullBuf), "%sFullscreen", (selectedOption==2?"> ":"  "));
+    DrawTextShadowed(fullBuf, menuX, 380, menuFontSize,
+                    WHITE, menuShadowPx, shadowCol);
 
     char quitBuf[32];
-    snprintf(quitBuf, sizeof(quitBuf), "%sQuit", (selectedOption==2?"> ":"  "));
-    DrawTextShadowed(quitBuf, menuX, 380, menuFontSize,
+    snprintf(quitBuf, sizeof(quitBuf), "%sQuit", (selectedOption==3?"> ":"  "));
+    DrawTextShadowed(quitBuf, menuX, 430, menuFontSize,
                     WHITE, menuShadowPx, shadowCol);
+
+
 
     float alpha = 1.0f; // 0..1
     if (fade > 0) DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, alpha));
@@ -351,8 +358,8 @@ void UpdateMenu(Camera& camera){
     if (currentGameState == GameState::Menu) {
 
         if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Playing;
-        if (IsKeyPressed(KEY_UP)) selectedOption = (selectedOption - 1 + 3) % 3;
-        if (IsKeyPressed(KEY_DOWN)) selectedOption = (selectedOption + 1) % 3;
+        if (IsKeyPressed(KEY_UP)) selectedOption = (selectedOption - 1 + 4) % 4;
+        if (IsKeyPressed(KEY_DOWN)) selectedOption = (selectedOption + 1) % 4;
 
         if (IsKeyPressed(KEY_ENTER)) {
             if (selectedOption == 0) {
@@ -361,6 +368,8 @@ void UpdateMenu(Camera& camera){
             } else if (selectedOption == 1) {
                 levelIndex = (levelIndex + 1) % levels.size(); // Cycle through levels
             } else if (selectedOption == 2) {
+                MenuToggleFullScreen();
+            } else if (selectedOption == 3) {
                 currentGameState = GameState::Quit;
             }
         }
