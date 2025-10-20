@@ -31,7 +31,7 @@ DungeonEntrance entranceToDungeon11 = {
 
 std::vector<LevelData> levels = {
     {
-        "Middle Island", //display name
+        "(Middle Island)", //display name
         "assets/heightmaps/MiddleIsland.png", //heightmap
         "",//dungeon path
         {0.0f, 300.0f, 0.0f}, //starting position

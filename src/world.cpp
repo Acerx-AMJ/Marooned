@@ -66,6 +66,7 @@ float weaponDarkness = 0.0f;
 bool playerInit = false;
 bool hasStaff = false;
 float fade = 0.0f;
+bool isFullscreen = true;
 FadePhase gFadePhase = FadePhase::Idle;
 
 //std::vector<Bullet> activeBullets;
@@ -191,12 +192,6 @@ void InitLevel(const LevelData& level, Camera& camera) {
 
 }
 
-void MenuToggleFullScreen(){
-    int mon = GetCurrentMonitor();
-    SetWindowSize(GetMonitorWidth(mon), GetMonitorHeight(mon));
-
-    ToggleFullscreen();   
-}
 
 inline float FadeDt() {
     // Use unpaused time, but cap it to avoid spikes

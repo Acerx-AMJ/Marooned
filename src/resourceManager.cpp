@@ -202,7 +202,7 @@ void ResourceManager::LoadAllResources() {
     // R.LoadRenderTexture("postProcessTexture", (int)screenResolution.x,(int) screenResolution.y);
 
     R.LoadFont("Pieces", "assets/fonts/PiecesOfEight.ttf", 128, 1);
-    R.LoadFont("Pirata", "assets/fonts/Pirata.ttf", 128, 1);
+    R.LoadFont("Kingthings", "assets/fonts/KingthingsPetrock.ttf", 128, 1);
 
     //Resources are saved to unordered maps, with a string key. Get a resource by calling R.GetModel("blunderbuss") for example. 
     R.LoadTexture("raptorTexture",    "assets/sprites/raptorSheet.png");

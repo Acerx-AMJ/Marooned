@@ -15,8 +15,6 @@ static HintManager hints;   // one global-ish instance, private to UI.cpp
 void TutorialSetup(){
     if (!first){
         hints.SetMessage("");
-        
-
     }
     else{
         hints.AddHint("WASD TO MOVE");
@@ -31,9 +29,10 @@ void TutorialSetup(){
         //see hintmanager.cpp update tutuorial
         hints.SetAnchor({0.5f, 0.85f});         // bottom-center
         hints.SetMaxWidthFraction(0.7f);        // wrap at 70% of screen width
-        hints.SetFontScale(0.030f);             // ~3% of screen height
+        hints.SetFontScale(0.04f);             // ~3% of screen height
         hints.SetLetterSpacing(5.0f);           // pixels
         hints.SetFadeSpeeds(2.0f, 2.0f);        // fadeIn/fadeOut
+        hints.SetColors(WHITE, Color {0, 0, 0, 0}, BLACK);
 
     }
 
@@ -351,6 +350,7 @@ void DrawMenu(int selectedOption, int levelIndex) {
     float menuFontSizeF = 60.0f;
     float menuSpacing   = 1.0f;
     int   menuShadowPx  = std::max(1, (int)(menuFontSizeF/18.0f));
+    float verticalSpacing = 75.0f;
 
     char startBuf[64];
     snprintf(startBuf, sizeof(startBuf), "%sStart", (selectedOption==0?"> ":"  "));
@@ -361,44 +361,21 @@ void DrawMenu(int selectedOption, int levelIndex) {
                                     (selectedOption==1?">":" "),
                                     levels[levelIndex].name.c_str());
 
-    DrawTextExShadowed(pieces, levelLine, {(float)menuX, 350.0f},
+    DrawTextExShadowed(pieces, levelLine, {(float)menuX, 375},
                     menuFontSizeF, menuSpacing, YELLOW, menuShadowPx, shadowCol);
 
     char fullBuf[64];
-    snprintf(fullBuf, sizeof(fullBuf), "%sFullscreen", (selectedOption==2?"> ":"  "));
-    DrawTextExShadowed(pieces, fullBuf, {(float)menuX, 400.0f},
+    const char* label = "Toggle Fullscreen";//isFullscreen ? "windowed" : "fullscreen";  // what to show
+    snprintf(fullBuf, sizeof(fullBuf), "%s%s",
+            (selectedOption == 2 ? "> " : "  "), label);
+
+    DrawTextExShadowed(pieces, fullBuf, {(float)menuX, 450},
                     menuFontSizeF, menuSpacing, WHITE, menuShadowPx, shadowCol);
 
     char quitBuf[64];
     snprintf(quitBuf, sizeof(quitBuf), "%sQuit", (selectedOption==3?"> ":"  "));
-    DrawTextExShadowed(pieces, quitBuf, {(float)menuX, 450.0f},
+    DrawTextExShadowed(pieces, quitBuf, {(float)menuX, 525.0f},
                     menuFontSizeF, menuSpacing, WHITE, menuShadowPx, shadowCol);
-
-    // int menuFontSize = 30;
-    // int menuShadowPx = std::max(1, menuFontSize/18);
-    // //Color shadowCol = {0,0,0,190};
-
-    // char startBuf[32];
-    // snprintf(startBuf, sizeof(startBuf), "%sStart", (selectedOption==0?"> ":"  "));
-    // DrawTextShadowed(startBuf, menuX, 280, menuFontSize,
-    //                 WHITE, menuShadowPx, shadowCol);
-
-    // std::string levelLine = TextFormat("%s Level: %s",
-    //                                 (selectedOption==1?">":" "),
-    //                                 levels[levelIndex].name.c_str());
-    // DrawTextShadowed(levelLine.c_str(), menuX, 330, menuFontSize,
-    //                 YELLOW, menuShadowPx, shadowCol);
-    // char fullBuf[32];
-
-    // snprintf(fullBuf, sizeof(fullBuf), "%sFullscreen", (selectedOption==2?"> ":"  "));
-    // DrawTextShadowed(fullBuf, menuX, 380, menuFontSize,
-    //                 WHITE, menuShadowPx, shadowCol);
-
-    // char quitBuf[32];
-    // snprintf(quitBuf, sizeof(quitBuf), "%sQuit", (selectedOption==3?"> ":"  "));
-    // DrawTextShadowed(quitBuf, menuX, 430, menuFontSize,
-    //                 WHITE, menuShadowPx, shadowCol);
-
 
 
     float alpha = 1.0f; // 0..1
@@ -426,6 +403,11 @@ void UpdateMenu(Camera& camera){
                 levelIndex = (levelIndex + 1) % levels.size(); // Cycle through levels
             } else if (selectedOption == 2) {
                 ToggleFullscreen();
+                if (!isFullscreen){
+                    isFullscreen = true;
+                }else{
+                    isFullscreen = false;
+                }
 
             } else if (selectedOption == 3) {
                 currentGameState = GameState::Quit;

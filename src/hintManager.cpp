@@ -144,8 +144,8 @@ void HintManager::Draw() const {
     const int sw = GetScreenWidth();
     const int sh = GetScreenHeight();
 
-    Font font = GetFontDefault();
-    const float fontPx = clampf(fontScale * (float)sh, 16.0f, 48.0f);
+    Font font = R.GetFont("Kingthings");//GetFontDefault();
+    const float fontPx = clampf(fontScale * (float)sh, 16.0f, 100.0f);
     //const float spacing = 1.0f;
 
     const float maxWidthPx = std::max(64.0f, maxWidthFrac * (float)sw);
@@ -167,13 +167,17 @@ void HintManager::Draw() const {
     // Text position (top-left inside padding)
     Vector2 pos{ x + paddingPx, y + paddingPx };
 
-    // Draw text with subtle shadow
-    Color shCol = shadowColor; shCol.a = (unsigned char)(shadowColor.a * alpha);
-    Color txCol = textColor;   txCol.a = (unsigned char)(textColor.a * alpha);
+    // Colors with alpha baked in
+    Color shadow = { 0, 0, 0, (unsigned char)(220 * alpha) };        // near-black shadow
+    Color text   = { 255, 255, 255, (unsigned char)(255 * alpha) };  // white (or your UI color)
 
-    Vector2 shadowPos{ pos.x + 2.0f, pos.y + 2.0f };
-    DrawMultilineText(wrapped, font, fontPx, letterSpacing, shadowPos, (float)shCol.a / 255.0f);
-    DrawMultilineText(wrapped, font, fontPx, letterSpacing, pos, (float)txCol.a / 255.0f);
+    // Pixel-snap positions helps avoid bleed:
+    Vector2 shadowPos{ floorf(pos.x + 2.0f), floorf(pos.y + 2.0f) };
+    Vector2 textPos  { floorf(pos.x),        floorf(pos.y)        };
+
+    // Draw shadow, then text
+    DrawMultilineText(wrapped, font, floorf(fontPx), floorf(letterSpacing), shadowPos, shadow, 1.15f);
+    DrawMultilineText(wrapped, font, floorf(fontPx), floorf(letterSpacing), textPos,   text,   1.15f);
 }
 
 bool HintManager::HasActiveHint() const {
@@ -267,15 +271,15 @@ Vector2 HintManager::MeasureMultiline(const std::string& text, Font font, float 
     return { maxW, totalH };
 }
 
-void HintManager::DrawMultilineText(const std::string& text, Font font, float fontSize, float spacing, Vector2 pos, float alphaScale) const {
+void HintManager::DrawMultilineText(const std::string& text, Font font, float fontSize, float spacing, Vector2 pos, Color tint, float alphaScale) const {
     std::istringstream ss(text);
     std::string line;
     float y = pos.y;
     const float lineGap = fontSize * 0.25f;
 
-    // Derive colors once based on intended textColor/shadowColor alpha already applied by caller.
-    Color col = textColor;
-    col.a = (unsigned char)(col.a * alphaScale);
+    //texColor no longer used. pass the colors when you call this function
+    Color col = tint;
+    //col.a = (unsigned char)(col.a * alphaScale); // no alpha, just white text and black shadow. 
 
     while (std::getline(ss, line)) {
         DrawTextEx(font, line.c_str(), { pos.x, y }, fontSize, spacing, col);

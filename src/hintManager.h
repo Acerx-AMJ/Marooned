@@ -66,5 +66,5 @@ private:
     // Helpers
     std::string WrapText(const std::string& text, Font font, float fontSize, float spacing, float maxWidth) const;
     Vector2 MeasureMultiline(const std::string& text, Font font, float fontSize, float spacing) const;
-    void DrawMultilineText(const std::string& text, Font font, float fontSize, float spacing, Vector2 pos, float alpha) const;
+    void DrawMultilineText(const std::string& text, Font font, float fontSize, float spacing, Vector2 pos, Color tint, float alpha) const;
 };

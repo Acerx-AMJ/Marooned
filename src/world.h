@@ -75,6 +75,7 @@ extern float fade;
 extern bool hasStaff;
 extern bool drawCeiling;
 extern bool levelLoaded;
+extern bool isFullscreen;
 //extern float muzzleFlashTimer;
 
 extern GameState currentGameState;
@@ -118,7 +119,7 @@ void DrawBloodParticles(Camera& camera);
 void DrawOverworldProps();
 Vector3 ResolveSpawnPoint(const LevelData& level, bool isDungeon, bool first, float floorHeight);
 float GetHeightAtWorldPosition(Vector3 position, Image& heightmap, Vector3 terrainScale);
-void MenuToggleFullScreen();
+
 void UpdateWorldFrame(float dt, Player& player);
 void StartFadeOutToLevel(int levelIndex);
 void StartFadeInFromBlack(); 
