@@ -9,6 +9,7 @@
 #include "utilities.h"
 #include "camera_system.h"
 
+
 static HintManager hints;   // one global-ish instance, private to UI.cpp
 
 void TutorialSetup(){
@@ -274,17 +275,37 @@ static Rectangle FitTextureDest(const Texture2D& tex, int screenW, int screenH, 
 }
 
 
-inline void DrawTextShadowed(const char* text, int x, int y, int fontSize,
-                             Color color,
-                             int shadowPx = -1,
-                             Color shadowCol = {0,0,0,190})
+// inline void DrawTextShadowed(const char* text, int x, int y, int fontSize,
+//                              Color color,
+//                              int shadowPx = -1,
+//                              Color shadowCol = {0,0,0,190})
+// {
+//     if (shadowPx < 0) shadowPx = std::max(1, fontSize/18); // scale with size
+//     DrawText(text, x + shadowPx, y + shadowPx, fontSize, shadowCol); // shadow
+//     DrawText(text, x,            y,            fontSize, color);     // main
+// }
+
+inline void DrawTextExShadowed(Font font,
+                               const char* text,
+                               Vector2 pos,
+                               float fontSize,
+                               float spacing,
+                               Color color,
+                               int shadowPx = -1,
+                               Color shadowCol = {0,0,0,190})
 {
-    if (shadowPx < 0) shadowPx = std::max(1, fontSize/18); // scale with size
-    DrawText(text, x + shadowPx, y + shadowPx, fontSize, shadowCol); // shadow
-    DrawText(text, x,            y,            fontSize, color);     // main
+    if (shadowPx < 0) shadowPx = std::max(1, (int)std::round(fontSize/18.0f));
+    Vector2 sh = { (float)shadowPx, (float)shadowPx };
+    DrawTextEx(font, text, {pos.x + sh.x, pos.y + sh.y}, fontSize, spacing, shadowCol);
+    DrawTextEx(font, text, pos,                           fontSize, spacing, color);
 }
 
-
+inline void DrawTextExShadowed(Font font, const std::string& s, Vector2 pos,
+                               float fontSize, float spacing, Color color,
+                               int shadowPx = -1, Color shadowCol = {0,0,0,190})
+{
+    DrawTextExShadowed(font, s.c_str(), pos, fontSize, spacing, color, shadowPx, shadowCol);
+}
 
 void DrawMenu(int selectedOption, int levelIndex) {
 
@@ -297,52 +318,86 @@ void DrawMenu(int selectedOption, int levelIndex) {
     Rectangle src  = { 0, 0, (float)backDrop.width, (float)backDrop.height };
     Rectangle dest = FitTextureDest(backDrop, GetScreenWidth(), GetScreenHeight(), cover);
 
-
-
     if (fade <= 0) DrawTexturePro(backDrop, src, dest, Vector2{0,0}, 0.0f, WHITE);
 
     const char* title = "MAROONED";
-
- 
-    int fontSize = 80;
+    int fontSize = 128;
 
     // center X
     int titleX = GetScreenWidth()/2 - MeasureText(title, fontSize)/2;
-    int titleY = 180;
-    int menuX = titleX + 128;
+    int titleY = 128;
+    int menuX = titleX+100;
     // shadow settings
     int shadowPx = std::max(1, fontSize/18);          // scales with size (≈3–4 px here)
     Color shadowCol = {0, 0, 0, 180};                 // semi-transparent black
 
+    auto& pieces = R.GetFont("Pieces"); 
+  
+
     // draw shadow, then title
-    DrawText(title, titleX + shadowPx, titleY + shadowPx, fontSize, shadowCol);
-    DrawText(title, titleX,             titleY,             fontSize, GREEN);
+    DrawTextEx(pieces, title, Vector2 {(float)titleX+ shadowPx, (float)titleY+shadowPx}, fontSize, 1.0f, shadowCol);
+    DrawTextEx(pieces, title, Vector2 {(float)titleX, (float)titleY}, fontSize, 1.0f, GREEN);
+    
 
-    int menuFontSize = 30;
- 
-    int menuShadowPx = std::max(1, menuFontSize/18);
-    //Color shadowCol = {0,0,0,190};
+    // --- Title ---
+    float titleFontSize = (float)fontSize;       // your computed size
+    float titleSpacing  = 0.5f;                  // tweak if you want looser kerning
+    DrawTextExShadowed(pieces, title,
+                    {(float)titleX, (float)titleY},
+                    titleFontSize, titleSpacing, GREEN,
+                    shadowPx, shadowCol);
 
-    char startBuf[32];
+    // --- Menu items ---
+    float menuFontSizeF = 60.0f;
+    float menuSpacing   = 1.0f;
+    int   menuShadowPx  = std::max(1, (int)(menuFontSizeF/18.0f));
+
+    char startBuf[64];
     snprintf(startBuf, sizeof(startBuf), "%sStart", (selectedOption==0?"> ":"  "));
-    DrawTextShadowed(startBuf, menuX, 280, menuFontSize,
-                    WHITE, menuShadowPx, shadowCol);
+    DrawTextExShadowed(pieces, startBuf, {(float)menuX, 300.0f},
+                    menuFontSizeF, menuSpacing, WHITE, menuShadowPx, shadowCol);
 
     std::string levelLine = TextFormat("%s Level: %s",
                                     (selectedOption==1?">":" "),
                                     levels[levelIndex].name.c_str());
-    DrawTextShadowed(levelLine.c_str(), menuX, 330, menuFontSize,
-                    YELLOW, menuShadowPx, shadowCol);
-    char fullBuf[32];
 
+    DrawTextExShadowed(pieces, levelLine, {(float)menuX, 350.0f},
+                    menuFontSizeF, menuSpacing, YELLOW, menuShadowPx, shadowCol);
+
+    char fullBuf[64];
     snprintf(fullBuf, sizeof(fullBuf), "%sFullscreen", (selectedOption==2?"> ":"  "));
-    DrawTextShadowed(fullBuf, menuX, 380, menuFontSize,
-                    WHITE, menuShadowPx, shadowCol);
+    DrawTextExShadowed(pieces, fullBuf, {(float)menuX, 400.0f},
+                    menuFontSizeF, menuSpacing, WHITE, menuShadowPx, shadowCol);
 
-    char quitBuf[32];
+    char quitBuf[64];
     snprintf(quitBuf, sizeof(quitBuf), "%sQuit", (selectedOption==3?"> ":"  "));
-    DrawTextShadowed(quitBuf, menuX, 430, menuFontSize,
-                    WHITE, menuShadowPx, shadowCol);
+    DrawTextExShadowed(pieces, quitBuf, {(float)menuX, 450.0f},
+                    menuFontSizeF, menuSpacing, WHITE, menuShadowPx, shadowCol);
+
+    // int menuFontSize = 30;
+    // int menuShadowPx = std::max(1, menuFontSize/18);
+    // //Color shadowCol = {0,0,0,190};
+
+    // char startBuf[32];
+    // snprintf(startBuf, sizeof(startBuf), "%sStart", (selectedOption==0?"> ":"  "));
+    // DrawTextShadowed(startBuf, menuX, 280, menuFontSize,
+    //                 WHITE, menuShadowPx, shadowCol);
+
+    // std::string levelLine = TextFormat("%s Level: %s",
+    //                                 (selectedOption==1?">":" "),
+    //                                 levels[levelIndex].name.c_str());
+    // DrawTextShadowed(levelLine.c_str(), menuX, 330, menuFontSize,
+    //                 YELLOW, menuShadowPx, shadowCol);
+    // char fullBuf[32];
+
+    // snprintf(fullBuf, sizeof(fullBuf), "%sFullscreen", (selectedOption==2?"> ":"  "));
+    // DrawTextShadowed(fullBuf, menuX, 380, menuFontSize,
+    //                 WHITE, menuShadowPx, shadowCol);
+
+    // char quitBuf[32];
+    // snprintf(quitBuf, sizeof(quitBuf), "%sQuit", (selectedOption==3?"> ":"  "));
+    // DrawTextShadowed(quitBuf, menuX, 430, menuFontSize,
+    //                 WHITE, menuShadowPx, shadowCol);
 
 
 
@@ -355,20 +410,23 @@ void DrawMenu(int selectedOption, int levelIndex) {
 
 void UpdateMenu(Camera& camera){
     //Main Menu - level select 
+    int optionsCount = 4;
     if (currentGameState == GameState::Menu) {
 
-        if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Playing;
-        if (IsKeyPressed(KEY_UP)) selectedOption = (selectedOption - 1 + 4) % 4;
-        if (IsKeyPressed(KEY_DOWN)) selectedOption = (selectedOption + 1) % 4;
+        if (IsKeyPressed(KEY_ESCAPE) && levelLoaded) currentGameState = GameState::Playing;
+        if (IsKeyPressed(KEY_UP)) selectedOption = (selectedOption - 1 + optionsCount) % optionsCount; //loop
+        if (IsKeyPressed(KEY_DOWN)) selectedOption = (selectedOption + 1) % optionsCount;
 
         if (IsKeyPressed(KEY_ENTER)) {
             if (selectedOption == 0) {
                 InitLevel(levels[levelIndex], camera);
                 currentGameState = GameState::Playing;
+                levelLoaded = true;
             } else if (selectedOption == 1) {
                 levelIndex = (levelIndex + 1) % levels.size(); // Cycle through levels
             } else if (selectedOption == 2) {
-                MenuToggleFullScreen();
+                ToggleFullscreen();
+
             } else if (selectedOption == 3) {
                 currentGameState = GameState::Quit;
             }

@@ -14,19 +14,19 @@
 #include "hintManager.h"
 
 
+
 bool squareRes = false; // set true for 1280x1024, false for widescreen
 
 
 int main() { 
-    int screenWidth = squareRes ? 1280 : 1920;
-    int screenHeight = squareRes ? 1024 : 1080;
+    int screenWidth = squareRes ? 1280 : 1600;
+    int screenHeight = squareRes ? 1024 : 900;
 
     drawCeiling = true; //debug no ceiling mode. drawCeiling is set by levelData so we can have some dungeons with and without ceilings. 
 
     InitWindow(screenWidth, screenHeight, "Marooned");
+    SetWindowState(FLAG_WINDOW_RESIZABLE);
 
-
-    MenuToggleFullScreen();
     InitAudioDevice();
     SetTargetFPS(60);
     DisableCursor();
@@ -85,7 +85,7 @@ int main() {
             continue; // skip the rest of the game loop
         }
 
-        if (IsKeyPressed(KEY_ESCAPE)) currentGameState = GameState::Menu;
+        if (IsKeyPressed(KEY_ESCAPE) && currentGameState != GameState::Menu) currentGameState = GameState::Menu;
         UpdateMusicStream(SoundManager::GetInstance().GetMusic(isDungeon ? "dungeonAir" : "jungleAmbience"));
 
         //update context

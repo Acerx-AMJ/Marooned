@@ -82,18 +82,32 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
 
     // --- post to postProcessTexture ---
     BeginTextureMode(R.GetRenderTexture("postProcessTexture"));
+    {
         BeginShaderMode(R.GetShader("fogShader"));
-            DrawTextureRec(R.GetRenderTexture("sceneTexture").texture,
-                {0,0,(float)GetScreenWidth(),-(float)GetScreenHeight()}, {0,0}, WHITE);
+            auto& sceneRT = R.GetRenderTexture("sceneTexture");
+            Rectangle src = { 0, 0,
+                            (float)sceneRT.texture.width,
+                            -(float)sceneRT.texture.height }; // flip Y!
+            Rectangle dst = { 0, 0,
+                            (float)GetScreenWidth(),
+                            (float)GetScreenHeight() };
+            DrawTexturePro(sceneRT.texture, src, dst, {0,0}, 0.0f, WHITE);
         EndShaderMode();
+    }
     EndTextureMode();
 
     // --- final to backbuffer + UI ---
     BeginDrawing();
         ClearBackground(WHITE);
         BeginShaderMode(R.GetShader("bloomShader"));
-            DrawTextureRec(R.GetRenderTexture("postProcessTexture").texture,
-                {0,0,(float)GetScreenWidth(),-(float)GetScreenHeight()}, {0,0}, WHITE);
+            auto& postRT = R.GetRenderTexture("postProcessTexture");
+            Rectangle src = { 0, 0,
+                            (float)postRT.texture.width,
+                            -(float)postRT.texture.height }; // flip Y!
+            Rectangle dst = { 0, 0,
+                            (float)GetScreenWidth(),
+                            (float)GetScreenHeight() };
+            DrawTexturePro(postRT.texture, src, dst, {0,0}, 0.0f, WHITE);
         EndShaderMode();
 
         

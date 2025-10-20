@@ -70,6 +70,7 @@ Model& ResourceManager::LoadModel(const std::string& name, const std::string& pa
     _models.emplace(name, m);
     return _models[name];
 }
+
 Model& ResourceManager::LoadModelFromMesh(const std::string& name, const Mesh& mesh) {
     auto it = _models.find(name);
     if (it != _models.end()) return it->second;
@@ -111,12 +112,97 @@ RenderTexture2D& ResourceManager::GetRenderTexture(const std::string& name) cons
     return const_cast<RenderTexture2D&>(it->second);
 }
 
+Font& ResourceManager::LoadFont(const std::string& name,const std::string& path, int baseSize, int filter)
+{
+    auto it = _fonts.find(name);
+    if (it != _fonts.end()) return it->second;
+
+    // Load with control over bake size (crisp at large sizes)
+    Font f = LoadFontEx(path.c_str(), baseSize, nullptr, 0);
+
+    // Optional safety: fall back to default font if something failed
+    if (f.texture.id == 0) {
+        TraceLog(LOG_WARNING, "LoadFontEx failed for %s, using default font.", path.c_str());
+        f = GetFontDefault();
+    } else {
+        // Choose smoothing/pixel look
+        SetTextureFilter(f.texture, filter);
+    }
+
+    _fonts.emplace(name, f);
+    return _fonts[name];
+}
+
+Font& ResourceManager::GetFont(const std::string& name)
+{
+    auto it = _fonts.find(name);
+    if (it == _fonts.end()) {
+        TraceLog(LOG_WARNING, "GetFont: '%s' not found, returning default font.", name.c_str());
+        static Font fallback = GetFontDefault(); // static to keep ref valid
+        return fallback;
+    }
+    return it->second;
+}
+
+void ResourceManager::UnloadAllFonts()
+{
+    for (auto& kv : _fonts) {
+        // Don't unload default font (raylib manages it)
+        if (kv.second.texture.id != GetFontDefault().texture.id) {
+            UnloadFont(kv.second);
+        }
+    }
+    _fonts.clear();
+}
+
+// ResourceManager.cpp (example)
+static int gLastW = -1, gLastH = -1;
+
+void ResourceManager::EnsureScreenSizedRTs() {
+    int w = GetScreenWidth(), h = GetScreenHeight();
+    if (w == gLastW && h == gLastH) return;
+
+    // Recreate sceneTexture
+    if (_renderTextures.count("sceneTexture")) {
+        UnloadRenderTexture(_renderTextures["sceneTexture"]);
+    }
+    _renderTextures["sceneTexture"] = LoadRenderTexture("sceneTexture", w, h);
+    SetTextureWrap(_renderTextures["sceneTexture"].texture, TEXTURE_WRAP_CLAMP);
+
+    // Recreate postProcessTexture
+    if (_renderTextures.count("postProcessTexture")) {
+        UnloadRenderTexture(_renderTextures["postProcessTexture"]);
+    }
+    _renderTextures["postProcessTexture"] = LoadRenderTexture("postProcessTexture", w, h);
+    SetTextureWrap(_renderTextures["postProcessTexture"].texture, TEXTURE_WRAP_CLAMP);
+
+    gLastW = w; gLastH = h;
+}
+
+
+
 void ResourceManager::LoadAllResources() {
     Vector2 screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
     //render textures
-    R.LoadRenderTexture("sceneTexture", (int)screenResolution.x, (int)screenResolution.y);
-    R.LoadRenderTexture("postProcessTexture", (int)screenResolution.x,(int) screenResolution.y);
+    // ResourceManager init once
+    auto& scene = R.LoadRenderTexture("sceneTexture", 1600, 900);
+    SetTextureFilter(scene.texture, TEXTURE_FILTER_BILINEAR);
+    SetTextureWrap(scene.texture, TEXTURE_WRAP_CLAMP);
 
+    auto& post = R.LoadRenderTexture("postProcessTexture", 1600, 900);
+    SetTextureFilter(post.texture, TEXTURE_FILTER_BILINEAR);
+    SetTextureWrap(post.texture, TEXTURE_WRAP_CLAMP);
+
+    SetTextureWrap(R.GetRenderTexture("sceneTexture").texture, TEXTURE_WRAP_CLAMP);
+    SetTextureWrap(R.GetRenderTexture("postProcessTexture").texture, TEXTURE_WRAP_CLAMP);
+
+
+
+    // R.LoadRenderTexture("sceneTexture", (int)screenResolution.x, (int)screenResolution.y);
+    // R.LoadRenderTexture("postProcessTexture", (int)screenResolution.x,(int) screenResolution.y);
+
+    R.LoadFont("Pieces", "assets/fonts/PiecesOfEight.ttf", 128, 1);
+    R.LoadFont("Pirata", "assets/fonts/Pirata.ttf", 128, 1);
 
     //Resources are saved to unordered maps, with a string key. Get a resource by calling R.GetModel("blunderbuss") for example. 
     R.LoadTexture("raptorTexture",    "assets/sprites/raptorSheet.png");
@@ -194,6 +280,8 @@ void ResourceManager::LoadAllResources() {
     R.LoadShader("lavaShader",    "assets/shaders/lava_world.vs",        "assets/shaders/lava_world.fs");
     R.LoadShader("treeShader", "assets/shaders/treeShader.vs",           "assets/shaders/treeShader.fs");
     R.LoadShader("portalShader", "assets/shaders/portal.vs",             "assets/shaders/portal.fs");
+
+
 }
 
 
@@ -653,6 +741,7 @@ void ResourceManager::UnloadAll() {
     UnloadContainer(_models,          ::UnloadModel);
     UnloadContainer(_shaders,         ::UnloadShader);
     UnloadContainer(_renderTextures,  ::UnloadRenderTexture);
+    UnloadAllFonts();
     if (_fallbackTex.id) { UnloadTexture(_fallbackTex); _fallbackTex = {}; }
     _fallbackReady = false;
 }

@@ -26,7 +26,6 @@ Mesh terrainMesh;
 Vector3 terrainScale = {16000.0f, 200.0f, 16000.0f}; //very large x and z, 
 
 TreeShadowMask gTreeShadowMask;
-
 int levelIndex = 0; //current level, levels[levelIndex]
 int previousLevelIndex = 0;
 bool first = true; //for first player start position
@@ -41,6 +40,7 @@ Vector3 waterPos = {0, 0, 0};
 int pendingLevelIndex = -1; //wait to switch level until faded out. UpdateFade() needs to know the next level index. 
 bool unlockEntrances = false; // unlock entrances after levelindex 4
 bool drawCeiling = true;
+bool levelLoaded = false;
 float waterHeightY = 60;
 Vector3 bottomPos = {0, waterHeightY - 100, 0};
 float dungeonPlayerHeight = 100;
@@ -194,8 +194,8 @@ void InitLevel(const LevelData& level, Camera& camera) {
 void MenuToggleFullScreen(){
     int mon = GetCurrentMonitor();
     SetWindowSize(GetMonitorWidth(mon), GetMonitorHeight(mon));
-    // Now go exclusive fullscreen:
-    ToggleFullscreen();   // Alt+Enter does the same at runtime
+
+    ToggleFullscreen();   
 }
 
 inline float FadeDt() {
@@ -205,7 +205,7 @@ inline float FadeDt() {
     return dt;
 }
 
-
+// fix me, put some where more sane. 
 static float fadeValue = 0.0;   // 0 = clear, 1 = black
 //static float fadeSpeed = 1.5f;    // tweak to taste
 static int   queuedLevel = -1;

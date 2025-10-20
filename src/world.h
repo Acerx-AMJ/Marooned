@@ -73,10 +73,11 @@ extern bool unlockEntrances;
 extern bool playerInit;
 extern float fade;
 extern bool hasStaff;
+extern bool drawCeiling;
+extern bool levelLoaded;
 //extern float muzzleFlashTimer;
 
 extern GameState currentGameState;
-
 extern FadePhase gFadePhase;
 
 extern TreeShadowMask gTreeShadowMask;

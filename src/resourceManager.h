@@ -26,7 +26,16 @@ public:
     RenderTexture2D& LoadRenderTexture(const std::string& name, int width, int height);
     RenderTexture2D& GetRenderTexture(const std::string& name) const;
 
-    //should these be ResourceManager::LoadAllResources ect..? functions are not part of the class. 
+    Font& LoadFont(const std::string& name,
+                   const std::string& path,
+                   int baseSize = 128,
+                   int filter = TEXTURE_FILTER_BILINEAR);
+
+    // Optional: access by name without loading
+    Font& GetFont(const std::string& name);
+
+    // Optional: cleanup helpers
+    void UnloadAllFonts();
     void LoadAllResources();
     void UpdateShaders(Camera& camera);
     void SetBloomShaderValues();
@@ -35,6 +44,7 @@ public:
     void SetTerrainShaderValues();
     void SetPortalShaderValues();
     void SetShaderValues();
+    void EnsureScreenSizedRTs();
 
 
     // Clean-up
@@ -57,6 +67,7 @@ private:
     std::unordered_map<std::string, Model>          _models;
     std::unordered_map<std::string, Shader>         _shaders;
     std::unordered_map<std::string, RenderTexture2D> _renderTextures;
+    std::unordered_map<std::string, Font> _fonts;
 
     // Fallback texture (not in the map); 'mutable' so const GetTexture can lazy-init it
     mutable Texture2D _fallbackTex{};
