@@ -7,6 +7,7 @@ std::vector<PropSpawn> overworldProps;
 DungeonEntrance entranceToDungeon1 = {
     {0, 200, 0}, // position
     2, // linkedLevelIndex
+    false, //islocked
 };
 
 
@@ -14,17 +15,20 @@ DungeonEntrance entranceToDungeon1 = {
 DungeonEntrance entranceToDungeon3 = {
     {-5653, 150, 6073}, 
     4,
+    true
 };
 
 //Player Position: X=6294.27 Y=299.216 Z=5515.47
 DungeonEntrance entranceToDungeon4 = {
     {6294, 150, 5515},
-    6, 
+    6,
+    true
 };
 
 DungeonEntrance entranceToDungeon11 = {
     {6294, 150, 5515},
-    10, 
+    10,
+    false 
 
 };
 

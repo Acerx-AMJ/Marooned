@@ -361,20 +361,20 @@ void DrawMenu(int selectedOption, int levelIndex) {
                                     (selectedOption==1?">":" "),
                                     levels[levelIndex].name.c_str());
 
-    DrawTextExShadowed(pieces, levelLine, {(float)menuX, 375},
+    DrawTextExShadowed(pieces, levelLine, {(float)menuX, 360.0f},
                     menuFontSizeF, menuSpacing, YELLOW, menuShadowPx, shadowCol);
 
     char fullBuf[64];
-    const char* label = "Toggle Fullscreen";//isFullscreen ? "windowed" : "fullscreen";  // what to show
+    const char* label = "Toggle Fullscreen";//isFullscreen ? "windowed" : "fullscreen";  
     snprintf(fullBuf, sizeof(fullBuf), "%s%s",
             (selectedOption == 2 ? "> " : "  "), label);
 
-    DrawTextExShadowed(pieces, fullBuf, {(float)menuX, 450},
+    DrawTextExShadowed(pieces, fullBuf, {(float)menuX, 420.0f},
                     menuFontSizeF, menuSpacing, WHITE, menuShadowPx, shadowCol);
 
     char quitBuf[64];
     snprintf(quitBuf, sizeof(quitBuf), "%sQuit", (selectedOption==3?"> ":"  "));
-    DrawTextExShadowed(pieces, quitBuf, {(float)menuX, 525.0f},
+    DrawTextExShadowed(pieces, quitBuf, {(float)menuX, 480.0f},
                     menuFontSizeF, menuSpacing, WHITE, menuShadowPx, shadowCol);
 
 

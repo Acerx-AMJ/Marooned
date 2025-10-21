@@ -328,6 +328,27 @@ replaced smoothPath with SmoothWorldPath, where we smooth the world path instead
 Finaly switched over to using the depth test and mask to sort the billboards. I was hanging on to my custom billboard sorter just because I put so much work into it, when all I needed to do was add an alpha cutoff shader to all billboards. So I went ahead and did that and it works, and now the T-rex isn't occluding bullets. I thought I might need the custom sorter for blended toward alpha edges on sprites, but I haven't needed semi transparent or blended billboards yet and don't think I will ever need that. We still manualy sort the billboards for no reason. When we put all the billboards into one vector of struct drawRequest. Having all the draws in one vector seems like a good idea, instead of character, fire, web, door, ect all having their own draw function. Although we have the gather function for all those things. I don't really want to go back and dismantel it, maybe there will be a reason to sort the billboards manualy in the future. 
 
 
+14 days, it's basically done. There is even a boss. Take out some levels? Maybe skip some levels. Like level 3 could jump to 5. Make like a story board or something, and reorder things. 
+
+it goes: 2,3,4, 0, 6, 8, 9, 10, 11, 12, 13, exit to river (1) 
+-should we exit after level 10 and make another entrance for the last 3? I think there is an island that doesn't have an entrance - for the demo keep it as is. The user would have to do more exploration to find the last door, and we don't explain anything. 
+
+maybe make an entrance on the last little island, it starts locked, but once you have completed say level 6, it turns into a portal door that leads to river boss level. 
+
+Play through the whole thing again and time it. -27 minute speed run. No game breaking bugs, oh one where I reentered dungeon 3, the entrance is suppose to be locked upon exiting dungeon 3. entrance 2 should remain locked at all times, wonder how that happended. Level 13 is super baren of enemies, it's an ok level but I just skip it, the portal on dungeon12 leads to river level with t-rex. maybe skip dungeon 12 as well? mmm yeah mmm no, it's set up with a portal already. It's kind of a shitty level because you are just randomly opening doors to little rooms until you find the right one. placing a portal is as easy as changing the color on the png map. Portals are just differently colored next level doors. -changed last dungeon to be lava level. skiping 12 13, these levels are still available from the menu. 
+
+1. give t-rex more health
+2. lock entrance 2. 
+3. push
+4. make release. 
+
+Make resolution changable from main menu. -Resolution start fullscreen for whatever monitor. By simply using raylibs ToggleFullscreen() which makes it borderless window fullscreen automatically. When you select the fullscreen toggle from the menu, it drops out of full screep to 1600x900 window. Maybe the menu button should read windowed and when you toggle it, it would read fullscreen. It reads "Toggle Fullscreen" at all times now. The word toggle works for both situations. 
+
+Added Kingthing font for tutorial text, had to redo the shadows to properly show. Looks better IMO, maybe the text could be bigger. 
+
+-redo the art using ImgToImg. Generate a idle pose and use imgtoimg to make other poses. can only do one image a day. better make them count. 
+
+
 
 
 

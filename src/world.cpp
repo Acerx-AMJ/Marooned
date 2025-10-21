@@ -401,11 +401,8 @@ void GenerateEntrances() {
         d.rotationY = 0.0f;
         d.doorTexture = R.GetTexture("doorTexture");
         d.isOpen = false;
-        if (i == 0) d.isLocked = false; //entrance 1 remains unlocked
-        if (i == 1) d.isLocked = true; //entrance 2 is an exit from dungeon 3, it remains locked. 
-        if (i == 2) d.isLocked = !unlockEntrances; // entrance 3 is unlocked after dungeon 3. 
-
-
+        d.isLocked = e.isLocked;
+        if (i == 2) d.isLocked = !unlockEntrances;
 
         d.scale = {300, 365, 1};
         d.tint = WHITE;
@@ -422,10 +419,12 @@ void GenerateEntrances() {
         dw.position = e.position;
         dw.rotationY = 90.0f * DEG2RAD;
         dw.isOpen = false;
-        dw.isLocked = (i > 0);
+        //dw.isLocked = d.isLocked;
         dw.tint = WHITE;
         doorways.push_back(dw);
     }
+
+
 }
 
 

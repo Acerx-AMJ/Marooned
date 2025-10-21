@@ -17,8 +17,7 @@ struct PropSpawn {
 struct DungeonEntrance {
     Vector3 position;
     int linkedLevelIndex;
-    bool isTriggered = false;
-
+    bool isLocked = false;
 
 };
 
