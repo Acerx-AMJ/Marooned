@@ -92,6 +92,13 @@ public:
     //BoundingBox collider;
     int maxHealth = 150;
     int currentHealth = maxHealth;
+
+    bool   isLeaving = false;          // choose "walk away" row vs "walk toward"
+    float  prevDistToPlayer = -1.0f;   // for distance trend fallback
+    Vector3 prevPos = {0,0,0};         // to compute velocity
+    int    approachStreak = 0;         // hysteresis counters
+    int    leaveStreak    = 0;
+
     CharacterType type;
 
     std::vector<Vector2> currentPath;
@@ -125,5 +132,9 @@ public:
     void UpdateRunaway(float deltaTime);
     void UpdateChase(float deltaTime);
     void UpdateTrexStepSFX(float dt);
+
+    AnimDesc GetAnimFor(CharacterType type, CharacterState state);
+
+    void UpdateLeavingFlag(const Vector3& playerPos);
 };
 

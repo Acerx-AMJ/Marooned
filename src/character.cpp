@@ -184,7 +184,61 @@ void Character::Update(float deltaTime, Player& player ) {
 
 }
 
-static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
+// Show the character's back when moving away
+static inline Vector3 XZ(const Vector3& v){ return {v.x, 0.0f, v.z}; }
+static inline float   DotXZ(const Vector3& a, const Vector3& b){ return a.x*b.x + a.z*b.z; }
+static inline float   LenSqXZ(const Vector3& v){ return v.x*v.x + v.z*v.z; }
+
+void Character::UpdateLeavingFlag(const Vector3& playerPos)
+{
+    // Tunables
+    constexpr float MIN_MOVE_EPS_SQ   = 1.0f; // how much squared motion counts as "moving" (units^2 per tick)
+    constexpr int   STREAK_TO_FLIP    = 5;    // require N consistent frames to flip
+    constexpr float DIST_EPS          = 1.0f; // tiny epsilon to ignore micro distance jitter
+
+    // Current vectors (XZ plane)
+    Vector3 toPlayer   = XZ( Vector3Subtract(playerPos, this->position) );
+    Vector3 deltaMove  = XZ( Vector3Subtract(this->position, this->prevPos) );
+
+    bool decisionMade = false;
+
+    // 1) Prefer velocity-based decision if we actually moved
+    if (LenSqXZ(deltaMove) > MIN_MOVE_EPS_SQ && LenSqXZ(toPlayer) > 0.0001f)
+    {
+        // If movement has a positive dot toward the player → approaching; negative → leaving
+        const float d = DotXZ(deltaMove, toPlayer);
+        if (d > 0.0f) {        // moving toward player
+            approachStreak++;  leaveStreak = 0;
+            if (approachStreak >= STREAK_TO_FLIP) { isLeaving = false; decisionMade = true; }
+        } else if (d < 0.0f) { // moving away from player
+            leaveStreak++;     approachStreak = 0;
+            if (leaveStreak >= STREAK_TO_FLIP)  { isLeaving = true;  decisionMade = true; }
+        }
+    }
+
+    // 2) Fallback: if barely moving, use distance trend (prevents flicker at path corners)
+    if (!decisionMade)
+    {
+        float curDist = sqrtf(LenSqXZ(toPlayer));
+        if (prevDistToPlayer >= 0.0f)
+        {
+            float delta = curDist - prevDistToPlayer;
+            if (delta > DIST_EPS) { // getting farther
+                leaveStreak++;     approachStreak = 0;
+                if (leaveStreak >= STREAK_TO_FLIP)  isLeaving = true;
+            } else if (delta < -DIST_EPS) { // getting closer
+                approachStreak++;  leaveStreak = 0;
+                if (approachStreak >= STREAK_TO_FLIP) isLeaving = false;
+            }
+        }
+        prevDistToPlayer = curDist;
+    }
+
+    // Bookkeeping
+    prevPos = this->position;
+}
+
+AnimDesc Character::GetAnimFor(CharacterType type, CharacterState state) {
     switch (type) {
         case CharacterType::Trex:
             switch (state) {
@@ -207,12 +261,19 @@ static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
             switch (state) {
 
                 case CharacterState::Chase:
-                case CharacterState::Patrol:
+                
                 case CharacterState::Reposition:
                 case CharacterState::Orbit: 
                     return AnimDesc{1, 5, 0.12f, true}; // walk
+
                 
-                case CharacterState::RunAway: return {3, 4, 0.1f, true};
+                case CharacterState::RunAway:
+                case CharacterState::Patrol:
+                    if (isLeaving){
+                        return AnimDesc {3, 4, 0.12f, true};
+                    }else{
+                        return AnimDesc{1, 5, 0.12f, true}; // walk
+                    }
                 case CharacterState::Freeze: return {0, 1, 1.0f, true};
                 case CharacterState::Idle:   return {0, 1, 1.0f, true};
                 case CharacterState::Attack: return {2, 5, 0.1f, false};  // 4 * 0.2 = 0.8s
@@ -273,9 +334,14 @@ static AnimDesc GetAnimFor(CharacterType type, CharacterState state) {
           
             switch (state) {
                 case CharacterState::Chase:
-                case CharacterState::Patrol:
                 case CharacterState::Reposition:
                     return AnimDesc{1, 4, 0.2f, true}; // walk
+
+                case CharacterState::Patrol:
+                    // Choose row depending on whether the pirate is walking toward or away
+                    return isLeaving
+                        ? AnimDesc{5, 4, 0.25f, true}   // walking away (show back)
+                        : AnimDesc{1, 4, 0.25f, true};  // walking toward (normal walk)
 
                 case CharacterState::Freeze: return {0, 1, 1.0f, true};
                 case CharacterState::Idle:   return     {0, 1, 1.0f, true};
@@ -330,6 +396,9 @@ void Character::ChangeState(CharacterState next) {
     const AnimDesc a = GetAnimFor(type, state);
     SetAnimation(a.row, a.frames, a.frameTime, a.loop);
 }
+
+
+
 
 
 

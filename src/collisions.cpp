@@ -354,19 +354,16 @@ void CheckBulletHits(Camera& camera) {
             if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), b.GetPosition(), b.GetRadius())) {
                 if (!b.IsEnemy() && (b.type == BulletType::Default)) {
                     enemy->TakeDamage(25);
-
-                    if (enemy->isDead) {
-                        if (isSkeleton || isGhost){
-                            //nothing
+                    if (enemy->isDead){
+                        if (enemy->type == CharacterType::Skeleton || enemy->type == CharacterType::Ghost){
+                            b.Erase(); //dont show decal
                         }else{
-                             b.Blood(camera);  // blood decals on death
+                            b.Blood(camera); //blood decal on death
+                            b.Erase();
                         }
-                        b.kill(camera);
-                    } else {
-                        b.kill(camera);
                     }
-
                     break;
+
                 }
                 
                 else if (!b.IsEnemy() && (b.type == BulletType::Fireball)){

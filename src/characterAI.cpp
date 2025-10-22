@@ -400,8 +400,6 @@ void Character::UpdateTrexAI(float deltaTime, Player& player){
 
 void Character::UpdateRaptorAI(float deltaTime, Player& player)
 {
-
-    
     // --- Perception & timers ---
     stateTimer     += deltaTime;
     attackCooldown  = std::max(0.0f, attackCooldown - deltaTime);
@@ -409,13 +407,15 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
     const float distance = Vector3Distance(position, player.position);
     UpdateRaptorVisibility(player, deltaTime);
 
+    //UpdateLeavingFlag(player.position);
+
     // --- Simple deadbands ---
     const float STALK_ENTER   = 2000.0f;  // engage if closer than this
     const float STALK_EXIT    = 2400.0f;  // drop back to idle 
     const float ATTACK_ENTER  = 200.0f;   // start attack if closer than this
     const float ATTACK_EXIT   = 300.0f;   // leave attack if beyond this 
     const float FLEE_ENTER    = 100.0f;   // too close -> run away
-    const float FLEE_EXIT     = 1000.0f;   // far enough -> stop fleeing
+    const float FLEE_EXIT     = 3000.0f;   // far enough -> stop fleeing
     const float VISION_ENTER = 4000.0f;
 
     //playerVisible = distance < VISION_ENTER;
@@ -448,6 +448,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
 
         case CharacterState::Patrol:
         {
+            UpdateLeavingFlag(player.position);
             UpdatePatrol(deltaTime);
             break;   
         }
@@ -462,52 +463,6 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
         case CharacterState::Orbit:
 {           //we never use this. 
 
-            // Seed once on entry (stateTimer is reset by ChangeState)
-            if (stateTimer == 0.0f) {
-                orbitDirCW    = (GetRandomValue(0, 1) == 0) ? +1 : -1; // clockwise or CCW
-                orbitDuration = GetRandomValue(2, 5);                  // seconds to orbit before doing something else
-            }
-
-            // Usual exits first (keep these consistent with your other states)
-            if (distance < FLEE_ENTER) {                 // too close → bail out
-                ChangeState(CharacterState::RunAway);
-                break;
-            }
-            if (canSee && distance < ATTACK_ENTER && attackCooldown <= 0.0f) { // clear shot
-                ChangeState(CharacterState::Attack);
-                break;
-            }
-            if (distance > STALK_EXIT && !playerVisible) { // lost interest
-                ChangeState(CharacterState::Idle);
-                break;
-            }
-
-            // --- Steering: circle the player at a ring ---
-            const float ORBIT_RADIUS = 1500.0f;  // tweak to taste
-            const float TANGENT_GAIN = 0.7f;     // how strongly to circle
-            const float RADIAL_GAIN  = 2.0f;     // how tightly to hold the ring
-            const float MAX_SPEED    = raptorSpeed;
-
-            Vector3 vel = OrbitXZ(position, player.position,
-                                ORBIT_RADIUS, orbitDirCW,
-                                TANGENT_GAIN, RADIAL_GAIN, MAX_SPEED);
-
-            // Integrate + face motion
-            position = Vector3Add(position, Vector3Scale(vel, deltaTime));
-
-            if (vel.x*vel.x + vel.z*vel.z > 1e-4f) {
-                rotationY = RAD2DEG * atan2f(vel.x, vel.z);
-            }
-
-            // End the orbit burst after a bit (then you’ll fall back to Chase again)
-            if (stateTimer >= orbitDuration) {
-                ChangeState(CharacterState::Chase);
-                break;
-            }
-
-            // Optional spice later:
-            // - Flip direction occasionally (timer-based) for variety
-            // - Add a tiny WanderXZ to vel if it looks too robotic
         } break;
 
 
@@ -545,7 +500,9 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
 
         case CharacterState::RunAway:
         {
+            UpdateLeavingFlag(player.position);
             UpdateRunaway(deltaTime);
+
             
         } break;
 
@@ -806,19 +763,19 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
         case CharacterState::Patrol: { //Pirate Patrol after every shot. 
             stateTimer += deltaTime;
             //ignore player while patroling to new tile. 
-
-            if (!currentWorldPath.empty()) {
-                Vector3 targetPos = currentWorldPath[0];
-                Vector3 dir = Vector3Normalize(Vector3Subtract(targetPos, position));
-                Vector3 move = Vector3Scale(dir, 300 * deltaTime); // slower than chase //maybe make it even slower, pirates are hard to hit. 
-                position = Vector3Add(position, move);
-                rotationY = RAD2DEG * atan2f(dir.x, dir.z);
-                position.y = pirateHeight;
-
-                if (Vector3Distance(position, targetPos) < 100.0f) {
-                    currentWorldPath.erase(currentWorldPath.begin());
+            
+            // Advance along path (with repulsion)
+            if (!currentWorldPath.empty() && state != CharacterState::Stagger) {
+                Vector3 repel = ComputeRepulsionForce(enemyPtrs, 50, 500); // your existing call
+                MoveAlongPath(currentWorldPath, position, rotationY, skeleSpeed, deltaTime, 100.0f, repel);
+                UpdateLeavingFlag(player.position);
+                // Reached the end but still no LOS? stop chasing
+                if (currentWorldPath.empty() && !canSee) {
+                    playerVisible = false;          // memory expires now that we arrived
+                    ChangeState(CharacterState::Idle);
                 }
             }
+            
             else {
                 ChangeState(CharacterState::Idle);
             }
@@ -1117,9 +1074,9 @@ void Character::UpdateRunaway(float deltaTime)
     float distance = Vector3Distance(position, player.position);
     // --- simple knobs ---
     const float MAX_SPEED     = raptorSpeed;   // same as chase or a bit higher
-    const float FLEE_MIN_TIME = 0.7f;          // don’t instantly flip back
-    const float FLEE_MAX_TIME = 2.0f;          // optional: cap flee bursts
-    const float FLEE_EXIT     = 400.0f;       
+    const float FLEE_MIN_TIME = 2.0f;          // don’t instantly flip back
+    const float FLEE_MAX_TIME = 5.0f;          // optional: cap flee bursts
+    const float FLEE_EXIT     = 1000.0f;       
     const float SEP_CAP       = 200.0f;        // limit separation shove
 
     // Steering: flee + a touch of separation + tiny wander so it’s not laser-straight

@@ -242,9 +242,7 @@ void DrawTransparentDrawRequests(Camera& camera) {
         });
 
     for (const BillboardDrawRequest& req : billboardRequests) {
-        //rlDisableDepthMask(); // we manually get depth by sorting by distance. //with alpha discard shader we could use depthMask to automatically sort.
-        //and we would discard any transparent border pixels. This has it's own limitations however. Like alpha blending wouldn't work.
-        //Means no soft edges. So we sort manually.
+        //use alpha cut out shader on everything. treeShader does the fog at a distance thing + alpha cutout
         if (!isDungeon) BeginShaderMode(R.GetShader("treeShader"));
         if (isDungeon) BeginShaderMode(R.GetShader("cutoutShader"));
         switch (req.type) {
