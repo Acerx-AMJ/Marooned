@@ -233,6 +233,10 @@ void ResourceManager::LoadAllResources() {
     R.LoadTexture("grassTexture",     "assets/textures/grass2.png");
     R.LoadTexture("sandTexture",      "assets/textures/sand.png");
     R.LoadTexture("trexSheet",        "assets/sprites/trexSheet.png");
+    R.LoadTexture("blockSheet",       "assets/sprites/blockSheet.png");
+    R.LoadTexture("slashSheet",       "assets/sprites/slashSheet.png");
+    R.LoadTexture("slashSheetLeft",   "assets/sprites/slashSheetLeft.png");
+    R.LoadTexture("biteSheet",        "assets/sprites/biteSheet.png");
 
 
     // Models (registering with string keys)

@@ -10,6 +10,7 @@ enum class DecalType {
     Explosion,
     MagicAttack,
     NewBlood,
+    Blocked, 
 };
 
 struct Decal {

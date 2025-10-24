@@ -182,11 +182,6 @@ void DoorCollision(){
             }
         }
 
-
-
-
-
-
     }
 }
 
@@ -202,7 +197,6 @@ void WallCollision(){
         if (CheckCollisionBoxSphere(run.bounds, player.position, player.radius)) { //player wall collision
             ResolveBoxSphereCollision(run.bounds, player.position, player.radius);
         }
-
 
     }
 }
@@ -249,10 +243,6 @@ void HandleEnemyPlayerCollision(Player* player) {
         }
     }
 }
-
-
-
-
 
 
 void HandleMeleeHitboxCollision(Camera& camera) {
@@ -370,7 +360,7 @@ void CheckBulletHits(Camera& camera) {
                     enemy->TakeDamage(25);
                     
                     b.pendingExplosion = true;
-                    b.explosionTimer = 0.04f; // short delay
+                    b.explosionTimer = 0.04f; // short delay //so it blows up inside the enemy not on the top of their head. 
                     // Don't call b.Explode() yet //called in updateFireball
 
                 }else if (!b.IsEnemy() && (b.type == BulletType::Iceball)){

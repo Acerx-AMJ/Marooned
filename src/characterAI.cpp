@@ -152,38 +152,38 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                 attackCooldown = 0.8f; // 0.2 * 4 frames on animation for skele attack. 
 
                 // Play attack sound
-                if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play("swipe3");
-                if (type == CharacterType::Spider){
-                    if (rand() % 2 == 0){
-                        SoundManager::GetInstance().Play("spiderBite1");
-                    }else{
-                        SoundManager::GetInstance().Play("spiderBite2");
-                    }
-                    
-                } 
-                
+                if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play(rand() % 2 ? "swipe2" : "swipe3");
+
                     // Blocked!
                 if (CheckCollisionBoxes(GetBoundingBox(), player.blockHitbox) && player.blocking) {
+                    Vector3 camDir = Vector3Normalize(Vector3Subtract(position, player.position));
+                    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
 
-                    if (rand()%2 == 0){
-                        SoundManager::GetInstance().Play("swordBlock");
-                    } else{
-                        SoundManager::GetInstance().Play("swordBlock2");
-                    }
+                    decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("blockSheet"), 4, 0.4f, 0.1f, 50.0f);
+                    SoundManager::GetInstance().Play(rand() % 2 ? "swordBlock" : "swordBlock2");
+
       
                 } else  {
                     // Player takes damage
-                    
                     player.TakeDamage(10);
+                    
 
-                    if (type == CharacterType::Ghost){
+                    Vector3 camDir = Vector3Normalize(Vector3Subtract(position, player.position));
+                    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
+                    if (type == CharacterType::Spider){
+                        SoundManager::GetInstance().Play(rand() % 2 ? "spiderBite2" : "spiderBite1");
+                        decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("biteSheet"), 4, 0.4f, 0.1f, 50.0f);
+                    }else if (type == CharacterType::Skeleton){
+                        SoundManager::GetInstance().Play("slice");
+                        decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("slashSheet"), 5, 0.5f, 0.1f, 100.0f);
+                    }else if (type == CharacterType::Ghost){
                         Vector3 mid = Vector3Lerp(position, player.position, 0.5f); //in between ghost and player
                         decals.emplace_back(mid, DecalType::MagicAttack, R.GetTexture("magicAttackSheet"), 8, 1.0f, 0.1f, 60.0f);
                         // siphon heal
                         int healOnHit = 20; 
                         currentHealth = std::min(maxHealth, currentHealth + healOnHit);
-                        player.TakeDamage(10);
                     }
+
 
                 }
                 
@@ -355,6 +355,11 @@ void Character::UpdateTrexAI(float deltaTime, Player& player){
             if (attackCooldown <= 0.0f && distance < ATTACK_EXIT && canSee){
                 attackCooldown = 3.0f;
                 player.TakeDamage(20);
+                //add bite decal
+                Vector3 camDir = Vector3Normalize(Vector3Subtract(position, player.position));
+                Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
+                decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("biteSheet"), 4, 0.4f, 0.1f, 50.0f);
+
                 SoundManager::GetInstance().Play(GetRandomValue(0, 1) == 0 ? "TrexBite" : "TrexBite2");
                 break;
             }
@@ -483,14 +488,20 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
                 // Damage the player
                 if (CheckCollisionBoxes(GetBoundingBox(), player.blockHitbox) && player.blocking) {
                     // Blocked!
-                    if (rand()%2 == 0){
-                        SoundManager::GetInstance().Play("swordBlock");
-                    } else{
-                        SoundManager::GetInstance().Play("swordBlock2");
-                    }
+
+                    Vector3 camDir = Vector3Normalize(Vector3Subtract(position, player.position));
+                    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
+
+                    decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("blockSheet"), 4, 0.4f, 0.1f, 50.0f);
+                    
+                    SoundManager::GetInstance().Play(rand()%2 ? "swordBlock" : "swordBlock2");
         
                 } else  {
                     // Player takes damage
+                    Vector3 camDir = Vector3Normalize(Vector3Subtract(position, player.position));
+                    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
+
+                    decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("biteSheet"), 4, 0.4f, 0.1f, 50.0f);
                     
                     player.TakeDamage(10);
                 }
@@ -693,14 +704,23 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                 if (distance < 300.0f && playerVisible) {
                     if (CheckCollisionBoxes(GetBoundingBox(), player.blockHitbox) && player.blocking) {
                         // Blocked!
-                        if (rand() % 2 == 0) {
-                            SoundManager::GetInstance().Play("swordBlock");
-                        } else {
-                            SoundManager::GetInstance().Play("swordBlock2");
-                        }
+
+                        Vector3 camDir = Vector3Normalize(Vector3Subtract(position, player.position));
+                        Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
+
+                        decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("blockSheet"), 4, 0.4f, 0.1f, 50.0f);
+                        SoundManager::GetInstance().Play(rand()%2 ? "swordBlock" : "swordBlock2");
+
                     } else {
                         // Direct hit
                         player.TakeDamage(10);
+                                               
+                        SoundManager::GetInstance().Play("slice");
+
+                        Vector3 camDir = Vector3Normalize(Vector3Subtract(position, player.position));
+                        Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
+
+                        decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("slashSheetLeft"), 5, 0.5f, 0.1f, 50.0f);
                     }
                 }
             }
