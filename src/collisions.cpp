@@ -253,6 +253,7 @@ void HandleMeleeHitboxCollision(Camera& camera) {
         int tileY = GetDungeonImageY(barrel.position.z, tileSize, dungeonHeight);
 
         if (CheckCollisionBoxes(barrel.bounds, player.meleeHitbox)){
+            PlayerSwipeDecal(camera);
             barrel.destroyed = true;
             walkable[tileX][tileY] = true; //tile is now walkable for enemies
             SoundManager::GetInstance().Play("barrelBreak");
@@ -287,6 +288,8 @@ void HandleMeleeHitboxCollision(Camera& camera) {
 
         if (CheckCollisionBoxes(enemy->GetBoundingBox(), player.meleeHitbox)){
             enemy->TakeDamage(50);
+            PlayerSwipeDecal(camera);
+
             if (enemy->type != CharacterType::Skeleton && enemy->type != CharacterType::Ghost){ //skeles and ghosts dont bleed.  
                 if (enemy->currentHealth <= 0){
                     meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordBloody");
@@ -330,7 +333,8 @@ void CheckBulletHits(Camera& camera) {
                 continue;
             }
             if (b.IsEnemy()) {
-                b.kill(camera);
+                //b.kill(camera);
+                b.BulletHole(camera);
                 player.TakeDamage(25);
                 continue;
             }
@@ -344,14 +348,21 @@ void CheckBulletHits(Camera& camera) {
             if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), b.GetPosition(), b.GetRadius())) {
                 if (!b.IsEnemy() && (b.type == BulletType::Default)) {
                     enemy->TakeDamage(25);
+                    
                     if (enemy->isDead){
                         if (enemy->type == CharacterType::Skeleton || enemy->type == CharacterType::Ghost){
-                            b.Erase(); //dont show decal
+                            b.BulletHole(camera, true);
+                            break;
+
                         }else{
                             b.Blood(camera); //blood decal on death
-                            b.Erase();
+                            b.BulletHole(camera, true);
+                            break;
+                            //b.Erase();
                         }
                     }
+
+                    b.BulletHole(camera, true);
                     break;
 
                 }

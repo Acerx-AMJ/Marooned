@@ -167,7 +167,6 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                     // Player takes damage
                     player.TakeDamage(10);
                     
-
                     Vector3 camDir = Vector3Normalize(Vector3Subtract(position, player.position));
                     Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
                     if (type == CharacterType::Spider){
@@ -175,7 +174,12 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
                         decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("biteSheet"), 4, 0.4f, 0.1f, 50.0f);
                     }else if (type == CharacterType::Skeleton){
                         SoundManager::GetInstance().Play("slice");
-                        decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("slashSheet"), 5, 0.5f, 0.1f, 100.0f);
+                        Decal decal = {offsetPos, DecalType::MeleeSwipe, R.GetTexture("slashSheet"), 5, 0.5f, 0.1f, 80.0f};
+
+                        Vector3 vel = Vector3Scale(camDir, -250.0f);
+                        decal.velocity = vel;
+                        decals.emplace_back(decal);
+                        //decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("slashSheet"), 5, 0.5f, 0.1f, 80.0f);
                     }else if (type == CharacterType::Ghost){
                         Vector3 mid = Vector3Lerp(position, player.position, 0.5f); //in between ghost and player
                         decals.emplace_back(mid, DecalType::MagicAttack, R.GetTexture("magicAttackSheet"), 8, 1.0f, 0.1f, 60.0f);
@@ -358,7 +362,7 @@ void Character::UpdateTrexAI(float deltaTime, Player& player){
                 //add bite decal
                 Vector3 camDir = Vector3Normalize(Vector3Subtract(position, player.position));
                 Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
-                decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("biteSheet"), 4, 0.4f, 0.1f, 50.0f);
+                decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("biteSheet"), 4, 0.4f, 0.1f, 100.0f);
 
                 SoundManager::GetInstance().Play(GetRandomValue(0, 1) == 0 ? "TrexBite" : "TrexBite2");
                 break;

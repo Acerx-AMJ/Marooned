@@ -330,7 +330,7 @@ Finaly switched over to using the depth test and mask to sort the billboards. I 
 
 14 days, it's basically done. There is even a boss. Take out some levels? Maybe skip some levels. Like level 3 could jump to 5. Make like a story board or something, and reorder things. 
 
-it goes: 2,3,4, 0, 6, 8, 9, 10, 11, 12, 13, exit to river (1) 
+it goes: 0, 2,3,4, 0, 6, 8, 9, 10, 11, exit to river (1) 
 -should we exit after level 10 and make another entrance for the last 3? I think there is an island that doesn't have an entrance - for the demo keep it as is. The user would have to do more exploration to find the last door, and we don't explain anything. 
 
 maybe make an entrance on the last little island, it starts locked, but once you have completed say level 6, it turns into a portal door that leads to river boss level. 
@@ -346,7 +346,32 @@ Make resolution changable from main menu. -Resolution start fullscreen for whate
 
 Added Kingthing font for tutorial text, had to redo the shadows to properly show. Looks better IMO, maybe the text could be bigger. 
 
--redo the art using ImgToImg. Generate a idle pose and use imgtoimg to make other poses. can only do one image a day. better make them count. 
+-redo the art using ImgToImg. Generate a idle pose and use imgtoimg to make other poses. can only do one image a day. better make them count. -Tried comic book style but when I shrink the size down to 200x200 it becomes a muddy mess. If I try pixel art style it's way to simple and what I have now is better. So what to do...
+
+    -edit existing sprites pixel by pixel, there is only 5 frames each or so. 
+    -pay for an image generating software beyound chatGPT. 
+    -pay for an artist on fivr. 
+
+Use the skeleton walking away animation somehow. If the distance to player is rising, play row 5. else play row 2. distant skeleton would be seen wandering away half the time. Would we need a whole new case? Check if the current animation is walking, measure distance over time, switch animation based on isLeaving boolean. isLeaving could be a member of Character and could be used for pirates and spiders. It would work best for pirates who actively run away. Maybe implement it for pirates first. If pirate patrol measure distance and switch anim. 
+
+Added isLeaving bool to character. It is updated to be true if the character is moving away from the player. We can then play the leaving animation when isLeaving is true. It works for pirates, sometimes it looks a little weird but at least they are not moon walking backward all the time. Raptors were trickier because they already have run away behavior. I just added isLeaving check to the runway case. So only show your ass when state == runaway and you are leaving. This makes them show their rear less often wich makes less moon walks still not perfect though. It's hard to judge becuase of the hysteresis.
+
+we could add isleaving to skeletons but I think it might look bad. and skeletons are like never leaving. they always chase. if you see them from a distance patroling they could be moon walking. Redo skeleton walking away art by doing the same thing you did with pirates. Just pain over the face to look like the back of their head and so on. 
+
+for a split second it's showing a rectangular frame when killing an enemy with the gun. it must be decal? or muzzle flash. -The solution was to just remove smoke decals. We no longer spawn smoke decals when hitting enemies. It looks better and doesn't show the bug. I guess we were getting z fighting becuase I upped the amount of bullets to 8 instead of 6. that is 8 smoke decales if they all hit. Any way it looks better now. 
+
+Implemented attack/block decals. Give way more visceral punch to the attacks. Also added stab sound effect that should have been on the skeles. We spawn an animated decal of an arc, like a swoop comic book action line 100 units in front of the attacking skeleton. It swoops down in the same arc as their new sword swing animation that I also made. This works for multiple skeletons because each spawn their own attack swoop. Also added block decal for when blocking these attacks with a sword. It's just a white icon of two swords crossed. This also works for multiple skeles and it looks good blocking two enemies at a time. Also added a bite animated decal that plays when raptors or trex is biting the player. works the same way. Just an icon of teeth colored red that animate in a biting motion while alpha fades out. Spiders also use the bite decal. Consider a decal for spider bites, maybe they could be green and poision you. 
+
+-spawn a decal in front of the player when he is hit with a bullet. The decal should be a bullet whole in glass?
+
+what else needs decals. fireballs? spider bite decal, bullet hole decal, player melee attack? Should we play a decal when you swing the sword? It would need to be positioned offset to the right. Need a forward swoop. First frame is the full swoop shape. Then erase from top to bottom while fading out alpha. Or start frame is empty and animate the swoop being filled in. Look at examples some where. -Added a semi transparent animated streak that plays when you swipe sword. Looks kind of lame. but I guess it's better than nothing. Maybe it should have more frames because it's not exactly smooth looking. 
+
+Go through and rename all maps to their level names, for sanities sake. name map4 -> map1, That way dungeon1 is map1. Dungeon2 = map2 and so on. Consider giving them code names? Would make it easier to remember, like I know lava level is level 10. dungeon1 can be called dungeon1. dungeon2 would be called. . . 3 doors. Dungeon3 would be called, 3 pirates, dungeon4 would be called, Room maze, dungeon 5 would be called. . . 
+
+6 days. Is there anything that looks unprofessional. Pirate sprite is bad, needs to be redone. Trex fight could be cooler but how many people will get that far. sword swing is lame. The way it snaps back to the starting position looks bad. Trees and bushes can still spawn on slopes making it look bad. Shift to run is never explained. 1 and 2 to use health and mana potions is never explained. It's explained when health is low but mana isn't. Maybe the use can infer. Right click for magic staff fire isn't explained neighther is T for switch spell. Should we brighten the dungeon? Nah don't touch it. It looks better dark, only brighten for videos. Re do the readme. That looks very unprofessional. It's AI slop. Write it your self. 
+
+
+
 
 
 

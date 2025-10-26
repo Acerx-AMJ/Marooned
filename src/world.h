@@ -119,7 +119,7 @@ void DrawBloodParticles(Camera& camera);
 void DrawOverworldProps();
 Vector3 ResolveSpawnPoint(const LevelData& level, bool isDungeon, bool first, float floorHeight);
 float GetHeightAtWorldPosition(Vector3 position, Image& heightmap, Vector3 terrainScale);
-
+void PlayerSwipeDecal(Camera& camera);
 void UpdateWorldFrame(float dt, Player& player);
 void StartFadeOutToLevel(int levelIndex);
 void StartFadeInFromBlack(); 

@@ -27,7 +27,7 @@ DungeonEntrance entranceToDungeon4 = {
 
 DungeonEntrance entranceToDungeon11 = {
     {6294, 150, 5515},
-    10,
+    0, //go back to start
     false 
 
 };
@@ -235,7 +235,7 @@ std::vector<LevelData> levels = {
         true, //isDungeon is true
         {},
         12, 
-        13, //river 
+        13,  
         {}, 
         false,// ceiling
     },

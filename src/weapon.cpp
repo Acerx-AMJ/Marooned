@@ -288,9 +288,10 @@ void MeleeWeapon::EndBlock() {
     blocking = false;
 }
 
-void MeleeWeapon::StartSwing() {
+void MeleeWeapon::StartSwing(Camera& camera) {
     if (timeSinceLastSwing >= cooldown && !blocking) {
         PlaySwipe();
+
         swinging = true;
         swingTimer = 0.0f;
         timeSinceLastSwing = 0.0f;
@@ -369,7 +370,7 @@ void MagicStaff::PlaySwipe(){
 
 }
 
-void MagicStaff::StartSwing() {
+void MagicStaff::StartSwing(Camera& camera) {
     if (swinging || timeSinceLastSwing < cooldown) return;
     PlaySwipe();
     swinging = true;

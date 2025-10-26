@@ -415,9 +415,9 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
            if (player.activeWeapon == WeaponType::Blunderbuss){
                 weapon.Fire(camera); 
            } else if (player.activeWeapon == WeaponType::Sword){
-                meleeWeapon.StartSwing();
+                meleeWeapon.StartSwing(camera);
            } else if (player.activeWeapon == WeaponType::MagicStaff){
-                magicStaff.StartSwing();
+                magicStaff.StartSwing(camera);
            }
            
            

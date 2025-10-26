@@ -185,11 +185,11 @@ void ResourceManager::LoadAllResources() {
     Vector2 screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
     //render textures
     // ResourceManager init once
-    auto& scene = R.LoadRenderTexture("sceneTexture", 1600, 900);
+    auto& scene = R.LoadRenderTexture("sceneTexture", screenResolution.x, screenResolution.y);
     SetTextureFilter(scene.texture, TEXTURE_FILTER_BILINEAR);
     SetTextureWrap(scene.texture, TEXTURE_WRAP_CLAMP);
 
-    auto& post = R.LoadRenderTexture("postProcessTexture", 1600, 900);
+    auto& post = R.LoadRenderTexture("postProcessTexture", screenResolution.x, screenResolution.y);
     SetTextureFilter(post.texture, TEXTURE_FILTER_BILINEAR);
     SetTextureWrap(post.texture, TEXTURE_WRAP_CLAMP);
 
@@ -233,10 +233,12 @@ void ResourceManager::LoadAllResources() {
     R.LoadTexture("grassTexture",     "assets/textures/grass2.png");
     R.LoadTexture("sandTexture",      "assets/textures/sand.png");
     R.LoadTexture("trexSheet",        "assets/sprites/trexSheet.png");
-    R.LoadTexture("blockSheet",       "assets/sprites/blockSheet.png");
+    R.LoadTexture("blockSheet",       "assets/sprites/blockSheet2.png");
+    R.LoadTexture("playerSlashSheet",       "assets/sprites/playerSlashSheet.png");
     R.LoadTexture("slashSheet",       "assets/sprites/slashSheet.png");
     R.LoadTexture("slashSheetLeft",   "assets/sprites/slashSheetLeft.png");
     R.LoadTexture("biteSheet",        "assets/sprites/biteSheet.png");
+    R.LoadTexture("bulletHoleSheet",  "assets/sprites/bulletHoleSheet.png");
 
 
     // Models (registering with string keys)

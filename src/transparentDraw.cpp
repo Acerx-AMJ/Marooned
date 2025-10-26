@@ -180,10 +180,18 @@ void GatherDecals(Camera& camera, const std::vector<Decal>& decals) {
                 static_cast<float>(decal.currentFrame * 196),
                 0,
                 196,
-                190
+                196
             };
         
-        } else {
+        } else if (decal.type == DecalType::MeleeSwipe){
+            sourceRect = {
+                static_cast<float>(decal.currentFrame * 196),
+                0,
+                196,
+                196
+            };           
+
+        }else {
             sourceRect = {
                 static_cast<float>(decal.currentFrame * 64),
                 0,

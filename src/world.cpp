@@ -608,10 +608,28 @@ void UpdateCollectables(float deltaTime) {
     }
 }
 
+void PlayerSwipeDecal(Camera& camera){
+    //swipe decal on melee attack
+    Vector3 fwd = Vector3Normalize(Vector3Subtract(camera.target, player.position));
+    Vector3 up  = {0.0f, 1.0f, 0.0f};
+    // Right = fwd × up  (raylib uses right-handed coords; this gives +X when fwd = (0,0,-1))
+    Vector3 right = Vector3Normalize(Vector3CrossProduct(fwd, up));
+    // Safety: if looking straight up/down, cross can be tiny — fall back to +X
+    if (Vector3Length(right) < 1e-4f) right = {1.0f, 0.0f, 0.0f};
+    Vector3 basePos   = Vector3Add(camera.position, Vector3Scale(fwd, 130.0f));  // in front
+    Vector3 offsetPos = Vector3Add(basePos,        Vector3Scale(right, 0.0f)); // to the right
+    offsetPos.y -= 50;
+    Decal decal = {offsetPos, DecalType::MeleeSwipe, R.GetTexture("playerSlashSheet"), 7, 0.35f, 0.05f, 100.0f};
 
+    Vector3 vel = Vector3Add(Vector3Scale(fwd, 200.0f), Vector3Scale(right, 0.0f)); //melee swipe decals move forward 
+    decal.velocity = vel;
+    
+    decals.emplace_back(decal);
+}
 
 
 void UpdateDecals(float deltaTime){
+    //update decal animation timers
     for (auto& d : decals) {
         d.Update(deltaTime);
         

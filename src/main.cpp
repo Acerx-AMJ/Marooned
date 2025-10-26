@@ -15,7 +15,7 @@
 
 
 
-bool squareRes = false; // set true for 1280x1024, false for widescreen
+bool squareRes = true; // set true for 1280x1024, false for widescreen
 //TODO: make 1280 res work. How? 
 
 
@@ -26,8 +26,8 @@ int main() {
     drawCeiling = true; //debug no ceiling mode. drawCeiling is set by levelData so we can have some dungeons with and without ceilings. 
 
     InitWindow(screenWidth, screenHeight, "Marooned");
-    ToggleFullscreen(); //start full screen, toggle out to 1600x900
-    isFullscreen = true;
+    //ToggleFullscreen(); //start full screen, toggle out to 1600x900
+    //isFullscreen = true;
     InitAudioDevice();
     SetTargetFPS(60);
     DisableCursor();

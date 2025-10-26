@@ -62,6 +62,7 @@ public:
 
     void Blood(Camera& camera);
     void Explode(Camera& camera);
+    void BulletHole(Camera& camera, bool enemy = false);
     void HandleBulletWorldCollision(Camera& camera);
 
     float GetRadius() const { return radius; }

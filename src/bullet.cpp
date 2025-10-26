@@ -259,6 +259,20 @@ void Bullet::kill(Camera& camera){
     
 }
 
+void Bullet::BulletHole(Camera& camera, bool enemy){
+    //spawn a bullet hole decal before dying. Push backward for enemies and forward for player. 
+
+    float forward = enemy ? -200 : 200;
+    float size = enemy ? 25 : 50;
+
+    Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
+    Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, forward));
+
+    decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("bulletHoleSheet"), 5, 1.0f, 0.2f, size);
+
+    alive = false; //kill the bullet
+
+}
 
 
 void Bullet::Blood(Camera& camera){
