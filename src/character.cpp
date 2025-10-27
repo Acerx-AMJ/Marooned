@@ -192,8 +192,8 @@ static inline float   LenSqXZ(const Vector3& v){ return v.x*v.x + v.z*v.z; }
 void Character::UpdateLeavingFlag(const Vector3& playerPos)
 {
     // Tunables
-    constexpr float MIN_MOVE_EPS_SQ   = 1.0f; // how much squared motion counts as "moving" (units^2 per tick)
-    constexpr int   STREAK_TO_FLIP    = 5;    // require N consistent frames to flip
+    constexpr float MIN_MOVE_EPS_SQ   = 50.0f; // how much squared motion counts as "moving" (units^2 per tick)
+    constexpr int   STREAK_TO_FLIP    = 3;    // require N consistent frames to flip
     constexpr float DIST_EPS          = 1.0f; // tiny epsilon to ignore micro distance jitter
 
     // Current vectors (XZ plane)
@@ -212,7 +212,7 @@ void Character::UpdateLeavingFlag(const Vector3& playerPos)
             if (approachStreak >= STREAK_TO_FLIP) { isLeaving = false; decisionMade = true; }
         } else if (d < 0.0f) { // moving away from player
             leaveStreak++;     approachStreak = 0;
-            if (leaveStreak >= STREAK_TO_FLIP)  { isLeaving = true;  decisionMade = true; }
+            if (leaveStreak >= STREAK_TO_FLIP+10)  { isLeaving = true;  decisionMade = true; } //slightly more ticks to flip to isLeaving
         }
     }
 

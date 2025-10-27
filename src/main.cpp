@@ -15,7 +15,7 @@
 
 
 
-bool squareRes = true; // set true for 1280x1024, false for widescreen
+bool squareRes = false; // set true for 1280x1024, false for widescreen
 //TODO: make 1280 res work. How? 
 
 

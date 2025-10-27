@@ -100,7 +100,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             stateTimer += deltaTime;
             pathCooldownTimer = std::max(0.0f, pathCooldownTimer - deltaTime);
 
-            if (distance < 300.0f && canSee) {
+            if (distance < 200.0f && canSee) {
                 ChangeState(CharacterState::Attack);
 
             }
@@ -213,7 +213,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
                 float dist = Vector3Distance(position, target);
 
-                if (dist < 350.0f && stateTimer > 1.0f) {
+                if (dist < 300.0f && stateTimer > 1.0f) {
                     ChangeState(CharacterState::Attack);
                 } else if (dist > 350.0f && stateTimer > 1.0f) {
                     ChangeState(CharacterState::Chase);
@@ -577,6 +577,11 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
             Vector2 start = WorldToImageCoords(position);
 
+            if (distance < 250 && canSee){
+                ChangeState(CharacterState::MeleeAttack);
+                break;
+            }
+
             // Transition to chase if player detected
             if (distance < 4000.0f && stateTimer > 1.0f && (playerVisible)) {
                 AlertNearbySkeletons(position, 3000.0f);
@@ -601,6 +606,11 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
         case CharacterState::Chase: {
             stateTimer += deltaTime;
             pathCooldownTimer = std::max(0.0f, pathCooldownTimer - deltaTime);
+
+            if (distance < 250 && canSee){
+                ChangeState(CharacterState::MeleeAttack);
+                break;
+            }
 
             // 1) Try to attack when close AND we have instant LOS
             if (distance < PIRATE_ATTACK_ENTER && canSee) {
@@ -666,7 +676,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             }
 
             attackCooldown -= deltaTime;
-            if (distance < 800 && distance > 350){
+            if (distance < 800 && distance > 300){
                 
                 if (canSee && attackCooldown <= 0.0f && currentFrame == 1 && !hasFired && type == CharacterType::Pirate) {
                     FireBullet(position, player.position, 1200.0f, 3.0f, true);
@@ -676,8 +686,9 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                     SoundManager::GetInstance().PlaySoundAtPosition("musket", position, player.position, 1.0, 2000);
                 }
 
-            }else if (distance < 350){
+            }else if (distance < 250){
                 ChangeState(CharacterState::MeleeAttack);
+                break;
             }
 
             // Wait for next attack opportunity
@@ -705,7 +716,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             if (stateTimer >= 0.6f && !hasFired) { // 5 frames * 0.12s = 0.6s
                 hasFired = true; //reusing hasfired for sword attack. I think this is ok?
 
-                if (distance < 300.0f && playerVisible) {
+                if (distance < 250.0f && playerVisible) {
                     if (CheckCollisionBoxes(GetBoundingBox(), player.blockHitbox) && player.blocking) {
                         // Blocked!
 

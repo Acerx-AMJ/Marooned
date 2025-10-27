@@ -253,7 +253,7 @@ void HandleMeleeHitboxCollision(Camera& camera) {
         int tileY = GetDungeonImageY(barrel.position.z, tileSize, dungeonHeight);
 
         if (CheckCollisionBoxes(barrel.bounds, player.meleeHitbox)){
-            PlayerSwipeDecal(camera);
+            PlayerSwipeDecal(camera); //swipe decal on hit. 
             barrel.destroyed = true;
             walkable[tileX][tileY] = true; //tile is now walkable for enemies
             SoundManager::GetInstance().Play("barrelBreak");
@@ -288,7 +288,7 @@ void HandleMeleeHitboxCollision(Camera& camera) {
 
         if (CheckCollisionBoxes(enemy->GetBoundingBox(), player.meleeHitbox)){
             enemy->TakeDamage(50);
-            PlayerSwipeDecal(camera);
+            PlayerSwipeDecal(camera); //play animated decal, semi transparent red slash animation on hit
 
             if (enemy->type != CharacterType::Skeleton && enemy->type != CharacterType::Ghost){ //skeles and ghosts dont bleed.  
                 if (enemy->currentHealth <= 0){
@@ -311,6 +311,7 @@ void HandleMeleeHitboxCollision(Camera& camera) {
     for (SpiderWebInstance& web : spiderWebs){
         if (!web.destroyed && CheckCollisionBoxes(web.bounds, player.meleeHitbox)){
             web.destroyed = true;
+            PlayerSwipeDecal(camera);
             //play a sound
         }
     }
@@ -348,21 +349,22 @@ void CheckBulletHits(Camera& camera) {
             if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), b.GetPosition(), b.GetRadius())) {
                 if (!b.IsEnemy() && (b.type == BulletType::Default)) {
                     enemy->TakeDamage(25);
-                    
+                    int rn = GetRandomValue(0, 4);
                     if (enemy->isDead){
                         if (enemy->type == CharacterType::Skeleton || enemy->type == CharacterType::Ghost){
-                            b.BulletHole(camera, true);
+                            b.Erase();
                             break;
 
                         }else{
                             b.Blood(camera); //blood decal on death
-                            b.BulletHole(camera, true);
+                            b.Erase();
                             break;
                             //b.Erase();
                         }
                     }
 
-                    b.BulletHole(camera, true);
+                    //b.BulletHole(camera, true);
+                    b.Erase();
                     break;
 
                 }
