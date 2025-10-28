@@ -7,8 +7,6 @@
 #include "decal.h"
 #include "sound_manager.h"
 #include "utilities.h"
-#include "dungeonGeneration.h"
-#include "pathfinding.h"
 
 
 Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, BulletType t, float r, bool launch)
