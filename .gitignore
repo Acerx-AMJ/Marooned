@@ -7,6 +7,8 @@
 *.d
 /raylib/
 /build/
-/.gitignore
 /Makefile
 /CMakeLists.txt
+/cache
+/.cache
+/.vscode
