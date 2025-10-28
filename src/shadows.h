@@ -4,8 +4,6 @@
 #include "raylib.h"
 #include "vegetation.h"
 #include "raymath.h"
-#include "resourceManager.h"
-#include "world.h"
 
 //Holder for the rt
 struct TreeShadowMask {

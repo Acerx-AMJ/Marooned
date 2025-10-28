@@ -2,9 +2,6 @@
 #pragma once
 
 #include "raylib.h"
-#include "raymath.h"
-#include <string>
-
 
 bool InBounds(int x, int y, int w, int h);
 float RandomFloat(float min, float max);

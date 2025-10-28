@@ -4,9 +4,6 @@
 #include <iostream>
 #include "player.h"
 #include "utilities.h"
-#include "lighting.h"
-#include "resourceManager.h"
-#include "sound_manager.h"
 
 InputMode currentInputMode = InputMode::KeyboardMouse;
 //TODO: add controller support 

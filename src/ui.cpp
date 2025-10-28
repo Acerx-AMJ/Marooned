@@ -1,14 +1,12 @@
 // ui.cpp
 #include "ui.h"
 #include <cmath>
-#include "raymath.h"
+#include "hintManager.h"
 #include "level.h"
 #include "resourceManager.h"
 #include "weapon.h"
 #include "world.h"
 #include "utilities.h"
-#include "camera_system.h"
-
 
 static HintManager hints;   // one global-ish instance, private to UI.cpp
 

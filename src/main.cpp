@@ -1,5 +1,4 @@
 #include "raylib.h"
-#include <iostream>
 #include "world.h"
 #include "input.h"
 #include "boat.h"
@@ -11,8 +10,6 @@
 #include "render_pipeline.h"
 #include "camera_system.h"
 #include "lighting.h"
-#include "hintManager.h"
-
 
 
 bool squareRes = false; // set true for 1280x1024, false for widescreen

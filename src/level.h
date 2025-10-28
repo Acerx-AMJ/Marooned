@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include "raylib.h"
-#include <optional>
 
 enum class PropType { Barrel, FirePit, Boat};
 

@@ -1,7 +1,6 @@
 #pragma once
 #include "raylib.h"
 #include "rlgl.h"
-#include "raymath.h"
 
 enum class CamMode { Player, Free };
 

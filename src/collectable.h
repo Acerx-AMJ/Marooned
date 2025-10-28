@@ -1,6 +1,5 @@
 #pragma once
 #include "raylib.h"
-#include "inventory.h"
 
 enum class CollectableType {
     HealthPotion,

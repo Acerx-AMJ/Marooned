@@ -322,7 +322,7 @@ bool LineOfSightRaycast(Vector2 start, Vector2 end, const Image& dungeonMap, int
 
     for (int i = 0; i < numRays; ++i) {
         
-        float offset = ((float)i - numRays / 2) * (spread / (float)numRays);
+        float offset = ((float)i - (float)numRays / 2) * (spread / (float)numRays);
         Vector2 offsetStart = Vector2Add(start, Vector2Scale(perp, offset));
 
         

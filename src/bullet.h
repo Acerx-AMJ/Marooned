@@ -1,9 +1,8 @@
 #pragma once
 
 #include "raylib.h"
-#include <vector>
+#include <climits>
 #include "emitter.h"
-#include "raymath.h"
 
 enum class BulletType {
     Default,

@@ -1,5 +1,6 @@
 #include "sound_manager.h"
 #include <iostream>
+#include <vector>
 #include "raymath.h"
 
 std::vector<std::string> footstepKeys;

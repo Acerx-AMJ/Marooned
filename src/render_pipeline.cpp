@@ -8,13 +8,7 @@
 #include "rlgl.h"
 #include "dungeonGeneration.h"
 #include "player.h"
-#include "input.h"
 #include "camera_system.h"
-#include "lighting.h"
-#include "shadows.h"
-
-
-
 
 void RenderFrame(Camera3D& camera, Player& player, float dt) {
     Shader& terrainShader = R.GetShader("terrainShader");

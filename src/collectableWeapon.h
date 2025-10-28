@@ -1,7 +1,6 @@
 #pragma once
 
 #include "raylib.h"
-#include "raymath.h"
 #include "weapon.h" // Contains enum class WeaponType
 #include "player.h"
 

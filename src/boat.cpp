@@ -2,7 +2,6 @@
 #include "raymath.h"
 #include "resourceManager.h"
 #include "world.h"
-#include <iostream>
 
 Boat player_boat{};
 

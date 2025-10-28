@@ -1,7 +1,6 @@
 #include "player.h"
 #include "raymath.h"
 #include "world.h"
-#include <iostream>
 #include "resourceManager.h"
 #include "input.h"
 #include "boat.h"
@@ -10,7 +9,6 @@
 #include "inventory.h"
 #include "input.h"
 #include "weapon.h"
-#include "camera_system.h"
 #include "array"
 
 Weapon weapon;
@@ -41,7 +39,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
         player.inventory.AddItem("HealthPotion");
     
     }
-    
+
 }
 
 
@@ -296,6 +294,7 @@ void InitSword(MeleeWeapon& meleeWeapon){
     //init sword
     meleeWeapon.model = R.GetModel("swordModel");
     meleeWeapon.scale = {2, 2, 2};
+    meleeWeapon.model.materials[3].maps = new MaterialMap(); // TODO: unload this at some point
     meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordClean");
     
 }

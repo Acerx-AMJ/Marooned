@@ -1,7 +1,5 @@
 #pragma once
 #include "raylib.h"
-#include <vector>
-#include <iostream>
 #include "raymath.h"
 
 // What kind of decal this is

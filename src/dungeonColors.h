@@ -1,8 +1,8 @@
 #pragma once
 #include "raylib.h"
+#include <cstdlib>
 #include <string_view>
 #include <optional>
-#include "raymath.h"
 
 namespace dungeon {
 

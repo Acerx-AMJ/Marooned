@@ -5,5 +5,8 @@
 *.log
 *.hdr
 *.d
-raylib/
-build/
+/raylib/
+/build/
+/.gitignore
+/Makefile
+/CMakeLists.txt

@@ -6,7 +6,6 @@
 #include "cfloat"
 #include "stdint.h"
 #include "world.h"
-#include "utilities.h"
 
 
 BakedLightmap gDynamic; 

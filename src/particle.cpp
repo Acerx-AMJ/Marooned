@@ -1,6 +1,5 @@
 #include "particle.h"
 #include "raymath.h"
-#include <iostream>
 
 void Particle::Update(float dt) {
     if (!active) return;

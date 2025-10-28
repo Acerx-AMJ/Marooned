@@ -1,13 +1,11 @@
 #include "weapon.h"
 #include "raymath.h"
-#include <iostream>
 #include "rlgl.h"
 #include "bullet.h"
 #include "sound_manager.h"
 #include "resourceManager.h"
 #include "player.h"
 #include "world.h"
-#include "ui.h"
 
 void Weapon::Fire(Camera& camera) {
 

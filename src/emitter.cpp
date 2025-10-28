@@ -1,6 +1,6 @@
 #include "emitter.h"
-#include <iostream>
 #include "utilities.h"
+#include <raymath.h>
 
 Emitter::Emitter()
     : position({0, -9999, 0}) //-9999 off screen

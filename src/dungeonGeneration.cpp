@@ -1,17 +1,14 @@
 #include "dungeonGeneration.h"
 #include "raymath.h"
-#include <iostream>
 #include "player.h"
 #include "vector"
 #include "world.h"
 #include "rlgl.h"
 #include "sound_manager.h"
-#include "transparentDraw.h"
 #include "pathfinding.h"
 #include "resourceManager.h"
 #include "utilities.h"
 #include "dungeonColors.h"
-#include "lighting.h"
 #include <cstdint>
 
 std::vector<uint8_t> lavaMask; // width*height, 1 = lava, 0 = not
@@ -480,7 +477,7 @@ void GenerateDoorways(float baseY, int currentLevelIndex) {
             }
 
             Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
-            DoorwayInstance archway = { pos, rotationY, false, false, false, WHITE, x, y };
+            DoorwayInstance archway = { pos, rotationY, false, false, false, WHITE, WHITE, 0.f, x, y, };
 
             GenerateSideColliders(pos, rotationY, archway);
 
@@ -1062,11 +1059,11 @@ void GenerateChests(float baseY) {
 
                 // load a _separate_ model for this chest
                 // (this reads the same GLB but gives you independent skeleton data)
-                R.LoadModel(key, "assets/models/chest.glb");
+                R.LoadModel(key, "assets/Models/chest.glb");
                 Model& model = R.GetModel(key);
 
                 int animCount = 0;
-                ModelAnimation *anims = LoadModelAnimations("assets/models/chest.glb", &animCount);
+                ModelAnimation *anims = LoadModelAnimations("assets/Models/chest.glb", &animCount);
 
                 ChestInstance chest = {
                     model,

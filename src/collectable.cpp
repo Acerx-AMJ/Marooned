@@ -1,6 +1,5 @@
 #include "collectable.h"
 #include "raymath.h"
-#include <iostream>
 
 // NEW constructor with icon and scale
 Collectable::Collectable(CollectableType type, Vector3 position, Texture2D icon, float scale)

@@ -3,7 +3,6 @@
 #include "raylib.h"
 #include "player.h"
 #include "character.h"
-#include "bullet.h"
 #include "vegetation.h"
 
 void UpdateCollisions(Camera& camera);

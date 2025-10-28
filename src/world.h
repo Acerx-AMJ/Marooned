@@ -5,7 +5,6 @@
 #include <vector>
 #include "character.h"
 #include "bullet.h"
-#include "vegetation.h"
 #include "decal.h"
 #include "level.h"
 #include "collectable.h"

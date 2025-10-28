@@ -1,5 +1,6 @@
 #include "utilities.h"
 #include <iostream> // for DebugPrintVector
+#include <raymath.h>
 
 bool InBounds(int x, int y, int w, int h) {
     return (x >= 0 && y >= 0 && x < w && y < h);

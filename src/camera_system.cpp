@@ -1,6 +1,5 @@
 #include "camera_system.h"
 #include "raymath.h"
-#include "input.h" 
 #include "world.h"
 #include "rlgl.h"
 

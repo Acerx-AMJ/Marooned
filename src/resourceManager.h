@@ -2,7 +2,6 @@
 #include <string>
 #include <unordered_map>
 #include "raylib.h"
-#include <stdexcept>
 
 class ResourceManager {
 public:

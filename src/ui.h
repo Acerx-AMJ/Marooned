@@ -2,7 +2,6 @@
 #pragma once
 #include "raylib.h"
 #include "player.h"
-#include "hintManager.h" 
 
 
 enum class SlantSide { Right, Left };

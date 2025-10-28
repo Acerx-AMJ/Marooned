@@ -1,14 +1,11 @@
 #include "character.h"
 #include "raymath.h"
-#include <iostream>
 #include "rlgl.h"
 #include "world.h"
 #include "algorithm"
 #include "sound_manager.h"
 #include "player.h"
-#include "dungeonGeneration.h"
 #include "pathfinding.h"
-#include "resourceManager.h"
 
 //Character raptor(spawnPos, R.GetTexture("raptorTexture"), 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
 

@@ -287,6 +287,7 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
 
             deathTimer += deltaTime;
             break;
+        default: break;
         }
        
 }
@@ -401,6 +402,7 @@ void Character::UpdateTrexAI(float deltaTime, Player& player){
 
             deathTimer += deltaTime;
         } break;
+        default: break;
 
 
     }
@@ -550,6 +552,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
 
             deathTimer += deltaTime;
         } break;
+        default: break;
     }
 
 }
@@ -850,6 +853,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
             deathTimer += deltaTime;
             break;
+        default: break;
         }
 }
 
@@ -863,7 +867,7 @@ bool Character::FindRepositionTarget(const Player& player, const Vector3& selfPo
     Vector3 right = Vector3Normalize(Vector3CrossProduct({ 0, 1, 0 }, forward));
 
     // Generate offsets
-    Vector2 relativeOffsets[3];
+    Vector2 relativeOffsets[4];
     relativeOffsets[0] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(forward, tileSize))) - playerTile;
     relativeOffsets[1] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(right, tileSize))) - playerTile;
     relativeOffsets[2] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(Vector3Negate(right), tileSize))) - playerTile;
