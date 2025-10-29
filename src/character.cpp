@@ -7,7 +7,7 @@
 #include "player.h"
 #include "pathfinding.h"
 
-//Character raptor(spawnPos, R.GetTexture("raptorTexture"), 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
+//Character raptor(spawnPos, ResourceManager::Get().GetTexture("raptorTexture"), 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
 
 Character::Character(Vector3 pos, Texture2D& tex, int fw, int fh, int frames, float speed, float scl, int row, CharacterType t)
     : position(pos),
@@ -37,9 +37,9 @@ BoundingBox Character::GetBoundingBox() const {
 void Character::playRaptorSounds(){
     int rn = GetRandomValue(1, 3);
     switch (rn){
-    case 1:SoundManager::GetInstance().PlaySoundAtPosition("dinoTweet", position, player.position, player.rotation.y, 4000);break;
-    case 2:SoundManager::GetInstance().PlaySoundAtPosition("dinoTweet2", position, player.position, player.rotation.y, 4000);break;
-    case 3:SoundManager::GetInstance().PlaySoundAtPosition("dinoTarget", position, player.position, player.rotation.y, 4000);break;
+    case 1:SoundManager::Get().PlaySoundAtPosition("dinoTweet", position, player.position, player.rotation.y, 4000);break;
+    case 2:SoundManager::Get().PlaySoundAtPosition("dinoTweet2", position, player.position, player.rotation.y, 4000);break;
+    case 3:SoundManager::Get().PlaySoundAtPosition("dinoTarget", position, player.position, player.rotation.y, 4000);break;
     } 
 
 }
@@ -72,9 +72,9 @@ void Character::TakeDamage(int amount) {
         ChangeState(CharacterState::Death);
 
         
-        if (type != CharacterType::Spider)  SoundManager::GetInstance().Play("dinoDeath");
-        if (type == CharacterType::Skeleton) SoundManager::GetInstance().Play("bones");
-        if (type == CharacterType::Spider) SoundManager::GetInstance().Play("spiderDeath");
+        if (type != CharacterType::Spider)  SoundManager::Get().Play("dinoDeath");
+        if (type == CharacterType::Skeleton) SoundManager::Get().Play("bones");
+        if (type == CharacterType::Spider) SoundManager::Get().Play("spiderDeath");
      
     } else {
         hitTimer = 0.5f; //tint red
@@ -97,13 +97,13 @@ void Character::TakeDamage(int amount) {
         AlertNearbySkeletons(position, 3000.0f);
 
         if (type == CharacterType::Pirate){
-            SoundManager::GetInstance().Play("phit1");
+            SoundManager::Get().Play("phit1");
         }else if (type == CharacterType::Spider){
-            SoundManager::GetInstance().Play("spiderDeath");
+            SoundManager::Get().Play("spiderDeath");
         }else if (type == CharacterType::Raptor || type == CharacterType::Skeleton){
-            SoundManager::GetInstance().PlaySoundAtPosition("dinoHit", position, player.position, 0.0f, 4000.0f); //raptor and skeletons
+            SoundManager::Get().PlaySoundAtPosition("dinoHit", position, player.position, 0.0f, 4000.0f); //raptor and skeletons
         }else if (type == CharacterType::Trex){
-            SoundManager::GetInstance().Play(GetRandomValue(0, 1) == 0 ? "TrexHurt2" : "TrexHurt");
+            SoundManager::Get().Play(GetRandomValue(0, 1) == 0 ? "TrexHurt2" : "TrexHurt");
         }
         
     }

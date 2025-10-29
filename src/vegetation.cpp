@@ -65,7 +65,7 @@ void generateVegetation(){
     //static TreeShadowMask gTreeShadowMask;
     InitOrResizeTreeShadowMask(gTreeShadowMask, /*tex size*/ 4096, 4096, worldXZ);
 
-    BuildTreeShadowMask_Tex(gTreeShadowMask, trees, R.GetTexture("treeShadow"));
+    BuildTreeShadowMask_Tex(gTreeShadowMask, trees, ResourceManager::Get().GetTexture("treeShadow"));
 
     // Bake
     // BuildTreeShadowMask(gTreeShadowMask, trees,
@@ -180,7 +180,7 @@ std::vector<BushInstance> GenerateBushes(Image& heightmap, unsigned char* pixels
                 BushInstance bush;
                 bush.position = pos;
                 bush.scale = 100.0f + ((float)GetRandomValue(0, 1000) / 100.0f);
-                bush.model = R.GetModel("bush");
+                bush.model = ResourceManager::Get().GetModel("bush");
                 bush.yOffset = ((float)GetRandomValue(-200, 200)) / 100.0f;     // -2.0 to 2.0
                 bush.xOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2));
                 bush.zOffset = ((float)GetRandomValue(-bushSpacing*2, bushSpacing*2)); //space them out wider, then cull more aggresively. 
@@ -234,7 +234,7 @@ void DrawTrees(const std::vector<TreeInstance>& trees, Camera& camera){
         pos.x += tree->xOffset;
         pos.z += tree->zOffset;
 
-        Model& treeModel = tree->useAltModel ? R.GetModel("palmTree") : R.GetModel("palm2");
+        Model& treeModel = tree->useAltModel ? ResourceManager::Get().GetModel("palmTree") : ResourceManager::Get().GetModel("palm2");
 
         DrawModelEx(treeModel, pos, { 0, 1, 0 }, tree->rotationY,
                     { tree->scale, tree->scale, tree->scale }, WHITE);

@@ -200,7 +200,7 @@ void Bullet::Draw(Camera& camera) const {
         
         if (!exploded){
             //dont draw the ball or firetrail if it's exploded. 
-            DrawModelEx(R.GetModel("fireballModel"), position, { 0, 1, 0 }, spinAngle, { 20.0f, 20.0f, 20.0f }, WHITE);
+            DrawModelEx(ResourceManager::Get().GetModel("fireballModel"), position, { 0, 1, 0 }, spinAngle, { 20.0f, 20.0f, 20.0f }, WHITE);
             sparkEmitter.Draw(camera); //firetrail
         } 
         
@@ -208,7 +208,7 @@ void Bullet::Draw(Camera& camera) const {
         fireEmitter.Draw(camera);
 
         if (!exploded){
-            DrawModelEx(R.GetModel("iceballModel"), position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
+            DrawModelEx(ResourceManager::Get().GetModel("iceballModel"), position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
             sparkEmitter.Draw(camera);
             
         } 
@@ -251,7 +251,7 @@ void Bullet::kill(Camera& camera){
     Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
     Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
 
-    decals.emplace_back(offsetPos, DecalType::Smoke, R.GetTexture("smokeSheet"), 7, 0.8f, 0.1f, 25.0f);
+    decals.emplace_back(offsetPos, DecalType::Smoke, ResourceManager::Get().GetTexture("smokeSheet"), 7, 0.8f, 0.1f, 25.0f);
 
     alive = false;
     
@@ -266,7 +266,7 @@ void Bullet::BulletHole(Camera& camera, bool enemy){
     Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
     Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, forward));
 
-    decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("bulletHoleSheet"), 5, 1.0f, 0.2f, size);
+    decals.emplace_back(offsetPos, DecalType::Explosion, ResourceManager::Get().GetTexture("bulletHoleSheet"), 5, 1.0f, 0.2f, size);
 
     alive = false; //kill the bullet
 
@@ -278,7 +278,7 @@ void Bullet::Blood(Camera& camera){
     Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
     Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
 
-    decals.emplace_back(offsetPos, DecalType::Blood, R.GetTexture("bloodSheet"), 7, 1.0f, 0.1f, 60.0f);
+    decals.emplace_back(offsetPos, DecalType::Blood, ResourceManager::Get().GetTexture("bloodSheet"), 7, 1.0f, 0.1f, 60.0f);
 
     alive = false;
 
@@ -293,12 +293,12 @@ void Bullet::Explode(Camera& camera) {
         explosionTriggered = true;
         velocity.x = 0; //stop bullets velocity when exploding but keep gravity. 
         velocity.z = 0;
-        SoundManager::GetInstance().PlaySoundAtPosition("explosion", position, player.position, player.rotation.y, 3000.0f);
+        SoundManager::Get().PlaySoundAtPosition("explosion", position, player.position, player.rotation.y, 3000.0f);
         
         Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
         Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
         if (type == BulletType::Fireball){
-            decals.emplace_back(offsetPos, DecalType::Explosion, R.GetTexture("explosionSheet"), 13, 1.0f, 0.1f, 500.0f);
+            decals.emplace_back(offsetPos, DecalType::Explosion, ResourceManager::Get().GetTexture("explosionSheet"), 13, 1.0f, 0.1f, 500.0f);
             fireEmitter.EmitBurst(position, 200, ParticleType::Sparks);
 
         }else if (type == BulletType::Iceball){
@@ -397,7 +397,7 @@ void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, b
     b.light.detachOnDeath = true;
     b.light.lifeTime   = 0.25f; // short glow after death
 
-    SoundManager::GetInstance().PlaySoundAtPosition((rand() % 2 == 0 ? "flame1" : "flame2"), origin, player.position, 0.0f, 3000.0f);
+    SoundManager::Get().PlaySoundAtPosition((rand() % 2 == 0 ? "flame1" : "flame2"), origin, player.position, 0.0f, 3000.0f);
 
 
 }
@@ -415,6 +415,6 @@ void FireIceball(Vector3 origin, Vector3 target, float speed, float lifetime, bo
     b.light.detachOnDeath = true;
     b.light.lifeTime   = 0.25f; // short glow after death
 
-    SoundManager::GetInstance().Play("iceMagic");
+    SoundManager::Get().Play("iceMagic");
 }
 

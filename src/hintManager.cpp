@@ -145,7 +145,7 @@ void HintManager::Draw() const {
     const int sw = GetScreenWidth();
     const int sh = GetScreenHeight();
 
-    Font font = R.GetFont("Kingthings");//GetFontDefault();
+    Font font = ResourceManager::Get().GetFont("Kingthings");//GetFontDefault();
     const float fontPx = clampf(fontScale * (float)sh, 16.0f, 100.0f);
     //const float spacing = 1.0f;
 

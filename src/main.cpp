@@ -30,11 +30,11 @@ int main() {
     DisableCursor();
     SetExitKey(KEY_NULL); //Escape brings up menu, not quit
     ResourceManager::Get().LoadAllResources();
-    SoundManager::GetInstance().LoadSounds();
+    SoundManager::Get().LoadSounds();
     
-    SoundManager::GetInstance().PlayMusic("dungeonAir");
-    SoundManager::GetInstance().PlayMusic("jungleAmbience");
-    SetMusicVolume(SoundManager::GetInstance().GetMusic("jungleAmbience"), 0.5f);
+    SoundManager::Get().PlayMusic("dungeonAir");
+    SoundManager::Get().PlayMusic("jungleAmbience");
+    SetMusicVolume(SoundManager::Get().GetMusic("jungleAmbience"), 0.5f);
 
     controlPlayer = true; //start as player //hit ~ for debug mode, hit Tab for freecam in debug mode. 
     //was accidently hitting tab and entering freeCam while playing. 
@@ -58,7 +58,7 @@ int main() {
 
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
-            UpdateMusicStream(SoundManager::GetInstance().GetMusic("jungleAmbience"));
+            UpdateMusicStream(SoundManager::Get().GetMusic("jungleAmbience"));
             if (switchFromMenu){ //HACK//// make lighting work on level load from door. When game state is menu, only menu code runs,
             //enabling us to cleanly switch levels and lightmaps. 
                
@@ -84,12 +84,12 @@ int main() {
         }
 
         if (IsKeyPressed(KEY_ESCAPE) && currentGameState != GameState::Menu) currentGameState = GameState::Menu;
-        UpdateMusicStream(SoundManager::GetInstance().GetMusic(isDungeon ? "dungeonAir" : "jungleAmbience"));
+        UpdateMusicStream(SoundManager::Get().GetMusic(isDungeon ? "dungeonAir" : "jungleAmbience"));
 
         //update context
 
         debugControls(camera, deltaTime); 
-        R.UpdateShaders(camera);
+        ResourceManager::Get().UpdateShaders(camera);
         UpdateEnemies(deltaTime);
         UpdateBullets(camera, deltaTime);
         GatherFrameLights();
@@ -132,7 +132,7 @@ int main() {
     // Cleanup
     ClearLevel();
     ResourceManager::Get().UnloadAll();
-    SoundManager::GetInstance().UnloadAll();
+    SoundManager::Get().UnloadAll();
     CloseAudioDevice();
     CloseWindow();
 

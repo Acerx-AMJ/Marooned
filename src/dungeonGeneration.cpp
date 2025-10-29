@@ -111,7 +111,7 @@ void GenerateWeapons(float Height){
 
             if (EqualsRGB(current,ColorOf(Code::MagicStaffDarkRed))) { // Dark red staff
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, Height);
-                worldWeapons.push_back(CollectableWeapon(WeaponType::MagicStaff, pos, R.GetModel("staffModel")));
+                worldWeapons.push_back(CollectableWeapon(WeaponType::MagicStaff, pos, ResourceManager::Get().GetModel("staffModel")));
 
             }
         }
@@ -132,7 +132,7 @@ void UpdateDungeonChests() {
             chest.animFrame = 0.0f;
 
 
-            SoundManager::GetInstance().Play("chestOpen");
+            SoundManager::Get().Play("chestOpen");
         }
 
         if (chest.animPlaying) {
@@ -152,7 +152,7 @@ void UpdateDungeonChests() {
             chest.canDrop = false;
             UpdateModelAnimation(chest.model, chest.animations[0], OPEN_END_FRAME);
             Vector3 pos = {chest.position.x, chest.position.y + 100, chest.position.z};
-            Collectable key(CollectableType::Key, pos, R.GetTexture("keyTexture"), 100);
+            Collectable key(CollectableType::Key, pos, ResourceManager::Get().GetTexture("keyTexture"), 100);
             
             collectables.push_back(key);
             
@@ -519,7 +519,7 @@ void GenerateDoorsFromArchways() {
         door.isPortal = dw.isPortal;
 
         door.isLocked = dw.isLocked;
-        door.doorTexture = R.GetTexture("doorTexture");
+        door.doorTexture = ResourceManager::Get().GetTexture("doorTexture");
         door.scale = {300, 365, 1}; //stretch it taller
         door.tileX = dw.tileX;
         door.tileY = dw.tileY;
@@ -1059,8 +1059,8 @@ void GenerateChests(float baseY) {
 
                 // load a _separate_ model for this chest
                 // (this reads the same GLB but gives you independent skeleton data)
-                R.LoadModel(key, "assets/Models/chest.glb");
-                Model& model = R.GetModel(key);
+                ResourceManager::Get().LoadModel(key, "assets/Models/chest.glb");
+                Model& model = ResourceManager::Get().GetModel(key);
 
                 int animCount = 0;
                 ModelAnimation *anims = LoadModelAnimations("assets/Models/chest.glb", &animCount);
@@ -1092,7 +1092,7 @@ void GeneratePotions(float baseY) {
 
             if (current.r == 255 && current.g == 105 && current.b == 180) { // pink for potions
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 50); // raised slightly off floor
-                Collectable p = {CollectableType::HealthPotion, pos, R.GetTexture("healthPotTexture"), 40};
+                Collectable p = {CollectableType::HealthPotion, pos, ResourceManager::Get().GetTexture("healthPotTexture"), 40};
                 collectables.push_back(p);
             }
         }
@@ -1106,7 +1106,7 @@ void GenerateKeys(float baseY) {
 
             if (current.r == 255 && current.g == 200 && current.b == 0) { // Gold for keys
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY + 80); // raised slightly off floor
-                Collectable key = {CollectableType::Key, pos, R.GetTexture("keyTexture"), 100.0f};
+                Collectable key = {CollectableType::Key, pos, ResourceManager::Get().GetTexture("keyTexture"), 100.0f};
                 collectables.push_back(key);
             }
         }
@@ -1125,7 +1125,7 @@ void GenerateSpiderFromImage(float baseY) {
 
                 Character spider(
                     spawnPos,
-                    R.GetTexture("spiderSheet"), 
+                    ResourceManager::Get().GetTexture("spiderSheet"), 
                     200, 200,         // frame width, height
                     1,                // max frames
                     0.5f, 0.5f,       // scale, speed
@@ -1155,7 +1155,7 @@ void GenerateGhostsFromImage(float baseY) {
 
                 Character ghost(
                     spawnPos,
-                    R.GetTexture("ghostSheet"), 
+                    ResourceManager::Get().GetTexture("ghostSheet"), 
                     200, 200,         // frame width, height
                     1,                // max frames
                     0.8f, 0.5f,       // scale, speed
@@ -1188,7 +1188,7 @@ void GenerateSkeletonsFromImage(float baseY) {
 
                 Character skeleton(
                     spawnPos,
-                    R.GetTexture("skeletonSheet"), 
+                    ResourceManager::Get().GetTexture("skeletonSheet"), 
                     200, 200,         // frame width, height
                     1,                // max frames
                     0.8f, 0.5f,       // scale, speed
@@ -1220,7 +1220,7 @@ void GeneratePiratesFromImage(float baseY) {
 
                 Character pirate(
                     spawnPos,
-                    R.GetTexture("pirateSheet"), 
+                    ResourceManager::Get().GetTexture("pirateSheet"), 
                     200, 200,         // frame width, height 
                     1,                // max frames, set when setting animations
                     0.5f, 0.5f,       // scale, speed
@@ -1402,7 +1402,7 @@ void DrawLaunchers() {
     for (const LauncherTrap& launcher : launchers) {
 
         Vector3 offsetPos = {launcher.position.x, launcher.position.y + 20, launcher.position.z}; 
-        DrawModelEx(R.GetModel("stonePillar"), offsetPos, Vector3{0,1,0}, 0.0f, Vector3{100, 100, 100}, WHITE);
+        DrawModelEx(ResourceManager::Get().GetModel("stonePillar"), offsetPos, Vector3{0,1,0}, 0.0f, Vector3{100, 100, 100}, WHITE);
     }
 
 }
@@ -1412,7 +1412,7 @@ void DrawLaunchers() {
 void DrawDungeonBarrels() {
     for (const BarrelInstance& barrel : barrelInstances) {
         Vector3 offsetPos = {barrel.position.x, barrel.position.y + 20, barrel.position.z}; //move the barrel up a bit
-        Model modelToDraw = barrel.destroyed ? R.GetModel("brokeBarrel") : R.GetModel("barrelModel");
+        Model modelToDraw = barrel.destroyed ? ResourceManager::Get().GetModel("brokeBarrel") : ResourceManager::Get().GetModel("barrelModel");
         DrawModelEx(modelToDraw, offsetPos, Vector3{0, 1, 0}, 0.0f, Vector3{350.0f, 350.0f, 350.0f}, barrel.tint); //scaled half size
         
     }
@@ -1446,9 +1446,9 @@ static inline void SetIsCeilingUniform(bool yes, Shader s) {
 void DrawDungeonCeiling(){
     if (!drawCeiling) return;
     const float cull_radius = 5400;
-    Model& ceilingModel = R.GetModel("floorTileGray");
+    Model& ceilingModel = ResourceManager::Get().GetModel("floorTileGray");
 
-    SetIsCeilingUniform(true, R.GetShader("lightingShader"));
+    SetIsCeilingUniform(true, ResourceManager::Get().GetShader("lightingShader"));
     rlEnableBackfaceCulling();
     for (CeilingTile& tile : ceilingTiles){
         float dist = Vector3Distance(player.position, tile.position);
@@ -1459,14 +1459,14 @@ void DrawDungeonCeiling(){
     }
         
     rlDisableBackfaceCulling();
-    SetIsCeilingUniform(false, R.GetShader("lightingShader"));
+    SetIsCeilingUniform(false, ResourceManager::Get().GetShader("lightingShader"));
 }
 
 
 void DrawDungeonFloor() {
 
-    Model& floorModel = R.GetModel("floorTileGray");
-    Model& lavaModel = R.GetModel("lavaTile");
+    Model& floorModel = ResourceManager::Get().GetModel("floorTileGray");
+    Model& lavaModel = ResourceManager::Get().GetModel("lavaTile");
     const float cull_radius = 10000.0f;
 
     const Vector3 baseScale   = {700, 700, 700};
@@ -1489,7 +1489,7 @@ void DrawDungeonWalls() {
 
     for (const WallInstance& _wall : wallInstances) {
         // "wall"
-        DrawModelEx(R.GetModel("wallSegment"), _wall.position, Vector3{0, 1, 0}, _wall.rotationY, Vector3{700, 700, 700}, _wall.tint);
+        DrawModelEx(ResourceManager::Get().GetModel("wallSegment"), _wall.position, Vector3{0, 1, 0}, _wall.rotationY, Vector3{700, 700, 700}, _wall.tint);
 
     }
 }
@@ -1498,7 +1498,7 @@ void DrawDungeonDoorways(){
 
     for (const DoorwayInstance& d : doorways) {
         Vector3 dPos = {d.position.x, d.position.y + 100, d.position.z};
-        DrawModelEx(R.GetModel("doorWayGray"), dPos, {0, 1, 0}, d.rotationY * RAD2DEG, {490, 595, 476}, d.tint);
+        DrawModelEx(ResourceManager::Get().GetModel("doorWayGray"), dPos, {0, 1, 0}, d.rotationY * RAD2DEG, {490, 595, 476}, d.tint);
     }
 
 }
@@ -1520,7 +1520,7 @@ void DrawFlatDoor(Texture2D tex, Vector3 pos, float width, float height, float r
     Vector3 topLeft     = Vector3Add(bottomLeft, {0, h, 0});
     Vector3 topRight    = Vector3Add(bottomRight, {0, h, 0});
     BeginBlendMode(BLEND_ALPHA);
-    if (!isDungeon) BeginShaderMode(R.GetShader("treeShader")); //fog on flat door at distance in jungle
+    if (!isDungeon) BeginShaderMode(ResourceManager::Get().GetShader("treeShader")); //fog on flat door at distance in jungle
     rlEnableDepthTest();   // make sure testing is on
     rlDisableDepthMask();  // <-- NO depth writes from the portal..still occludes bullets for some reason. 
     rlSetTexture(tex.id);
@@ -1549,7 +1549,7 @@ void DrawDungeonPillars() {
         //Fire& fire = fires[i];
 
         // Draw the pedestal model
-        DrawModelEx(R.GetModel("lampModel"), pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{350, 350, 350}, WHITE);
+        DrawModelEx(ResourceManager::Get().GetModel("lampModel"), pillar.position, Vector3{0, 1, 0}, pillar.rotation, Vector3{350, 350, 350}, WHITE);
 
     }
 }

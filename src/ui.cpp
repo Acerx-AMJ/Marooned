@@ -59,9 +59,9 @@ void DrawMagicIcon(){
     Texture2D currentTexture;
 
     if (magicStaff.magicType == MagicType::Fireball) {
-        currentTexture = R.GetTexture("fireIcon");
+        currentTexture = ResourceManager::Get().GetTexture("fireIcon");
     } else if (magicStaff.magicType == MagicType::Iceball) {
-        currentTexture = R.GetTexture("iceIcon");
+        currentTexture = ResourceManager::Get().GetTexture("iceIcon");
     }
 
     int targetSize = 64;
@@ -308,7 +308,7 @@ void DrawMenu(int selectedOption, int levelIndex) {
 
     ClearBackground(BLACK);
    
-    Texture2D backDrop = R.GetTexture("backDrop");
+    Texture2D backDrop = ResourceManager::Get().GetTexture("backDrop");
     // choose contain or cover
     bool cover = false; // true = fill screen (crop), false = fit inside (letterbox)
 
@@ -328,7 +328,7 @@ void DrawMenu(int selectedOption, int levelIndex) {
     int shadowPx = std::max(1, fontSize/18);          // scales with size (≈3–4 px here)
     Color shadowCol = {0, 0, 0, 180};                 // semi-transparent black
 
-    auto& pieces = R.GetFont("Pieces"); 
+    auto& pieces = ResourceManager::Get().GetFont("Pieces"); 
   
 
     // draw shadow, then title

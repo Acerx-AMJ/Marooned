@@ -11,7 +11,7 @@ public:
     SoundManager(const SoundManager&) = delete;
     SoundManager& operator=(const SoundManager&) = delete;
 
-    static SoundManager& GetInstance(); // Singleton
+    static SoundManager& Get(); // Singleton
 
     void LoadSound(const std::string& name, const std::string& filePath);
     void LoadMusic(const std::string& name, const std::string& filePath);
@@ -24,7 +24,7 @@ public:
     
     void Update(); // Call this every frame
     Music& GetMusic(const std::string& name);
-    Sound GetSound(const std::string& name);
+    Sound& GetSound(const std::string& name);
 
 private:
     std::map<std::string, Sound> sounds;

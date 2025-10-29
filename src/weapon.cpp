@@ -10,14 +10,14 @@
 void Weapon::Fire(Camera& camera) {
 
     if (GetTime() - lastFired >= fireCooldown) {
-        SoundManager::GetInstance().Play("shotgun");
+        SoundManager::Get().Play("shotgun");
         
         recoil = recoilAmount;
         lastFired = GetTime();
 
         activeMuzzleFlashes.push_back({
             muzzlePos,
-            R.GetTexture("muzzleFlash"),
+            ResourceManager::Get().GetTexture("muzzleFlash"),
             flashSize,
             0.1f  // lifetime in seconds
         });
@@ -153,7 +153,7 @@ void Weapon::Update(float deltaTime) {
         reloadTimer += deltaTime;
 
         if (reloadTimer >= reloadDelay) {
-            SoundManager::GetInstance().Play("reload");
+            SoundManager::Get().Play("reload");
             reloadScheduled = false;
         }
 
@@ -314,7 +314,7 @@ void MeleeWeapon::PlaySwipe(){
     lastIndex = index;
     std::string stepKey = swipes[index];
 
-    SoundManager::GetInstance().Play(stepKey);
+    SoundManager::Get().Play(stepKey);
 
 }
 
@@ -334,7 +334,7 @@ void MagicStaff::Fire(const Camera& camera) {
 
     activeMuzzleFlashes.push_back({
             muzzlePos,
-            R.GetTexture("muzzleFlash"),
+            ResourceManager::Get().GetTexture("muzzleFlash"),
             flashSize,
             0.1f  // lifetime in seconds
     });
@@ -364,7 +364,7 @@ void MagicStaff::PlaySwipe(){
     lastIndex = index;
     std::string stepKey = swipes[index];
 
-    SoundManager::GetInstance().Play(stepKey);
+    SoundManager::Get().Play(stepKey);
 
 }
 

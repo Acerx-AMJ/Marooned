@@ -12,7 +12,7 @@ SoundManager::~SoundManager() {
     UnloadAll();
 }
 
-SoundManager& SoundManager::GetInstance() {
+SoundManager& SoundManager::Get() {
     static SoundManager instance;
     return instance;
 }
@@ -31,7 +31,11 @@ void SoundManager::LoadMusic(const std::string& name, const std::string& filePat
 
 void SoundManager::LoadSounds() {
     for (const auto& file : std::filesystem::directory_iterator("assets/sounds/")) {
-        SoundManager::GetInstance().LoadSound(file.path().stem().string(), file.path().string());
+        LoadSound(file.path().stem().string(), file.path().string());
+    }
+
+    for (const auto& file : std::filesystem::directory_iterator("assets/music/")) {
+        LoadMusic(file.path().stem().string(), file.path().string());
     }
 }
 
@@ -93,14 +97,9 @@ void SoundManager::Update() {
 }
 
 Music& SoundManager::GetMusic(const std::string& name) {
-    return musicTracks[name]; 
+    return musicTracks.at(name); 
 }
 
-// Why is music returned by reference and sound is not? Why are sounds retrieved safely and music not?
-Sound SoundManager::GetSound(const std::string& name) {
-    if (sounds.count(name)) {
-        return sounds[name];
-    }
-    std::cerr << "Sound not found: " << name << std::endl;
-    return {0}; // Empty sound
+Sound& SoundManager::GetSound(const std::string& name) {
+    return sounds.at(name);
 }

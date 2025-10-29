@@ -117,7 +117,7 @@ void GatherDungeonFires(Camera& camera, float deltaTime) {
         billboardRequests.push_back({
             Billboard_FacingCamera,
             firePos,
-            R.GetTexture("fireSheet"),
+            ResourceManager::Get().GetTexture("fireSheet"),
             sourceRect,
             100.0f,
             WHITE,
@@ -132,7 +132,7 @@ void GatherWebs(Camera& camera) {
         if (!isDungeon) return;
         //if (web.destroyed && !web.showBrokeWebTexture) continue;
 
-        Texture2D tex = web.destroyed ? R.GetTexture("brokeWebTexture") : R.GetTexture("spiderWebTexture");
+        Texture2D tex = web.destroyed ? ResourceManager::Get().GetTexture("brokeWebTexture") : ResourceManager::Get().GetTexture("spiderWebTexture");
 
         billboardRequests.push_back({
             Billboard_FixedFlat,
@@ -251,8 +251,8 @@ void DrawTransparentDrawRequests(Camera& camera) {
 
     for (const BillboardDrawRequest& req : billboardRequests) {
         //use alpha cut out shader on everything. treeShader does the fog at a distance thing + alpha cutout
-        if (!isDungeon) BeginShaderMode(R.GetShader("treeShader"));
-        if (isDungeon) BeginShaderMode(R.GetShader("cutoutShader"));
+        if (!isDungeon) BeginShaderMode(ResourceManager::Get().GetShader("treeShader"));
+        if (isDungeon) BeginShaderMode(ResourceManager::Get().GetShader("cutoutShader"));
         switch (req.type) {
             case Billboard_FacingCamera: //use draw billboard for both decals, and enemies. 
             case Billboard_Decal:
@@ -277,7 +277,7 @@ void DrawTransparentDrawRequests(Camera& camera) {
                 break;
 
             case Billboard_Door:
-                if (req.isPortal) BeginShaderMode(R.GetShader("portalShader")); 
+                if (req.isPortal) BeginShaderMode(ResourceManager::Get().GetShader("portalShader")); 
                 //we added another field to drawRequest just for portal doors. We could mark other things as portal an apply the same wacky color shader to them. 
                 //maybe we could protal shader ghost. 
                 DrawFlatDoor(

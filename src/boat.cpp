@@ -68,5 +68,5 @@ void DrawBoat(const Boat& boat) {
     Vector3 drawPos = boat.position;
     if (!boat.beached) drawPos.y += bob;
     
-    DrawModelEx(R.GetModel("boatModel"), drawPos, {0, 1, 0}, boat.rotationY, {1.0f, 1.0f, 1.0f}, WHITE);
+    DrawModelEx(ResourceManager::Get().GetModel("boatModel"), drawPos, {0, 1, 0}, boat.rotationY, {1.0f, 1.0f, 1.0f}, WHITE);
 }

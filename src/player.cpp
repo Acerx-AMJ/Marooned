@@ -44,7 +44,7 @@ void InitPlayer(Player& player, Vector3 startPosition) {
 
 
 void Player::EquipNextWeapon() {
-    meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordClean"); //wipe the blood off. 
+    meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = ResourceManager::Get().GetTexture("swordClean"); //wipe the blood off. 
     if (collectedWeapons.empty()) {
        
         activeWeapon = WeaponType::None;
@@ -125,7 +125,7 @@ void HandleKeyboardInput(float deltaTime) {
             if (player.currentHealth < player.maxHealth){
                 player.currentHealth = player.maxHealth;
                 player.inventory.UseItem("HealthPotion");
-                SoundManager::GetInstance().Play("gulp");
+                SoundManager::Get().Play("gulp");
             }
         }
     }
@@ -135,7 +135,7 @@ void HandleKeyboardInput(float deltaTime) {
             if (player.currentMana < player.maxMana){
                 player.currentMana = player.maxMana;
                 player.inventory.UseItem("ManaPotion");
-                SoundManager::GetInstance().Play("gulp");
+                SoundManager::Get().Play("gulp");
             }
         }
     }
@@ -206,7 +206,7 @@ void PlaySwimOnce()
     while (idx == lastIndex && KEYS.size() > 1);
     lastIndex = idx;
 
-    current = SoundManager::GetInstance().GetSound(KEYS[idx]);
+    current = SoundManager::Get().GetSound(KEYS[idx]);
     PlaySound(current);
 }
 
@@ -226,7 +226,7 @@ void PlayFootstepSound() {
     lastIndex = index;
     std::string stepKey = footstepKeys[index];
 
-    SoundManager::GetInstance().Play(stepKey);
+    SoundManager::Get().Play(stepKey);
 }
 
 void UpdateFootsteps(float deltaTime){
@@ -292,27 +292,27 @@ void UpdateMeleeHitbox(Camera& camera){
 
 void InitSword(MeleeWeapon& meleeWeapon){
     //init sword
-    meleeWeapon.model = R.GetModel("swordModel");
+    meleeWeapon.model = ResourceManager::Get().GetModel("swordModel");
     meleeWeapon.scale = {2, 2, 2};
     meleeWeapon.model.materials[3].maps = new MaterialMap(); // TODO: unload this at some point
-    meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordClean");
+    meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = ResourceManager::Get().GetTexture("swordClean");
     
 }
 
 void InitBlunderbuss(Weapon& weapon){
     //init blunderbuss
-    weapon.model = R.GetModel("blunderbuss");
+    weapon.model = ResourceManager::Get().GetModel("blunderbuss");
     weapon.scale = { 2.0f, 2.0f, 2.0f };
-    weapon.muzzleFlashTexture = R.GetTexture("muzzleFlash");
+    weapon.muzzleFlashTexture = ResourceManager::Get().GetTexture("muzzleFlash");
     weapon.fireCooldown = 2.0f;
     weapon.flashDuration = 1.0;
 
 }
 
 void InitMagicStaff(MagicStaff& magicStaff) {
-    magicStaff.model = R.GetModel("staffModel");
+    magicStaff.model = ResourceManager::Get().GetModel("staffModel");
     magicStaff.scale = {1.0f, 1.0f, 1.0f};
-    magicStaff.muzzleFlashTexture = R.GetTexture("muzzleFlash");
+    magicStaff.muzzleFlashTexture = ResourceManager::Get().GetTexture("muzzleFlash");
     magicStaff.fireCooldown = 1.0f;
 
     //set starting offsets here
@@ -421,7 +421,7 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
            
            
         }else{
-            if (player.activeWeapon == WeaponType::Blunderbuss) SoundManager::GetInstance().Play("reload"); //play "click" if in water with gun
+            if (player.activeWeapon == WeaponType::Blunderbuss) SoundManager::Get().Play("reload"); //play "click" if in water with gun
         }
         
     }
@@ -542,9 +542,9 @@ void Player::TakeDamage(int amount){
     vignetteFade = 0.0f;
 
     if (rand() % 2 == 0){
-        SoundManager::GetInstance().Play("phit1");
+        SoundManager::Get().Play("phit1");
     }else{
-        SoundManager::GetInstance().Play("phit2");
+        SoundManager::Get().Play("phit2");
     }
 
 }

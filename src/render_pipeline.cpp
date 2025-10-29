@@ -11,17 +11,17 @@
 #include "camera_system.h"
 
 void RenderFrame(Camera3D& camera, Player& player, float dt) {
-    Shader& terrainShader = R.GetShader("terrainShader");
+    Shader& terrainShader = ResourceManager::Get().GetShader("terrainShader");
     //int locShadow      = GetShaderLocation(terrainShader, "u_ShadowMask");
     // --- 3D scene to sceneTexture ---
-    BeginTextureMode(R.GetRenderTexture("sceneTexture"));
+    BeginTextureMode(ResourceManager::Get().GetRenderTexture("sceneTexture"));
         ClearBackground(SKYBLUE);
         float farClip = isDungeon ? 10000.0f : 50000.0f;
         float nearclip = 30.0f;
         CameraSystem::Get().BeginCustom3D(camera, nearclip, farClip);
 
         rlDisableBackfaceCulling(); rlDisableDepthMask(); rlDisableDepthTest();
-        DrawModel(R.GetModel("skyModel"), camera.position, 10000.0f, WHITE);
+        DrawModel(ResourceManager::Get().GetModel("skyModel"), camera.position, 10000.0f, WHITE);
         rlEnableDepthMask(); rlEnableDepthTest();
         rlSetBlendMode(BLEND_ALPHA);
 
@@ -29,10 +29,10 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
 
             DrawModel(terrainModel, {-terrainScale.x/2,0,-terrainScale.z/2}, 1.0f, WHITE);
 
-            DrawModel(R.GetModel("waterModel"), {0, waterPos.y + (float)sin(GetTime()*0.9f)*0.9f, 0}, 1.0f, WHITE);
-            DrawModel(R.GetModel("bottomPlane"), {0, waterHeightY - 100, 0}, 1.0f, DARKBLUE);
+            DrawModel(ResourceManager::Get().GetModel("waterModel"), {0, waterPos.y + (float)sin(GetTime()*0.9f)*0.9f, 0}, 1.0f, WHITE);
+            DrawModel(ResourceManager::Get().GetModel("bottomPlane"), {0, waterHeightY - 100, 0}, 1.0f, DARKBLUE);
             DrawBoat(player_boat);
-            BeginShaderMode(R.GetShader("cutoutShader"));
+            BeginShaderMode(ResourceManager::Get().GetShader("cutoutShader"));
             DrawTrees(trees, camera); 
             DrawBushes(bushes); //alpha cuttout bushes as well as tree leaf
             EndShaderMode();
@@ -75,10 +75,10 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
     EndTextureMode();
 
     // --- post to postProcessTexture ---
-    BeginTextureMode(R.GetRenderTexture("postProcessTexture"));
+    BeginTextureMode(ResourceManager::Get().GetRenderTexture("postProcessTexture"));
     {
-        BeginShaderMode(R.GetShader("fogShader"));
-            auto& sceneRT = R.GetRenderTexture("sceneTexture");
+        BeginShaderMode(ResourceManager::Get().GetShader("fogShader"));
+            auto& sceneRT = ResourceManager::Get().GetRenderTexture("sceneTexture");
             Rectangle src = { 0, 0,
                             (float)sceneRT.texture.width,
                             -(float)sceneRT.texture.height }; // flip Y!
@@ -93,8 +93,8 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
     // --- final to backbuffer + UI ---
     BeginDrawing();
         ClearBackground(WHITE);
-        BeginShaderMode(R.GetShader("bloomShader"));
-            auto& postRT = R.GetRenderTexture("postProcessTexture");
+        BeginShaderMode(ResourceManager::Get().GetShader("bloomShader"));
+            auto& postRT = ResourceManager::Get().GetRenderTexture("postProcessTexture");
             Rectangle src = { 0, 0,
                             (float)postRT.texture.width,
                             -(float)postRT.texture.height }; // flip Y!

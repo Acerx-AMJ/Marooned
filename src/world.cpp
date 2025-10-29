@@ -93,8 +93,8 @@ void InitLevel(const LevelData& level, Camera& camera) {
 
     vignetteStrengthValue = 0.2f; //less of vignette outdoors.
     bloomStrengthValue = 0.0f; //turn on bloom in dungeons
-    SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(R.GetShader("bloomShader"), GetShaderLocation(R.GetShader("bloomShader"), "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(ResourceManager::Get().GetShader("bloomShader"), GetShaderLocation(ResourceManager::Get().GetShader("bloomShader"), "vignetteStrength"), &vignetteStrengthValue, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(ResourceManager::Get().GetShader("bloomShader"), GetShaderLocation(ResourceManager::Get().GetShader("bloomShader"), "bloomStrength"), &bloomStrengthValue, SHADER_UNIFORM_FLOAT);
     
     // Load and format the heightmap image
     heightmap = LoadImage(level.heightmapPath.c_str());
@@ -111,7 +111,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
     GenerateEntrances();
     generateVegetation();
     //tree shadows after tree generation
-    Shader& terrainShader = R.GetShader("terrainShader");
+    Shader& terrainShader = ResourceManager::Get().GetShader("terrainShader");
     terrainShader.locs[SHADER_LOC_MAP_OCCLUSION] = GetShaderLocation(terrainShader, "textureOcclusion");
     terrainModel.materials[0].shader = terrainShader;
 
@@ -157,8 +157,8 @@ void InitLevel(const LevelData& level, Camera& camera) {
 
         if (levelIndex == 4) levels[0].startPosition = {-5653, 200, 6073}; //exit dungeon 3 to dungeon enterance 2 position.
 
-        R.SetLavaShaderValues();
-        R.SetBloomShaderValues();
+        ResourceManager::Get().SetLavaShaderValues();
+        ResourceManager::Get().SetBloomShaderValues();
 
         //XZ dynamic lightmap + shader lighting with occlusion
         InitDungeonLights();
@@ -172,8 +172,8 @@ void InitLevel(const LevelData& level, Camera& camera) {
     isLoadingLevel = false;
 
 
-    R.SetShaderValues();
-    if (!isDungeon) R.SetTerrainShaderValues();
+    ResourceManager::Get().SetShaderValues();
+    if (!isDungeon) ResourceManager::Get().SetTerrainShaderValues();
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
 
@@ -259,7 +259,7 @@ void UpdateFade(Camera& camera) {
     }
 
     // Push uniform every frame so the shader always matches
-    Shader& fogShader = R.GetShader("fogShader");
+    Shader& fogShader = ResourceManager::Get().GetShader("fogShader");
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"),
                    &fadeValue, SHADER_UNIFORM_FLOAT);
 }
@@ -298,7 +298,7 @@ void UpdateFade(Camera& camera) {
 
 //     }
 
-//     Shader& fogShader = R.GetShader("fogShader");
+//     Shader& fogShader = ResourceManager::Get().GetShader("fogShader");
 //     SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
 
 // }
@@ -314,13 +314,13 @@ void InitDungeonLights(){
 }
 
 void DrawEnemyShadows() {
-    Model& shadowModel = R.GetModel("shadowQuad");
+    Model& shadowModel = ResourceManager::Get().GetModel("shadowQuad");
 
     // Don’t write to depth, but still test against it
     rlEnableDepthTest();
     rlDisableDepthMask();
 
-    Shader shadowSh = R.GetShader("shadowShader"); // your quad shadow shader
+    Shader shadowSh = ResourceManager::Get().GetShader("shadowShader"); // your quad shadow shader
     int locStrength = GetShaderLocation(shadowSh, "shadowStrength");
 
     float enemyStrength = 0.6f;
@@ -399,7 +399,7 @@ void GenerateEntrances() {
         Door d{};
         d.position = e.position;
         d.rotationY = 0.0f;
-        d.doorTexture = R.GetTexture("doorTexture");
+        d.doorTexture = ResourceManager::Get().GetTexture("doorTexture");
         d.isOpen = false;
         d.isLocked = e.isLocked;
         if (i == 2) d.isLocked = !unlockEntrances;
@@ -465,7 +465,7 @@ void generateTrex(int amount, Vector3 centerPos, float radius) {
         }
 
         std::cout << "generated T-Rex\n";
-        Character Trex(spawnPos, R.GetTexture("trexSheet"), 300, 300, 1, 0.5, 1.0, 0, CharacterType::Trex);
+        Character Trex(spawnPos, ResourceManager::Get().GetTexture("trexSheet"), 300, 300, 1, 0.5, 1.0, 0, CharacterType::Trex);
         Trex.maxHealth = 2000;
         Trex.currentHealth = Trex.maxHealth;
         enemies.push_back(Trex);
@@ -515,7 +515,7 @@ void generateRaptors(int amount, Vector3 centerPos, float radius) {
 
         //std::cout << "generated raptor\n";
 
-        Character raptor(spawnPos, R.GetTexture("raptorTexture"), 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
+        Character raptor(spawnPos, ResourceManager::Get().GetTexture("raptorTexture"), 200, 200, 1, 0.5f, 0.5f, 0, CharacterType::Raptor);
         enemies.push_back(raptor);
         enemyPtrs.push_back(&enemies.back()); 
         ++spawned;
@@ -588,18 +588,18 @@ void UpdateCollectables(float deltaTime) {
         if (collectables[i].CheckPickup(player.position, 180.0f)) { //180 radius
             if (collectables[i].type == CollectableType::HealthPotion) {
                 player.inventory.AddItem("HealthPotion");
-                SoundManager::GetInstance().Play("clink");
+                SoundManager::Get().Play("clink");
             }
             else if (collectables[i].type == CollectableType::Key) {
                 player.inventory.AddItem("GoldKey");
-                SoundManager::GetInstance().Play("key");
+                SoundManager::Get().Play("key");
             }
             else if (collectables[i].type == CollectableType::Gold) {
                 player.gold += collectables[i].value;
-                SoundManager::GetInstance().Play("key");
+                SoundManager::Get().Play("key");
             } else if (collectables[i].type == CollectableType::ManaPotion) {
                 player.inventory.AddItem("ManaPotion");
-                SoundManager::GetInstance().Play("clink");
+                SoundManager::Get().Play("clink");
             }
 
             collectables.erase(collectables.begin() + i);
@@ -619,7 +619,7 @@ void PlayerSwipeDecal(Camera& camera){
     Vector3 basePos   = Vector3Add(camera.position, Vector3Scale(fwd, 130.0f));  // in front
     Vector3 offsetPos = Vector3Add(basePos,        Vector3Scale(right, 0.0f)); // to the right
     offsetPos.y -= 50;
-    Decal decal = {offsetPos, DecalType::MeleeSwipe, R.GetTexture("playerSlashSheet"), 7, 0.35f, 0.05f, 100.0f};
+    Decal decal = {offsetPos, DecalType::MeleeSwipe, ResourceManager::Get().GetTexture("playerSlashSheet"), 7, 0.35f, 0.05f, 100.0f};
 
     Vector3 vel = Vector3Add(Vector3Scale(fwd, 200.0f), Vector3Scale(right, 0.0f)); //melee swipe decals move forward 
     decal.velocity = vel;
@@ -666,7 +666,7 @@ void DrawOverworldProps() {
         Vector3 propPos = {p.x, 300, p.z};
         float propY = GetHeightAtWorldPosition(propPos, heightmap, terrainScale);
         propPos.y = propY;
-        DrawModelEx(R.GetModel(modelKey), propPos,
+        DrawModelEx(ResourceManager::Get().GetModel(modelKey), propPos,
                     {0,1,0}, p.yawDeg, {p.scale,p.scale,p.scale}, WHITE);
     }
 }

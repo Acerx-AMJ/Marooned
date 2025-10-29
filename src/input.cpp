@@ -22,7 +22,7 @@ void debugControls(Camera& camera, float deltaTime){
         //Reloading lights live breaks them for what ever reason
         // isLoadingLevel = true;
         // InitDynamicLightmap(dungeonWidth * 4);
-        // R.SetLightingShaderValues();
+        // ResourceManager::Get().SetLightingShaderValues();
         // BuildStaticLightmapOnce(dungeonLights);
         // BuildDynamicLightmapFromFrameLights(frameLights);
         // isLoadingLevel = false;

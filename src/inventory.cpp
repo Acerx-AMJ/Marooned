@@ -15,9 +15,9 @@ std::vector<std::string> slotOrder = {
 std::map<std::string, Texture2D> itemTextures;
 
 void Inventory::SetupItemTextures() {
-    itemTextures["HealthPotion"] = R.GetTexture("healthPotTexture");
-    itemTextures["GoldKey"] = R.GetTexture("keyTexture");
-    itemTextures["ManaPotion" ] = R.GetTexture("manaPotion");
+    itemTextures["HealthPotion"] = ResourceManager::Get().GetTexture("healthPotTexture");
+    itemTextures["GoldKey"] = ResourceManager::Get().GetTexture("keyTexture");
+    itemTextures["ManaPotion" ] = ResourceManager::Get().GetTexture("manaPotion");
 }
 
 

@@ -110,16 +110,16 @@ bool HandleBarrelHitsForBullet(Bullet& b, Camera& camera) {
 
 
             // Play SFX
-            SoundManager::GetInstance().Play("barrelBreak");
+            SoundManager::Get().Play("barrelBreak");
 
 
             Vector3 dropPos{ barrel.position.x, barrel.position.y + 100.0f, barrel.position.z };
             if (barrel.containsPotion) {
-                collectables.emplace_back(CollectableType::HealthPotion, dropPos, R.GetTexture("healthPotTexture"), 40);
+                collectables.emplace_back(CollectableType::HealthPotion, dropPos, ResourceManager::Get().GetTexture("healthPotTexture"), 40);
             } else if (barrel.containsMana) {
-                collectables.emplace_back(CollectableType::ManaPotion, dropPos, R.GetTexture("manaPotion"), 40);
+                collectables.emplace_back(CollectableType::ManaPotion, dropPos, ResourceManager::Get().GetTexture("manaPotion"), 40);
             } else if (barrel.containsGold) {
-                Collectable gold(CollectableType::Gold, dropPos, R.GetTexture("coinTexture"), 40);
+                Collectable gold(CollectableType::Gold, dropPos, ResourceManager::Get().GetTexture("coinTexture"), 40);
                 gold.value = GetRandomValue(1, 100);
                 collectables.push_back(gold);
             }
@@ -256,17 +256,17 @@ void HandleMeleeHitboxCollision(Camera& camera) {
             PlayerSwipeDecal(camera); //swipe decal on hit. 
             barrel.destroyed = true;
             walkable[tileX][tileY] = true; //tile is now walkable for enemies
-            SoundManager::GetInstance().Play("barrelBreak");
+            SoundManager::Get().Play("barrelBreak");
             if (barrel.containsPotion) {
                 Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
-                collectables.push_back(Collectable(CollectableType::HealthPotion, pos, R.GetTexture("healthPotTexture"), 40));
+                collectables.push_back(Collectable(CollectableType::HealthPotion, pos, ResourceManager::Get().GetTexture("healthPotTexture"), 40));
 
             }
 
             if (barrel.containsGold) {
                 Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
                 int gvalue = GetRandomValue(1, 100);
-                Collectable gold = Collectable(CollectableType::Gold, pos, R.GetTexture("coinTexture"), 40);
+                Collectable gold = Collectable(CollectableType::Gold, pos, ResourceManager::Get().GetTexture("coinTexture"), 40);
                 gold.value = gvalue;
                 collectables.push_back(gold);
 
@@ -274,7 +274,7 @@ void HandleMeleeHitboxCollision(Camera& camera) {
 
             if (barrel.containsMana) {
                 Vector3 pos = {barrel.position.x, barrel.position.y + 100, barrel.position.z};
-                Collectable manaPot = Collectable(CollectableType::ManaPotion, pos, R.GetTexture("manaPotion"), 40);
+                Collectable manaPot = Collectable(CollectableType::ManaPotion, pos, ResourceManager::Get().GetTexture("manaPotion"), 40);
                 collectables.push_back(manaPot);
 
             }
@@ -292,19 +292,19 @@ void HandleMeleeHitboxCollision(Camera& camera) {
 
             if (enemy->type != CharacterType::Skeleton && enemy->type != CharacterType::Ghost){ //skeles and ghosts dont bleed.  
                 if (enemy->currentHealth <= 0){
-                    meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = R.GetTexture("swordBloody");
+                    meleeWeapon.model.materials[3].maps[MATERIAL_MAP_DIFFUSE].texture = ResourceManager::Get().GetTexture("swordBloody");
                     //spawning decals here doesn't work for whatever reason
 
                     Vector3 camDir = Vector3Normalize(Vector3Subtract(enemy->position, camera.position));
                     Vector3 offsetPos = Vector3Add(enemy->position, Vector3Scale(camDir, -100.0f));
                     offsetPos.y += 10; 
-                    decals.emplace_back(offsetPos, DecalType::Blood, R.GetTexture("bloodSheet"), 7, 0.7f, 0.1f, 60.0f);
+                    decals.emplace_back(offsetPos, DecalType::Blood, ResourceManager::Get().GetTexture("bloodSheet"), 7, 0.7f, 0.1f, 60.0f);
                     
                     
                 } 
             }
-            if (player.activeWeapon == WeaponType::Sword) SoundManager::GetInstance().Play("swordHit");
-            if (player.activeWeapon == WeaponType::MagicStaff) SoundManager::GetInstance().Play("staffHit");
+            if (player.activeWeapon == WeaponType::Sword) SoundManager::Get().Play("swordHit");
+            if (player.activeWeapon == WeaponType::MagicStaff) SoundManager::Get().Play("staffHit");
         }
     }
 
@@ -630,9 +630,9 @@ void HandleDoorInteraction(Camera& camera) {
                     if (player.inventory.HasItem("GoldKey")) {
                         player.inventory.UseItem("GoldKey");
                         doors[i].isLocked = false;
-                        SoundManager::GetInstance().Play("unlock");
+                        SoundManager::Get().Play("unlock");
                     } else {
-                        SoundManager::GetInstance().Play("lockedDoor");
+                        SoundManager::Get().Play("lockedDoor");
                         return; // skip the rest of this function
                     }
                 }
@@ -643,7 +643,7 @@ void HandleDoorInteraction(Camera& camera) {
                 pendingDoorIndex = i;
 
                 std::string s = doors[i].isOpen ? "doorClose" : "doorOpen";
-                SoundManager::GetInstance().Play(s);
+                SoundManager::Get().Play(s);
 
                 DoorType type = doors[i].doorType;
                 if (type == DoorType::GoToNext || type == DoorType::ExitToPrevious) {
