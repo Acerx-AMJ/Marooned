@@ -431,7 +431,7 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     // --- Boarding Check ---
     if (!player.onBoard) { //board the boat, lock player position to boat position, keep free look
         float distanceToBoat = Vector3Distance(player.position, player_boat.position);
-        if (distanceToBoat < 300.0f && IsKeyPressed(KEY_SPACE)) {
+        if (distanceToBoat < 300.0f && IsKeyPressed(KEY_E)) {
             player.onBoard = true;
             player_boat.playerOnBoard = true;
             player.position = Vector3Add(player_boat.position, {0, 200.0f, 0}); // sit up a bit
@@ -440,7 +440,7 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     }
 
     // --- Exit Boat ---
-    if (player.onBoard && IsKeyPressed(KEY_SPACE)) {
+    if (player.onBoard && IsKeyPressed(KEY_E)) {
         player.onBoard = false;
         player_boat.playerOnBoard = false;
         player.position = Vector3Add(player_boat.position, {2.0f, 0.0f, 0.0f}); // step off
