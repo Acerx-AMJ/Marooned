@@ -1,20 +1,15 @@
-#include "raylib.h"
-#include "world.h"
-#include "input.h"
-#include "boat.h"
-#include "sound_manager.h"
-#include "dungeonGeneration.h"
-#include "collisions.h"
-#include "ui.h"
-#include "resourceManager.h"
-#include "render_pipeline.h"
-#include "camera_system.h"
-#include "lighting.h"
-
+#include "render/lighting.h"
+#include "render/render_pipeline.h"
+#include "tools/boat.h"
+#include "util/camera_system.h"
+#include "util/collisions.h"
+#include "util/resourceManager.h"
+#include "util/sound_manager.h"
+#include "util/ui.h"
+#include "world/world.h"
 
 bool squareRes = false; // set true for 1280x1024, false for widescreen
 //TODO: make 1280 res work. How? 
-
 
 int main() { 
     int screenWidth = squareRes ? 1280 : 1600;
@@ -88,7 +83,6 @@ int main() {
 
         //update context
 
-        debugControls(camera, deltaTime); 
         ResourceManager::Get().UpdateShaders(camera);
         UpdateEnemies(deltaTime);
         UpdateBullets(camera, deltaTime);
@@ -135,7 +129,4 @@ int main() {
     SoundManager::Get().UnloadAll();
     CloseAudioDevice();
     CloseWindow();
-
-    //system("pause"); // ← waits for keypress
-    return 0;
 }

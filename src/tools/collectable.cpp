@@ -1,0 +1,30 @@
+#include "tools/collectable.h"
+
+#include "raymath.h"
+
+// NEW constructor with icon and scale
+Collectable::Collectable(CollectableType type, Vector3 position, Texture2D icon, float scale)
+    : type(type), position(position), icon(icon), scale(scale)
+    
+{
+    collider = {
+        position - Vector3{20, 0, 20},
+        position + Vector3{20, 60, 20}
+    };
+}
+
+void Collectable::Update(float deltaTime) {
+    bobTimer += deltaTime;
+    float bobAmount = sinf(bobTimer) * 0.1f;
+    position.y += bobAmount;
+
+    // Update collider height to match
+    collider.min.y = position.y;
+    collider.max.y = position.y + 60.0f;
+}
+
+
+
+bool Collectable::CheckPickup(const Vector3& playerPos, float pickupRadius) const {
+    return Vector3Distance(playerPos, position) < pickupRadius;
+}
