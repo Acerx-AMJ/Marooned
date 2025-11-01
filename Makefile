@@ -1,45 +1,42 @@
-# Compiler and common flags
-CC      := g++
-CXXFLAGS:= -std=c++17 -Wall -Wextra -O2 -MMD -MP
-
-# Sources / objects
-SRC := $(wildcard src/*.cpp)
-OBJ := $(SRC:.cpp=.o)
+CC := g++
+CXXFLAGS := -std=c++17 -Wall -Wextra -O2 -MMD -MP -Iinclude
+SRC := $(wildcard src/*.cpp) $(wildcard src/**/*.cpp)
+OBJ := $(patsubst src/%.cpp, build/%.o, $(SRC))
 DEP := $(OBJ:.o=.d)
 
-# ===== Platform detection =====
 UNAME_S := $(shell uname -s)
+OUT := build/marooned
 
-# Default output name (overridden below)
-OUT := Marooned
-
-ifeq ($(OS),Windows_NT)                       # Windows (CMD/PowerShell/MSYS)
-    EXT     := .exe
-    OUT     := $(OUT)$(EXT)
-    LDLIBS  := -lraylib -lopengl32 -lgdi32 -lwinmm
-else                                          # Unixy (Linux/macOS/MSYS)
-    # Prefer pkg-config if raylib is installed
-    ifeq ($(shell pkg-config --exists raylib && echo yes),yes)
-        CXXFLAGS += $(shell pkg-config --cflags raylib)
-        LDLIBS   := $(shell pkg-config --libs raylib)
-    else
-        # Fallback: common Linux libs for raylib
-        LDLIBS := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
-        # (Depending on distro you might also need: -lXrandr -lXi -lXcursor -lXinerama)
-    endif
+ifeq ($(OS),Windows_NT)
+	OUT := $(OUT).exe
+	LDLIBS := -lraylib -lopengl32 -lgdi32 -lwinmm
+else
+	ifeq ($(shell pkg-config --exists raylib && echo yes), yes)
+		CXXFLAGS += $(shell pkg-config --cflags raylib)
+		LDLIBS := $(shell pkg-config --libs raylib)
+	else
+	# Depending on your distro you might also need -lXrandr -lXi -lXcursor -lXinerama
+		LDLIBS := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+	endif
 endif
 
-# ===== Build rules =====
-all: $(OUT)
+all: create_build_dir $(OUT)
+
+create_build_dir:
+	mkdir -p build
 
 $(OUT): $(OBJ)
 	$(CC) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
-src/%.o: src/%.cpp
+build/%.o: src/%.cpp
+	@mkdir -p $(dir $@)
+	$(CC) $(CXXFLAGS) -c $< -o $@
+build/%/%.o: src/%/%.cpp
+	@mkdir -p $(dir $@)
 	$(CC) $(CXXFLAGS) -c $< -o $@
 
 -include $(DEP)
 
 .PHONY: clean
 clean:
-	rm -f src/*.o src/*.d $(OUT)
+	rm -rf build/*

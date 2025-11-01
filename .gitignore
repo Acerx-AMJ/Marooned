@@ -8,7 +8,7 @@
 /raylib/
 /build/
 /Makefile
-/CMakeLists.txt
 /cache
 /.cache
 /.vscode
+/Bugs.md
