@@ -72,7 +72,7 @@ struct MeleeWeapon {
     float verticalOffset = -40.0f;
     void StartBlock();
     void EndBlock();
-    void StartSwing(Camera& camera);
+    void StartSwing();
     void PlaySwipe();
     void Update(float deltaTime);
     void Draw(const Camera& camera);
@@ -170,7 +170,7 @@ struct MagicStaff {
     float reloadDip = 0.0f;
 
     // === Methods ===
-    void StartSwing(Camera& camera);
+    void StartSwing();
     void Update(float deltaTime);
     void Fire(const Camera& camera);
     void Draw(const Camera& camera);

@@ -19,7 +19,7 @@ public:
 
     void PlayMusic(const std::string& name, float volume = 1.0f);
     void Play(const std::string& name);
-    void PlaySoundAtPosition(const std::string& soundName, const Vector3& soundPos, const Vector3& listenerPos, float listenerYaw, float maxDistance);
+    void PlaySoundAtPosition(const std::string& soundName, const Vector3& soundPos, const Vector3& listenerPos, float maxDistance);
     
     void Update(); // Call this every frame
     Music& GetMusic(const std::string& name);

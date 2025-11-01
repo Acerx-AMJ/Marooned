@@ -58,9 +58,6 @@ void Character::UpdatePlayerVisibility(const Vector3& playerPos, float deltaTime
 void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
     float distance = Vector3Distance(position, player.position);
 
-    Vector2 start = WorldToImageCoords(position);
-    Vector2 goal = WorldToImageCoords(player.position);
-    //changed vision to soley rely on world LOS. More forgiving 
     playerVisible = false;
     UpdatePlayerVisibility(player.position, deltaTime, 0.0f);
 
@@ -199,10 +196,9 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
             //surround the player
             stateTimer += deltaTime;
 
-            Vector2 playerTile = WorldToImageCoords(player.position);
             Vector3 target = position; // fallback
 
-            bool foundSpot = FindRepositionTarget(player, position, target);
+            bool foundSpot = FindRepositionTarget(player, target);
 
             if (foundSpot) {
                 Vector3 dir = Vector3Normalize(Vector3Subtract(target, position));
@@ -325,14 +321,14 @@ void Character::UpdateTrexAI(float deltaTime, Player& player){
 
                 hasPatrolTarget  = true;
                 ChangeState(CharacterState::Patrol);
-                SoundManager::Get().PlaySoundAtPosition((GetRandomValue(0, 1) == 0 ? "TrexRoar" : "TrexRoar2"), position, player.position, 0.0, 6000);
+                SoundManager::Get().PlaySoundAtPosition((GetRandomValue(0, 1) == 0 ? "TrexRoar" : "TrexRoar2"), position, player.position, 6000);
                 break;
             }
 
             if (distance < STALK_ENTER && playerVisible) {
                 if (canSee){
                     ChangeState(CharacterState::Chase);
-                    SoundManager::Get().PlaySoundAtPosition((GetRandomValue(0, 1) == 0 ? "TrexRoar" : "TrexRoar2"), position, player.position, 0.0, 6000);
+                    SoundManager::Get().PlaySoundAtPosition((GetRandomValue(0, 1) == 0 ? "TrexRoar" : "TrexRoar2"), position, player.position, 6000);
                 } 
                 
                 
@@ -426,12 +422,8 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
 
     // --- Simple deadbands ---
     const float STALK_ENTER   = 2000.0f;  // engage if closer than this
-    const float STALK_EXIT    = 2400.0f;  // drop back to idle 
-    const float ATTACK_ENTER  = 200.0f;   // start attack if closer than this
     const float ATTACK_EXIT   = 300.0f;   // leave attack if beyond this 
     const float FLEE_ENTER    = 100.0f;   // too close -> run away
-    const float FLEE_EXIT     = 3000.0f;   // far enough -> stop fleeing
-    const float VISION_ENTER = 4000.0f;
 
     //playerVisible = distance < VISION_ENTER;
 
@@ -573,7 +565,6 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
     float pirateHeight = 160;
     playerVisible = false;
     Vector2 start = WorldToImageCoords(position);
-    Vector2 goal = WorldToImageCoords(player.position);
 
     UpdatePlayerVisibility(player.position, deltaTime, 0.0f);
 
@@ -690,7 +681,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                     hasFired = true;
                     attackCooldown = 1.5f;
                     //SoundManager::Get().Play("shotgun");
-                    SoundManager::Get().PlaySoundAtPosition("musket", position, player.position, 1.0, 2000);
+                    SoundManager::Get().PlaySoundAtPosition("musket", position, player.position, 2000);
                 }
 
             }else if (distance < 250){
@@ -773,10 +764,9 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             //skeletons and pirates and spiders, when close, surround the player. Instead of all standing on the same tile. 
             stateTimer += deltaTime;
 
-            Vector2 playerTile = WorldToImageCoords(player.position);
             Vector3 target = position; // fallback
 
-            bool foundSpot = FindRepositionTarget(player, position, target);
+            bool foundSpot = FindRepositionTarget(player, target);
 
 
             if (foundSpot) {
@@ -861,7 +851,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
         }
 }
 
-bool Character::FindRepositionTarget(const Player& player, const Vector3& selfPos, Vector3& outTarget) {
+bool Character::FindRepositionTarget(const Player& player, Vector3& outTarget) {
     //surround the player, don't all stand on the same tile. 
     Vector2 playerTile = WorldToImageCoords(player.position);
 
@@ -882,7 +872,7 @@ bool Character::FindRepositionTarget(const Player& player, const Vector3& selfPo
 
         if (tx < 0 || ty < 0 || tx >= dungeonWidth || ty >= dungeonHeight) continue;
         if (!IsWalkable(tx, ty, dungeonImg)) continue;
-        if (IsTileOccupied(tx, ty, enemyPtrs, nullptr)) continue;
+        if (IsTileOccupied(tx, ty, nullptr)) continue;
 
         outTarget = GetDungeonWorldPos(tx, ty, tileSize, dungeonPlayerHeight);
         outTarget.y += 80.0f;
@@ -893,7 +883,7 @@ bool Character::FindRepositionTarget(const Player& player, const Vector3& selfPo
 }
 
 Vector3 Character::ComputeRepulsionForce(const std::vector<Character*>& allRaptors, float repulsionRadius, float repulsionStrength) {
-    Vector3 repulsion = { 0 };
+    Vector3 repulsion = {0, 0, 0};
     //prevent raptors overlapping 
     for (Character* other : allRaptors) {
         if (other == this) continue;
@@ -1062,7 +1052,7 @@ void Character::UpdateChase(float deltaTime)
     const float SLOW_RADIUS = 800.0f;       // ease-in so we don’t overshoot
     // Move straight toward the player (XZ only), easing inside SLOW_RADIUS
     Vector3 vel = ArriveXZ(position, player.position, MAX_SPEED, SLOW_RADIUS);
-    bool blocked = StopAtWaterEdge(position, vel, 65, deltaTime);
+    bool blocked = StopAtWaterEdge(position, vel, 65);
 
     if (!blocked) position = Vector3Add(position, Vector3Scale(vel, deltaTime));
     //SoundManager::Get().PlaySoundAtPosition("TrexStep", position, player.position, 0.0f, 4000.0f);
@@ -1088,7 +1078,7 @@ void Character::UpdateTrexStepSFX(float dt)
     stepTimer += dt;
     if (stepTimer >= 1.0f) {
 
-        SoundManager::Get().PlaySoundAtPosition("TrexStep", position, player.position, 0.0f, 8000.0f);
+        SoundManager::Get().PlaySoundAtPosition("TrexStep", position, player.position, 8000.0f);
         stepTimer -= 1.0f; // use -= to survive occasional long frames
     }
 }
@@ -1118,7 +1108,7 @@ void Character::UpdateRunaway(float deltaTime)
     Vector3 desired = Vector3Add(vFlee, Vector3Add(vSep, vWander));
     desired         = Limit(desired, MAX_SPEED);
 
-    bool blocked = StopAtWaterEdge(position, desired, 65, deltaTime);
+    bool blocked = StopAtWaterEdge(position, desired, 65);
     if (blocked) ChangeState(CharacterState::Idle);
 
     // Integrate + face motion
@@ -1156,7 +1146,7 @@ void Character::UpdatePatrol(float deltaTime)
     position    = Vector3Add(position, Vector3Scale(vel, deltaTime));
 
     // Stop at water edge → flee
-    if (StopAtWaterEdge(position, vel, 65, deltaTime)) {
+    if (StopAtWaterEdge(position, vel, 65)) {
         hasPatrolTarget = false;
         ChangeState(CharacterState::RunAway);
         return;

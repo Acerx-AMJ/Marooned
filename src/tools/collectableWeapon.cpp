@@ -4,7 +4,7 @@
 #include "world/world.h"
 
 CollectableWeapon::CollectableWeapon(WeaponType type, Vector3 position, Model model)
-    : type(type), position(position), model(model), rotationY(0.0f), isCollected(false) {}
+    : type(type), position(position), rotationY(0.0f), isCollected(false), model(model) {}
 
 void CollectableWeapon::Update(float deltaTime) {
     rotationY += 45.0f * deltaTime;

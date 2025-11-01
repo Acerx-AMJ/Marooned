@@ -4,7 +4,7 @@
 
 // NEW constructor with icon and scale
 Collectable::Collectable(CollectableType type, Vector3 position, Texture2D icon, float scale)
-    : type(type), position(position), icon(icon), scale(scale)
+    : position(position), type(type), icon(icon), scale(scale)
     
 {
     collider = {

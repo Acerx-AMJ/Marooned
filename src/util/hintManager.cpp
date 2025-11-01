@@ -181,8 +181,8 @@ void HintManager::Draw() const {
     Vector2 textPos  { floorf(pos.x),        floorf(pos.y)        };
 
     // Draw shadow, then text
-    DrawMultilineText(wrapped, font, floorf(fontPx), floorf(letterSpacing), shadowPos, shadow, 1.15f);
-    DrawMultilineText(wrapped, font, floorf(fontPx), floorf(letterSpacing), textPos,   text,   1.15f);
+    DrawMultilineText(wrapped, font, floorf(fontPx), floorf(letterSpacing), shadowPos, shadow);
+    DrawMultilineText(wrapped, font, floorf(fontPx), floorf(letterSpacing), textPos,   text);
 }
 
 bool HintManager::HasActiveHint() const {
@@ -276,7 +276,7 @@ Vector2 HintManager::MeasureMultiline(const std::string& text, Font font, float 
     return { maxW, totalH };
 }
 
-void HintManager::DrawMultilineText(const std::string& text, Font font, float fontSize, float spacing, Vector2 pos, Color tint, float alphaScale) const {
+void HintManager::DrawMultilineText(const std::string& text, Font font, float fontSize, float spacing, Vector2 pos, Color tint) const {
     std::istringstream ss(text);
     std::string line;
     float y = pos.y;

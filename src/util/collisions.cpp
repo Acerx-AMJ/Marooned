@@ -339,11 +339,9 @@ void CheckBulletHits(Camera& camera) {
         for (Character* enemy : enemyPtrs) {
             if (enemy->isDead) continue;
             bool isSkeleton = (enemy->type == CharacterType::Skeleton);
-            bool isGhost = (enemy->type == CharacterType::Ghost);
             if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), b.GetPosition(), b.GetRadius())) {
                 if (!b.IsEnemy() && (b.type == BulletType::Default)) {
                     enemy->TakeDamage(25);
-                    int rn = GetRandomValue(0, 4);
                     if (enemy->isDead){
                         if (enemy->type == CharacterType::Skeleton || enemy->type == CharacterType::Ghost){
                             b.Erase();
@@ -607,7 +605,7 @@ void TreeCollision(Camera& camera){
 
 
 
-void HandleDoorInteraction(Camera& camera) {
+void HandleDoorInteraction() {
     static bool isWaiting = false;
     static float openTimer = 0.0f;
     static int pendingDoorIndex = -1;
@@ -670,7 +668,7 @@ void HandleDoorInteraction(Camera& camera) {
             // Update walkable grid, open doors are walkable. 
             int tileX = GetDungeonImageX(doors[pendingDoorIndex].position.x, tileSize, dungeonWidth);
             int tileY = GetDungeonImageY(doors[pendingDoorIndex].position.z, tileSize, dungeonHeight);
-            if (tileX >= 0 && tileY >= 0 && tileX < walkable.size() && tileY < walkable[0].size()) {
+            if (tileX >= 0 && tileY >= 0 && tileX < (int)walkable.size() && tileY < (int)walkable[0].size()) {
                 walkable[tileX][tileY] = doors[pendingDoorIndex].isOpen;
             }
 

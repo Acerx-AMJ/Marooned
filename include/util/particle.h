@@ -12,5 +12,5 @@ struct Particle {
     bool active = false;
 
     void Update(float dt);
-    void Draw(Camera3D& camera) const;
+    void Draw() const;
 };

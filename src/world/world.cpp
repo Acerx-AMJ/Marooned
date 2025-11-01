@@ -22,7 +22,6 @@ TreeShadowMask gTreeShadowMask;
 int levelIndex = 0; //current level, levels[levelIndex]
 int previousLevelIndex = 0;
 bool first = true; //for first player start position
-bool controlPlayer = false;
 bool isDungeon = false;
 unsigned char* heightmapPixels = nullptr;
 Player player = {};
@@ -131,7 +130,7 @@ void InitLevel(const LevelData& level, Camera& camera) {
         GenerateWallTiles(wallHeight); //model is 400 tall with origin at it's center, so wallHeight is floorHeight + model height/2. 270
         GenerateDoorways(floorHeight - 20, levelIndex); //calls generate doors from archways
         GenerateLavaSkirtsFromMask(floorHeight);
-        GenerateCeilingTiles(ceilingHeight);//400
+        GenerateCeilingTiles();//400
         GenerateBarrels(floorHeight);
         GenerateLaunchers(floorHeight);
         GenerateSpiderWebs(floorHeight);
@@ -157,8 +156,6 @@ void InitLevel(const LevelData& level, Camera& camera) {
  
     }
 
-
-
     ResourceManager::Get().SetLightingShaderValues();
     ResourceManager::Get().SetPortalShaderValues();
     isLoadingLevel = false;
@@ -168,10 +165,6 @@ void InitLevel(const LevelData& level, Camera& camera) {
     if (!isDungeon) ResourceManager::Get().SetTerrainShaderValues();
     Vector3 resolvedSpawn = ResolveSpawnPoint(level, isDungeon, first, floorHeight);
     InitPlayer(player, resolvedSpawn); //start at green pixel if there is one. otherwise level.startPos or first startPos
-
-    CameraSystem::Get().SnapAllToPlayer(); //put freecam at player pos
-
-    //start with blunderbus and sword in that order
 
     player.collectedWeapons = {WeaponType::Blunderbuss, WeaponType::Sword}; 
     if (hasStaff) player.collectedWeapons.push_back(WeaponType::MagicStaff); //once you pick up the staff in world you have it forever. 
@@ -212,7 +205,7 @@ void StartFadeInFromBlack() {
 
 
 // Call this EVERY FRAME, regardless of game state:
-void UpdateFade(Camera& camera) {
+void UpdateFade() {
 
     float dt = FadeDt(); //prevents loading time accumulating frames and skiping the fade.
     fade = fadeValue;
@@ -255,45 +248,6 @@ void UpdateFade(Camera& camera) {
     SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"),
                    &fadeValue, SHADER_UNIFORM_FLOAT);
 }
-
-// void UpdateFade(float deltaTime, Camera& camera){
-//     //fades out on death, and level transition if pendingLevelIndex != -1
-//     if (isFading) {
-//         if (fadeIn) {
-//             fadeToBlack += fadeSpeed * deltaTime;
-
-//             if (fadeToBlack >= 1.0f) {
-//                 fadeToBlack = 1.0f;
-//                 isFading = false;
-
-//                 if (pendingLevelIndex != -1) {
-//                     currentGameState = GameState::Menu; //HACK //quickly switch to menu before switching to new level. This fixes lighting bug on level switch.
-//                     //Menu gameState stops all other code from running, letting us switch lightmaps cleanly, found no other way. 
-//                     switchFromMenu = true;
-//                     //InitLevel(levels[pendingLevelIndex], camera); //Start new Level
-//                     //pendingLevelIndex = -1;
-
-//                     // Start fading back in
-//                     fadeIn = false;
-//                     isFading = true;
-//                 }
-//             }
-//         } else {//fade in = false
-//             std::cout << "fading in \n" << fadeToBlack << "\n";
-//             fadeToBlack -= fadeSpeed * deltaTime;
-            
-//             if (fadeToBlack <= 0.0f) {
-//                 fadeToBlack = 0.0f;
-//                 isFading = false;
-//             }
-//         }
-
-//     }
-
-//     Shader& fogShader = ResourceManager::Get().GetShader("fogShader");
-//     SetShaderValue(fogShader, GetShaderLocation(fogShader, "fadeToBlack"), &fadeToBlack, SHADER_UNIFORM_FLOAT);
-
-// }
 
 void InitDungeonLights(){
     InitDynamicLightmap(dungeonWidth * 4); //128 for 32 pixel map. keep same ratio if bigger map. 
@@ -631,16 +585,16 @@ void UpdateDecals(float deltaTime){
 }
 
 
-void DrawBloodParticles(Camera& camera){
+void DrawBloodParticles(){
     for (Character* enemy : enemyPtrs) { //draw enemy blood, blood is 3d so draw before billboards. 
-            enemy->bloodEmitter.Draw(camera);
+            enemy->bloodEmitter.Draw();
     }
 }
 
-void DrawBullets(Camera& camera) {
+void DrawBullets() {
     for (const Bullet& b : activeBullets) {
         if (b.IsAlive()){
-             b.Draw(camera);
+             b.Draw();
         }
     }
 
@@ -714,8 +668,8 @@ void UpdateWorldFrame(float dt, Player& player) {
         player.rotation.x,
         player.isSwimming,
         player.onBoard,
-        player_boat.position
-        
+        player_boat.position,
+        0.f
     };
     CameraSystem::Get().SyncFromPlayer(pv); //synce to players rotation
 

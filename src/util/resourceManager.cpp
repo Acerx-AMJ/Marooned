@@ -194,7 +194,6 @@ void ResourceManager::UpdateShaders(Camera& camera){
     Shader& skyShader = GetShader("skyShader");
     Shader& terrainShader = GetShader("terrainShader");
     Shader& fogShader = GetShader("fogShader");
-    Shader& bloomShader = GetShader("bloomShader");
     Shader& treeShader = GetShader("treeShader");
 
     Vector3 camPos = camera.position;
@@ -302,7 +301,6 @@ void ResourceManager::SetLavaShaderValues(){
     }
 
     // Hook locations once
-    int locTime   = GetShaderLocation(lavaShader, "uTime");
     int locDir    = GetShaderLocation(lavaShader, "uScrollDir");
     int locSpeed  = GetShaderLocation(lavaShader, "uSpeed");
     int locOff    = GetShaderLocation(lavaShader, "uWorldOffset");
@@ -547,13 +545,8 @@ void ResourceManager::SetPortalShaderValues(){
 }
 
 void ResourceManager::SetShaderValues(){
-    //outdoor shaders + bloom, tonemap, saturation, foliage alpha cutoff , shadowTex
-    Vector2 screenResolution = (Vector2){ (float)GetScreenWidth(), (float)GetScreenHeight() };
-    // set shaders values
-    Shader& fogShader = GetShader("fogShader");
     Shader& shadowShader = GetShader("shadowShader");
     Shader& waterShader = GetShader("waterShader");
-    Shader& terrainShader = GetShader("terrainShader");
 
     // Sky
     //apply skyShader to sky model
@@ -564,7 +557,6 @@ void ResourceManager::SetShaderValues(){
     GetModel("skyModel").materials[0].shader = sky;
 
     // Cache uniform locations
-    int locTime      = GetShaderLocation(sky, "time");
     int locIsDungeon = GetShaderLocation(sky, "isDungeon");
 
     int isDung = isDungeon ? 1 : 0; 

@@ -226,7 +226,6 @@ void DrawHUDBars(const Player& player) {
 
     //Position the bars on screen
     float baseY   = GetScreenHeight() - 80.0f; // top of the stack, aligned with inventory
-    float aspect = (float)GetScreenWidth() / (float)GetScreenHeight();
     float xCenter = 550;
  
     // Vertical spacing between bars 
@@ -346,7 +345,6 @@ void DrawMenu(int selectedOption, int levelIndex) {
     float menuFontSizeF = 60.0f;
     float menuSpacing   = 1.0f;
     int   menuShadowPx  = std::max(1, (int)(menuFontSizeF/18.0f));
-    float verticalSpacing = 75.0f;
 
     char startBuf[64];
     snprintf(startBuf, sizeof(startBuf), "%sStart", (selectedOption==0?"> ":"  "));

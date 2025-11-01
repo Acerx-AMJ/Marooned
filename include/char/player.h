@@ -91,7 +91,6 @@ void InitPlayer(Player& player, Vector3 startPosition);
 
 // Updates player movement and physics
 void UpdatePlayer(Player& player, float deltaTime, Camera& camera);
-void UpdatePlayerInput(Player& player, float deltaTime, Camera& camera);
 void HandlePlayerMovement(float deltaTime);
 void TryQueuedJump();
 void DrawPlayer(const Player& player, Camera& camera);
@@ -100,4 +99,4 @@ void InitBlunderbuss(Weapon& blunderbuss);
 void InitMagicStaff(MagicStaff& magicStaff);
 void HandleJumpButton(float timeNow);
 void OnGroundCheck(bool groundedNow, float timeNow);
-void HandleMouseLook(float deltaTime);
+void HandleMouseLook();

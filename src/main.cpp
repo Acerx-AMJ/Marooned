@@ -31,9 +31,6 @@ int main() {
     SoundManager::Get().PlayMusic("jungleAmbience");
     SetMusicVolume(SoundManager::Get().GetMusic("jungleAmbience"), 0.5f);
 
-    controlPlayer = true; //start as player //hit ~ for debug mode, hit Tab for freecam in debug mode. 
-    //was accidently hitting tab and entering freeCam while playing. 
-
     float aspect = (float)GetScreenWidth() / (float)GetScreenHeight();
     float fovy   = (aspect < (16.0f/9.0f)) ? 50.0f : 45.0f; //bump up FOV if it's narrower than 16x9
 
@@ -49,7 +46,7 @@ int main() {
        // Use the active camera everywhere:
         Camera3D& camera = CameraSystem::Get().Active();
         
-        UpdateFade(camera); //always update fade
+        UpdateFade(); //always update fade
 
         //Main Menu - level select 
         if (currentGameState == GameState::Menu) {
@@ -94,14 +91,14 @@ int main() {
         UpdateCollectables(deltaTime); 
         UpdateLauncherTraps(deltaTime);
         UpdateDungeonChests();
-        ApplyLavaDPS(player, deltaTime, 1);
+        ApplyLavaDPS(player, deltaTime, 10);
         HandleWaves();
         UpdateHintManager(deltaTime);
         
         //collisions
         UpdateCollisions(camera);
 
-        HandleDoorInteraction(camera);
+        HandleDoorInteraction();
         HandleWeaponTints();
         if (isDungeon){
             
@@ -110,8 +107,6 @@ int main() {
 
         //gather up everything 2d and put it into a vector of struct drawRequests, then we sort and draw every billboard/quad in the game.
         GatherTransparentDrawRequests(camera, deltaTime);
-
-        controlPlayer = CameraSystem::Get().IsPlayerMode();
 
         // Update camera based on player
         UpdateWorldFrame(deltaTime, player);

@@ -9,17 +9,17 @@
 
 
 Bullet::Bullet(Vector3 startPos, Vector3 vel, float lifetime, bool en, BulletType t, float r, bool launch)
-    : position(startPos),
+    : fireEmitter(startPos),
+      sparkEmitter(startPos),
+      position(startPos),
       velocity(vel),
       alive(true),
+      enemy(en),
       age(0.0f),
       maxLifetime(lifetime),
-      enemy(en),
-      type(t),
-      fireEmitter(startPos),
-      sparkEmitter(startPos),
       radius(r),
-      launcher(launch)
+      launcher(launch),
+      type(t)
 {}
 
 
@@ -191,24 +191,24 @@ void Bullet::Update(Camera& camera, float deltaTime) {
 
 
 
-void Bullet::Draw(Camera& camera) const {
+void Bullet::Draw() const {
     if (!alive) return;
     if (type == BulletType::Fireball){
-        fireEmitter.Draw(camera); //explosion particles 
+        fireEmitter.Draw(); //explosion particles 
         //bullet remains alive until timeSinceExplosion = 2.0f, always draw explosion particles.  
         
         if (!exploded){
             //dont draw the ball or firetrail if it's exploded. 
             DrawModelEx(ResourceManager::Get().GetModel("fireballModel"), position, { 0, 1, 0 }, spinAngle, { 20.0f, 20.0f, 20.0f }, WHITE);
-            sparkEmitter.Draw(camera); //firetrail
+            sparkEmitter.Draw(); //firetrail
         } 
         
     }else if (type == BulletType::Iceball){
-        fireEmitter.Draw(camera);
+        fireEmitter.Draw();
 
         if (!exploded){
             DrawModelEx(ResourceManager::Get().GetModel("iceballModel"), position, { 0, 1, 0 }, spinAngle, { 25.0f, 25.0f, 25.0f }, WHITE);
-            sparkEmitter.Draw(camera);
+            sparkEmitter.Draw();
             
         } 
     } else{
@@ -292,7 +292,7 @@ void Bullet::Explode(Camera& camera) {
         explosionTriggered = true;
         velocity.x = 0; //stop bullets velocity when exploding but keep gravity. 
         velocity.z = 0;
-        SoundManager::Get().PlaySoundAtPosition("explosion", position, player.position, player.rotation.y, 3000.0f);
+        SoundManager::Get().PlaySoundAtPosition("explosion", position, player.position, 3000.0f);
         
         Vector3 camDir = Vector3Normalize(Vector3Subtract(position, camera.position));
         Vector3 offsetPos = Vector3Add(position, Vector3Scale(camDir, -100.0f));
@@ -396,7 +396,7 @@ void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, b
     b.light.detachOnDeath = true;
     b.light.lifeTime   = 0.25f; // short glow after death
 
-    SoundManager::Get().PlaySoundAtPosition((rand() % 2 == 0 ? "flame1" : "flame2"), origin, player.position, 0.0f, 3000.0f);
+    SoundManager::Get().PlaySoundAtPosition((rand() % 2 == 0 ? "flame1" : "flame2"), origin, player.position, 3000.0f);
 
 
 }

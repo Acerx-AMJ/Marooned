@@ -71,7 +71,7 @@ void SoundManager::Play(const std::string& name) {
     }
 }
 
-void SoundManager::PlaySoundAtPosition(const std::string& soundName, const Vector3& soundPos, const Vector3& listenerPos, float listenerYaw, float maxDistance) {
+void SoundManager::PlaySoundAtPosition(const std::string& soundName, const Vector3& soundPos, const Vector3& listenerPos, float maxDistance) {
     if (sounds.find(soundName) == sounds.end()) {
         std::cerr << "Sound not found: " << soundName << std::endl;
         return;

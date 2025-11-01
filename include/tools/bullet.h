@@ -47,7 +47,7 @@ public:
     void Update(Camera& camera, float deltaTime);
     void UpdateMagicBall(Camera& camera, float deltaTime);
     void Erase();
-    void Draw(Camera& camera) const;
+    void Draw() const;
     void kill(Camera& camera);
 
     //These just return the public members now. Clean this up eventually

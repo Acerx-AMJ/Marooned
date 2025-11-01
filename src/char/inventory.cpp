@@ -48,7 +48,7 @@ int Inventory::GetItemCount(const std::string& itemId) const {
 void Inventory::DrawInventoryUIWithIcons(const std::map<std::string, Texture2D>& itemTextures, const std::vector<std::string>& slotOrder, int x, int y, int slotSize) const {
     int spacing = slotSize + 10;
 
-    for (int i = 0; i < slotOrder.size(); ++i) {
+    for (size_t i = 0; i < slotOrder.size(); ++i) {
         const std::string& itemId = slotOrder[i];
 
         Rectangle slotRect = { (float)(x + i * spacing), (float)y, (float)slotSize, (float)slotSize };

@@ -103,7 +103,7 @@ void HandlePlayerMovement(float deltaTime){
 
 }
 
-void HandleKeyboardInput(float deltaTime, Camera& camera) {
+void HandleKeyboardInput(Camera& camera) {
 
     // Right mouse state //blocking
     const bool rmb = IsMouseButtonDown(MOUSE_RIGHT_BUTTON);
@@ -146,11 +146,11 @@ void HandleKeyboardInput(float deltaTime, Camera& camera) {
         }
 
         if (player.activeWeapon == WeaponType::Sword){
-            meleeWeapon.StartSwing(camera);
+            meleeWeapon.StartSwing();
         }
 
         if (player.activeWeapon == WeaponType::MagicStaff){
-                magicStaff.StartSwing(camera);
+                magicStaff.StartSwing();
            }
     }
 
@@ -252,7 +252,7 @@ void PlaySwimOnce()
     if (isDungeon) return;
     static const std::array<const char*,4> KEYS = { "swim1","swim2","swim3","swim4" };
     static int lastIndex = -1;
-    static Sound current = {0};  // raylib Sound handle of the *last* played clip
+    static Sound current;  // raylib Sound handle of the *last* played clip
 
     // If a previous swim sound is still playing, do nothing
     if (current.frameCount > 0 && IsSoundPlaying(current)){
@@ -324,7 +324,6 @@ void UpdateSwimSounds(float deltaTime){
 void UpdateMeleeHitbox(Camera& camera){
     if (meleeWeapon.hitboxActive || magicStaff.hitboxActive) {
         Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
-        Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, { 0, 1, 0 }));
 
         Vector3 hitboxCenter = Vector3Add(player.position, Vector3Scale(forward, 200.0f));
         hitboxCenter.y += 0.0f; 
@@ -406,16 +405,8 @@ void TryQueuedJump(){
     }
 }
 
-void UpdatePlayerInput(Player& player, float deltaTime, Camera& camera){
-
-
-}
-
-
-
 void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
-    UpdatePlayerInput(player, deltaTime, camera);
-    HandleMouseLook(deltaTime);
+    HandleMouseLook();
     weapon.Update(deltaTime);
     weapon.isMoving = player.isMoving;
     meleeWeapon.isMoving = player.isMoving;
@@ -479,9 +470,9 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
            if (player.activeWeapon == WeaponType::Blunderbuss){
                 weapon.Fire(camera); 
            } else if (player.activeWeapon == WeaponType::Sword){
-                meleeWeapon.StartSwing(camera);
+                meleeWeapon.StartSwing();
            } else if (player.activeWeapon == WeaponType::MagicStaff){
-                magicStaff.StartSwing(camera);
+                magicStaff.StartSwing();
            }
            
            
@@ -549,7 +540,7 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     //start the dying process. 
     if (player.dying) {
         player.deathTimer += deltaTime;
-        player.velocity = {0.0f, 0.0f, 0.0f}; //stop moving when dying. should hide the gun as well. 
+        player.velocity = {0, 0, 0}; //stop moving when dying. should hide the gun as well. 
         player.canMove = false;
         vignetteIntensity = 1.0f; //should stay red becuase its set to 1 everyframe. 
         vignetteFade = 0.0f;
@@ -566,21 +557,15 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     if (player.dead) {
         // Reset position and state
         player.position = player.startPosition;
-        player.velocity = {0}; 
+        player.velocity = {0, 0, 0}; 
         player.currentHealth = player.maxHealth;
         player.dead = false;
         player.canMove = true;
         
 
     }
-
-    //PLAYER MOVEMENT KEYBOARD INPUT
-    if (controlPlayer){
-        HandleKeyboardInput(deltaTime, camera);
-        if (!player.onBoard) HandlePlayerMovement(deltaTime);
-    } 
-
-   
+    HandleKeyboardInput(camera);
+    if (!player.onBoard) HandlePlayerMovement(deltaTime);
 }
 
 void Player::TakeDamage(int amount){
@@ -607,36 +592,15 @@ void Player::TakeDamage(int amount){
 }
 
 void DrawPlayer(const Player& player, Camera& camera) {
-    // DrawCapsule(player.position, Vector3 {player.position.x, player.height/2, player.position.z}, 5, 4, 4, RED);
-    //DrawBoundingBox(player.GetBoundingBox(), RED);
-    //DrawBoundingBox(player.meleeHitbox, WHITE);
-
-    //draw weapon
-    if (controlPlayer) {
-        switch (player.activeWeapon) {
-            case WeaponType::Blunderbuss:
-                weapon.Draw(camera);
-                break;
-            case WeaponType::Sword:
-                meleeWeapon.Draw(camera);
-                if (meleeWeapon.hitboxActive) {
-                    // DrawBoundingBox(player.meleeHitbox, RED);
-                }
-                if (player.blocking) {
-                    // DrawBoundingBox(player.blockHitbox, RED);
-                }
-                break;
-            case WeaponType::MagicStaff:
-                magicStaff.Draw(camera);
-                break;
-            case WeaponType::None:
-                // draw nothing
-                break;
-        }
+    switch (player.activeWeapon) {
+    case WeaponType::Blunderbuss: weapon.Draw(camera);      break;
+    case WeaponType::Sword:       meleeWeapon.Draw(camera); break;
+    case WeaponType::MagicStaff:  magicStaff.Draw(camera);  break;
+    case WeaponType::None:                                  break;
     }
 }
 
-void HandleMouseLook(float deltaTime){
+void HandleMouseLook(){
     Vector2 mouseDelta = GetMouseDelta();
     float mouseSensitivity = 0.05f;
     player.rotation.y -= mouseDelta.x * mouseSensitivity;

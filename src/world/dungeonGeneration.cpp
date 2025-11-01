@@ -120,7 +120,6 @@ void GenerateWeapons(float Height){
 
 void UpdateDungeonChests() {
     
-    const int OPEN_START_FRAME = 0;
     const int OPEN_END_FRAME = 10;
 
     for (ChestInstance& chest : chestInstances) {
@@ -242,7 +241,7 @@ inline bool IsLava(int gx, int gy) {
     return lavaMask[Idx(gx,gy)] != 0;
 }
 
-void GenerateCeilingTiles(float ceilingOffsetY) {
+void GenerateCeilingTiles() {
     ceilingTiles.clear();
 
     //fill the whole dungeon with ceiling tiles. 
@@ -706,7 +705,6 @@ BoundingBox MakeAABBFromSkirt(const WallInstance& s, int dir)
 void AddLavaSkirtEdge(int x, int y, int dir, float baseY) {
     // endpoints on the floor plane at the edge between two tiles
     Vector3 a, b;
-    Vector3 ta = GetDungeonWorldPos(x, y, tileSize, baseY);
 
     switch (dir) {
         case 0: // east edge: (x,y) -> (x+1,y)
@@ -730,11 +728,8 @@ void AddLavaSkirtEdge(int x, int y, int dir, float baseY) {
 
     const float topY   = baseY + 20.0f;
     const float lavaY  = baseY - 420;
-    const float bTop   = baseY - 50;
     const float height = (topY - lavaY);
     const float WALL_MODEL_HEIGHT = 400.0f; // visual height of your wall model
-
-    const float t = 50.0f;
     if (height <= 0.0f) return;
 
     // Instance positioned at mid of the segment, centered vertically
@@ -1248,7 +1243,7 @@ void GenerateLightSources(float baseY) {
             if (current.r == 255 && current.g == 255 && current.b == 0) {
                 Vector3 pos = GetDungeonWorldPos(x, y, tileSize, baseY);
 
-                dungeonLights.push_back({ pos });
+                dungeonLights.push_back({pos});
 
                 // Create a 100x100x100 bounding box centered on pos
                 BoundingBox box;
@@ -1327,7 +1322,7 @@ void ApplyLavaDPS(Player& player, float dt, float lavaDps) {
         player.overLava = true;
         lavaTimer += dt;
         if (lavaTimer > tickDamage && player.grounded && player.position.y < floorHeight){ // only damage if on floor. //floor is lower over lava // a bit fucky
-            player.TakeDamage(10);
+            player.TakeDamage(lavaDps);
 
             lavaTimer = 0.0;
 

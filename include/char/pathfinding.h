@@ -9,7 +9,7 @@ class Character;
 void ConvertImageToWalkableGrid(const Image& dungeonMap);
 Vector2 WorldToImageCoords(Vector3 worldPos);
 bool IsWalkable(int x, int y, const Image& dungeonMap);
-bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, const Character* self);
+bool IsTileOccupied(int x, int y, const Character* self);
 Character* GetTileOccupier(int x, int y, const std::vector<Character*>& skeletons, const Character* self);
 Vector2 TileToWorldCenter(Vector2 tile);
 bool HasWorldLineOfSight(Vector3 from, Vector3 to, float epsilonFraction = 0.0f, LOSMode mode = LOSMode::AI);
@@ -28,5 +28,5 @@ Vector3 FleeXZ(const Vector3& pos, const Vector3& threat, float maxSpeed);
 Vector3 WanderXZ(float& wanderAngle, float wanderTurnRate, float wanderSpeed, float dt);
 Vector3 OrbitXZ(const Vector3& pos, const Vector3& target, float orbitRadius, int clockwise,float tangentGain, float radialGain,float maxSpeed);
 
-bool StopAtWaterEdge(const Vector3& pos,Vector3& desiredVel, float waterLevel, float dt);
+bool StopAtWaterEdge(const Vector3& pos,Vector3& desiredVel, float waterLevel);
 bool IsWaterAtXZ(float x, float z, float waterLevel);

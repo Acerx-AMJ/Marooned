@@ -70,7 +70,6 @@ void generateVegetation(){
 std::vector<TreeInstance> GenerateTrees(Image& heightmap, unsigned char* pixels, Vector3 terrainScale,
                                         float treeSpacing, float minTreeSpacing, float treeHeightThreshold) {
     std::vector<TreeInstance> trees;
-    Vector3 ePos = dungeonEntrances[0].position; 
     float startClearRadiusSq = 700.0f;
     for (int z = 0; z < heightmap.height; z += (int)treeSpacing) {
         for (int x = 0; x < heightmap.width; x += (int)treeSpacing) {
@@ -219,7 +218,7 @@ void RemoveAllVegetation() {
 
 
 
-void DrawTrees(const std::vector<TreeInstance>& trees, Camera& camera){
+void DrawTrees(){
     //sortTrees(camera); //sort trees by distance to camera
     for (const TreeInstance* tree : sortedTrees) {
         Vector3 pos = tree->position;
@@ -244,7 +243,6 @@ void DrawBushes(const std::vector<BushInstance>& bushes) {
         pos.x += bush.xOffset;
         pos.y += bush.yOffset-10;
         pos.z += bush.zOffset;
-        Color customGreen = { 0, 160, 0, 255 };
         DrawModel(bush.model, pos, bush.scale, WHITE);
 
     }

@@ -8,9 +8,6 @@
 #include "world/world.h"
 
 void RenderFrame(Camera3D& camera, Player& player, float dt) {
-    Shader& terrainShader = ResourceManager::Get().GetShader("terrainShader");
-    //int locShadow      = GetShaderLocation(terrainShader, "u_ShadowMask");
-    // --- 3D scene to sceneTexture ---
     BeginTextureMode(ResourceManager::Get().GetRenderTexture("sceneTexture"));
         ClearBackground(SKYBLUE);
         float farClip = isDungeon ? 10000.0f : 50000.0f;
@@ -30,7 +27,7 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
             DrawModel(ResourceManager::Get().GetModel("bottomPlane"), {0, waterHeightY - 100, 0}, 1.0f, DARKBLUE);
             DrawBoat(player_boat);
             BeginShaderMode(ResourceManager::Get().GetShader("cutoutShader"));
-            DrawTrees(trees, camera); 
+            DrawTrees(); 
             DrawBushes(bushes); //alpha cuttout bushes as well as tree leaf
             EndShaderMode();
             DrawDungeonDoorways();          
@@ -51,14 +48,14 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
         DrawPlayer(player, camera);
         
         DrawEnemyShadows();
-        DrawBullets(camera);
+        DrawBullets();
         DrawCollectableWeapons(player, dt);
         HandleWaves();
         // transparency last
 
         DrawTransparentDrawRequests(camera);
         rlDisableDepthMask();
-        DrawBloodParticles(camera);
+        DrawBloodParticles();
         rlEnableDepthMask();
 
 
@@ -100,14 +97,11 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
         if (pendingLevelIndex != -1) {
             DrawText("Loading...", GetScreenWidth()/2 - MeasureText("Loading...", 20)/2, GetScreenHeight()/2, 20, WHITE);
         } else {
-            //health mana stam bars
-            if (controlPlayer){
-                DrawHUDBars(player);
-                if (player.activeWeapon == WeaponType::MagicStaff) DrawMagicIcon();
-                DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD);
-                player.inventory.DrawInventoryUIWithIcons(itemTextures, slotOrder, 20, GetScreenHeight() - 80, 64);
-                DrawHints();
-            }
+            DrawHUDBars(player);
+            if (player.activeWeapon == WeaponType::MagicStaff) DrawMagicIcon();
+            DrawText(TextFormat("Gold: %d", (int)player.displayedGold), 32, GetScreenHeight()-120, 30, GOLD);
+            player.inventory.DrawInventoryUIWithIcons(itemTextures, slotOrder, 20, GetScreenHeight() - 80, 64);
+            DrawHints();
         }
     EndDrawing();
 }

@@ -139,7 +139,7 @@ struct LightSource {
     float fireballIntensity = 0.8f;
     float range = 1500.0f;
     float lifeTime = 1.0f;
-    float age;
+    float age = 0.f;
     float fireballRange = 600.0f;
     
     Vector3 colorTint = {1.0f, 0.85f, 0.8f}; // default warm
@@ -215,7 +215,7 @@ void UpdateDungeonChests();
 void LoadDungeonLayout(const std::string& imagePath); // Just loads and caches image
 void GenerateFloorTiles(float baseY);
 void GenerateWallTiles(float baseY);
-void GenerateCeilingTiles(float ceilingOffsetY);
+void GenerateCeilingTiles();
 void GenerateBarrels(float baseY);
 void GenerateSpiderWebs(float baseY);
 void GenerateChests(float baseY); 

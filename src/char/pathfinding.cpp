@@ -147,7 +147,7 @@ bool IsWalkable(int x, int y, const Image& dungeonMap) {
 
 
 
-bool IsTileOccupied(int x, int y, const std::vector<Character*>& skeletons, const Character* self) {
+bool IsTileOccupied(int x, int y, const Character* self) {
     for (const Character* s : enemyPtrs) {
         if (s == self || s->state == CharacterState::Death) continue; 
 
@@ -184,7 +184,7 @@ Vector2 GetRandomReachableTile(const Vector2& start, const Character* self, int 
             continue;
 
         if (!walkable[rx][ry]) continue;
-        if (IsTileOccupied(rx, ry, enemyPtrs, self)) continue;
+        if (IsTileOccupied(rx, ry, self)) continue;
 
         Vector2 target = {(float)rx, (float)ry};
         if (!LineOfSightRaycast(start, target, dungeonImg, 100, 0.0f)) continue;
@@ -526,10 +526,7 @@ Vector3 WanderXZ(float& wanderAngle, float wanderTurnRate, float wanderSpeed, fl
 }
 
 // returns true if movement was blocked by water this frame
-bool StopAtWaterEdge(const Vector3& pos,
-                            Vector3& desiredVel,     // in/out
-                            float waterLevel,
-                            float dt)
+bool StopAtWaterEdge(const Vector3& pos, Vector3& desiredVel, float waterLevel)
 {
     // if we’re not moving, nothing to do
     float v2 = desiredVel.x*desiredVel.x + desiredVel.z*desiredVel.z;

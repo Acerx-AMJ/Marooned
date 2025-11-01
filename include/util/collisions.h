@@ -8,7 +8,7 @@ void UpdateCollisions(Camera& camera);
 void CheckBulletHits(Camera& camera);
 void HandleMeleeHitboxCollision(Camera& camera);
 bool CheckCollisionPointBox(Vector3 point, BoundingBox box);
-void HandleDoorInteraction(Camera& camera);
+void HandleDoorInteraction();
 void DoorCollision();
 void TreeCollision(Camera& camera);
 bool CheckTreeCollision(const TreeInstance& tree, const Vector3& playerPos);

@@ -37,9 +37,9 @@ BoundingBox Character::GetBoundingBox() const {
 void Character::playRaptorSounds(){
     int rn = GetRandomValue(1, 3);
     switch (rn){
-    case 1:SoundManager::Get().PlaySoundAtPosition("dinoTweet", position, player.position, player.rotation.y, 4000);break;
-    case 2:SoundManager::Get().PlaySoundAtPosition("dinoTweet2", position, player.position, player.rotation.y, 4000);break;
-    case 3:SoundManager::Get().PlaySoundAtPosition("dinoTarget", position, player.position, player.rotation.y, 4000);break;
+    case 1:SoundManager::Get().PlaySoundAtPosition("dinoTweet", position, player.position, 4000);break;
+    case 2:SoundManager::Get().PlaySoundAtPosition("dinoTweet2", position, player.position, 4000);break;
+    case 3:SoundManager::Get().PlaySoundAtPosition("dinoTarget", position, player.position, 4000);break;
     } 
 
 }
@@ -101,7 +101,7 @@ void Character::TakeDamage(int amount) {
         }else if (type == CharacterType::Spider){
             SoundManager::Get().Play("spiderDeath");
         }else if (type == CharacterType::Raptor || type == CharacterType::Skeleton){
-            SoundManager::Get().PlaySoundAtPosition("dinoHit", position, player.position, 0.0f, 4000.0f); //raptor and skeletons
+            SoundManager::Get().PlaySoundAtPosition("dinoHit", position, player.position, 4000.0f); //raptor and skeletons
         }else if (type == CharacterType::Trex){
             SoundManager::Get().Play(GetRandomValue(0, 1) == 0 ? "TrexHurt2" : "TrexHurt");
         }
@@ -351,19 +351,6 @@ AnimDesc Character::GetAnimFor(CharacterType type, CharacterState state) {
         
         default:
             return {0, 1, 1.0f, true};
-    }
-}
-
-// Which states actually use a nav path?
-static inline bool StateUsesPath(CharacterState s) {
-    switch (s) {
-        case CharacterState::Chase:
-        case CharacterState::Patrol:
-        case CharacterState::Reposition:
-        case CharacterState::Orbit:
-            return true;
-        default:
-            return false;
     }
 }
 
