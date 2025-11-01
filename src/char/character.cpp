@@ -258,7 +258,6 @@ AnimDesc Character::GetAnimFor(CharacterType type, CharacterState state) {
             switch (state) {
 
                 case CharacterState::Chase:
-                
                 case CharacterState::Reposition:
                 case CharacterState::Orbit: 
                     return AnimDesc{1, 5, 0.12f, true}; // walk
@@ -377,7 +376,7 @@ void Character::ChangeState(CharacterState next) {
     stateTimer = 0.0f;
 
     //if (clearPath) currentWorldPath.clear(); testing with this off to see if it fixes a bug where skeletons stop chasing and just stand there. 
-
+    //is does fix the bug. clearing the path is causing enemies to stop and remain idle sometimes instead of chasing. 
     if (type == CharacterType::Raptor && state == CharacterState::Chase){
         chaseDuration = GetRandomValue(5, 8);
         playRaptorSounds(); //play a random tweet when switching to chase. 
@@ -393,10 +392,6 @@ void Character::ChangeState(CharacterState next) {
     const AnimDesc a = GetAnimFor(type, state);
     SetAnimation(a.row, a.frames, a.frameTime, a.loop);
 }
-
-
-
-
 
 
 

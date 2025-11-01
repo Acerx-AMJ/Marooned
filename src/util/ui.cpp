@@ -18,6 +18,7 @@ void TutorialSetup(){
         hints.AddHint("Q TO SWITCH WEAPONS");
         hints.AddHint("RIGHT CLICK TO BLOCK");
         hints.AddHint("SPACEBAR TO JUMP");
+        hints.AddHint("HOLD SHIFT TO RUN");
         
         //setmessage E TO INTERACT when you encounter first dungeon entrance
         //Also set message to 1 TO USE HEALTH POTION when health is low and you have a health pot. This should happen every time.

@@ -91,6 +91,7 @@ void InitPlayer(Player& player, Vector3 startPosition);
 
 // Updates player movement and physics
 void UpdatePlayer(Player& player, float deltaTime, Camera& camera);
+void UpdatePlayerInput(Player& player, float deltaTime, Camera& camera);
 void HandlePlayerMovement(float deltaTime);
 void TryQueuedJump();
 void DrawPlayer(const Player& player, Camera& camera);

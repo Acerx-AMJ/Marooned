@@ -370,6 +370,13 @@ Go through and rename all maps to their level names, for sanities sake. name map
 
 6 days. Is there anything that looks unprofessional. Pirate sprite is bad, needs to be redone. Trex fight could be cooler but how many people will get that far. sword swing is lame. The way it snaps back to the starting position looks bad. Trees and bushes can still spawn on slopes making it look bad. Shift to run is never explained. 1 and 2 to use health and mana potions is never explained. It's explained when health is low but mana isn't. Maybe the use can infer. Right click for magic staff fire isn't explained neighther is T for switch spell. Should we brighten the dungeon? Nah don't touch it. It looks better dark, only brighten for videos. Re do the readme. That looks very unprofessional. It's AI slop. Write it your self. 
 
+Maybe a decal that plays when an enemy is hit by bullets. We did play smoke before but it just got in the way. Instead of smoke play small bullet whole texture for each bullet, projected 100 unit backward toward player. -It's hardly noticable but I guess I will keep it. 
+
+Made some decals have a velocity. When skelton swipes a sword at you the decal move toward the player as fading out. So it looks like it's coming at ya. Player slash decal move away from player as it fades out. This maybe looks worse than having it just stay in one spot but I haven't decided yet. Use this technology on ghost attack. 
+
+-idea: make decals have a collision box. Ghost could shoot decals at player. decals are billboards so the projectile would look the same from any angle. Maybe make a new enemy that shoots decals. 
+
+Get a different tile texture for ceilings. 
 
 
 

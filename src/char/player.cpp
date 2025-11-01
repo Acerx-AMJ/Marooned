@@ -103,14 +103,79 @@ void HandlePlayerMovement(float deltaTime){
 
 }
 
-void HandleKeyboardInput(float deltaTime) {
+void HandleKeyboardInput(float deltaTime, Camera& camera) {
 
+    // Right mouse state //blocking
+    const bool rmb = IsMouseButtonDown(MOUSE_RIGHT_BUTTON);
+
+    // Desired block state this frame
+    const bool wantBlock = rmb && (player.activeWeapon == WeaponType::Sword);
+
+    // Transition into block
+    if (wantBlock && !player.blocking) {
+        meleeWeapon.StartBlock();
+    }
+
+    // Transition out of block (includes: switching off the sword while still holding RMB)
+    if (!wantBlock && player.blocking) {
+        meleeWeapon.EndBlock();
+    }
+
+    // Commit state
+    player.blocking = wantBlock;
+
+    // Other RMB actions (only when not blocking with sword)
+    if (rmb && player.activeWeapon == WeaponType::MagicStaff) {
+        magicStaff.Fire(camera);
+    }
 
     if (IsKeyPressed(KEY_Q)) {
  
         player.EquipNextWeapon();
     }
 
+
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (!player.isSwimming){ //dont fire gun in water
+           if (player.activeWeapon == WeaponType::Blunderbuss){
+                weapon.Fire(camera); 
+           } 
+        }else{
+            if (player.activeWeapon == WeaponType::Blunderbuss) SoundManager::Get().Play("reload"); //play "click" if in water with gun
+        }
+
+        if (player.activeWeapon == WeaponType::Sword){
+            meleeWeapon.StartSwing(camera);
+        }
+
+        if (player.activeWeapon == WeaponType::MagicStaff){
+                magicStaff.StartSwing(camera);
+           }
+    }
+
+    // --- Boarding Check ---
+    if (!player.onBoard) { //board the boat, lock player position to boat position, keep free look
+        float distanceToBoat = Vector3Distance(player.position, player_boat.position);
+        if (distanceToBoat < 300.0f && IsKeyPressed(KEY_E)) {
+            player.onBoard = true;
+            player_boat.playerOnBoard = true;
+            player.position = Vector3Add(player_boat.position, {0, 200.0f, 0}); // sit up a bit
+            return; // skip rest of update this frame
+        }
+    }
+
+    // --- Exit Boat ---
+    if (player.onBoard && IsKeyPressed(KEY_E)) {
+        player.onBoard = false;
+        player_boat.playerOnBoard = false;
+        player.position = Vector3Add(player_boat.position, {2.0f, 0.0f, 0.0f}); // step off
+    }
+
+    // --- Sync Player to Boat ---
+    if (player.onBoard) {
+        player.position = Vector3Add(player_boat.position, {0, 200.0f, 0});
+    }
 
     if (IsKeyPressed(KEY_ONE)){
         //use health potion
@@ -341,10 +406,16 @@ void TryQueuedJump(){
     }
 }
 
+void UpdatePlayerInput(Player& player, float deltaTime, Camera& camera){
+
+
+}
+
 
 
 void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
-
+    UpdatePlayerInput(player, deltaTime, camera);
+    HandleMouseLook(deltaTime);
     weapon.Update(deltaTime);
     weapon.isMoving = player.isMoving;
     meleeWeapon.isMoving = player.isMoving;
@@ -455,14 +526,6 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
     }
 
 
-    HandleMouseLook(deltaTime);
-    
-
-    // === Skip Movement if On Boat ===
-    if (player.onBoard) {
-        return;
-    }
-
     // === Ground Check ===
     
     player.groundY = GetHeightAtWorldPosition(player.position, heightmap, terrainScale);
@@ -513,8 +576,8 @@ void UpdatePlayer(Player& player, float deltaTime, Camera& camera) {
 
     //PLAYER MOVEMENT KEYBOARD INPUT
     if (controlPlayer){
-        HandleKeyboardInput(deltaTime);
-        HandlePlayerMovement(deltaTime);
+        HandleKeyboardInput(deltaTime, camera);
+        if (!player.onBoard) HandlePlayerMovement(deltaTime);
     } 
 
    

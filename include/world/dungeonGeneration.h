@@ -53,10 +53,10 @@ struct DoorwayInstance {
     bool isLocked = false;
     bool isPortal = false;
     Color tint = GRAY;
-    Color bakedTint = WHITE;
-    float bakedBrightness = 0.0f;
     int tileX = 0;
     int tileY = 0;
+    Color bakedTint = WHITE;
+    float bakedBrightness = 0.0f;
     int linkedLevelIndex = -1;
     std::vector<BoundingBox> sideColliders{};
 
