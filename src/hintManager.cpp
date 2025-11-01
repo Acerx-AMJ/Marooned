@@ -106,6 +106,10 @@ void HintManager::UpdateTutorial(){
         Advance();
     }
 
+    if (currentIndex == 6 && IsKeyPressed(KEY_LEFT_SHIFT)){
+        Advance();
+    }
+
     //checked even in dungeons, should work as a cue to use a health pot. 
     if (player.currentHealth < 30 && currentIndex == -1 && player.inventory.HasItem("HealthPotion")){ //Low health pot check
         SetMessage("PRESS 1 TO USE HEALTH POTION");

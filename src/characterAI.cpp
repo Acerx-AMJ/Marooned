@@ -256,8 +256,11 @@ void Character::UpdateSkeletonAI(float deltaTime, Player& player) {
         case CharacterState::Freeze: {
             stateTimer += deltaTime;
             //do nothing
+            if (currentHealth <= 0){ //hopefully prevents invincible skeles. 
+                ChangeState(CharacterState::Death);
+            }
 
-            if (stateTimer > 5.0f){
+            if (stateTimer > 5.0f && !isDead){
                 ChangeState(CharacterState::Idle);
             }
             break;
@@ -526,7 +529,7 @@ void Character::UpdateRaptorAI(float deltaTime, Player& player)
         {
             // TODO: do nothing; exit after freezeDuration or on event
             
-            if (stateTimer >= 5.0f && canSee) ChangeState(CharacterState::Chase);
+            if (stateTimer >= 5.0f && canSee && !isDead) ChangeState(CharacterState::Chase);
         } break;
 
         case CharacterState::Stagger:
@@ -713,10 +716,10 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             stateTimer += deltaTime;
 
             // Wait until animation is done to apply damage
-            if (stateTimer >= 0.6f && !hasFired) { // 5 frames * 0.12s = 0.6s
+            if (stateTimer >= 0.5f && !hasFired) { // 5 frames * 0.12s = 0.6s make it 0.5
                 hasFired = true; //reusing hasfired for sword attack. I think this is ok?
 
-                if (distance < 250.0f && playerVisible) {
+                if (distance < 280.0f && playerVisible) {
                     if (CheckCollisionBoxes(GetBoundingBox(), player.blockHitbox) && player.blocking) {
                         // Blocked!
 
@@ -742,7 +745,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
             // Exit state after full animation plays
             if (stateTimer >= 1.5f) {
-                if (distance > 350.0f) {
+                if (distance > 300.0f) {
                     Vector2 start = WorldToImageCoords(position);
                     if (TrySetRandomPatrolPath(start, this, currentWorldPath)){
                         ChangeState(CharacterState::Patrol);
@@ -783,7 +786,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
 
                 float dist = Vector3Distance(position, target);
 
-                if (dist < 350.0f && stateTimer > 2.0f) {
+                if (dist < 300.0f && stateTimer > 2.0f) {
                     ChangeState(CharacterState::MeleeAttack);
                 } else if (dist > 350.0f && stateTimer > 2.0f) {
                     ChangeState(CharacterState::Chase);
@@ -822,7 +825,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
             stateTimer += deltaTime;
             //do nothing
 
-            if (stateTimer > 5.0f){
+            if (stateTimer > 5.0f && !isDead){
                 ChangeState(CharacterState::Idle);
             }
             break;
@@ -868,8 +871,9 @@ bool Character::FindRepositionTarget(const Player& player, const Vector3& selfPo
     relativeOffsets[1] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(right, tileSize))) - playerTile;
     relativeOffsets[2] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(Vector3Negate(right), tileSize))) - playerTile;
     //relativeOffsets[3] = WorldToImageCoords(Vector3Add(player.position, Vector3Scale(Vector3Negate(forward), tileSize))) - playerTile;
+    //don't go behind the player theoretically. 
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 3; ++i) {
         int tx = (int)playerTile.x + (int)roundf(relativeOffsets[i].x);
         int ty = (int)playerTile.y + (int)roundf(relativeOffsets[i].y);
 
@@ -917,27 +921,11 @@ void Character::AlertNearbySkeletons(Vector3 alertOrigin, float radius) {
         if (!LineOfSightRaycast(originTile, targetTile, dungeonImg, 60, 0.0f)) continue;
 
         // Passed all checks → alert the skeleton
-        other.state = CharacterState::Chase;
-        other.SetAnimation(1, 4, 0.2f);
-        other.stateTimer = 0.0f;
-        other.playerVisible = true;
+        other.ChangeState(CharacterState::Chase);
+
     }
 }
 
-// void Character::SetPath(Vector2 start){
-//     float pirateHeight = 160;
-//     Vector2 goal = WorldToImageCoords(player.position);
-//     std::vector<Vector2> tilePath = SmoothPath(FindPath(start, goal), dungeonImg);
-
-//     currentWorldPath.clear(); //construct the path the frame before chasing
-//     for (const Vector2& tile : tilePath) {
-//         Vector3 worldPos = GetDungeonWorldPos(tile.x, tile.y, tileSize, dungeonPlayerHeight);
-//         worldPos.y = 180;
-//         if (type == CharacterType::Pirate) worldPos.y = pirateHeight;
-//         currentWorldPath.push_back(worldPos);
-//     }
-
-// }
 
 
 void Character::SetPath(Vector2 start)
