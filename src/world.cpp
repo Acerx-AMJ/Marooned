@@ -1192,6 +1192,11 @@ void DrawMagicMissiles()
 
 bool AcquireMagicMissileTarget(MagicMissile& missile)
 {
+    if (missile.enemyMissile)
+    {
+        missile.targetPoint = player.position;
+        return true;
+    }
     constexpr float acquisitionRange = 2000.0f;
     float closestDistanceSq = acquisitionRange * acquisitionRange;
 
@@ -1667,7 +1672,7 @@ float GetHeightAtWorldPosition(Vector3 position, Image& heightmap, Vector3 terra
     return heightValue * terrainScale.y;
 }
 
-void SpawnMagicMissiles(Vector3 startPosition, Vector3 forwardDirection, Vector3 targetPoint)
+void SpawnMagicMissiles(Vector3 startPosition, Vector3 forwardDirection, Vector3 targetPoint, bool enemyMissile)
 {
     float damageMultiplier = player.quadDamage ? 4.0f : 1.0f;
     for (int i = 0; i < 3; ++i)
@@ -1676,6 +1681,7 @@ void SpawnMagicMissiles(Vector3 startPosition, Vector3 forwardDirection, Vector3
             startPosition,
             forwardDirection,
             targetPoint,
+            enemyMissile,
             i == 1  // middle missile carries the volley’s sound
         );
 

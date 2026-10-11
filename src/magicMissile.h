@@ -6,15 +6,12 @@
 class MagicMissile
 {
 public:
-    //MagicMissile(Vector3 startPosition, Vector3 launchDirection, Vector3 targetPoint);
 
-    MagicMissile(Vector3 startPosition, Vector3 launchDirection, Vector3 targetPoint, bool playWoosh);
+    MagicMissile(Vector3 startPosition, Vector3 launchDirection, Vector3 targetPoint, bool enemyMissile, bool playWoosh);
 
     void Update(float deltaTime);
     void InitParameters();
-
     void DestroyOnImpact(Vector3 impactPosition);
-
 
     Vector3 position;
     Vector3 travelDirection;
@@ -23,8 +20,7 @@ public:
     float lifetime;
     bool active;
     bool targetAcquired;
-
-
+    bool enemyMissile = false;
     float age;
     float burstTime;
     float turnSpeed;
@@ -32,6 +28,7 @@ public:
     float particleAccumulator = 1.0f;
     float collisionRadius;
     float damage;
+
 
     float retargetTimer;
     float retargetInterval;
@@ -56,6 +53,8 @@ private:
     );
 
     bool HandleEnemyCollision();
+
+    bool HandlePlayerCollision();
 
 
 };

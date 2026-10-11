@@ -132,7 +132,12 @@ void GatherEnemies(Camera& camera)
             }
         }
 
-        if (enemy->hitTimer > 0.0f)
+        // if (enemy->hitTimer > 0.0f)
+        // {
+        //     flipX = false;
+        // }
+
+        if (enemy->isDead || enemy->hitTimer > 0.0f) //fixes enemies showing first frame on death? 
         {
             flipX = false;
         }

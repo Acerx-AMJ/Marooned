@@ -200,8 +200,12 @@ void Character::UpdateGiantSpiderAI(float deltaTime, Player& player) {
     UpdateLeavingFlag(player.position, player.previousPosition);
 
     if (currentHealth <= 0.0f){
-        state = CharacterState::Death;
+        ChangeState(CharacterState::Death);
     }
+
+    // if (currentHealth <= 0.0f){
+    //     state = CharacterState::Death;
+    // }
 
     if (!spiderAgro){
         spiderAgroTimer += deltaTime;
@@ -2483,64 +2487,147 @@ void Character::UpdateWizardAI(float deltaTime, Player& player) {
 
         } break;
 
-        case CharacterState::Attack: { //wizard attacks with fireball
-            
+        case CharacterState::Attack:
+        {
             Vector2 myTile = WorldToImageCoords(position);
-            Character* occupier = GetTileOccupier(myTile.x, myTile.y, enemyPtrs, this);
-            //pirates won't occupy the same tile while shooting. 
-            if (occupier && occupier != this) {
-                // Only the one with the "greater" pointer backs off
-                if (this > occupier) {
+            Character* occupier = GetTileOccupier(
+                myTile.x, myTile.y, enemyPtrs, this
+            );
+
+            if (occupier && occupier != this)
+            {
+                if (this > occupier)
+                {
+                    missileCastRemaining = 0.0f;
+                    missileBurstTimer = 0.0f;
                     ChangeState(CharacterState::Reposition);
-                    break;
-                } else {
-                    // Let the other one reposition — wait
-                    break;
                 }
+
+                break;
             }
 
-            // Hysteresis: only leave attack if we're clearly out of range or lost LOS
-            if (distanceSq > WIZARD_ATTACK_ENTER || !canSee) {
+            // Cancel the cast if out of range or LOS is lost.
+            if (distanceSq > WIZARD_ATTACK_ENTER || !canSee)
+            {
+                missileCastRemaining = 0.0f;
+                missileBurstTimer = 0.0f;
                 ChangeState(CharacterState::Chase);
                 break;
             }
 
-            attackCooldown -= deltaTime;
-            if (distanceSq < WIZARD_ATTACK_ENTER && distanceSq > WIZARD_MELEE_ENTER){
-                
-                if (canSee && attackCooldown <= 0.0f && currentFrame == 1 && !hasFired && type == CharacterType::Wizard) {
-
-                    Vector3 muzzle = isElite ? Vector3{position.x, position.y + 50, position.z} : position; 
-
-                    if (iceWizard){
-                        FireIceball(muzzle, player.position, 1350, 2.0, true, true);
-                    }else{
-                        FireFireball(muzzle, player.position, 1350.0f, 2.0f, true, true, true);
-                    }
-                    
-                    hasFired = true;
-                    attackCooldown = 5.0f;
-                    SoundManager::GetInstance().PlaySoundAtPosition("flame1", position, player.position, 1.0, 2000);
-                }
-
-            }else if (distanceSq < WIZARD_MELEE_ENTER){ //was 280
+            if (distanceSq < WIZARD_MELEE_ENTER)
+            {
+                missileCastRemaining = 0.0f;
+                missileBurstTimer = 0.0f;
                 ChangeState(CharacterState::MeleeAttack);
                 break;
             }
 
-            // Wait for next attack opportunity
-            if (hasFired && stateTimer > 1.5f) {
+            attackCooldown -= deltaTime;
+
+            // The animation frame starts an attack.
+            if (distanceSq < WIZARD_ATTACK_ENTER &&
+                attackCooldown <= 0.0f &&
+                currentFrame == 1 &&
+                !hasFired &&
+                type == CharacterType::Wizard)
+            {
+                hasFired = true;
+                stateTimer = 0.0f;
+
+                Vector3 muzzle = isElite
+                    ? Vector3{position.x, position.y + 50.0f, position.z}
+                    : position;
+
+                if (iceWizard)
+                {
+                    FireIceball(muzzle, player.position, 1350.0f, 2.0f, true, true);
+
+                    attackCooldown = 5.0f;
+
+                    SoundManager::GetInstance().PlaySoundAtPosition(
+                        "iceMagic", position, player.position, 1.0f, 2000
+                    );
+                }
+                else if (arcaneWizard)
+                {
+                    missileCastRemaining = 2.0f;
+                    missileBurstTimer = 0.0f;
+                }
+                else
+                {
+                    // Put your original Fireball call here,
+                    // followed by its cooldown and sound.
+                    //FireFireball(muzzle, player.position, 1350.0f, 2.0f, true, true);
+                    FireFireball(muzzle, player.position, 1350.0f, 2.0f, true, false, true);
+
+                    attackCooldown = 5.0f;
+
+                    SoundManager::GetInstance().PlaySoundAtPosition(
+                        "flame1", position, player.position, 1.0f, 2000
+                    );
+                }
+            }
+
+            // Once started, the stream does not depend on animation frames.
+            if (!iceWizard && missileCastRemaining > 0.0f)
+            {
+                missileBurstTimer -= deltaTime;
+
+                if (missileBurstTimer <= 0.0f)
+                {
+                    Vector3 muzzle = isElite
+                        ? Vector3{position.x, position.y + 50.0f, position.z}
+                        : position;
+
+                    Vector3 targetPoint = player.position;
+                    Vector3 launchDirection = Vector3Normalize(
+                        Vector3Subtract(targetPoint, muzzle)
+                    );
+
+                    SpawnMagicMissiles(
+                        muzzle, launchDirection, targetPoint, true
+                    );
+
+                    missileBurstTimer += 0.3f;
+                }
+
+                missileCastRemaining -= deltaTime;
+
+                if (missileCastRemaining <= 0.0f)
+                {
+                    missileCastRemaining = 0.0f;
+                    missileBurstTimer = 0.0f;
+                    attackCooldown = 5.0f;
+
+                    // Start recovery after the final burst.
+                    stateTimer = 0.0f;
+                }
+
+                // Stay here until the stream finishes.
+                break;
+            }
+
+            // Recover, then relocate using the existing behavior.
+            if (hasFired && stateTimer > 1.5f)
+            {
                 hasFired = false;
                 attackCooldown = 3.5f;
                 currentFrame = 0;
-                stateTimer = 0;
+                stateTimer = 0.0f;
 
-                if (TrySetRandomPatrolPath(start, this, currentWorldPath) && canSee) { //shoot then move to a random tile and shoot again.
+                missileCastRemaining = 0.0f;
+                missileBurstTimer = 0.0f;
+
+                if (TrySetRandomPatrolPath(start, this, currentWorldPath) &&
+                    canSee)
+                {
                     ChangeState(CharacterState::Patrol);
-                }else{
+                }
+                else
+                {
                     ChangeState(CharacterState::Attack);
                 }
-               
             }
 
             break;
@@ -2762,6 +2849,13 @@ void PirateOpenDoorWhileChasing(Character& pirate){
 
 void Character::UpdatePirateAI(float deltaTime, Player& player) {
     if (isLoadingLevel) return;
+
+    if (isDead)
+    {
+        deathTimer += deltaTime;
+        return;
+    }
+
 
     stateTimer += deltaTime; // is always counting
     

@@ -174,6 +174,7 @@ public:
     bool isElite = false;
 
     bool iceWizard = false;
+    bool arcaneWizard = false;
 
     //pirates vs zombies
     Character* target = nullptr;
@@ -184,6 +185,10 @@ public:
     bool canGib = true;
     bool canRes = true;
     float shambleCooldown = 1.0f; //zombie shamble
+
+    //wizard missile stream
+    float missileCastRemaining = 0.0f;
+    float missileBurstTimer = 0.0f;
 
     FacingMode facingMode = FacingMode::Approaching;
     CharacterType type;

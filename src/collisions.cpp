@@ -789,7 +789,7 @@ void CheckBulletHits(Camera& camera) {
 
                 } else if (b.IsEnemy() && (isSkeleton || isZombie)) { // friendly fire vs skeletons and zombies
                     enemy->TakeDamage(150); //higher damage for higher chance of death by enemy bullet. 1 sword swipe plus friendly fire = death
-                    BulletParticleBounce(b, LIGHTGRAY);
+                    //BulletParticleBounce(b, LIGHTGRAY);
                     break;
                 }
 

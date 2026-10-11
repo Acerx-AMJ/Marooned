@@ -1234,7 +1234,7 @@ void MagicStaff::Fire(const Camera& camera) {
     } else if (magicType == MagicType::Iceball){
         FireIceball(muzzlePos, targetPoint, 2000, 10.0f, false, false);
     }else if (magicType == MagicType::MagicMissile){
-        SpawnMagicMissiles(muzzlePos, player.lookForward, missileTargetPoint);
+        SpawnMagicMissiles(muzzlePos, player.lookForward, missileTargetPoint, false);
     }
     
 }

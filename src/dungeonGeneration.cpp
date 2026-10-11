@@ -2496,10 +2496,20 @@ void GenerateWizardsFromImage(float baseY) {
         for (int x = 0; x < dungeonWidth; x++) {
             Color current = dungeonPixels[y * dungeonWidth + x];
             bool iceWizard = EqualsRGB(current, ColorOf(Code::iceWizard));
+            bool arcaneWizard = EqualsRGB(current, ColorOf(Code::arcaneWizard));
             // Look for magenta pixels (148, 0, 211) → wizard spawn
-            if (EqualsRGB(current, ColorOf(Code::Wizard)) || iceWizard) {
+            if (EqualsRGB(current, ColorOf(Code::Wizard)) || iceWizard || arcaneWizard) {
                 Vector3 spawnPos = GetDungeonWorldPos(x, y, tileSize, baseY);
-                std::string sheet = iceWizard ? "IceWizardSheet" : "wizardSheet";
+                std::string sheet; //iceWizard ? "IceWizardSheet" : "wizardSheet";
+
+                if (iceWizard){
+                    sheet = "IceWizardSheet";
+                }else if (arcaneWizard){
+                    sheet = "arcaneWizardSheet";
+                }else{
+                    sheet = "wizardSheet";
+                }
+
                 Character wizard(
                     spawnPos,
                     R.GetTexture(sheet), 
@@ -2520,6 +2530,7 @@ void GenerateWizardsFromImage(float baseY) {
                 );
 
                 if (iceWizard) wizard.iceWizard = true;
+                if (arcaneWizard) wizard.arcaneWizard = true;
 
                 wizard.id = gEnemyCounter++;
                 enemies.push_back(wizard);

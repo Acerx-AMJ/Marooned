@@ -418,6 +418,7 @@ void Character::TakeDamage(int amount) {
         currentHealth = 0;
         isDead = true;
         deathTimer = 0.0f;
+
         if (type == CharacterType::GiantSpider && levelIndex == 7) OpenEventLockedDoors(); //open boss door when spider dies. abstract this 
 
         if (type == CharacterType::Ghost) SetAnimation(1, 7, 0.2);
@@ -1123,13 +1124,13 @@ AnimDesc Character::GetAnimFor(CharacterType type, CharacterState state) {
                 case CharacterState::Patrol:
                     return AnimDesc{1, 4, 0.2f, true}; // walk
 
-                case CharacterState::Freeze: return     {0, 1, 1.0f, true};
-                case CharacterState::Idle:   return     {0, 1, 1.0f, true};
-                case CharacterState::Attack: return     {2, 4, 0.2f, false}; // ranged attack = attack
-                case CharacterState::MeleeAttack: return{6, 5, 0.12f, false};
-                case CharacterState::Stagger: return    {4, 1, 1.0f, false};
-                case CharacterState::Death:  return     {4, 3, 0.25f, false };
-                default:                     return     {0, 7, 0.2f, true};
+                case CharacterState::Freeze: return      {0, 1, 1.0f, true};
+                case CharacterState::Idle:   return      {0, 1, 1.0f, true};
+                case CharacterState::Attack: return      {2, 4, 0.2f, false}; // ranged attack = attack
+                case CharacterState::MeleeAttack: return {6, 5, 0.12f, false};
+                case CharacterState::Stagger: return     {4, 1, 1.0f, false};
+                case CharacterState::Death:  return      {4, 3, 0.25f, false };
+                default:                     return      {0, 7, 0.2f, false}; //changed to false
             }
 
         case CharacterType::Wizard:
@@ -1171,6 +1172,9 @@ void Character::ChangeState(CharacterState next) {
     state = next;
     stateTimer = 0.0f;
 
+    missileCastRemaining = 0.0f;
+    missileBurstTimer = 0.0f;
+
     if (type == CharacterType::Raptor && state == CharacterState::Chase){
         chaseDuration = GetRandomValue(10, 20);
         playRaptorSounds(); //play a random tweet when switching to chase. 
@@ -1190,6 +1194,14 @@ void Character::ChangeState(CharacterState next) {
 
 
 void Character::SetAnimation(int row, int frames, float speed, bool loop) {
+
+    if (isDead)
+    {
+        TraceLog(LOG_WARNING,
+            "Dead enemy animation: type=%d state=%d row=%d frames=%d oldFrame=%d",
+            (int)type, (int)state, row, frames, currentFrame);
+    }
+
     rowIndex = row;
     maxFrames = frames;
     animationSpeed = speed;

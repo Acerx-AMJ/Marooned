@@ -201,5 +201,5 @@ void InitTextureSettings();
 void UpdateRaftInteraction();
 void DrawMagicMissiles();
 void UpdateMagicMissile(float deltaTime);
-void SpawnMagicMissiles(Vector3 startPosition, Vector3 forwardDirection, Vector3 targetPoint); //move this somewhere sane. 
+void SpawnMagicMissiles(Vector3 startPosition, Vector3 forwardDirection, Vector3 targetPoint, bool enemyMissile); 
 void ChangeLevel(int idx);

@@ -8,15 +8,13 @@
 #include "collisions.h"
 
 
-// MagicMissile::MagicMissile(Vector3 startPosition, Vector3 launchDirection, Vector3 targetPoint)
-//     : position(startPosition), targetPoint(targetPoint), speed(900.0f)
-
 // magicMissile.cpp — constructor
 MagicMissile::MagicMissile(Vector3 startPosition, Vector3 launchDirection,
-                           Vector3 targetPoint, bool playWoosh)
+                           Vector3 targetPoint, bool enemyMissile, bool playWoosh)
     : position(startPosition),
       targetPoint(targetPoint),
       speed(900.0f),
+      enemyMissile(enemyMissile),
       playWoosh(playWoosh)
 {
     InitParameters();
@@ -78,11 +76,12 @@ void MagicMissile::DestroyOnImpact(Vector3 impactPosition)
 
 
 bool MagicMissile::HandleEnemyCollision(){
-    if (!active) return false;
+    if (!active || enemyMissile) return false;
 
     for (Character* enemy : enemyPtrs){
         if (!enemy) continue;
         if (enemy->isDead) continue;
+
 
 
         if (CheckCollisionBoxSphere(enemy->GetBoundingBox(), position, collisionRadius)){
@@ -94,6 +93,28 @@ bool MagicMissile::HandleEnemyCollision(){
     }
 
     return false;
+}
+
+bool MagicMissile::HandlePlayerCollision()
+{
+    if (!active || !enemyMissile) return false;
+
+    if (!CheckCollisionBoxSphere(
+            player.GetBoundingBox(), position, collisionRadius))
+    {
+        return false;
+    }
+
+    // Apply damage using the same player damage code as enemy fireballs.
+    int damageVsPlayer = 5;
+    player.TakeDamage(damageVsPlayer);
+
+    particleSystem.EmitBurst(
+        position, 100, ParticleType::MagicBurst
+    );
+
+    DestroyOnImpact(position);
+    return true;
 }
 
 bool MagicMissile::HandleWorldCollision(Vector3 previousPosition, Vector3 nextPosition)
@@ -186,29 +207,6 @@ bool MagicMissile::HandleWorldCollision(Vector3 previousPosition, Vector3 nextPo
             killFloorY = floorHeight + 20.0f;
         }
 
-
-
-        // if (tx != curTileX || ty != curTileY)
-        // {
-        //     curTileX = tx;
-        //     curTileY = ty;
-
-        //     bool tileIsLava = (lavaMask[Idx(tx, ty)] == 1);
-        //     bool tileIsVoid = (voidMask[Idx(tx, ty)] == 1);
-
-        //     if (tileIsVoid)
-        //     {
-        //         killFloorY = -1000.0f;
-        //     }
-        //     else if (tileIsLava)
-        //     {
-        //         killFloorY = floorHeight - lavaOffsetY;
-        //     }
-        //     else
-        //     {
-        //         killFloorY = floorHeight + 20.0f;
-        //     }
-        // }
 
         // Crossed the dungeon floor this frame.
         if (previousPosition.y > killFloorY &&
@@ -356,6 +354,11 @@ void MagicMissile::Update(float deltaTime)
 
 
     if (HandleEnemyCollision())
+    {
+        return;
+    }
+
+    if (HandlePlayerCollision())
     {
         return;
     }
