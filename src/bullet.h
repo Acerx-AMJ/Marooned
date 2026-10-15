@@ -114,6 +114,8 @@ public:
     void BulletHole(Camera& camera, bool enemy = false);
     void HandleBulletWorldCollision();
 
+
+
     float ComputeDamage();
     float GetRadius() const { return radius; }
     bool pendingExplosion = false;
@@ -134,3 +136,4 @@ void FireCrossbow(Vector3 origin, Vector3 forward, float speed, float lifetime, 
 void FireCrossbowHarpoon(Vector3 origin, Vector3 forward, float speed, float lifetime, bool enemy);
 void FireCannon(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy = false);
 Vector3 GetHarpoonAnchor();
+Color BulletHeatHSV(float t);

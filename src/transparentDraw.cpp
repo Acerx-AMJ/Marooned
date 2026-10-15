@@ -688,6 +688,7 @@ void GatherDecals(Camera& camera, const std::vector<Decal>& decals) {
 }
 
 void GatherMuzzleFlashes(Camera& camera, const std::vector<MuzzleFlash>& flashes) {
+    
     for (const auto& flash : flashes) {
         float dist = Vector3DistanceSqr(camera.position, flash.position);
         

@@ -202,4 +202,5 @@ void UpdateRaftInteraction();
 void DrawMagicMissiles();
 void UpdateMagicMissile(float deltaTime);
 void SpawnMagicMissiles(Vector3 startPosition, Vector3 forwardDirection, Vector3 targetPoint, bool enemyMissile); 
+void DrawFrameLightGlows(const Camera3D& camera, const Texture2D& glowTexture);
 void ChangeLevel(int idx);

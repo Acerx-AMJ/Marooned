@@ -203,6 +203,9 @@ void RenderFrame(Camera3D& camera, Player& player, float dt) {
         // transparency last
 
         DrawTransparentDrawRequests(camera);
+
+        DrawFrameLightGlows(camera, R.GetTexture("gradientCircle"));
+
         rlDisableDepthMask();
         //DrawBloodParticles(camera);
         particleSystem.Draw(camera);

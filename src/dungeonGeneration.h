@@ -94,6 +94,10 @@ struct LightSample {
     Vector3 color;   // 0..1
     float   range;
     float   intensity;
+
+    float glowRadius = 0.0f;   // Zero disables the visible halo
+    float glowIntensity = 1.0f;
+    
 };
 
 

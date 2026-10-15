@@ -229,6 +229,8 @@ void Bullet::Update(Camera& camera, float deltaTime, ParticleSystem& particleSys
         lifeTime -= deltaTime;
     }
 
+    age += deltaTime;
+
     if (lifeTime <= 0 && type != BulletType::Fireball && type != BulletType::Harpoon){
         exploded = true;
         alive = false;
@@ -837,7 +839,14 @@ void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int p
 
         Bullet b = {origin, velocity, lifetime, enemy, BulletType::Default};
 
-        b.initialSpeed = Vector3Length(b.velocity); //set initial speed. 
+        b.initialSpeed = Vector3Length(b.velocity); //set initial speed.
+        
+
+        b.light.range      = lightConfig.dynamicRange;
+        b.light.intensity  = 0.0f;
+        b.light.color = lightConfig.dynamicFireColor;
+        b.light.active = true;
+    
         if (b.initialSpeed < 1.0f) b.initialSpeed = 1.0f;
         b.id = gBulletCounter++;
         activeBullets.emplace_back(b);

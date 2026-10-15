@@ -208,7 +208,7 @@ void ParticleSystem::CreateParticle(
         case ParticleType::Smoke:
         {
             particle.color = color;
-
+            particle.size = 5.0f;
             particle.gravity = -100.0f;
 
             particle.velocity = {

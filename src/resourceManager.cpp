@@ -272,6 +272,7 @@ void ResourceManager::LoadAllResources() {
     R.LoadTexture("batSheet",           "assets/sprites/batSheet.png");
     R.LoadTexture("hermitSheet",        "assets/sprites/hermitSheet.png");
     R.LoadTexture("whiteGradient",      "assets/textures/whiteGradient.png");
+    R.LoadTexture("gradientCircle",     "assets/textures/gradientCircle.png");
     R.LoadTexture("zombieSheet",        "assets/sprites/zombieSheet.png");
     R.LoadTexture("zombieSheetArmless", "assets/sprites/zombieSheetArmless.png");
     R.LoadTexture("zombieSheetHeadless","assets/sprites/zombieSheetHeadless.png");

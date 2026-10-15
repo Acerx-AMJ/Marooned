@@ -1268,48 +1268,6 @@ void UpdateMagicMissile(float deltaTime)
     );
 }
 
-// void UpdateMagicMissile(float deltaTime){
-//     for (MagicMissile& missile : activeMagicMissiles)
-//     {
-
-//         if (!missile.targetAcquired && missile.age >= missile.burstTime)
-//         {
-//             missile.targetAcquired = true;
-
-//             float closestDistanceSq = 2000.0f * 2000.0f; // acquisition range
-
-//             for (Character* enemy : enemyPtrs)
-//             {
-//                 if (!enemy || enemy->isDead) continue;
-//                 if (!DDAHasLineOfSightWorld(missile.position, enemy->position)) continue;
-
-//                 float distanceSq = Vector3DistanceSqr(
-//                     missile.position,
-//                     enemy->position
-//                 );
-
-//                 if (distanceSq < closestDistanceSq)
-//                 {
-//                     closestDistanceSq = distanceSq;
-//                     missile.targetPoint = enemy->position;
-//                 }
-//             }
-//         }
-
-
-//         missile.Update(deltaTime);
-//     }
-
-//     activeMagicMissiles.erase(
-//         std::remove_if(
-//             activeMagicMissiles.begin(),
-//             activeMagicMissiles.end(),
-//             [](const MagicMissile& missile) { return !missile.active; }
-//         ),
-//         activeMagicMissiles.end()
-//     );
-
-// }
 
 void UpdateBullets(Camera& camera, float dt, ParticleSystem& particleSystem) {
 
@@ -1336,6 +1294,44 @@ void EraseBullets() {
             [](Bullet& b) { return b.IsDone();}),
         activeBullets.end()
     );
+}
+
+void DrawFrameLightGlows(const Camera3D& camera, const Texture2D& glowTexture)
+{
+    rlDrawRenderBatchActive();
+    rlDisableDepthMask();  // Keep depth testing, disable depth writing
+    BeginBlendMode(BLEND_ADDITIVE);
+
+
+    for (const LightSample& light : frameLights)
+    {
+        if (light.glowRadius <= 0.0f ||
+            light.glowIntensity <= 0.0f)
+            continue;
+
+        Color tint = {
+            static_cast<unsigned char>(
+                Clamp(light.color.x, 0.0f, 1.0f) * 255.0f),
+            static_cast<unsigned char>(
+                Clamp(light.color.y, 0.0f, 1.0f) * 255.0f),
+            static_cast<unsigned char>(
+                Clamp(light.color.z, 0.0f, 1.0f) * 255.0f),
+            static_cast<unsigned char>(
+                Clamp(light.glowIntensity, 0.0f, 1.0f) * 255.0f)
+        };
+
+        DrawBillboard(
+            camera,
+            glowTexture,
+            light.pos,
+            light.glowRadius,
+            tint
+        );
+    }
+
+    EndBlendMode();
+    rlDrawRenderBatchActive();
+    rlEnableDepthMask();
 }
 
 

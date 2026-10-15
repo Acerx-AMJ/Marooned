@@ -119,20 +119,61 @@ LightSource MakeStaticTorch(Vector3 pos) { //init static light params
     return L;
 }
 
+Vector3 BulletGlowColor(float age)
+{
+    float t = Clamp(age / 0.5f, 0.0f, 1.0f);
+
+    Color heat = ColorFromHSV(
+        Lerp(45.0f, 10.0f, t),
+        Lerp(0.65f, 1.0f, t),
+        1.0f
+    );
+
+    return {
+        heat.r / 255.0f,
+        heat.g / 255.0f,
+        heat.b / 255.0f
+    };
+}
+
 void GatherFrameLights() {
-    //each bullet has a struct called light. Check bullet lights and add info to LightSample struct and add to framelight vector.
     frameLights.clear();
     frameLights.reserve(activeBullets.size()); // upper bound
+    bool bulletLightTaken = false; //only light the first blunderbuss bullet. 
 
     for (const Bullet& b : activeBullets) {
         if (!b.light.active) continue;
-        if (b.light.age > 0.75) continue; //wait to stop lights 
+
+        bool defaultBullet = (b.type == BulletType::Default);
 
         LightSample s;
         s.color     = b.light.color;
         s.range     = b.light.range;
         s.intensity = b.light.intensity;
-        if (b.exploded) s.range = s.range * 2; //increase light range when exploding. 
+
+        if (b.exploded) s.range = s.range * 2; //increase light range when exploding.
+
+        if (defaultBullet) {
+
+            float t = Clamp(b.age /1.5f, 0.0f, 1.0f);
+            s.color = BulletGlowColor(b.age); //The glow has it's own color curve. That starts more yellow. 
+            s.glowRadius = 25.0f;
+            s.glowIntensity = 1.0f - t;
+            s.intensity = 0.0f;
+
+            if (!bulletLightTaken && t < 1.0f) {
+                s.intensity = 1.0f - t;
+                bulletLightTaken = true;
+            }
+
+        } else {
+            if (b.light.age > 0.75) continue; //wait to stop lights 
+            // Fire / Ice // fade after explosion. b.light.age starts updating once the bullet is exploded. 
+            float fade = Clamp((0.75f - b.light.age) / 0.5f, 0.0f, 1.0f);
+            s.glowRadius = 100.0f;
+            s.glowIntensity = fade;
+            s.intensity *= fade;
+        }
 
         s.pos = b.light.detached ? b.light.posWhenDetached
                                  : b.GetPosition();
@@ -146,19 +187,23 @@ void GatherFrameLights() {
 
     for (const MagicMissile& missile : activeMagicMissiles)
     {
-        if (!missile.carriesLight) continue;
-
         LightSample s;
-        s.pos = missile.position; // use your actual position member/getter
+        s.pos = missile.position;
         s.color = { 0.65f, 0.25f, 1.0f };
         s.range = 500.0f;
 
-        float fade = Clamp((2.0f - missile.age) / 0.25f, 0.0f, 1.0f);
-        s.intensity = 0.25f * fade;
+        float fade = Clamp((2.0f - missile.age) / 0.5f, 0.0f, 1.0f);
 
+        // Only one missile per volley lights the environment.
+        s.intensity = missile.carriesLight ? 0.25f * fade : 0.0f;
+
+        // Every missile gets its own halo.
+        s.glowRadius = 20.0f;  
+        s.glowIntensity = fade;
 
         frameLights.push_back(s);
     }
+
 }
 
 
@@ -1266,6 +1311,8 @@ void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLi
         255
     };
 
+
+
     //stamp player light. 
     StampDynamicLight(ls.pos, ls.range, c);  
 
@@ -1278,6 +1325,8 @@ void BuildDynamicLightmapFromFrameLights(const std::vector<LightSample>& frameLi
             (unsigned char)Clamp(L.color.z * 255.0f * L.intensity, 0.0f, 255.0f),
             255
         };
+
+        if (L.intensity <= 0.0f) continue;
 
         StampDynamicLight(L.pos, L.range, c);
         // No occlusion for fireballs, too expensive. 
