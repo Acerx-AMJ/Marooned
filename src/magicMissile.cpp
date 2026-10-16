@@ -70,6 +70,9 @@ void MagicMissile::DestroyOnImpact(Vector3 impactPosition)
         player.lookForward,
         2000.0f
     );
+
+    explosionLightTimer = 0.2f;
+
     active = false;
 }
 

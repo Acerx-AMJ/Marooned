@@ -198,7 +198,19 @@ void Bullet::HandleBulletWorldCollision(){
 
             killFloorY = tileIsLava
                 ? (floorHeight - lavaOffsetY)
-                : (floorHeight + 20);
+                : (floorHeight + 30);
+
+            if (position.y <= killFloorY) {
+                if (tileIsLava) {
+                    BulletParticleBounce(*this, ORANGE);
+                } else {
+                    Vector3 n = {0, 1, 0};
+                    alive = TryBulletRicochet(*this, n, 0.6f, 500, 0.7f);
+                    exploded = alive;
+                }
+
+                return;
+            }
         }
     } else {
         // Overworld: terrain height varies; sampling each frame is fine.
@@ -794,6 +806,7 @@ void ExplodeShrapnelSphere(Vector3 origin, int pelletCount,float speed,float lif
         if (b.initialSpeed < 1.0f) b.initialSpeed = 1.0f;
         b.size = 10.0f;
         b.id = gBulletCounter++;
+        b.light.active = true; //glowing shrapnel
         activeBullets.emplace_back(b);
     }
 }
@@ -846,6 +859,7 @@ void FireBlunderbuss(Vector3 origin, Vector3 forward, float spreadDegrees, int p
         b.light.intensity  = 0.0f;
         b.light.color = lightConfig.dynamicFireColor;
         b.light.active = true;
+        b.light.detachOnDeath = false;
     
         if (b.initialSpeed < 1.0f) b.initialSpeed = 1.0f;
         b.id = gBulletCounter++;
@@ -867,13 +881,15 @@ void FireCannon(Vector3 origin, Vector3 target, float speed, float lifetime, boo
     SoundManager::GetInstance().PlaySoundAtPosition("CannonShot", b.position, player.position, 0.0f, 10000.0f);
 }
 
-void FireBullet(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy, bool hermit) {
+void FireBullet(Vector3 origin, Vector3 target, float speed, float lifetime, bool enemy, bool hermit, Character* owner) {
     Vector3 direction = Vector3Subtract(target, origin);
     direction = Vector3Normalize(direction);
     Vector3 velocity = Vector3Scale(direction, speed);
     Bullet b = {origin, velocity, lifetime, enemy};
     b.id = gBulletCounter++;
     b.hermit = hermit;
+    b.light.active = true; //glowing enemy bullets. 
+    b.owner = owner;
 
     activeBullets.push_back(b);
 }
@@ -893,6 +909,7 @@ void FireFireball(Vector3 origin, Vector3 target, float speed, float lifetime, b
     b.light.lifeTime   = 0.15f; // short glow after death
     b.id = gBulletCounter++;
     b.wizard = wizard;
+    
 
     
 

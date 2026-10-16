@@ -244,7 +244,7 @@ namespace ShaderSetup
         gs.shader = &R.GetShader("ghostShader");
         assert(gs.shader && "GhostShader.shader must be set");
         Model& raftModel = R.GetModel("raft");
-        Model& missileModel = R.GetModel("magicMissile");
+        //Model& missileModel = R.GetModel("magicMissile");
         Shader& sh = *gs.shader;
 
         for (int i = 0; i < raftModel.materialCount; i++)
@@ -252,16 +252,16 @@ namespace ShaderSetup
             raftModel.materials[i].shader = sh;
         }
 
-        for (int i = 0; i < missileModel.materialCount; i++)
-        {
-            missileModel.materials[i].shader = sh;
-        }
+        // for (int i = 0; i < missileModel.materialCount; i++)
+        // {
+        //     missileModel.materials[i].shader = sh;
+        // }
 
         CacheGhostLocations(gs);
 
-        gs.ghostTint = {0.7f, 0.4f, 1.0f}; // spectral purple
+        //gs.ghostTint = {0.7f, 0.4f, 1.0f}; // spectral purple
 
-        //gs.ghostTint = {0.4f, 0.8f, 1.0f}; // spectral blue
+        gs.ghostTint = {0.4f, 0.8f, 1.0f}; // spectral blue
         gs.alpha = 0.35f;
         gs.rimPow = 2.0f;
         gs.rimStr = 1.2f;

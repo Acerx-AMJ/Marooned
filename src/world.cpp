@@ -1237,9 +1237,17 @@ void UpdateMagicMissile(float deltaTime)
 {
     for (MagicMissile& missile : activeMagicMissiles)
     {
+
+        if (!missile.active)
+        {
+            missile.explosionLightTimer = std::max(0.0f, missile.explosionLightTimer - deltaTime);
+            continue;
+        }
+
         if (missile.age >= missile.burstTime)
         {
             missile.retargetTimer -= deltaTime;
+
 
             if (missile.retargetTimer <= 0.0f)
             {
@@ -1261,7 +1269,7 @@ void UpdateMagicMissile(float deltaTime)
             activeMagicMissiles.end(),
             [](const MagicMissile& missile)
             {
-                return !missile.active;
+                return !missile.active && missile.explosionLightTimer <= 0.0f;
             }
         ),
         activeMagicMissiles.end()
@@ -1277,7 +1285,7 @@ void UpdateBullets(Camera& camera, float dt, ParticleSystem& particleSystem) {
             // First frame of death: convert to glow if requested
             if (b.light.active && b.light.detachOnDeath && !b.light.detached) {
                 b.light.detached = true;
-                b.light.age = 0.f;
+                //b.light.age = 0.f;
                 b.light.posWhenDetached = b.GetPosition();  // freeze at death position
 
             }

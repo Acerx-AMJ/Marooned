@@ -41,14 +41,15 @@ void ParticleSystem::Draw(Camera3D& camera) const
 void ParticleSystem::EmitBurst(
     Vector3 position,
     int count,
-    ParticleType type)
+    ParticleType type,
+    Color color)
 {
     if (count <= 0)
     {
         return;
     }
 
-    EmitParticles(position, count, type, RED);
+    EmitParticles(position, count, type, color);
 }
 
 void ParticleSystem::EmitTrail(
@@ -199,7 +200,7 @@ void ParticleSystem::CreateParticle(
     particle.maxLife = 1.5f;
     particle.gravity = 0.0f;
     particle.color = WHITE;
-    particle.size = 8.0f;
+    particle.size = 5.0f; //default was 8
     particle.drag = 0.0f;
     particle.bounce = 0.0f;
 
@@ -224,6 +225,7 @@ void ParticleSystem::CreateParticle(
         {
             particle.color = ORANGE;
             particle.gravity = 980.0f;
+            particle.size = 5.0f;
 
             particle.velocity = {
                 RandomFloat(-300.0f, 300.0f),
@@ -290,6 +292,7 @@ void ParticleSystem::CreateParticle(
         {
             particle.color = SKYBLUE;
             particle.gravity = -50.0f;
+            particle.size = 5.0f;
 
             particle.velocity = {
                 RandomFloat(-40.0f, 40.0f),

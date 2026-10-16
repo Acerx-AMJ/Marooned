@@ -20,7 +20,8 @@ public:
     void EmitBurst(
         Vector3 position,
         int count,
-        ParticleType type);
+        ParticleType type,
+        Color color=WHITE);
 
     // Creates particles continuously over time.
     //

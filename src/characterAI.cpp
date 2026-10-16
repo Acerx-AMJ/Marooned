@@ -2556,10 +2556,8 @@ void Character::UpdateWizardAI(float deltaTime, Player& player) {
                 }
                 else
                 {
-                    // Put your original Fireball call here,
-                    // followed by its cooldown and sound.
-                    //FireFireball(muzzle, player.position, 1350.0f, 2.0f, true, true);
-                    FireFireball(muzzle, player.position, 1350.0f, 2.0f, true, false, true);
+
+                    FireFireball(muzzle, player.position, 1350.0f, 2.0f, true, true, true);
 
                     attackCooldown = 5.0f;
 
@@ -2585,9 +2583,7 @@ void Character::UpdateWizardAI(float deltaTime, Player& player) {
                         Vector3Subtract(targetPoint, muzzle)
                     );
 
-                    SpawnMagicMissiles(
-                        muzzle, launchDirection, targetPoint, true
-                    );
+                    SpawnMagicMissiles(muzzle, launchDirection, targetPoint, true);
 
                     missileBurstTimer += 0.3f;
                 }
@@ -3154,7 +3150,7 @@ void Character::UpdatePirateAI(float deltaTime, Player& player) {
                     Vector3 muzzle = position;
                     muzzle.y = isElite ? position.y + 50 : position.y; //move muzzle up for taller enemies. 
 
-                    FireBullet(muzzle, aimPos, 1500.0f, 3.0f, true, false);
+                    FireBullet(muzzle, aimPos, 1500.0f, 3.0f, true, false, this);
                     hasFired = true;
                     attackCooldown = 1.5f;
 

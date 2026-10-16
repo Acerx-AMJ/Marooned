@@ -33,6 +33,8 @@ public:
     float retargetTimer;
     float retargetInterval;
 
+    float explosionLightTimer = 0.0f;
+
     bool playWoosh = false;
     bool wooshStarted = false;
     SoundInstanceId wooshId = 0;
@@ -44,6 +46,8 @@ public:
     bool carriesLight = false;
 
     float qDamage = 1.0f;
+
+
 
 
 private:

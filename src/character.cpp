@@ -1195,13 +1195,6 @@ void Character::ChangeState(CharacterState next) {
 
 void Character::SetAnimation(int row, int frames, float speed, bool loop) {
 
-    if (isDead)
-    {
-        TraceLog(LOG_WARNING,
-            "Dead enemy animation: type=%d state=%d row=%d frames=%d oldFrame=%d",
-            (int)type, (int)state, row, frames, currentFrame);
-    }
-
     rowIndex = row;
     maxFrames = frames;
     animationSpeed = speed;

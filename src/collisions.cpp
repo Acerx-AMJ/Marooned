@@ -593,8 +593,8 @@ static inline Vector3 AABBHitNormal(const BoundingBox& box, const Vector3& p)
 void BulletParticleBounce(Bullet& b, Color c){
     (void) c;
 
-    particleSystem.EmitBurst(b.position, 30, ParticleType::Smoke);
-
+    //particleSystem.EmitBurst(b.position, 30, ParticleType::Smoke);
+    particleSystem.EmitBlood(b.position, 30, DARKBROWN); //The ground bleeds brown...
     b.exploded = true;
     b.alive = false;
 }
@@ -687,8 +687,9 @@ void CheckBulletHits(Camera& camera) {
             if (enemy == nullptr) continue;
             if (enemy->isDead) continue;
 
-            bool isSkeleton = (enemy->type == CharacterType::Skeleton); 
-            bool isZombie = (enemy->type == CharacterType::Zombie);
+            // bool isSkeleton = (enemy->type == CharacterType::Skeleton); 
+            // bool isZombie = (enemy->type == CharacterType::Zombie);
+            // bool isPirate = (enemy->type == CharacterType::Pirate);
 
             BoundingBox box = enemy->GetBoundingBox();
 
@@ -787,9 +788,9 @@ void CheckBulletHits(Camera& camera) {
                     enemy->TakeDamage(100);
                     break;
 
-                } else if (b.IsEnemy() && (isSkeleton || isZombie)) { // friendly fire vs skeletons and zombies
-                    enemy->TakeDamage(150); //higher damage for higher chance of death by enemy bullet. 1 sword swipe plus friendly fire = death
-                    //BulletParticleBounce(b, LIGHTGRAY);
+                }  else if (b.IsEnemy() && enemy != b.owner) {
+                    //Enemy friendly fire
+                    enemy->TakeDamage(150);
                     break;
                 }
 
@@ -901,6 +902,11 @@ void CheckBulletHits(Camera& camera) {
                 Vector3 n = AABBHitNormal(w.bounds, b.position);
                 b.alive = TryBulletRicochet(b, n, 0.6f, 80.0f, 0.999f);//returns false if no ricochet.
                 b.exploded = b.alive;
+
+                b.light.posWhenDetached = Vector3Add(b.position, Vector3Scale(n, 5.0f));
+                b.light.detached = true;
+                b.light.age = 0.0f;
+
 
                 break;
             }
